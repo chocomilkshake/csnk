@@ -18,7 +18,7 @@
       </div>
 
       <nav class="d-flex justify-content-center">
-        <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm">
+        <div class="bg-danger rounded-pill px-3 py-3 d-inline-flex gap-1 shadow-sm px-3">
           <a class="btn btn-danger rounded-pill active" href="#home">Home</a>
           <a class="btn btn-danger rounded-pill" href="applicant.html">Applicants</a>
           <a class="btn btn-danger rounded-pill" href="#about">About</a>
@@ -59,8 +59,8 @@
 
           <div class="col-lg-6">
             <img class="img-fluid rounded-4 shadow"
-                 src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=900"
-                 alt="Office">
+                src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=900"
+                alt="Office">
           </div>
         </div>
       </div>

@@ -10,14 +10,14 @@
 </head>
 <body>
 <!-- Navbar -->
-  <header class="bg-white border-bottom sticky-top">
+  <header class="bg-white border-bottom ">
     <div class="container py-3">
       <div class="text-center mb-3">
         <img src="../resources/img/csnklogo.png" alt="CSNK Manpower Agency" style="height:95px;">
       </div>
 
       <nav class="d-flex justify-content-center">
-        <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm">
+        <div class="bg-danger rounded-pill px-3 py-3 d-inline-flex gap-1 shadow-sm px-3">
           <a class="btn btn-danger rounded-pill" href="index.php">Home</a>
           <a class="btn btn-danger rounded-pill active " href="applicant.html">Applicants</a>
           <a class="btn btn-danger rounded-pill" href="#about">About</a>
@@ -32,29 +32,67 @@
 
   <!-- Search Bar -->
   <section class="search-wrap mb-4">
-    <form id="searchForm" class="row g-2 align-items-center rounded-4 shadow-sm p-3 bg-white" role="search">
-      <div class="col-12 col-lg-3">
-        <label class="form-label small mb-1" for="q">Search by name, role, city</label>
-        <input type="text" class="form-control" id="q" name="q" placeholder="e.g., nanny, Makati">
+  <!-- Keep the form inside your existing .container (from <main class="container py-4">) -->
+  <form id="searchForm" role="search">
+    <!-- The pill itself stretches only within the current container width -->
+    <div class="search-pill d-flex align-items-stretch bg-white border border-2 rounded-pill shadow-sm p-2 p-sm-3 w-100">
+
+      <!-- Keyword -->
+      <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
+        <i class="bi bi-hospital-fill text-danger me-2 fs-5"></i>
+        <input
+          type="text"
+          class="form-control border-0 bg-transparent ps-3 min-w-0"
+          id="q"
+          name="q"
+          placeholder="Search for Name, Specialization, Experience..."
+          aria-label="Search keywords"
+        >
       </div>
-      <div class="col-6 col-lg-3">
-        <label class="form-label small mb-1" for="location">Location</label>
-        <input type="text" class="form-control" id="location" name="location" placeholder="City or Region">
+
+      <!-- Divider (desktop only) -->
+      <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
+
+      <!-- Location -->
+      <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
+        <i class="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
+        <input
+          type="text"
+          class="form-control border-0 bg-transparent ps-3 min-w-3"
+          id="location"
+          name="location"
+          placeholder="Location"
+          aria-label="Location"
+        >
       </div>
-      <div class="col-6 col-lg-2">
-        <label class="form-label small mb-1" for="min_experience">Min Experience (yrs)</label>
-        <input type="number" min="0" class="form-control" id="min_experience" name="min_experience">
+
+      <!-- Divider (desktop only) -->
+      <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
+
+      <!-- Date -->
+      <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
+        <i class="bi bi-calendar2-event-fill text-danger me-2 fs-5"></i>
+        <input
+          type="date"
+          class="form-control border-0 bg-transparent ps-3 min-w-0"
+          id="available_by"
+          name="available_by"
+          aria-label="Date"
+        >
       </div>
-      <div class="col-6 col-lg-2">
-        <label class="form-label small mb-1" for="available_by">Available By</label>
-        <input type="date" class="form-control" id="available_by" name="available_by">
+
+      <!-- Search button -->
+      <div class="d-flex align-items-center ps-2 ps-sm-3">
+        <button class="btn btn-danger rounded-pill px-3 px-sm-4 view-profile-btn" type="submit">
+          <i class="bi bi-search me-1"></i>
+          <span class="fw-medium">Search</span>
+        </button>
       </div>
-      <div class="col-6 col-lg-2 d-grid">
-        <label class="form-label small opacity-0" aria-hidden="true">Search</label>
-        <button class="btn btn-danger" type="submit"><i class="bi bi-search"></i> Search</button>
-      </div>
-    </form>
-  </section>
+
+    </div>
+  </form>
+</section>
+
 
   <div class="row">
     <!-- Sidebar Filters -->
@@ -150,12 +188,55 @@
   </div>
 </main>
 
-<footer class="border-top mt-5">
-  <div class="container py-4 small text-secondary d-flex flex-wrap gap-2 justify-content-between">
-    <div>© <span id="year"></span> CSNK Manpower Agency</div>
-    <div>AFC Company • Unit 05xx, BGC, Taguig</div>
+<!-- Include Bootstrap Icons (if not already on the page) -->
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
+
+<footer class="bg-white border-top">
+  <div class="container py-4">
+    <div class="row g-4 align-items-start">
+      <div class="col-md-6">
+        <img src="../resources/img/csnklogo.png" alt="CSNK Logo" style="height:75px;">
+      </div>
+
+      <div class="col-md-6 row ">
+        <ul class="list-unstyled text-muted mb-0">
+          <li class="mb-2">
+            <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+            2F Unit 1 Eden Townhouse 2001 Eden St. Cor Pedro Gil, <br> &emsp;&ensp; Sta Ana Barangay 784, City of Manila, NCR, First District
+          </li>
+          <li class="mb-2">
+            <i class="bi bi-telephone-fill text-danger me-2"></i>
+            +63 (02) 1234-5678
+          </li>
+          <li class="mb-2">
+            <i class="bi bi-envelope-fill text-danger me-2"></i>
+            info@csnkmanpower.com
+          </li>
+          <li class="mb-0">
+            <i class="bi bi-clock-fill text-danger me-2"></i>
+            Mon - Sat: 8:00 AM - 5:00 PM
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <div class="text-center small text-muted">
+      <div>Copyright © <span id="year"></span> CSNK Manpower Agency. All Rights Reserved.</div>
+      <div class="mt-2">
+        <a class="text-muted text-decoration-none me-3" href="#">Legal Notice</a>
+        <a class="text-muted text-decoration-none me-3" href="#">Privacy Policy</a>
+        <a class="text-muted text-decoration-none" href="#">Refund Policy</a>
+      </div>
+    </div>
   </div>
 </footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../resources/js/app.js"></script>  <!-- <- must exist and be reachable -->
