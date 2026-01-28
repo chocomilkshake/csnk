@@ -20,7 +20,7 @@
       <nav class="d-flex justify-content-center">
         <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm">
           <a class="btn btn-danger rounded-pill active" href="#home">Home</a>
-          <a class="btn btn-danger rounded-pill" href="#applicants">Applicants</a>
+          <a class="btn btn-danger rounded-pill" href="applicant.html">Applicants</a>
           <a class="btn btn-danger rounded-pill" href="#about">About</a>
           <a class="btn btn-danger rounded-pill" href="#contact">Contact</a>
         </div>
@@ -32,7 +32,7 @@
   <section id="home" class="py-5">
     <div class="container">
       <div class="p-4 p-lg-5 rounded-4 text-white shadow"
-           style="background: linear-gradient(90deg, #dc3545, #111);">
+          style="background: linear-gradient(90deg, #dc3545, #111);">
         <div class="row align-items-center g-4">
           <div class="col-lg-6">
             <h1 class="display-6 fw-bold">Welcome to CSNK Manpower Agency</h1>
