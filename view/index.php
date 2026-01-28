@@ -18,7 +18,7 @@
       </div>
 
       <nav class="d-flex justify-content-center">
-        <div class="bg-danger rounded-pill px-3 py-3 d-inline-flex gap-1 shadow-sm px-3">
+        <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm px-3">
           <a class="btn btn-danger rounded-pill active" href="#home">Home</a>
           <a class="btn btn-danger rounded-pill" href="applicant.html">Applicants</a>
           <a class="btn btn-danger rounded-pill" href="#about">About</a>
