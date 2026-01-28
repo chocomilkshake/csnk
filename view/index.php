@@ -10,7 +10,7 @@
 </head>
 <body class="bg-light">
 
-  <!-- Navbar -->
+   <!-- CSNK OFFICIAL WEBSITE NAVIGATION BAR -->
   <header class="bg-white border-bottom sticky-top">
     <div class="container py-3">
       <div class="text-center mb-3">
@@ -20,7 +20,7 @@
       <nav class="d-flex justify-content-center">
         <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm">
           <a class="btn btn-danger rounded-pill active" href="#home">Home</a>
-          <a class="btn btn-danger rounded-pill" href="#applicants">Applicants</a>
+          <a class="btn btn-danger rounded-pill" href="#applicants">Kasambahay</a>
           <a class="btn btn-danger rounded-pill" href="#about">About</a>
           <a class="btn btn-danger rounded-pill" href="#contact">Contact</a>
         </div>
