@@ -10,7 +10,7 @@
 </head>
 <body class="bg-light">
 
-   <!-- CSNK OFFICIAL WEBSITE NAVIGATION BAR -->
+   <!-- CSNK OFFICIAL WEBSITE NAVIGATION BARzzzzzz -->
      <!-- HOY! YUNG MGA BARKADA MO NAGBABATO SA BAHAY NAMIN! -->
   <header class="bg-white border-bottom sticky-top">
     <div class="container py-3">
