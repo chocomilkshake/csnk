@@ -13,7 +13,10 @@
 
   // --- Helpers ---
   // Data URL (relative to the page `view/applicant.html`)
-  const DATA_URL = '../resources/data/applicants.json';
+    const DATA_URL = new URL('../resources/data/applicants.json', window.location.href).toString();
+    console.log('Fetching applicants from:', DATA_URL); // <- keep this for debugging
+      ``
+
 
   // NEW: small utility helpers to make filtering safer/readable
   const norm = (s) => String(s ?? '').toLowerCase().trim();
@@ -151,6 +154,85 @@
     }
   };
 
+  //newwwwww
+  // --- Render a single applicant into the modal ---
+function renderApplicantToModal(a){
+  // Safe helpers (reuse from your code)
+  const escape = (s) => String(s ?? '');
+
+  // Avatar initials
+  const initials = (a.full_name || '')
+    .split(' ')
+    .map(p => p[0])
+    .join('')
+    .slice(0,2)
+    .toUpperCase() || 'AP';
+  document.getElementById('avatar').textContent = initials;
+
+  // Header fields
+  document.getElementById('name').textContent = a.full_name || 'Applicant';
+  document.getElementById('primaryRole').textContent = a.specialization || '—';
+  document.getElementById('yoeBadge').textContent = `${a.years_experience ?? 0} yrs`;
+
+  // Availability line (City, Region • Available from: <date>)
+  const availDate = Date.parse(a.availability_date);
+  const availStr = Number.isFinite(availDate)
+    ? new Date(availDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : '—';
+  document.getElementById('availabilityLine').innerHTML =
+  `${escape(a.location_city) || '—'}, ${escape(a.location_region) || '—'} • Available from: <strong class="text-dark"${availStr}</strong>`;
+
+  // Specialization chips (your data has a SINGLE specialization string)
+  const chips = document.getElementById('chipsContainer');
+  chips.innerHTML = '';
+  if (a.specialization) {
+    const span = document.createElement('span');
+    span.className = 'chip';
+    span.textContent = a.specialization;
+    chips.appendChild(span);
+  }
+
+  // Basic info
+  document.getElementById('cityValue').textContent = a.location_city || '—';
+  document.getElementById('regionValue').textContent = a.location_region || '—';
+  document.getElementById('yoeValue').textContent = a.years_experience ?? '—';
+  document.getElementById('employmentValue').textContent = a.employment_type || '—';
+  document.getElementById('availValue').textContent = availStr;
+
+  // Languages: your filters split by comma, mirror here
+  const langs = String(a.languages || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  document.getElementById('langValue').textContent = langs.length ? langs.join(', ') : '—';
+
+  // (Optional) Use photo in avatar circle background? You can add an <img> if you want.
+}
+
+let PROFILE_MODAL_INSTANCE = null;
+async function openProfileModal(id){
+  // Ensure data is loaded
+  const data = DataService.cache || await DataService.loadAll();
+  const found = data.find(x => (x.id ?? x.applicant_id) == id);
+  if (!found) return;
+
+  // Render
+  renderApplicantToModal(found);
+
+  // Show modal
+  const modalEl = document.getElementById('applicantModal');
+  if (!PROFILE_MODAL_INSTANCE) {
+    PROFILE_MODAL_INSTANCE = new bootstrap.Modal(modalEl);
+  }
+  PROFILE_MODAL_INSTANCE.show();
+
+  // Demo actions (replace with your integration)
+  document.getElementById('shortlistBtn').onclick = () => alert(`Shortlisted: ${found.full_name}`);
+  document.getElementById('messageBtn').onclick = () => alert(`Message sent to: ${found.full_name}`);
+}
+
+
+
   // --- Params building ---
   function paramsFromForms() {
     const sParams = new URLSearchParams(new FormData(searchForm));
@@ -179,15 +261,17 @@
   }
 
   // NEW: ensure URL used in <img> is safe-ish and fallback on error
-  function safeImg(src) {
-    const val = String(src || '').trim();
-    if (!val) return 'assets/img/placeholder-user.svg';
-    // allow http(s) and same-origin relative paths; otherwise fallback
-    if (/^(https?:)?\/\//i.test(val) || val.startsWith('/') || val.startsWith('./') || val.startsWith('../')) {
-      return val;
-    }
-    return 'assets/img/placeholder-user.svg';
+  
+function safeImg(src) {
+  const fallback = '../resources/img/placeholder-user.svg'; // ✅ match your structure
+  const val = String(src || '').trim();
+  if (!val) return fallback;
+  if (/^(https?:)?\/\//i.test(val) || val.startsWith('/') || val.startsWith('./') || val.startsWith('../')) {
+    return val;
   }
+  return fallback;
+}
+
 
   // --- Card template (with data-id and hover activator) ---
  function cardTemplate(a) {
@@ -202,13 +286,13 @@
     <div class="col-12 col-sm-6 col-lg-4">
       <article class="card h-100 shadow-sm position-relative hover-activator" data-id="${escapeHtml(id)}">
         <img
-          src="${escapeHtml((a.photo_url || '').trim() || 'assets/img/placeholder-user.svg')}"
+          src="${escapeHtml(safeImg(a.photo_url))}"
           class="card-img-top object-fit-cover"
           style="height:220px"
           alt="${escapeHtml(a.full_name)}"
           loading="lazy"
-          onerror="this.onerror=null;this.src='assets/img/placeholder-user.svg';"
-        >
+          onerror="this.onerror=null;this.src='../resources/img/placeholder-user.svg';"
+        />
 
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start">
@@ -235,8 +319,11 @@
 
         <div class="card-footer bg-white">
           <!-- Use stretched-link to make the whole card clickable on click (not on hover) -->
-          <a class="btn btn-sm btn-outline-primary w-100 view-profile-btn position-relative stretched-link"
-            href="/profile.html?id=${encodeURIComponent(id)}">
+          <button
+            class="btn btn-sm btn-outline-primary w-100 view-profile-btn position-relative"
+            type="button"
+            data-id="${escapeHtml(id)}"
+          >
             View Profile
           </a>
           <a class="btn btn-sm btn-outline-primary w-100 hire-me-btn position-relative stretched-link col-6 mt-2"
@@ -385,12 +472,10 @@
 
   // --- Card interactions: click + hover ---
   // NEW: One place to define what "View Profile" does
-  function openProfileById(id) {
-    if (!id) return;
-    // Navigate OR open modal — choose one:
-    window.location.href = `/profile.html?id=${encodeURIComponent(id)}`;
-    // OR modal pattern: openProfileModal(id);
-  }
+function openProfileById(id) {
+  if (!id) return;
+  openProfileModal(id); // show modal
+}
 
   // NEW: Event delegation for clicks on the button or anywhere on the card
   grid.addEventListener('click', (e) => {
