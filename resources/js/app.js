@@ -325,8 +325,11 @@ function safeImg(src) {
             data-id="${escapeHtml(id)}"
           >
             View Profile
-          </button>
-          
+          </a>
+          <a class="btn btn-sm btn-outline-primary w-100 hire-me-btn position-relative stretched-link col-6 mt-2"
+            href="/profile.html?id=${encodeURIComponent(id)}">
+            Hire Me
+          </a>
         </div>
       </article>
     </div>
