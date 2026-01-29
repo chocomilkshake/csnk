@@ -330,14 +330,10 @@
           <a href="#" class="btn btn-sm btn-outline-dark flex-fill view-profile-btn">
             <i class="bi bi-person-badge me-1"></i> View Profile
           </a>
-          <a href="#" class="btn btn-sm btn-brand text-white flex-fill hire-me-btn">
-            <i class="bi bi-briefcase me-1"></i> Hire Me
-          </a>
-        </div>
-      </div>
-    </article>`;
-  }
-  ``
+      </article>
+    </div>
+  `;
+}
 
   // --- Rendering ---
   function renderGrid(json) {
