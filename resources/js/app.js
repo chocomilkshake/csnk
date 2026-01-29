@@ -296,7 +296,7 @@
   ``
 
 
-  // --- Card template (with data-id and hover activator) ---
+  // --- Card template (with data-id and hover activator, including VIEW PROFILE & HIRE ME) ---
   function cardTemplate(a) {
     const availDate = Date.parse(a.availability_date);
     const availStr = Number.isFinite(availDate)
@@ -330,10 +330,14 @@
           <a href="#" class="btn btn-sm btn-outline-dark flex-fill view-profile-btn">
             <i class="bi bi-person-badge me-1"></i> View Profile
           </a>
-      </article>
-    </div>
-  `;
-}
+          <a href="#" class="btn btn-sm btn-brand text-white flex-fill hire-me-btn">
+            <i class="bi bi-briefcase me-1"></i> Hire Me
+          </a>
+        </div>
+      </div>
+    </article>`;
+  }
+  ``
 
   // --- Rendering ---
   function renderGrid(json) {
@@ -693,4 +697,4 @@
     updateURL(params, { push: false }); // replace on initial load only
     await refresh(params);
   })();
-})();
+})(); 
