@@ -326,7 +326,6 @@ function safeImg(src) {
           >
             View Profile
           </a>
-        </div>
       </article>
     </div>
   `;
