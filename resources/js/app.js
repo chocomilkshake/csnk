@@ -323,10 +323,16 @@ function safeImg(src) {
             class="btn btn-sm btn-outline-primary w-100 view-profile-btn position-relative"
             type="button"
             data-id="${escapeHtml(id)}"
-          >
+          <a class="btn btn-sm btn-outline-primary w-100 hire-me-btn position-relative stretched-link"
+            href="/profile.html?id=${encodeURIComponent(id)}">
             View Profile
           </a>
-          <a class="btn btn-sm btn-outline-primary w-100 hire-me-btn position-relative stretched-link col-6 mt-2"
+
+          <button
+            class="btn btn-sm btn-outline-primary w-100 view-profile-btn position-relative col-6 mt-2"
+            type="button"
+            data-id="${escapeHtml(id)}"
+          <a class="btn btn-sm btn-outline-primary w-100 hire-me-btn position-relative stretched-link"
             href="/profile.html?id=${encodeURIComponent(id)}">
             Hire Me
           </a>
