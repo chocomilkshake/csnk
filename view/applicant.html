@@ -238,7 +238,96 @@
 </script>
 
 
+<!-- ✅ Your modal goes here, before scripts -->
+<div class="modal fade" id="applicantModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <!-- header -->
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Applicant Profile</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- body IDs must match app.js -->
+      <div class="modal-body">
+        <div class="p-3 mb-3 d-flex gap-3 align-items-center" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+          <div id="avatar" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f4f6;border:1px solid #ffffff;color:#991b1b;font-weight:900;"></div>
+          <div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="fw-bold" id="name">Applicant Name</span>
+              <span class="badge rounded-pill" id="primaryRole" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">Role</span>
+              <span class="badge rounded-pill" id="yoeBadge" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">0 yrs</span>
+            </div>
+            <div class="mt-1" id="availabilityLine" style="color:#000000;">City, Region • Available from: <strong class="text-danger-emphasis">TBD</strong></div>
+          </div>
+        </div>
+
+        <div class="p-3 mb-3" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+          <h6 class="mb-2" style="color:#991b1b;text-transform:uppercase;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
+          <div class="d-flex flex-wrap gap-2" id="chipsContainer"></div>
+        </div>
+
+        <div class="p-3" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+          <h6 class="mb-3" style="color:#991b1b;text-transform:uppercase;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — City</div>
+                <div class="fw-semibold" id="cityValue">—</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — Region</div>
+                <div class="fw-semibold" id="regionValue">—</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of Experience</div>
+                <div class="fw-semibold" id="yoeValue">—</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type</div>
+                <div class="fw-semibold" id="employmentValue">—</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Available Dates</div>
+                <div class="fw-semibold" id="availValue">—</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Languages</div>
+                <div class="fw-semibold" id="langValue">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* chips */
+  #chipsContainer .chip{
+    user-select:none; pointer-events:none;
+    display:inline-block; padding:.4rem .7rem; border-radius:999px;
+    font-weight:700; font-size:.82rem; color:#000000;
+    background:#fafafa; border:1px solid #f0f0f0; position:relative;
+  }
+  #chipsContainer .chip::after{content:""; position:absolute; inset:-2px; border-radius:999px; box-shadow:0 0 0 2px #000000;}
+</style>
+
+<!-- scripts in this order -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../resources/js/app.js"></script>  <!-- <- must exist and be reachable -->
+<script src="../resources/js/app.js"></script>
 </body>
 </html>
+
