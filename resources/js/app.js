@@ -296,7 +296,7 @@
   ``
 
 
-  // --- Card template (with data-id and hover activator) ---
+  // --- Card template (with data-id and hover activator, including VIEW PROFILE & HIRE ME) ---
   function cardTemplate(a) {
     const availDate = Date.parse(a.availability_date);
     const availStr = Number.isFinite(availDate)
