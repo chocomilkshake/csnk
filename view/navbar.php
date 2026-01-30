@@ -60,3 +60,21 @@ if (!isset($page)) { $page = ''; }
     </div>
   </nav>
 </header>
+<style>
+  .navbar .nav-link {
+    position: relative;
+    border-bottom: 2px solid transparent; /* reserve space to avoid layout shift */
+    transition: border-color .2s ease;
+  }
+  .navbar .nav-link.active,
+  .navbar .nav-link[aria-current="page"] {
+    border-bottom-color: #D72638; /* your accent red */
+  }
+  /* Optional: also show on hover/focus (desktop) */
+  @media (hover: hover) {
+    .navbar .nav-link:hover,
+    .navbar .nav-link:focus {
+      border-bottom-color: #D72638;
+    }
+  }
+</style>
