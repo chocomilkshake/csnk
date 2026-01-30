@@ -48,7 +48,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='contact' ? 'active' : '' ?>"
-               href="./index.php#contact"
+               href="./contactUs.php"
                aria-current="<?= $page==='contact' ? 'page' : 'false' ?>">
               Contact
             </a>
@@ -60,3 +60,31 @@ if (!isset($page)) { $page = ''; }
     </div>
   </nav>
 </header>
+<style>
+  .navbar .nav-link {
+    position: relative;
+    border-bottom: 2px solid transparent; /* reserve space to avoid layout shift */
+    transition: border-color .2s ease;
+  }
+  .navbar .nav-link.active,
+  .navbar .nav-link[aria-current="page"] {
+    border-bottom-color: #D72638; /* your accent red */
+  }
+  /* Optional: also show on hover/focus (desktop) */
+  @media (hover: hover) {
+    .navbar .nav-link:hover,
+    .navbar .nav-link:focus {
+      border-bottom-color: #D72638;
+    } 
+.new-badge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  font-size: .55rem;
+  padding: .2rem .35rem;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+  }
+</style>
