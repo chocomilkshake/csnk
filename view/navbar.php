@@ -23,7 +23,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='home' ? 'active' : '' ?>"
-               href="./index.php#home"
+               href="./index.php"
                aria-current="<?= $page==='home' ? 'page' : 'false' ?>">
               Home
             </a>
@@ -31,7 +31,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
-               href="./applicant.html"
+               href="./applicant.php"
                aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
               Applicants
               <span class="ms-1 badge text-bg-danger align-text-top">New</span>
@@ -40,7 +40,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='about' ? 'active' : '' ?>"
-               href="./index.php#about"
+               href="./about.php"
                aria-current="<?= $page==='about' ? 'page' : 'false' ?>">
               About
             </a>
