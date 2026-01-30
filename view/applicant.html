@@ -94,81 +94,199 @@
     </section>
 
     <div class="row">
-      <!-- Sidebar Filters -->
-      <aside class="col-12 col-lg-3 mb-4">
-        <button class="btn btn-outline-secondary d-lg-none mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtersCanvas">
-          <i class="bi bi-funnel"></i> Filters
-        </button>
-        <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="filtersCanvas" aria-labelledby="filtersCanvasLabel">
-          <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="filtersCanvasLabel">Filter</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<!-- Sidebar Filters -->
+<aside class="col-12 col-lg-3 mb-4">
+  <button class="btn btn-outline-secondary d-lg-none mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtersCanvas">
+    <i class="bi bi-funnel"></i> Filters
+  </button>
+
+  <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="filtersCanvas" aria-labelledby="filtersCanvasLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="filtersCanvasLabel">Filter</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body">
+      <form id="filtersForm" class="d-grid gap-3">
+
+        <!-- Active filters chips -->
+        <div class="filter-group">
+          <div class="filter-group-title">
+            <span>Active Filters</span>
+            <a href="#" class="filter-clear" id="clearAll">Clear All</a>
           </div>
-          <div class="offcanvas-body">
-            <form id="filtersForm" class="d-grid gap-3">
-              <div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="fw-semibold">Specialization</span>
-                  <a href="#" class="small" id="clearSpecs">Clear</a>
-                </div>
-                <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Kasambahay" id="spec-kas"><label class="form-check-label" for="spec-kas">Kasambahay</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Nanny" id="spec-nan"><label class="form-check-label" for="spec-nan">Nanny</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cook" id="spec-cook"><label class="form-check-label" for="spec-cook">Cook</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly Care" id="spec-elder"><label class="form-check-label" for="spec-elder">Elderly Care</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="All-around Helper" id="spec-all"><label class="form-check-label" for="spec-all">All-around Helper</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Driver" id="spec-driver"><label class="form-check-label" for="spec-driver">Driver</label></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="fw-semibold">Availability</span>
-                  <a href="#" class="small" id="clearAvail">Clear</a>
-                </div>
-                <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"><label class="form-check-label" for="avail-ft">Full-time</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"><label class="form-check-label" for="avail-pt">Part-time</label></div>
-                </div>
-              </div>
-
-              <div>
-                <label class="fw-semibold mb-1" for="exp-range">Experience (min years)</label>
-                <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1" value="0" oninput="this.nextElementSibling.value=this.value">
-                <output class="small">0</output>
-              </div>
-
-              <div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="fw-semibold">Languages</span>
-                  <a href="#" class="small" id="clearLangs">Clear</a>
-                </div>
-                <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"><label class="form-check-label" for="lang-fil">Filipino</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"><label class="form-check-label" for="lang-eng">English</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Ilocano" id="lang-ilo"><label class="form-check-label" for="lang-ilo">Ilocano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Cebuano" id="lang-ceb"><label class="form-check-label" for="lang-ceb">Cebuano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Kapampangan" id="lang-kap"><label class="form-check-label" for="lang-kap">Kapampangan</label></div>
-                </div>
-              </div>
-
-              <div>
-                <label class="fw-semibold mb-1" for="sort">Sort by</label>
-                <select class="form-select" id="sort" name="sort">
-                  <option value="availability_asc">Availability: Earliest</option>
-                  <option value="experience_desc">Experience: Highest</option>
-                  <option value="newest">Newest</option>
-                </select>
-              </div>
-
-              <div class="d-grid gap-1">
-                <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
-                <a class="btn btn-outline-secondary" href="#" id="resetFilters">Reset</a>
-              </div>
-            </form>
+          <div id="activeChips" class="active-filters" aria-live="polite" aria-label="Active filters">
+            <!-- chips will appear here -->
           </div>
         </div>
-      </aside>
+
+        <!-- Specialization -->
+        <div class="filter-group" data-group="specializations">
+          <div class="filter-group-title">
+            <span>Specialization <span class="filter-count" id="countSpecs">· 0</span></span>
+            <a href="#" class="filter-clear" id="clearSpecs">Clear</a>
+          </div>
+          <div class="vstack gap-1">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Kasambahay" id="spec-kas"><label class="form-check-label" for="spec-kas">Kasambahay</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Nanny" id="spec-nan"><label class="form-check-label" for="spec-nan">Nanny</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cook" id="spec-cook"><label class="form-check-label" for="spec-cook">Cook</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly Care" id="spec-elder"><label class="form-check-label" for="spec-elder">Elderly Care</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="All-around Helper" id="spec-all"><label class="form-check-label" for="spec-all">All-around Helper</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Driver" id="spec-driver"><label class="form-check-label" for="spec-driver">Driver</label></div>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="filter-group" data-group="availability">
+          <div class="filter-group-title">
+            <span>Availability <span class="filter-count" id="countAvail">· 0</span></span>
+            <a href="#" class="filter-clear" id="clearAvail">Clear</a>
+          </div>
+          <div class="vstack gap-1">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"><label class="form-check-label" for="avail-ft">Full-time</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"><label class="form-check-label" for="avail-pt">Part-time</label></div>
+          </div>
+        </div>
+
+        <!-- Experience -->
+        <div class="filter-group" data-group="experience">
+          <div class="filter-group-title">
+            <span>Experience</span>
+            <a href="#" class="filter-clear" id="clearExp">Reset</a>
+          </div>
+          <label class="form-label small mb-1" for="exp-range">Minimum years <span id="expOut" class="filter-range-output">0</span></label>
+          <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1" value="0">
+        </div>
+
+        <!-- Languages -->
+        <div class="filter-group" data-group="languages">
+          <div class="filter-group-title">
+            <span>Languages <span class="filter-count" id="countLangs">· 0</span></span>
+            <a href="#" class="filter-clear" id="clearLangs">Clear</a>
+          </div>
+          <div class="vstack gap-1">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"><label class="form-check-label" for="lang-fil">Filipino</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"><label class="form-check-label" for="lang-eng">English</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Ilocano" id="lang-ilo"><label class="form-check-label" for="lang-ilo">Ilocano</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Cebuano" id="lang-ceb"><label class="form-check-label" for="lang-ceb">Cebuano</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Kapampangan" id="lang-kap"><label class="form-check-label" for="lang-kap">Kapampangan</label></div>
+          </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="filter-group">
+          <div class="filter-group-title"><span>Sort by</span></div>
+          <select class="form-select" id="sort" name="sort">
+            <option value="availability_asc">Availability: Earliest</option>
+            <option value="experience_desc">Experience: Highest</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+          <a class="btn btn-outline-secondary" href="#" id="resetFilters">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</aside>
+
+      <style>
+        /* --- FILTER SIDEBAR MODERN DESIGN --- */
+
+        #filtersCanvas .offcanvas-body { padding: 1.25rem 1.2rem; }
+
+        /* Card-like groups */
+        .filter-group {
+          padding: 2rem;
+          border: 1px solid #e9ecef;
+          border-radius: 12px;
+          background: #ffffff;
+          box-shadow: 0 2px 6px rgba(17,17,17,.03);
+        }
+        .filter-group + .filter-group { margin-top: .5rem; }
+
+        /* Section title */
+        .filter-group-title {
+          font-size: .85rem;
+          font-weight: 700;
+          letter-spacing: .35px;
+          text-transform: uppercase;
+          color: #991b1b; /* brand red hue you used in modals */
+          display: flex;
+          gap: .5rem;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: .35rem;
+        }
+
+        /* Clear link */
+        .filter-clear {
+          font-size: .60rem;
+          text-decoration: none;
+          color: #6c757d;
+          transition: .2s;
+        }
+        .filter-clear:hover { color: #991b1b; text-decoration: underline; }
+
+        /* Selection count */
+        .filter-count { font-weight: 700; color: #6c757d; }
+
+        /* Form check redesign */
+        .filter-group .form-check {
+          padding: .35rem .5rem;
+          border-radius: 8px;
+          transition: background .15s;
+        }
+        .filter-group .form-check:hover { background: #f8f9fa; }
+
+        /* Range slider output */
+        .filter-range-output {
+          font-weight: 700;
+          background: #f1f3f5;
+          border-radius: 999px;
+          padding: .1rem .5rem;
+          margin-left: .5rem;
+          display: inline-block;
+        }
+
+        /* Active filter chips */
+        .active-filters {
+          display: flex;
+          flex-wrap: wrap;
+          gap: .4rem;
+        }
+        .filter-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: .4rem;
+          padding: .25rem .5rem;
+          border: 1px solid #e9ecef;
+          border-radius: 999px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(0,0,0,.04);
+          font-size: .85rem;
+        }
+        .filter-chip .remove {
+          border: none;
+          background: transparent;
+          color: #991b1b;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        /* Buttons */
+        #applyFilters { background: #991b1b; border-color: #991b1b; }
+        #applyFilters:hover { background: #7a1515; border-color: #7a1515; }
+
+        /* Desktop sticky filter sidebar */
+        @media (min-width: 992px) {
+          aside.col-lg-3 {  top: 90px; height: fit-content; }
+        }
+</style>
+      
 
       <!-- Results -->
       <section class="col-12 col-lg-9">
@@ -186,6 +304,8 @@
       </section>
     </div>
   </main>
+
+  
 
   <!-- Include Bootstrap Icons (if not already on the page) -->
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
@@ -630,6 +750,142 @@
             const modal = new bootstrap.Modal(bookingEl);
           })();
         </script>
+
+      <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('filtersForm');
+        if (!form) return;
+
+        // Elements
+        const chipsWrap = document.getElementById('activeChips');
+        const countSpecs = document.getElementById('countSpecs');
+        const countAvail = document.getElementById('countAvail');
+        const countLangs = document.getElementById('countLangs');
+        const expRange = document.getElementById('exp-range');
+        const expOut = document.getElementById('expOut');
+
+        // Clear buttons
+        const clearAll = document.getElementById('clearAll');
+        const clearSpecs = document.getElementById('clearSpecs');
+        const clearAvail = document.getElementById('clearAvail');
+        const clearLangs = document.getElementById('clearLangs');
+        const clearExp = document.getElementById('clearExp');
+
+        // Helpers
+        const $$ = (selector, root = form) => Array.from(root.querySelectorAll(selector));
+
+        function getChecked(name) {
+          return $$(`input[name="${name}[]"]:checked`).map(el => ({ id: el.id, value: el.value }));
+        }
+
+        function updateCounts() {
+          if (countSpecs) countSpecs.textContent = `· ${getChecked('specializations').length}`;
+          if (countAvail) countAvail.textContent = `· ${getChecked('availability').length}`;
+          if (countLangs) countLangs.textContent = `· ${getChecked('languages').length}`;
+        }
+
+        function makeChip(text, onRemove) {
+          const chip = document.createElement('span');
+          chip.className = 'filter-chip';
+          chip.innerHTML = `<span>${text}</span><button class="remove" type="button" aria-label="Remove">×</button>`;
+          chip.querySelector('.remove').addEventListener('click', onRemove);
+          return chip;
+        }
+
+        function renderChips() {
+          if (!chipsWrap) return;
+          chipsWrap.innerHTML = '';
+
+          // Specializations
+          getChecked('specializations').forEach(({ id, value }) => {
+            chipsWrap.appendChild(makeChip(value, () => {
+              document.getElementById(id)?.click();
+              renderAll();
+            }));
+          });
+
+          // Availability
+          getChecked('availability').forEach(({ id, value }) => {
+            chipsWrap.appendChild(makeChip(value, () => {
+              document.getElementById(id)?.click();
+              renderAll();
+            }));
+          });
+
+          // Languages
+          getChecked('languages').forEach(({ id, value }) => {
+            chipsWrap.appendChild(makeChip(value, () => {
+              document.getElementById(id)?.click();
+              renderAll();
+            }));
+          });
+
+          // Experience min
+          if (expRange && Number(expRange.value) > 0) {
+            chipsWrap.appendChild(makeChip(`Min Exp: ${expRange.value}y`, () => {
+              expRange.value = 0;
+              syncExp();
+              renderAll();
+            }));
+          }
+        }
+
+        function syncExp() {
+          if (expOut && expRange) expOut.textContent = expRange.value;
+        }
+
+        function clearGroup(name) {
+          $$(`input[name="${name}[]"]:checked`).forEach(el => el.checked = false);
+        }
+
+        // Clear actions
+        clearAll?.addEventListener('click', (e) => {
+          e.preventDefault();
+          clearGroup('specializations');
+          clearGroup('availability');
+          clearGroup('languages');
+          if (expRange) { expRange.value = 0; syncExp(); }
+          renderAll();
+        });
+
+        clearSpecs?.addEventListener('click', (e) => { e.preventDefault(); clearGroup('specializations'); renderAll(); });
+        clearAvail?.addEventListener('click', (e) => { e.preventDefault(); clearGroup('availability'); renderAll(); });
+        clearLangs?.addEventListener('click', (e) => { e.preventDefault(); clearGroup('languages'); renderAll(); });
+        clearExp?.addEventListener('click', (e) => { e.preventDefault(); if (expRange) { expRange.value = 0; syncExp(); renderAll(); } });
+
+        // Bind changes
+        form.addEventListener('change', () => renderAll());
+        expRange?.addEventListener('input', () => { syncExp(); renderAll(); });
+
+        // Apply/Reset hook (optional UX)
+        document.getElementById('applyFilters')?.addEventListener('click', (e) => {
+          // If you submit via JS elsewhere, keep this. Otherwise remove preventDefault.
+          // e.preventDefault();
+          // Close offcanvas on mobile
+          const oc = document.getElementById('filtersCanvas');
+          if (oc?.classList.contains('show') && window.bootstrap) {
+            bootstrap.Offcanvas.getOrCreateInstance(oc).hide();
+          }
+        });
+
+        document.getElementById('resetFilters')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          form.reset();
+          syncExp();
+          renderAll();
+        });
+
+        // Initial render
+        syncExp();
+        renderAll();
+
+        function renderAll() {
+          updateCounts();
+          renderChips();
+        }
+      });
+      </script>
+
       </body>
       </html>
 
