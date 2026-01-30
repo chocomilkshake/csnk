@@ -202,12 +202,6 @@ function invalidClass(array $errors, string $key): string {
       border-top: 1px solid var(--border);
       color: var(--muted-ink);
     }
-    .map-embed {
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      background: #fafafa;
-    }
 
     .is-invalid ~ .invalid-feedback { display: block; }
   </style>
@@ -251,14 +245,38 @@ function invalidClass(array $errors, string $key): string {
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-floating">
-                  <input type="text" id="firstName" name="firstName" class="form-control <?= invalidClass($errors, 'firstName') ?>" placeholder="First name" required maxlength="80" value="<?= old('firstName') ?>" />
+                  
+                <!-- First name -->
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    class="form-control <?= invalidClass($errors, 'firstName') ?>"
+                    placeholder="First name"
+                    required
+                    maxlength="80"
+                    autocomplete="given-name"
+                    value="<?= old('firstName') ?>"
+                  />
                   <label for="firstName">First name</label>
                   <div class="invalid-feedback"><?= htmlspecialchars($errors['firstName'] ?? 'Please enter your first name.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-floating">
-                  <input type="text" id="lastName" name="lastName" class="form-control <?= invalidClass($errors, 'lastName') ?>" placeholder="Last name" required maxlength="80" value="<?= old('lastName') ?>" />
+                  
+                <!-- Last name -->
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    class="form-control <?= invalidClass($errors, 'lastName') ?>"
+                    placeholder="Last name"
+                    required
+                    maxlength="80"
+                    autocomplete="family-name"
+                    value="<?= old('lastName') ?>"
+                  />
                   <label for="lastName">Last name</label>
                   <div class="invalid-feedback"><?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
@@ -266,7 +284,19 @@ function invalidClass(array $errors, string $key): string {
 
               <div class="col-12">
                 <div class="form-floating">
-                  <input type="email" id="email" name="email" class="form-control <?= invalidClass($errors, 'email') ?>" placeholder="name@example.com" required value="<?= old('email') ?>" />
+                  
+                <!-- Email -->
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="form-control <?= invalidClass($errors, 'email') ?>"
+                    placeholder="name@example.com"
+                    required
+                    autocomplete="email"
+                    inputmode="email"
+                    value="<?= old('email') ?>"
+                  />
                   <label for="email">Email</label>
                   <div class="invalid-feedback"><?= htmlspecialchars($errors['email'] ?? 'Please enter a valid email address.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
@@ -274,20 +304,22 @@ function invalidClass(array $errors, string $key): string {
 
               <div class="col-md-6">
                 <div class="form-floating">
+                  
+                <!-- Phone (PH 11 digits, digits-only UI help) -->
                   <input
                     type="tel"
                     id="phone"
                     name="phone"
                     class="form-control <?= invalidClass($errors, 'phone') ?>"
                     placeholder="09XXXXXXXXX"
+                    autocomplete="tel-national"   
+                    inputmode="tel"
                     pattern="^\d{11}$"
-                    inputmode="numeric"
                     minlength="11"
                     maxlength="11"
                     value="<?= old('phone') ?>"
                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)"
-/>
-
+                  />
                   <label for="phone">Phone (optional)</label>
                   <div class="invalid-feedback"><?= htmlspecialchars($errors['phone'] ?? 'Please enter a valid phone number.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
@@ -346,7 +378,7 @@ function invalidClass(array $errors, string $key): string {
                   <div class="form-check">
                     <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1" id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
                     <label class="form-check-label" for="consent">
-                      I agree to the privacy policy</a>.
+                      <a>I agree to the privacy policy. </a>
                     </label>
                     <div class="invalid-feedback"><?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
                   </div>
@@ -377,35 +409,97 @@ function invalidClass(array $errors, string $key): string {
     </div>
   </section>
 
-  <!-- Map / Address -->
-  <section class="container pb-5">
-    <div class="row g-4">
-      <div class="col-lg-6">
-        <div class="map-embed ratio ratio-16x9">
-          <iframe
-            src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-            style="border:0"
-            allowfullscreen=""
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Our Office location"
-          ></iframe>
-        </div>
+  <!-- Contact / Map -->
+  <section id="contact" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-1">Contact and Location</h2>
+        <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
       </div>
 
-      <div class="col-lg-6 d-flex flex-column justify-content-center">
-        <h2 class="h4 fw-semibold mb-3">Our Office</h2>
-        <p class="mb-2 text-secondary">
-          123 Minimal Ave, Suite 456<br>
-          Metro Manila, Philippines
-        </p>
-        <p class="mb-0 text-secondary">Mon–Fri, 9:00 AM–6:00 PM (GMT+8)</p>
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="row g-0">
+
+          <!-- Map -->
+          <div class="col-lg-7">
+            <iframe
+              style="width:100%; height:100%; min-height:420px; border:0;"
+              src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen>
+            </iframe>
+          </div>
+
+          <!-- Info -->
+          <div class="col-lg-5 bg-white">
+            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
+
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-danger rounded-pill px-3 py-2">CSNK Manpower Agency</span>
+              </div>
+
+              <h5 class="fw-bold mb-3">Office Information</h5>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <div class="fw-semibold">Address</div>
+                  <div class="text-muted small">
+                    Ground Floor Unit 1 Eden Townhouse<br>
+                    2001 Eden St. Cor Pedro Gil, Sta Ana<br>
+                    Barangay 866, City of Manila, NCR, Sixth District
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <div class="fw-semibold">Phone</div>
+                  <div class="text-muted small">0945 657 0878</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <div class="fw-semibold">Email</div>
+                  <div class="text-muted small">csnkmanila06@gmail.com</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-4">
+                <div class="text-danger fs-5"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                  <div class="fw-semibold">Office Hours</div>
+                  <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-danger rounded-pill px-4"
+                   target="_blank" rel="noopener"
+                   href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                  <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
+                </a>
+
+                <a class="btn btn-outline-secondary rounded-pill px-4" href="#home">
+                  <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
   <footer>
+    
     <?php include __DIR__ . '/footer.php'; ?>
   </footer>
 
@@ -422,11 +516,9 @@ function invalidClass(array $errors, string $key): string {
   </div>
 
   <!-- Bootstrap JS -->
-  <script>https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js</script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"> </script>
 
   <script>
-    // Current year
-    document.getElementById('year').textContent = new Date().getFullYear();
 
     // Character counter
     const messageEl = document.getElementById('message');
