@@ -1,3 +1,7 @@
+<?php
+  // Active page for navbar highlighting
+  $page = 'applicants';
+?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
 <head>
@@ -9,23 +13,9 @@
   <link href="../resources/css/app.css" rel="stylesheet">
 </head>
 <body>
-  <!-- Navbar -->
-  <header class="bg-white border-bottom ">
-    <div class="container py-3">
-      <div class="text-center mb-3">
-        <img src="../resources/img/csnklogo.png" alt="CSNK Manpower Agency" style="height:95px;">
-      </div>
 
-      <nav class="d-flex justify-content-center">
-        <div class="bg-danger rounded-pill px-2 py-2 d-inline-flex gap-1 shadow-sm px-3">
-          <a class="btn btn-danger rounded-pill" href="index.php">Home</a>
-          <a class="btn btn-danger rounded-pill active " href="applicant.html">Applicants</a>
-          <a class="btn btn-danger rounded-pill" href="#about">About</a>
-          <a class="btn btn-danger rounded-pill" href="./contactUs.php">Contact</a>
-        </div>
-      </nav>
-    </div>
-  </header>
+  <!-- Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
 
   <main class="container py-4">
     <div class="mb-3"><h1 class="h3 mb-0">Kasambahay Applicants</h1></div>
@@ -206,12 +196,12 @@
           background: #ffffff;
           box-shadow: 0 2px 6px rgba(17,17,17,.03);
         }
-        .filter-group + .filter-group { margin-top: .5rem; }
+        .filter-group + .filter-group { margin-top: .5rem; }  
 
         /* Section title */
         .filter-group-title {
           font-size: .85rem;
-          font-weight: 700;
+          font-weight: 600;
           letter-spacing: .35px;
           text-transform: uppercase;
           color: #991b1b; /* brand red hue you used in modals */
@@ -286,8 +276,6 @@
           aside.col-lg-3 {  top: 90px; height: fit-content; }
         }
 </style>
-      
-
       <!-- Results -->
       <section class="col-12 col-lg-9">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -304,8 +292,6 @@
       </section>
     </div>
   </main>
-
-  
 
   <!-- Include Bootstrap Icons (if not already on the page) -->
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
@@ -739,19 +725,20 @@
         el.addEventListener('hidden.bs.toast', ()=> el.remove());
       }
 
-      btnBack.addEventListener('click', ()=> gotoStep(currentStep - 1));
+      btnBack.addEventListener('click', () => gotoStep(currentStep - 1));
       btnNext.addEventListener('click', ()=>{
         if (!validateStep(currentStep)) return;
         if (currentStep < maxStep) gotoStep(currentStep + 1);
         else { toast('Booking finished. We will contact you shortly.'); modal.hide(); }
       });
-      btnDownload.addEventListener('click', ()=> toast('Receipt download will be implemented.'));
+      btnDownload.addEventListener('click', () => toast('Receipt download will be implemented.'));
 
-            const modal = new bootstrap.Modal(bookingEl);
-          })();
-        </script>
+      const modal = new bootstrap.Modal(bookingEl);
+    })();
+  </script>
 
-      <script>
+    <!-- Filter logic -->
+<script>
       document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('filtersForm');
         if (!form) return;
@@ -886,7 +873,6 @@
       });
       </script>
 
-      </body>
-      </html>
-
-     
+</body>
+</html>
+``

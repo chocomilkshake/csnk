@@ -697,4 +697,4 @@
     updateURL(params, { push: false }); // replace on initial load only
     await refresh(params);
   })();
-})(); 
+})();

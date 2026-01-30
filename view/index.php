@@ -156,7 +156,7 @@
                           <a href="#contact" class="btn btn-danger rounded-pill px-4">
                             Contact Us <i class="fa-solid fa-phone ms-2"></i>
                           </a>
-                          <a href="./applicant.html" class="btn btn-outline-secondary rounded-pill px-4">Applicants</a>
+                          <a href="./applicant.php" class="btn btn-outline-secondary rounded-pill px-4">Applicants</a>
                         </div>
                       </div>
                     </div>
@@ -193,7 +193,7 @@
                         </div>
 
                         <div class="mt-2 d-flex flex-wrap gap-2">
-                          <a href="./applicant.html" class="btn btn-danger rounded-pill px-4">
+                          <a href="./applicant.php" class="btn btn-danger rounded-pill px-4">
                             View Applicants <i class="fa-solid fa-users ms-2"></i>
                           </a>
                           <a href="#about" class="btn btn-outline-secondary rounded-pill px-4">About CSNK</a>

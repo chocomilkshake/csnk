@@ -31,7 +31,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
-               href="./applicant.html"
+               href="./applicant.php"
                aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
               Applicants
               <span class="ms-1 badge text-bg-danger align-text-top">New</span>
