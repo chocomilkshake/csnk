@@ -48,7 +48,7 @@ if (!isset($page)) { $page = ''; }
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='contact' ? 'active' : '' ?>"
-               href="./index.php#contact"
+               href="./contactUs.php"
                aria-current="<?= $page==='contact' ? 'page' : 'false' ?>">
               Contact
             </a>
