@@ -209,7 +209,7 @@ function invalidClass(array $errors, string $key): string {
 <body>
   <!-- Header -->
   <header>
-    <?php include __DIR__ . '/navbar.php'; ?>
+    <?php $page = 'contact'; include __DIR__ . '/navbar.php'; ?>
   </header>
 
   <!-- Hero -->
