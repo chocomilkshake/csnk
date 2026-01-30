@@ -330,7 +330,7 @@
           <a href="#" class="btn btn-sm btn-outline-dark flex-fill view-profile-btn">
             <i class="bi bi-person-badge me-1"></i> View Profile
           </a>
-          <a href="#" class="btn btn-sm btn-brand text-white flex-fill hire-me-btn">
+          <a href="#" class="btn btn-sm btn btn-outline-danger text-red flex-fill hire-me-btn">
             <i class="bi bi-briefcase me-1"></i> Hire Me
           </a>
         </div>
@@ -697,4 +697,4 @@
     updateURL(params, { push: false }); // replace on initial load only
     await refresh(params);
   })();
-})();
+})(); 

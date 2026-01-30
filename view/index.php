@@ -196,7 +196,7 @@
                           <a href="./applicant.php" class="btn btn-danger rounded-pill px-4">
                             View Applicants <i class="fa-solid fa-users ms-2"></i>
                           </a>
-                          <a href="#about" class="btn btn-outline-secondary rounded-pill px-4">About CSNK</a>
+                          <a href="/view/about.php" class="btn btn-outline-secondary rounded-pill px-4">About CSNK</a>
                         </div>
                       </div>
                     </div>
