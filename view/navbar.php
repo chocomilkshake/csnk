@@ -29,14 +29,17 @@ if (!isset($page)) { $page = ''; }
             </a>
           </li>
 
-          <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
-               href="./applicant.php"
-               aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
-              Applicants
-              <span class="ms-1 badge text-bg-danger align-text-top">New</span>
-            </a>
-          </li>
+        <li class="nav-item position-relative">
+          <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
+            href="./applicant.php"
+            aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
+            Applicants
+          </a>
+
+          <!-- Floating NEW badge -->
+          <span class="badge bg-danger small new-badge">NEW</span>
+        </li>
+
 
           <li class="nav-item">
             <a class="nav-link px-3 <?= $page==='about' ? 'active' : '' ?>"
@@ -75,6 +78,16 @@ if (!isset($page)) { $page = ''; }
     .navbar .nav-link:hover,
     .navbar .nav-link:focus {
       border-bottom-color: #D72638;
-    }
+    } 
+.new-badge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  font-size: .55rem;
+  padding: .2rem .35rem;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
   }
 </style>
