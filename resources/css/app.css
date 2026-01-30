@@ -4,7 +4,7 @@
 .card .badge { font-weight: 600; }
 .card-img-top { background: #f7f7f7; }
 .offcanvas-lg { position: static; transform: none; visibility: visible; }
-@media (max-width: 991.98px) { .offcanvas-lg { position: fixed; } }
+@media (max-width: 991.98px) { .offcanvas-lg { position: fixed; }}
 .object-fit-cover { object-fit: cover; }
 .btn-outline-primary { border-radius: 999px; }
 .card-title { line-height: 1.2; min-height: 2.4em; }
