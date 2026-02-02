@@ -171,7 +171,7 @@
       avatarEl.textContent = initials;
     }
   }
-  ``
+
 
     // Header fields
     const nameEl = document.getElementById('name');
@@ -226,29 +226,32 @@
     if (langValue) langValue.textContent = langs.length ? langs.join(', ') : '—';
   }
 
-  let PROFILE_MODAL_INSTANCE = null;
-  async function openProfileModal(id) {
-    // Ensure data is loaded
-    const data = DataService.cache || await DataService.loadAll();
-    const found = data.find(x => (x.id ?? x.applicant_id) == id);
-    if (!found) return;
+let PROFILE_MODAL_INSTANCE = null;
 
-    // Render
-    renderApplicantToModal(found);
+async function openProfileModal(id) {
+  const data = DataService.cache ?? await DataService.loadAll();
+  const found = data.find(x => (x.id ?? x.applicant_id) == id);
+  if (!found) return;
 
-    // Show modal
-    const modalEl = document.getElementById('applicantModal');
-    if (!PROFILE_MODAL_INSTANCE) {
-      PROFILE_MODAL_INSTANCE = new bootstrap.Modal(modalEl);
-    }
-    PROFILE_MODAL_INSTANCE.show();
+  renderApplicantToModal(found);
 
-    // Optional actions (guarded if elements exist)
-    const shortlistBtn = document.getElementById('shortlistBtn');
-    const messageBtn = document.getElementById('messageBtn');
-    if (shortlistBtn) shortlistBtn.onclick = () => alert(`Shortlisted: ${found.full_name}`);
-    if (messageBtn) messageBtn.onclick = () => alert(`Message sent to: ${found.full_name}`);
+  const modalEl = document.getElementById('applicantModal');
+  if (!PROFILE_MODAL_INSTANCE) {
+    PROFILE_MODAL_INSTANCE = new bootstrap.Modal(modalEl);
+
+    // Clear ?id when the modal fully hides
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      clearIdParam({ push: false }); // replaceState -> no extra history entry
+    });
   }
+  PROFILE_MODAL_INSTANCE.show();
+
+  // Optional buttons
+  const shortlistBtn = document.getElementById('shortlistBtn');
+  const messageBtn  = document.getElementById('messageBtn');
+  if (shortlistBtn) shortlistBtn.onclick = () => alert(`Shortlisted: ${found.full_name}`);
+  if (messageBtn)  messageBtn.onclick  = () => alert(`Message sent to: ${found.full_name}`);
+}
 
   // --- Params building ---
   function paramsFromForms() {
@@ -269,6 +272,27 @@
     if (push) history.pushState({}, '', u);
     else history.replaceState({}, '', u);
   }
+
+  // --- ID in URL helpers (pushState/replaceState) ---
+function setIdParam(id, { push = true } = {}) {
+  const u = new URL(window.location.href);
+  u.searchParams.set('id', String(id));
+  if (push) history.pushState({ id }, '', u);
+  else history.replaceState({ id }, '', u);
+}
+
+function clearIdParam({ push = false } = {}) {
+  const u = new URL(window.location.href);
+  if (!u.searchParams.has('id')) return;
+  u.searchParams.delete('id');
+  if (push) history.pushState({}, '', u);
+  else history.replaceState({}, '', u);
+}
+
+function getIdFromUrl() {
+  const u = new URL(window.location.href);
+  return u.searchParams.get('id');
+}
 
   // Escaping
   function escapeHtml(s) {
@@ -293,7 +317,7 @@
   function pickPhoto(a) {
     return a.photo || a.photo_url || a.image || a.avatar || '';
   }
-  ``
+
 
 
   // --- Card template (with data-id and hover activator, including VIEW PROFILE & HIRE ME) ---
@@ -339,6 +363,8 @@
   }
   
 
+
+  
   // --- Rendering ---
   function renderGrid(json) {
     const { data, total } = json;
@@ -473,10 +499,20 @@
   });
 
   // --- Card interactions: click + hover ---
-  function openProfileById(id) {
-    if (!id) return;
-    openProfileModal(id); // show modal
-  }
+
+    function openProfileById(id, { pushUrl = true } = {}) {
+      if (!id) return;
+      const currentId = getIdFromUrl();
+      if (pushUrl && String(currentId) !== String(id)) {
+        setIdParam(id, { push: true });
+      } else if (!currentId) {
+        setIdParam(id, { push: false });
+      }
+      // Always open through the function that attaches the 'hidden' handler
+      openProfileModal(id);
+    }
+  
+  
 
   // Event delegation for View Profile + Hire Me on the grid
   grid.addEventListener('click', (e) => {
@@ -684,17 +720,39 @@
   }
 
   // Back/forward navigation support
-  window.addEventListener('popstate', () => {
-    refresh(currentParams());
-  });
+// Back/forward navigation support
+window.addEventListener('popstate', () => {
+  // Refresh the grid for filter/pagination params
+  refresh(currentParams()).catch(()=>{});
 
-  // --- First load ---
-  (async function firstLoad() {
-    const params = currentParams();
-    if (!params.get('limit')) params.set('limit', String(PAGE_SIZE_DEFAULT));
-    if (!params.get('page')) params.set('page', '1');
+  // Also handle modal state based on ?id
+  const id = getIdFromUrl();
+  const modalEl = document.getElementById('applicantModal');
 
-    updateURL(params, { push: false }); // replace on initial load only
-    await refresh(params);
-  })();
-})(); 
+  if (id) {
+    // Open (or re-open) the modal for the current id in the URL
+    openProfileModal(id);
+  } else if (modalEl && modalEl.classList.contains('show')) {
+    // Close modal if it's open and id was removed by history nav
+    PROFILE_MODAL_INSTANCE?.hide();
+  }
+});
+// --- First load ---
+(async function firstLoad() {
+  const existingId = getIdFromUrl();  // Read ?id *before* changing the URL
+  const params = currentParams();
+
+  if (!params.get('limit')) params.set('limit', String(PAGE_SIZE_DEFAULT));
+  if (!params.get('page'))  params.set('page', '1');
+
+  // Preserve id when we write params back
+  if (existingId) params.set('id', existingId);
+
+  updateURL(params, { push: false });
+  await refresh(params);
+
+  if (existingId) {
+    openProfileById(existingId, { pushUrl: false }); // don’t add another history entry
+  }
+})();
+})();
