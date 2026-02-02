@@ -6,118 +6,169 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CSNK Manpower Agency</title>
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-  <!-- Your app stylesheet (consolidated hero styles live here) -->
-  <!-- <link href="/resources/css/about.css" rel="stylesheet"> -->
 </head>
 <body class="bg-light">
 
 <!-- ✅ Reusable Navbar -->
 <?php include __DIR__ . '/navbar.php'; ?>
 
-
 <!-- ===================== -->
-<!-- Page Content Starts -->
+<!-- Page Content Starts   -->
 <!-- ===================== -->
 
 <style>
-  /* Section baseline: light page, hero has its own backdrop only inside this section */
+  /* ---------- Base / utilities applicable to this page ---------- */
+  img, svg { max-width: 100%; height: auto; }
+
+  /* ---------- HERO SECTION ---------- */
   .hero-section {
-    background-color: #f8f9fb; /* very light to match page */
+    background-color: #f8f9fb;
+    position: relative;
+    isolation: isolate; /* keep background layers behind content */
+    padding: clamp(2rem, 6vw, 5rem) 0;
   }
 
-  /* Optional subtle grid like your reference (very faint) */
-  .hero-grid {
+  /* Background layers */
+  .hero-grid,
+  .hero-gradient {
+    position: absolute; inset: 0;
+    z-index: 0;
     pointer-events: none;
+  }
+  .hero-grid {
     opacity: .22;
     background-image:
       linear-gradient(to right, rgba(0,0,0,.06) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
-    background-size: 32px 32px, 32px 32px; /* grid spacing */
+    background-size: 32px 32px, 32px 32px;
     mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,.85) 40%, rgba(0,0,0,.6) 70%, rgba(0,0,0,0) 100%);
   }
-
-  /* Gradient that covers only this section, with a gentle fade at edges */
   .hero-gradient {
-    pointer-events: none; /* content remains interactive */
-    /* Layer 1: soft red radial glow behind content (left) */
     background:
       radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
-      /* Layer 2: subtle darker radial near image (right) */
       radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17,17,17,0) 60%),
-      /* Layer 3: very light vertical wash */
       linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.25) 60%, rgba(255, 84, 84, 0) 100%);
-    /* Fade the gradient at the top/bottom so it blends with the page */
-    mask-image:
-      linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 10%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 10%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
   }
 
-  /* Make big heading closer to your reference look */
+  /* Keep actual content above background layers */
+  .hero-section .container { position: relative; z-index: 1; }
+
+  /* Headings (desktop) */
   @media (min-width: 992px) {
     .hero-section .display-4 { font-size: 3rem; line-height: 1.1; }
   }
 
-  /* Optional: differentiate the active pill visually */
-  .hero-section .btn-light.active {
-    background: #111;
-    color: #fff;
-  }
-
-  /* Tiny fade/slide animation for swaps */
+  /* Smooth swap animation */
   .fade-swap { transition: opacity .22s ease, transform .22s ease; }
   .is-swapping { opacity: 0; transform: translateY(6px); }
 
-  /* ========== Right image: no container background + easy sizing ========== */
-.hero-visual {
-  justify-content: center;
-}
+  /* ---------- PILL BAR (shrink-to-content & scrollable) ---------- */
 
-.hero-image-wrap {
-  background: transparent;                  /* no box background */
-  width: clamp(260px, 40vw, 520px);         /* <<< adjust size here */
-  border-radius: 1rem;                      /* keeps the soft rounded outline (no fill) */
-  filter: drop-shadow(0 12px 22px rgba(0,0,0,.18)); /* optional soft shadow */
-  margin-right: 16px;  /* + right, - left  */
-  margin-top: -50px;    /* move slightly upward */
-  transform: translateX(40px); /* tiny push to the right */
+  /* Wrapper: only scrolls when needed */
+  .hero-pills-abs-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-}
+  /* Pill bar: fit to content, not full width */
+  #heroPills {
+    display: inline-flex;        /* makes white capsule hug its content */
+    width: max-content;          /* shrink-wrap */
+    max-width: 100%;             /* never overflow the container */
+    gap: .5rem;
+    align-items: center;
+    padding: .5rem .6rem;        /* capsule padding */
+    border-radius: 999px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.08);
+    overflow: visible;           /* keep nice shadows visible */
+    flex-wrap: nowrap;           /* one row; wrapper handles scroll on small screens */
+    scroll-snap-type: x proximity;
+    background: #fff;            /* ensure white capsule */
+  }
 
-.hero-image-wrap img {
-  display: block;
-  width: 100%;
-  height: auto;          /* keep proportions */
-  object-fit: contain;   /* no cropping */
-  background: transparent !important;
-}
+  #heroPills .btn {
+    flex: 0 0 auto;              /* no shrinking */
+    white-space: nowrap;         /* keep labels on one line */
+    scroll-snap-align: start;
+  }
 
+  .hero-section .btn-light.active { background: #111; color: #fff; }
 
-/* Mobile: bring it back to center and remove negative margins */
-@media (max-width: 991.98px){
-  .hero-visual { justify-content: center; }
-  .hero-image-wrap { margin: 0; transform:none; }
-}
+  /* Center the capsule on md+ (optional) */
+  @media (min-width: 768px) {
+    .hero-pills-abs-wrapper {
+      display: flex;
+      justify-content: flex-start; /* change to center if you want centered pills */
+    }
+  }
 
+  /* ---------- Hero visual (image) ---------- */
+  .hero-visual { display: flex; justify-content: center; }
+  .hero-image-wrap {
+    background: transparent;
+    border-radius: 1rem;
+    filter: drop-shadow(0 12px 22px rgba(0,0,0,.18));
+    width: clamp(260px, 40vw, 520px);  /* desktop-preferred width */
+  }
+  .hero-image-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  /* ---------- Responsive fixes (small → medium) ---------- */
+
+  /* Let hero content breathe on xs; avoid clipping */
+  @media (max-width: 575.98px) {
+    .hero-section { overflow: visible !important; }
+    .hero-title-wrap .display-4 { font-size: 2rem; line-height: 1.2; }
+    .hero-lead-wrap .lead { font-size: 1rem; }
+  }
+
+  /* On < lg, center the image and remove desktop offsets entirely */
+  @media (max-width: 991.98px) {
+    .hero-image-wrap {
+      margin: 0 auto !important;
+      transform: none !important;
+      width: min(85vw, 420px);
+    }
+  }
+
+  /* ---------- Carousel image heights by breakpoint ---------- */
+  .carousel-img {
+    width: 100%;
+    height: 340px;
+    object-fit: cover;
+  }
+  @media (max-width: 575.98px) { .carousel-img { height: 220px; } }
+  @media (min-width: 576px) and (max-width: 991.98px) { .carousel-img { height: 280px; } }
+
+  /* Extra room around pills on phones */
+  @media (max-width: 575.98px) {
+    .hero-pills-abs-wrapper { margin-bottom: .5rem; }
+    .hero-pills-spacer { height: 0; }
+  }
 </style>
 
 <!-- HERO -->
-<section class="hero-section position-relative overflow-hidden py-5 py-lg-6">
-  <!-- faint grid & gradient (these are behind content via CSS) -->
-  <div class="hero-grid w-100 h-100 position-absolute top-0 start-0"></div>
-  <div class="hero-gradient w-100 h-100 position-absolute top-0 start-0"></div>
+<section class="hero-section">
+  <!-- background layers -->
+  <div class="hero-grid"></div>
+  <div class="hero-gradient"></div>
 
-  <div class="container position-relative">
+  <div class="container">
     <div class="row align-items-center g-4 g-lg-5">
 
       <!-- LEFT: Text + pills -->
-      <div class="col-lg-6 position-relative">
-
+      <div class="col-12 col-lg-6">
         <div class="hero-title-wrap mb-2">
           <h1 id="heroTitle" class="display-4 fw-bold mb-0 fade-swap">
             Get to know CSNK Manpower Agency
@@ -131,10 +182,10 @@
           </p>
         </div>
 
-        <!-- Absolutely‑positioned pill bar -->
+        <!-- Pills -->
         <div class="hero-pills-abs-wrapper">
           <div id="heroPills"
-               class="bg-white rounded-pill shadow-sm px-2 py-2 d-inline-flex align-items-center gap-2 flex-wrap"
+               class="rounded-pill px-3 py-2 d-inline-flex align-items-center"
                role="tablist" aria-label="Hero options">
 
             <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
@@ -146,7 +197,7 @@
                     women by connecting them with safe, legitimate, and rewarding employment opportunities. 
                     Through proper screening, guidance, and documentation, we ensure that every home receives 
                     trustworthy service, while every applicant receives a fair chance to build a better future."
-                    data-img="../resources/img/MrRog.png"
+                    data-img="../resources/img/overview.png"
                     data-img-alt="Clients getting onboarding help">
               Overview
             </button>
@@ -163,41 +214,30 @@
                     committed to ensuring that CSNK carries out its mission with integrity."
                     data-img="../resources/img/MrRog.png"
                     data-img-alt="Team collaborating on documents">
-              CSNK Founder
-            </button>
-
-            <button type="button" class="btn btn-light rounded-pill px-3 py-2"
-                    role="tab" aria-selected="false"
-                    data-title="Trusted Partner Companies"
-                    data-lead="We collaborate with vetted partners to ensure smooth placements."
-                    data-img="../resources/img/PartnerCompanies.png"
-                    data-img-alt="Handshake with company representative">
-              Partner Companies
+              Founder
             </button>
           </div>
         </div>
 
-        <!-- Spacer reserves space under the floating pills -->
+        <!-- Spacer (kept for layout compatibility) -->
         <div class="hero-pills-spacer"></div>
       </div>
 
-    <!-- RIGHT: Image (updated) -->
-    <div class="col-lg-6 hero-visual">
-    <div class="hero-image-wrap rounded-4">
-        <img id="heroImg"
-            src="/resources/img/hero1.jpg"
-            alt="Clients getting onboarding help"
-            class="fade-swap">
-    </div>
-    </div>
-
+      <!-- RIGHT: Image -->
+      <div class="col-12 col-lg-6 hero-visual">
+        <div class="hero-image-wrap rounded-4">
+          <img id="heroImg"
+               src="/resources/img/hero1.jpg"
+               alt="Clients getting onboarding help"
+               class="img-fluid fade-swap">
+        </div>
+      </div>
 
     </div>
   </div>
 </section>
 
-
-<!-- Slideshow (Card Style Carousel - Auto Only, Same Heights) -->
+<!-- Gallery (Card Style Carousel) -->
 <section class="py-4 bg-dark">
   <div class="container">
     <div id="csnkCarouselCards"
@@ -218,7 +258,6 @@
       </div>
 
       <div class="carousel-inner">
-        <!-- (slides unchanged) -->
         <!-- Slide 1 -->
         <div class="carousel-item active">
           <div class="row justify-content-center">
@@ -226,10 +265,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero1.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 1"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero1.jpg" class="carousel-img" alt="CSNK Slide 1">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -266,10 +302,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero2.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 2"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero2.jpg" class="carousel-img" alt="CSNK Slide 2">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -306,10 +339,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero3.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 3"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero3.jpg" class="carousel-img" alt="CSNK Slide 3">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -346,10 +376,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero4.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 4"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero4.jpg" class="carousel-img" alt="CSNK Slide 4">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -384,10 +411,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero5.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 5"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero5.jpg" class="carousel-img" alt="CSNK Slide 5">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -422,10 +446,7 @@
               <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="row g-0">
                   <div class="col-md-6">
-                    <img src="/resources/img/hero6.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 6"
-                         style="height:340px; object-fit:cover;">
+                    <img src="/resources/img/hero6.jpg" class="carousel-img" alt="CSNK Slide 6">
                   </div>
                   <div class="col-md-6 bg-white">
                     <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
@@ -458,11 +479,8 @@
   </div>
 </section>
 
-
 <!-- Why Choose CSNK -->
 <section id="about" class="py-5 bg-light">
-  <!-- (unchanged content) -->
-  <?php /* Keeping this section exactly as you sent. */ ?>
   <div class="container">
 
     <!-- Section Header -->
@@ -470,34 +488,7 @@
       <span class="text-uppercase text-muted fw-semibold small">Why Choose</span>
 
       <div class="my-2">
-        <img src="/resources/img/whychoose.png" alt="CSNK Manpower Agency" class="img-fluid" style="height:60px;">
-      </div>
-
-      <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-          <p class="text-muted mb-0">
-            CSNK Manpower Agency specializes in the recruitment and placement of qualified housemaids and nannies,
-            supported by structured screening and verified documentation. We connect families with trustworthy domestic
-            workers through safe, transparent, and compliant processes.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Feature Cards -->
-    <div class="row g-4">
-      <!-- (three cards exactly as before) -->
-      <div class="col-lg-4 col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-          <div class="card-body text-center p-4">
-            <div class="mb-3"><i class="fa-solid fa-award fa-3x text-danger"></i></div>
-            <h2 class="fw-bold text-danger mb-1">20,000+</h2>
-            <div class="text-uppercase text-muted fw-semibold small mb-3">Applications Processed</div>
-            <h5 class="fw-semibold mb-2">Efficient &amp; Quality Service</h5>
-            <p class="text-muted small mb-0">Clear guidance, organized processing, and consistent communication.</p>
-          </div>
-        </div>
-      </div>
+       v>
 
       <div class="col-lg-4 col-md-6">
         <div class="card h-100 border-0 shadow-sm">
@@ -530,7 +521,6 @@
 
 <!-- Contact / Map -->
 <section id="contact" class="py-5 bg-light">
-  <!-- (unchanged content) -->
   <div class="container">
     <div class="text-center mb-4">
       <h2 class="fw-bold mb-1">Contact and Location</h2>
@@ -541,12 +531,7 @@
       <div class="row g-0">
 
         <div class="col-lg-7">
-          <iframe
-            style="width:100%; height:100%; min-height:420px; border:0;"
-            src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            allowfullscreen>
+          https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed
           </iframe>
         </div>
 
@@ -596,13 +581,11 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-danger rounded-pill px-4"
-                 target="_blank" rel="noopener"
-                 href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+              https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT
                 <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
               </a>
 
-              <a class="btn btn-outline-secondary rounded-pill px-4" href="#home">
+              #home
                 <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
               </a>
             </div>
@@ -616,16 +599,16 @@
 </section>
 
 <!-- ===================== -->
-<!-- Page Content Ends -->
+<!-- Page Content Ends     -->
 <!-- ===================== -->
 
 <!-- ✅ Reusable Footer -->
 <?php include __DIR__ . '/footer.php'; ?>
 
 <!-- Bootstrap JS (bundle includes Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js</script>
 
-<!-- Page‑local: Hero pill swapper (single copy) -->
+<!-- Page‑local: Hero pill swapper -->
 <script>
 (function(){
   const container = document.getElementById('heroPills');
