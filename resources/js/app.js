@@ -309,7 +309,7 @@
     <article class="col-12 col-md-6 col-lg-4 hover-activator" data-id="${id}">
       <div class="card h-100">
         <!-- Photo -->
-        <div class="ratio ratio-16x9 bg-light">
+        <div class="ratio ratio-1x1 bg-light">
           <img src="${photo}" alt="${escapeHtml(a.full_name)}" class="object-fit-cover w-100 h-100">
         </div>
 
@@ -337,7 +337,7 @@
       </div>
     </article>`;
   }
-  ``
+  
 
   // --- Rendering ---
   function renderGrid(json) {
