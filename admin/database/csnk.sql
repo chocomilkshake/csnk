@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 03, 2026 at 07:34 AM
+-- Generation Time: Feb 03, 2026 at 09:36 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -259,7 +259,7 @@ CREATE TABLE `client_bookings` (
   `id` int(10) UNSIGNED NOT NULL,
   `applicant_id` int(10) UNSIGNED NOT NULL,
   `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`services_json`)),
-  `appointment_type` enum('Video Call','Audio Call','Chat','Office Visit') NOT NULL,
+  `appointment_type` enum('Video Call','Audio Call','Chat','House Visit','Office Visit') NOT NULL,
   `appointment_date` date NOT NULL,
   `appointment_time` time NOT NULL,
   `client_first_name` varchar(100) NOT NULL,
@@ -272,6 +272,13 @@ CREATE TABLE `client_bookings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `client_bookings`
+--
+
+INSERT INTO `client_bookings` (`id`, `applicant_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
+(13, 18, '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\",\"Pet & Outdoor Maintenance\"]', 'Video Call', '2026-02-03', '16:02:00', 'df', 'dfgh', 'fghj', '12345678912', 'ocasmcapcia@gmail.com', '1231 dfghjvgyhj', 'submitted', '2026-02-03 08:02:10', '2026-02-03 08:02:10');
 
 -- --------------------------------------------------------
 
@@ -340,7 +347,9 @@ ALTER TABLE `applicant_documents`
 --
 ALTER TABLE `client_bookings`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_applicant` (`applicant_id`);
+  ADD KEY `idx_applicant` (`applicant_id`),
+  ADD KEY `idx_client_bookings_applicant` (`applicant_id`),
+  ADD KEY `idx_client_bookings_created` (`created_at`);
 
 --
 -- Indexes for table `session_logs`
@@ -382,7 +391,7 @@ ALTER TABLE `applicant_documents`
 -- AUTO_INCREMENT for table `client_bookings`
 --
 ALTER TABLE `client_bookings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
