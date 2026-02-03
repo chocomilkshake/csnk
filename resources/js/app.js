@@ -30,7 +30,6 @@ function escapeHtml(str) {
 function byId(id) { return document.getElementById(id); }
 function toInt(n, fallback = 0){ const v = Number(n); return Number.isFinite(v) ? v : fallback; }
 function toDate(d){ const v = new Date(d); return isNaN(v) ? null : v; }
-
 function arrFromMaybe(val){
   if (!val) return [];
   if (Array.isArray(val)) return val;
@@ -221,7 +220,6 @@ function applyFilters() {
 
   const searchQuery   = (formData.get('q') || '').toLowerCase().trim();
   const locationQuery = (formData.get('location') || '').toLowerCase().trim();
-  const availableBy   = formData.get('available_by');
 
   const selectedSpecs = filtersData.getAll('specializations[]');
   const selectedAvail = filtersData.getAll('availability[]');
@@ -231,30 +229,43 @@ function applyFilters() {
 
   filteredApplicants = allApplicants.filter(applicant => {
     // Search by name or specialization
-    if (searchQuery &&
-        !String(applicant.full_name).toLowerCase().includes(searchQuery) &&
-        !String(applicant.specialization).toLowerCase().includes(searchQuery)
-    ) return false;
+    if (searchQuery) {
+      const matchName = String(applicant.full_name).toLowerCase().includes(searchQuery);
+      const matchSpec = applicant.specializations?.some(s => String(s).toLowerCase().includes(searchQuery));
+      if (!matchName && !matchSpec) return false;
+    }
 
     // Location (city)
     if (locationQuery && !String(applicant.location_city).toLowerCase().includes(locationQuery)) return false;
 
-    // Available by date (kept in filters even if not shown on cards)
-    if (availableBy && toDate(applicant.availability_date) > toDate(availableBy)) return false;
+    // Specialization filter using specializations array
+    if (selectedSpecs.length > 0) {
+      const specMapping = {
+        'Cleaning and Housekeeping (General)': 'Cleaning and Housekeeping (General)',
+        'Laundry and Clothing Care': 'Laundry and Clothing Care',
+        'Cooking and Food Service': 'Cooking and Food Service',
+        'Childcare and Maternity (Yaya)': 'Childcare and Maternity (Yaya)',
+        'Elderly and Special Care (Caregiver)': 'Elderly and Special Care (Caregiver)',
+        'Pet and Outdoor Maintenance': 'Pet and Outdoor Maintenance'
+      };
+      const applicantSpecs = applicant.specializations || [];
+      const hasMatch = selectedSpecs.some(selected => applicantSpecs.includes(selected));
+      if (!hasMatch) return false;
+    }
 
-    // Specialization exact match from filter
-    if (selectedSpecs.length > 0 && !selectedSpecs.includes(applicant.specialization)) return false;
-
-    // Employment type
-    if (selectedAvail.length > 0 && !selectedAvail.includes(applicant.employment_type)) return false;
+    // Employment type (form now sends "Full Time" / "Part Time")
+    if (selectedAvail.length > 0) {
+      if (!selectedAvail.includes(applicant.employment_type)) return false;
+    }
 
     // Experience
     if (toInt(applicant.years_experience) < minExperience) return false;
 
     // Languages
     if (selectedLangs.length > 0) {
-      const applicantLangs = String(applicant.languages || '').split(',').map(s=>s.trim()).filter(Boolean);
-      if (!selectedLangs.some(lang => applicantLangs.includes(lang))) return false;
+      const applicantLangs = applicant.languages_array || [];
+      const hasLang = selectedLangs.some(lang => applicantLangs.includes(lang));
+      if (!hasLang) return false;
     }
 
     return true;
@@ -265,11 +276,15 @@ function applyFilters() {
     filteredApplicants.sort((a, b) => {
       switch (sortBy) {
         case 'availability_asc':
-          return toDate(a.availability_date) - toDate(b.availability_date);
+          const dateA = toDate(a.availability_date);
+          const dateB = toDate(b.availability_date);
+          return (dateA && dateB) ? dateA - dateB : 0;
         case 'experience_desc':
           return toInt(b.years_experience) - toInt(a.years_experience);
         case 'newest':
-          return toDate(b.created_at) - toDate(a.created_at);
+          const createdA = toDate(a.created_at);
+          const createdB = toDate(b.created_at);
+          return (createdA && createdB) ? createdB - createdA : 0;
         default:
           return 0;
       }
@@ -279,7 +294,6 @@ function applyFilters() {
   currentPage = 1;
   renderApplicants();
 }
-
 /* =========================================================
    Rendering
 ========================================================= */

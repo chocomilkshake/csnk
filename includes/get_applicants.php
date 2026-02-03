@@ -31,12 +31,12 @@ function normalizeSkillLabel(string $label): string {
 function mapPrimarySpecialization(array $skills): string {
     // Exact option set from your schema/UI
     $roleMap = [
-        'Cleaning & Housekeeping (General)' => 'Kasambahay',
-        'Laundry & Clothing Care'           => 'Kasambahay',
-        'Cooking & Food Service'            => 'Cook',
-        'Childcare & Maternity (Yaya)'      => 'Nanny',
-        'Elderly & Special Care (Caregiver)'=> 'Elderly Care',
-        'Pet & Outdoor Maintenance'         => 'All-around Helper',
+        'Cleaning and Housekeeping (General)' => 'Kasambahay',
+        'Laundry and Clothing Care'           => 'Kasambahay',
+        'Cooking and Food Service'            => 'Cook',
+        'Childcare and Maternity (Yaya)'      => 'Nanny',
+        'Elderly and Special Care (Caregiver)'=> 'Elderly Care',
+        'Pet and Outdoor Maintenance'         => 'All-around Helper',
     ];
 
     foreach ($skills as $raw) {
@@ -71,7 +71,7 @@ try {
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
     // Adjust this path to your project root if needed:
-    $appBase = $scheme . '://' . $host . '/csnk-1';
+    $appBase = $scheme . '://' . $host . '/csnk';
 
     $uploadsBase    = $appBase . '/admin/uploads/';
     $placeholderUrl = $appBase . '/resources/img/placeholder-user.svg';
