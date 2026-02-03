@@ -1,74 +1,116 @@
 <?php
 /**
- * Create Booking Request (client-facing)
- * Accepts JSON POST and saves to DB; sends email confirmation to client.
- * Response: { ok: true, booking_id: N }
+ * Create Booking Request (client-facing, mysqli version)
+ * Accepts JSON POST and saves to DB; returns { ok: true, booking_id }
  */
+declare(strict_types=1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error'=>'Method not allowed']); exit; }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+  http_response_code(405);
+  echo json_encode(['ok'=>false, 'error'=>'Method not allowed']);
+  exit;
+}
 
 require_once __DIR__ . '/../admin/includes/config.php';
 require_once __DIR__ . '/../admin/includes/Database.php';
 
-try{
-    $raw = file_get_contents('php://input');
-    $data = json_decode($raw, true);
-    if (!is_array($data)) throw new Exception('Invalid JSON');
+function fail(int $code, array $payload){ http_response_code($code); echo json_encode($payload, JSON_UNESCAPED_SLASHES); exit; }
+function required(array $src, string $key): string {
+  if (!isset($src[$key])) fail(422, ['ok'=>false,'error'=>"Missing field: $key"]);
+  $v = is_string($src[$key]) ? trim($src[$key]) : $src[$key];
+  if ($v === '') fail(422, ['ok'=>false,'error'=>"Missing field: $key"]);
+  return (string)$v;
+}
 
-    // Basic validation
-    $required = ['applicant_id','services','appointment_type','date','time','client_first_name','client_last_name','client_phone','client_email','client_address'];
-    foreach ($required as $k) {
-        if (!isset($data[$k]) || $data[$k]==='') throw new Exception("Missing field: $k");
-    }
+try {
+  $raw  = file_get_contents('php://input');
+  $data = json_decode($raw, true);
+  if (!is_array($data)) fail(400, ['ok'=>false,'error'=>'Invalid JSON']);
 
-    $db = (new Database())->getConnection();
+  // Required fields (names aligned with your modal JS)
+  $applicant_id       = (int) required($data, 'applicant_id');
+  $services           = $data['services'] ?? [];
+  $appointment_type   = required($data, 'appointment_type'); // 'Video Call' | 'Audio Call' | 'Chat' | 'House Visit' | 'Office Visit'
+  $appointment_date   = required($data, 'date');             // YYYY-MM-DD
+  $appointment_time   = required($data, 'time');             // HH:MM
+  $client_first_name  = required($data, 'client_first_name');
+  $client_middle_name = (string)($data['client_middle_name'] ?? '');
+  $client_last_name   = required($data, 'client_last_name');
+  $client_phone       = required($data, 'client_phone');
+  $client_email       = required($data, 'client_email');
+  $client_address     = required($data, 'client_address');
 
-    // Insert booking
-    $stmt = $db->prepare("
-        INSERT INTO client_bookings
+  // Validate formats
+  if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $appointment_date)) {
+    fail(422, ['ok'=>false,'error'=>'Invalid date format (YYYY-MM-DD)']);
+  }
+  if (!preg_match('/^\d{2}:\d{2}$/', $appointment_time)) {
+    fail(422, ['ok'=>false,'error'=>'Invalid time format (HH:MM)']);
+  }
+  if (!filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+    fail(422, ['ok'=>false,'error'=>'Invalid email address']);
+  }
+
+  // Whitelist appointment_type against your ENUM set to avoid SQL error
+  $allowedTypes = ['Video Call','Audio Call','Chat','House Visit','Office Visit'];
+  if (!in_array($appointment_type, $allowedTypes, true)) {
+    fail(422, ['ok'=>false,'error'=>'Invalid appointment_type']);
+  }
+
+  // Normalize services
+  if (!is_array($services)) $services = [];
+  $services = array_values(array_filter(array_map(fn($x)=>trim((string)$x), $services)));
+  $services_json = json_encode($services, JSON_UNESCAPED_UNICODE);
+
+  // --- DB (mysqli) ---
+  $db = (new Database())->getConnection();   // returns mysqli
+  if (!($db instanceof mysqli)) {
+    fail(500, ['ok'=>false, 'error'=>'Database connection is not mysqli instance']);
+  }
+  $db->set_charset('utf8mb4');
+
+  $sql = "INSERT INTO client_bookings
           (applicant_id, services_json, appointment_type, appointment_date, appointment_time,
-           client_first_name, client_middle_name, client_last_name, client_phone, client_email, client_address, status)
-        VALUES (:applicant_id, :services_json, :appointment_type, :appointment_date, :appointment_time,
-                :client_first_name, :client_middle_name, :client_last_name, :client_phone, :client_email, :client_address, 'submitted')
-    ");
-    $stmt->execute([
-        ':applicant_id'      => (int)$data['applicant_id'],
-        ':services_json'     => json_encode($data['services'], JSON_UNESCAPED_UNICODE),
-        ':appointment_type'  => $data['appointment_type'],
-        ':appointment_date'  => $data['date'],
-        ':appointment_time'  => $data['time'],
-        ':client_first_name' => $data['client_first_name'],
-        ':client_middle_name'=> $data['client_middle_name'] ?? '',
-        ':client_last_name'  => $data['client_last_name'],
-        ':client_phone'      => $data['client_phone'],
-        ':client_email'      => $data['client_email'],
-        ':client_address'    => $data['client_address'],
-    ]);
-    $id = (int)$db->lastInsertId();
+           client_first_name, client_middle_name, client_last_name, client_phone, client_email, client_address, status, created_at, updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())";
 
-    // Send email confirmation (simple mail(); replace with PHPMailer if available)
-    $to = $data['client_email'];
-    $subject = 'Your Booking Request Has Been Received';
-    $services = implode(', ', $data['services'] ?? []);
-    $body = "Hello {$data['client_first_name']},\n\n".
-            "Thank you for your booking request. Here are the details:\n".
-            "Applicant ID: {$data['applicant_id']}\n".
-            "Services: $services\n".
-            "Interview Method: {$data['appointment_type']}\n".
-            "Date & Time: {$data['date']} {$data['time']}\n".
-            "Address: {$data['client_address']}\n\n".
-            "We’ll reach out to confirm shortly.\n\n".
-            "— CREMPCO / CSNK Manpower Agency";
+  $stmt = $db->prepare($sql);
+  if (!$stmt) fail(500, ['ok'=>false, 'error'=>'Prepare failed: '.$db->error]);
 
-    @mail($to, $subject, $body, "From: no-reply@{$_SERVER['HTTP_HOST']}");
+  $status = 'submitted';
 
-    echo json_encode(['ok'=>true, 'booking_id'=>$id]);
-} catch (Exception $e){
-    http_response_code(400);
-    echo json_encode(['error'=>$e->getMessage()]);
+  // bind_param types: i=integer, s=string
+  $stmt->bind_param(
+    'isssssssssss',
+    $applicant_id,
+    $services_json,
+    $appointment_type,
+    $appointment_date,
+    $appointment_time,
+    $client_first_name,
+    $client_middle_name,
+    $client_last_name,
+    $client_phone,
+    $client_email,
+    $client_address,
+    $status
+  );
+
+  if (!$stmt->execute()) {
+    fail(500, ['ok'=>false, 'error'=>'Execute failed: '.$stmt->error]);
+  }
+
+  $booking_id = (int)$stmt->insert_id;
+  $stmt->close();
+
+  http_response_code(201);
+  echo json_encode(['ok'=>true, 'booking_id'=>$booking_id], JSON_UNESCAPED_SLASHES);
+} catch (Throwable $e) {
+  fail(500, ['ok'=>false, 'error'=>$e->getMessage()]);
 }

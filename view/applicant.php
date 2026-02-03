@@ -372,6 +372,8 @@
             </div>
           </div>
 
+        
+
           <!-- STEP 5: Review & Submit (no QR) -->
           <div class="step-pane d-none" data-step-pane="5">
             <div class="panel mb-3">
@@ -381,6 +383,7 @@
               </div>
               <div class="d-grid">
                 <button class="btn btn-brand text-white" id="bkSubmit">Submit Request</button>
+                
               </div>
             </div>
           </div>

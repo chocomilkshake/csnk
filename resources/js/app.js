@@ -586,10 +586,19 @@ function showApplicantModal(applicant, options = { pushState: true }) {
 }
 window.showApplicantModal = showApplicantModal;
 
+
+(function enforceButtonTypes(){
+  ['bkSubmit','bkNext','bkBack'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('type','button');
+  });
+})();
+
 /* =========================================================
    Booking (Hire) — safe no-op if modal missing
 ========================================================= */
 function launchBooking(applicant){
+  window._lastApplicantForBooking = applicant;
   const modalEl = byId('bookingModal');
   if (!modalEl || !window.bootstrap?.Modal) return;
 
@@ -621,6 +630,104 @@ function launchBooking(applicant){
 
   bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
+function getBookingPayload(applicant) {
+  const modalEl = byId('bookingModal');
+  const services = Array.from(modalEl.querySelectorAll('.oval-tag.active'))
+                        .map(el => el.dataset.service)
+                        .filter(Boolean);
+
+  const apptType = modalEl.querySelector('input[name="apptType"]:checked')?.value || '';
+
+  return {
+    applicant_id:       applicant.id,
+    services:           services,
+    appointment_type:   apptType,                                        // must match your ENUM
+    date:               modalEl.querySelector('#bkDate')?.value || '',   // "YYYY-MM-DD"
+    time:               modalEl.querySelector('#bkTime')?.value || '',   // "HH:MM"
+    client_first_name:  modalEl.querySelector('#bkFirstName')?.value?.trim() || '',
+    client_middle_name: '',                                              // add if you have a field
+    client_last_name:   modalEl.querySelector('#bkLastName')?.value?.trim() || '',
+    client_phone:       modalEl.querySelector('#bkPhone')?.value?.trim() || '',
+    client_email:       modalEl.querySelector('#bkEmail')?.value?.trim() || '',
+    client_address:     modalEl.querySelector('#bkAddress')?.value?.trim() || ''
+  };
+}
+
+function validateBookingPayload(payload) {
+  const missing = [];
+  for (const k of ['applicant_id','appointment_type','date','time','client_first_name','client_last_name','client_phone','client_email','client_address']) {
+    if (!payload[k]) missing.push(k);
+  }
+  if (missing.length) return 'Please complete: ' + missing.join(', ');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.client_email)) return 'Please enter a valid email.';
+  return '';
+}
+
+function renderBookingSummary(payload) {
+  const sumEl = byId('bkSummary');
+  if (!sumEl) return;
+  const lines = [
+    payload.services?.length ? `<div><strong>Services:</strong> ${payload.services.map(escapeHtml).join(', ')}</div>` : '',
+    `<div><strong>Interview:</strong> ${escapeHtml(payload.appointment_type)}</div>`,
+    `<div><strong>Date & Time:</strong> ${escapeHtml(payload.date)} ${escapeHtml(payload.time)}</div>`,
+    `<div><strong>Client:</strong> ${escapeHtml(payload.client_first_name)} ${escapeHtml(payload.client_last_name)}</div>`,
+    `<div><strong>Email:</strong> ${escapeHtml(payload.client_email)}</div>`,
+    payload.client_phone ? `<div><strong>Phone:</strong> ${escapeHtml(payload.client_phone)}</div>` : '',
+    payload.client_address ? `<div><strong>Address:</strong> ${escapeHtml(payload.client_address)}</div>` : ''
+  ].filter(Boolean);
+  sumEl.innerHTML = `<div class="small">${lines.join('')}</div>`;
+}
+
+
+(function wireBookingStepsOnce(){
+  const modalEl = byId('bookingModal');
+  if (!modalEl) return;
+
+  // ----- Next (stepper forward) -----
+  const btnNext = byId('bkNext');
+  if (btnNext && !btnNext.dataset.bound) {
+    btnNext.dataset.bound = '1';
+    btnNext.addEventListener('click', () => {
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '1') return goToBookingStep(2);
+      if (current === '2') return goToBookingStep(3);
+      if (current === '3') return goToBookingStep(4);
+      if (current === '4') {
+        const applicant = window._lastApplicantForBooking
+          || JSON.parse(byId('applicantModal')?.dataset.applicant || 'null');
+        if (!applicant) return alert('Missing applicant.');
+
+        const payload = getBookingPayload(applicant);
+        const err = validateBookingPayload(payload);
+        if (err) { alert(err); return; }
+
+        // Build review summary and move to Step 5 (NO POST HERE)
+        renderBookingSummary(payload);
+        return goToBookingStep(5);
+      }
+    });
+  }
+
+  // ----- Back (stepper backward) -----
+  const btnBack = byId('bkBack');
+  if (btnBack && !btnBack.dataset.bound) {
+    btnBack.dataset.bound = '1';
+    btnBack.addEventListener('click', () => {
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '2') return goToBookingStep(1);
+      if (current === '3') return goToBookingStep(2);
+      if (current === '4') return goToBookingStep(3);
+      if (current === '5') return goToBookingStep(4);
+    });
+  }
+
+  
+})();
+
 
 /* =========================================================
    Styles injection (modern professional cards)
