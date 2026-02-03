@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 03, 2026 at 01:43 AM
+-- Generation Time: Feb 03, 2026 at 09:36 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -124,7 +124,8 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (81, 1, 'Add Applicant', 'Added new applicant: Dixon Myas', '::1', '2026-02-02 12:00:00'),
 (82, 1, 'Add Applicant', 'Added new applicant: Mhi Mha Mha', '::1', '2026-02-02 12:22:47'),
 (83, 1, 'Add Applicant', 'Added new applicant: Imee Bangag', '::1', '2026-02-02 12:58:24'),
-(84, 1, 'Login', 'User logged in successfully', '::1', '2026-02-03 00:17:53');
+(84, 1, 'Login', 'User logged in successfully', '::1', '2026-02-03 00:17:53'),
+(85, 1, 'Add Applicant', 'Added new applicant: Jennifer Refer', '::1', '2026-02-03 05:16:52');
 
 -- --------------------------------------------------------
 
@@ -191,9 +192,10 @@ CREATE TABLE `applicants` (
 --
 
 INSERT INTO `applicants` (`id`, `first_name`, `middle_name`, `last_name`, `suffix`, `phone_number`, `alt_phone_number`, `email`, `date_of_birth`, `address`, `educational_attainment`, `work_history`, `preferred_location`, `languages`, `specialization_skills`, `employment_type`, `education_level`, `years_experience`, `picture`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly nad Special Care (Caregiver)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'pending', 1, '2026-02-02 12:00:00', '2026-02-02 12:00:00', NULL),
-(18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly nad Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', 'pending', 1, '2026-02-02 12:22:47', '2026-02-02 12:22:47', NULL),
-(19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Elderly nad Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', 'pending', 1, '2026-02-02 12:58:24', '2026-02-02 12:58:24', NULL);
+(17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'pending', 1, '2026-02-02 12:00:00', '2026-02-03 06:29:00', NULL),
+(18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', 'pending', 1, '2026-02-02 12:22:47', '2026-02-03 06:28:45', NULL),
+(19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', 'pending', 1, '2026-02-02 12:58:24', '2026-02-03 06:28:32', NULL),
+(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', '', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'pending', 1, '2026-02-03 05:16:52', '2026-02-03 06:27:57', NULL);
 
 -- --------------------------------------------------------
 
@@ -237,7 +239,46 @@ INSERT INTO `applicant_documents` (`id`, `applicant_id`, `document_type`, `file_
 (141, 19, 'nbi', 'documents/69809f7012e60_1770037104.jpg', '2026-02-02 12:58:24'),
 (142, 19, 'police_clearance', 'documents/69809f7013bee_1770037104.jpg', '2026-02-02 12:58:24'),
 (143, 19, 'tin_id', 'documents/69809f7014911_1770037104.jpg', '2026-02-02 12:58:24'),
-(144, 19, 'passport', 'documents/69809f70155da_1770037104.jpg', '2026-02-02 12:58:24');
+(144, 19, 'passport', 'documents/69809f70155da_1770037104.jpg', '2026-02-02 12:58:24'),
+(145, 20, 'brgy_clearance', 'documents/698184c4d1e92_1770095812.jpg', '2026-02-03 05:16:52'),
+(146, 20, 'birth_certificate', 'documents/698184c4d2de7_1770095812.jpg', '2026-02-03 05:16:52'),
+(147, 20, 'sss', 'documents/698184c4d3ca9_1770095812.jpg', '2026-02-03 05:16:52'),
+(148, 20, 'pagibig', 'documents/698184c4d4d19_1770095812.jpg', '2026-02-03 05:16:52'),
+(149, 20, 'nbi', 'documents/698184c4d7908_1770095812.jpg', '2026-02-03 05:16:52'),
+(150, 20, 'police_clearance', 'documents/698184c4d9126_1770095812.jpg', '2026-02-03 05:16:52'),
+(151, 20, 'tin_id', 'documents/698184c4da8fc_1770095812.jpg', '2026-02-03 05:16:52'),
+(152, 20, 'passport', 'documents/698184c4dbe86_1770095812.jpg', '2026-02-03 05:16:52');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `client_bookings`
+--
+
+CREATE TABLE `client_bookings` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `applicant_id` int(10) UNSIGNED NOT NULL,
+  `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`services_json`)),
+  `appointment_type` enum('Video Call','Audio Call','Chat','House Visit','Office Visit') NOT NULL,
+  `appointment_date` date NOT NULL,
+  `appointment_time` time NOT NULL,
+  `client_first_name` varchar(100) NOT NULL,
+  `client_middle_name` varchar(100) DEFAULT NULL,
+  `client_last_name` varchar(100) NOT NULL,
+  `client_phone` varchar(30) NOT NULL,
+  `client_email` varchar(150) NOT NULL,
+  `client_address` varchar(255) NOT NULL,
+  `status` enum('submitted','confirmed','cancelled') NOT NULL DEFAULT 'submitted',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `client_bookings`
+--
+
+INSERT INTO `client_bookings` (`id`, `applicant_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
+(13, 18, '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\",\"Pet & Outdoor Maintenance\"]', 'Video Call', '2026-02-03', '16:02:00', 'df', 'dfgh', 'fghj', '12345678912', 'ocasmcapcia@gmail.com', '1231 dfghjvgyhj', 'submitted', '2026-02-03 08:02:10', '2026-02-03 08:02:10');
 
 -- --------------------------------------------------------
 
@@ -302,6 +343,15 @@ ALTER TABLE `applicant_documents`
   ADD KEY `idx_applicant_documents_applicant_id` (`applicant_id`);
 
 --
+-- Indexes for table `client_bookings`
+--
+ALTER TABLE `client_bookings`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_applicant` (`applicant_id`),
+  ADD KEY `idx_client_bookings_applicant` (`applicant_id`),
+  ADD KEY `idx_client_bookings_created` (`created_at`);
+
+--
 -- Indexes for table `session_logs`
 --
 ALTER TABLE `session_logs`
@@ -317,7 +367,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -329,13 +379,19 @@ ALTER TABLE `admin_users`
 -- AUTO_INCREMENT for table `applicants`
 --
 ALTER TABLE `applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `applicant_documents`
 --
 ALTER TABLE `applicant_documents`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=145;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+
+--
+-- AUTO_INCREMENT for table `client_bookings`
+--
+ALTER TABLE `client_bookings`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
@@ -364,6 +420,12 @@ ALTER TABLE `applicants`
 --
 ALTER TABLE `applicant_documents`
   ADD CONSTRAINT `fk_applicant_documents_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `client_bookings`
+--
+ALTER TABLE `client_bookings`
+  ADD CONSTRAINT `fk_booking_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `session_logs`

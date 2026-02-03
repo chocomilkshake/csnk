@@ -29,7 +29,11 @@ function escapeHtml(str) {
 }
 function byId(id) { return document.getElementById(id); }
 function toInt(n, fallback = 0){ const v = Number(n); return Number.isFinite(v) ? v : fallback; }
-function toDate(d){ const v = new Date(d); return isNaN(v) ? null : v; }
+function toDate(d){
+  if (!d) return null;
+  const v = new Date(d);
+  return isNaN(v) ? null : v;
+}
 function arrFromMaybe(val){
   if (!val) return [];
   if (Array.isArray(val)) return val;
@@ -38,6 +42,9 @@ function arrFromMaybe(val){
     return [val.trim()].filter(Boolean);
   }
   return [];
+}
+function normLabel(s){
+  return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
 }
 
 /** Update URL with applicant ID without navigating */
@@ -220,71 +227,88 @@ function applyFilters() {
 
   const searchQuery   = (formData.get('q') || '').toLowerCase().trim();
   const locationQuery = (formData.get('location') || '').toLowerCase().trim();
+  const availableBy   = formData.get('available_by');
 
   const selectedSpecs = filtersData.getAll('specializations[]');
-  const selectedAvail = filtersData.getAll('availability[]');
+  const selectedAvail = filtersData.getAll('availability[]'); // employment type in UI
   const minExperience = parseInt(filtersData.get('min_experience')) || 0;
   const selectedLangs = filtersData.getAll('languages[]');
   const sortBy        = filtersData.get('sort');
 
   filteredApplicants = allApplicants.filter(applicant => {
-    // Search by name or specialization
+    // Search by name or specialization (both string and array)
     if (searchQuery) {
-      const matchName = String(applicant.full_name).toLowerCase().includes(searchQuery);
-      const matchSpec = applicant.specializations?.some(s => String(s).toLowerCase().includes(searchQuery));
-      if (!matchName && !matchSpec) return false;
+      const nameMatch = String(applicant.full_name || '').toLowerCase().includes(searchQuery);
+      const primarySpecMatch = String(applicant.specialization || '').toLowerCase().includes(searchQuery);
+      const arraySpecMatch = Array.isArray(applicant.specializations)
+        ? applicant.specializations.some(s => String(s).toLowerCase().includes(searchQuery))
+        : false;
+      if (!nameMatch && !primarySpecMatch && !arraySpecMatch) return false;
     }
 
     // Location (city)
-    if (locationQuery && !String(applicant.location_city).toLowerCase().includes(locationQuery)) return false;
+    if (locationQuery && !String(applicant.location_city || '').toLowerCase().includes(locationQuery)) return false;
 
-    // Specialization filter using specializations array
-    if (selectedSpecs.length > 0) {
-      const specMapping = {
-        'Cleaning and Housekeeping (General)': 'Cleaning and Housekeeping (General)',
-        'Laundry and Clothing Care': 'Laundry and Clothing Care',
-        'Cooking and Food Service': 'Cooking and Food Service',
-        'Childcare and Maternity (Yaya)': 'Childcare and Maternity (Yaya)',
-        'Elderly and Special Care (Caregiver)': 'Elderly and Special Care (Caregiver)',
-        'Pet and Outdoor Maintenance': 'Pet and Outdoor Maintenance'
-      };
-      const applicantSpecs = applicant.specializations || [];
-      const hasMatch = selectedSpecs.some(selected => applicantSpecs.includes(selected));
-      if (!hasMatch) return false;
+    // Available by date (kept in filters even if not shown on cards)
+    if (availableBy) {
+      const appDate = toDate(applicant.availability_date);
+      const byDate  = toDate(availableBy);
+      if (appDate && byDate && appDate > byDate) return false;
     }
 
-    // Employment type (form now sends "Full Time" / "Part Time")
+    // Specialization filter using specializations array (fallback to primary string)
+    if (selectedSpecs.length > 0) {
+      const applicantSpecs = Array.isArray(applicant.specializations) ? applicant.specializations : [];
+      const hasArrayMatch = selectedSpecs.some(sel => applicantSpecs.includes(sel));
+      const hasPrimaryMatch = selectedSpecs.includes(applicant.specialization);
+      if (!hasArrayMatch && !hasPrimaryMatch) return false;
+    }
+
+    // Employment type: accept both "Full Time"/"Part Time" (raw) and "Full-time"/"Part-time" (label)
     if (selectedAvail.length > 0) {
-      if (!selectedAvail.includes(applicant.employment_type)) return false;
+      const selectedNorms = selectedAvail.map(normLabel);
+      const typeNorms = [applicant.employment_type, applicant.employment_type_raw].map(normLabel);
+      const match = typeNorms.some(t => selectedNorms.includes(t));
+      if (!match) return false;
     }
 
     // Experience
     if (toInt(applicant.years_experience) < minExperience) return false;
 
-    // Languages
+    // Languages (prefer array; fallback to CSV string)
     if (selectedLangs.length > 0) {
-      const applicantLangs = applicant.languages_array || [];
-      const hasLang = selectedLangs.some(lang => applicantLangs.includes(lang));
+      const langArr = Array.isArray(applicant.languages_array)
+        ? applicant.languages_array
+        : String(applicant.languages || '').split(',').map(s => s.trim()).filter(Boolean);
+      const hasLang = selectedLangs.some(lang => langArr.includes(lang));
       if (!hasLang) return false;
     }
 
     return true;
   });
 
-  // Sort
+  // Sort (robust guards)
   if (sortBy) {
     filteredApplicants.sort((a, b) => {
       switch (sortBy) {
-        case 'availability_asc':
-          const dateA = toDate(a.availability_date);
-          const dateB = toDate(b.availability_date);
-          return (dateA && dateB) ? dateA - dateB : 0;
+        case 'availability_asc': {
+          const da = toDate(a.availability_date);
+          const db = toDate(b.availability_date);
+          if (da && db) return da - db;
+          if (da && !db) return -1;
+          if (!da && db) return 1;
+          return 0;
+        }
         case 'experience_desc':
           return toInt(b.years_experience) - toInt(a.years_experience);
-        case 'newest':
-          const createdA = toDate(a.created_at);
-          const createdB = toDate(b.created_at);
-          return (createdA && createdB) ? createdB - createdA : 0;
+        case 'newest': {
+          const ca = toDate(a.created_at);
+          const cb = toDate(b.created_at);
+          if (ca && cb) return cb - ca;
+          if (cb && !ca) return 1;
+          if (!cb && ca) return -1;
+          return 0;
+        }
         default:
           return 0;
       }
@@ -294,6 +318,7 @@ function applyFilters() {
   currentPage = 1;
   renderApplicants();
 }
+
 /* =========================================================
    Rendering
 ========================================================= */
@@ -496,6 +521,16 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   const modalEl = byId('applicantModal');
   if (!modalEl) return;
 
+  // Preferred locations (badges) + education (from new API)
+  const prefEl = byId('prefLocValue');
+  if (prefEl) {
+    const arr = Array.isArray(applicant.preferred_locations) ? applicant.preferred_locations : [];
+    prefEl.innerHTML = arr.length
+      ? arr.map(x=>`<span class="badge text-bg-light border me-1 mb-1">${escapeHtml(x)}</span>`).join('')
+      : '—';
+  }
+  const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.education_level || '—';
+
   // Header area
   const avatar = byId('avatar');
   if (avatar) {
@@ -551,10 +586,19 @@ function showApplicantModal(applicant, options = { pushState: true }) {
 }
 window.showApplicantModal = showApplicantModal;
 
+
+(function enforceButtonTypes(){
+  ['bkSubmit','bkNext','bkBack'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('type','button');
+  });
+})();
+
 /* =========================================================
    Booking (Hire) — safe no-op if modal missing
 ========================================================= */
 function launchBooking(applicant){
+  window._lastApplicantForBooking = applicant;
   const modalEl = byId('bookingModal');
   if (!modalEl || !window.bootstrap?.Modal) return;
 
@@ -586,6 +630,104 @@ function launchBooking(applicant){
 
   bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
+function getBookingPayload(applicant) {
+  const modalEl = byId('bookingModal');
+  const services = Array.from(modalEl.querySelectorAll('.oval-tag.active'))
+                        .map(el => el.dataset.service)
+                        .filter(Boolean);
+
+  const apptType = modalEl.querySelector('input[name="apptType"]:checked')?.value || '';
+
+  return {
+    applicant_id:       applicant.id,
+    services:           services,
+    appointment_type:   apptType,                                        // must match your ENUM
+    date:               modalEl.querySelector('#bkDate')?.value || '',   // "YYYY-MM-DD"
+    time:               modalEl.querySelector('#bkTime')?.value || '',   // "HH:MM"
+    client_first_name:  modalEl.querySelector('#bkFirstName')?.value?.trim() || '',
+    client_middle_name: '',                                              // add if you have a field
+    client_last_name:   modalEl.querySelector('#bkLastName')?.value?.trim() || '',
+    client_phone:       modalEl.querySelector('#bkPhone')?.value?.trim() || '',
+    client_email:       modalEl.querySelector('#bkEmail')?.value?.trim() || '',
+    client_address:     modalEl.querySelector('#bkAddress')?.value?.trim() || ''
+  };
+}
+
+function validateBookingPayload(payload) {
+  const missing = [];
+  for (const k of ['applicant_id','appointment_type','date','time','client_first_name','client_last_name','client_phone','client_email','client_address']) {
+    if (!payload[k]) missing.push(k);
+  }
+  if (missing.length) return 'Please complete: ' + missing.join(', ');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.client_email)) return 'Please enter a valid email.';
+  return '';
+}
+
+function renderBookingSummary(payload) {
+  const sumEl = byId('bkSummary');
+  if (!sumEl) return;
+  const lines = [
+    payload.services?.length ? `<div><strong>Services:</strong> ${payload.services.map(escapeHtml).join(', ')}</div>` : '',
+    `<div><strong>Interview:</strong> ${escapeHtml(payload.appointment_type)}</div>`,
+    `<div><strong>Date & Time:</strong> ${escapeHtml(payload.date)} ${escapeHtml(payload.time)}</div>`,
+    `<div><strong>Client:</strong> ${escapeHtml(payload.client_first_name)} ${escapeHtml(payload.client_last_name)}</div>`,
+    `<div><strong>Email:</strong> ${escapeHtml(payload.client_email)}</div>`,
+    payload.client_phone ? `<div><strong>Phone:</strong> ${escapeHtml(payload.client_phone)}</div>` : '',
+    payload.client_address ? `<div><strong>Address:</strong> ${escapeHtml(payload.client_address)}</div>` : ''
+  ].filter(Boolean);
+  sumEl.innerHTML = `<div class="small">${lines.join('')}</div>`;
+}
+
+
+(function wireBookingStepsOnce(){
+  const modalEl = byId('bookingModal');
+  if (!modalEl) return;
+
+  // ----- Next (stepper forward) -----
+  const btnNext = byId('bkNext');
+  if (btnNext && !btnNext.dataset.bound) {
+    btnNext.dataset.bound = '1';
+    btnNext.addEventListener('click', () => {
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '1') return goToBookingStep(2);
+      if (current === '2') return goToBookingStep(3);
+      if (current === '3') return goToBookingStep(4);
+      if (current === '4') {
+        const applicant = window._lastApplicantForBooking
+          || JSON.parse(byId('applicantModal')?.dataset.applicant || 'null');
+        if (!applicant) return alert('Missing applicant.');
+
+        const payload = getBookingPayload(applicant);
+        const err = validateBookingPayload(payload);
+        if (err) { alert(err); return; }
+
+        // Build review summary and move to Step 5 (NO POST HERE)
+        renderBookingSummary(payload);
+        return goToBookingStep(5);
+      }
+    });
+  }
+
+  // ----- Back (stepper backward) -----
+  const btnBack = byId('bkBack');
+  if (btnBack && !btnBack.dataset.bound) {
+    btnBack.dataset.bound = '1';
+    btnBack.addEventListener('click', () => {
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '2') return goToBookingStep(1);
+      if (current === '3') return goToBookingStep(2);
+      if (current === '4') return goToBookingStep(3);
+      if (current === '5') return goToBookingStep(4);
+    });
+  }
+
+  
+})();
+
 
 /* =========================================================
    Styles injection (modern professional cards)
