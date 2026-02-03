@@ -7,7 +7,7 @@ define('DB_NAME', 'csnk');
 
 // Application Configuration
 define('APP_NAME', 'CSNK Admin System');
-define('APP_URL', 'http://localhost/csnk/admin');
+define('APP_URL', 'http://localhost/csnk-1/admin');
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', APP_URL . '/uploads/');
 

@@ -50,8 +50,6 @@
             >
           </div>
 
-          <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
-          <!-- Search button -->
           <div class="d-flex align-items-center ps-2 ps-sm-3">
             <button class="btn btn-danger rounded-pill px-3 px-sm-4" type="submit">
               <i class="bi bi-search me-1"></i>
@@ -86,7 +84,7 @@
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"><label class="form-check-label" for="spec-cook">Cooking and Food Service</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly and Special Care (Caregiver)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance</div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance</label></div>
                 </div>
               </div>
 
@@ -330,14 +328,12 @@
               <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Date
+                  <label class="form-label">Date</label>
                   <input type="date" class="form-control" id="bkDate">
-                  </label>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Time
+                  <label class="form-label">Time</label>
                   <input type="time" class="form-control" id="bkTime">
-                  </label>
                 </div>
               </div>
             </div>
@@ -348,30 +344,29 @@
             <div class="panel mb-3">
               <h6 class="mb-3">Your Details</h6>
               <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">First Name
+                <div class="col-md-4">
+                  <label class="form-label">First Name</label>
                   <input type="text" class="form-control" id="bkFirstName">
-                  </label>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Last Name
+                <div class="col-md-4">
+                  <label class="form-label">Middle Name</label>
+                  <input type="text" class="form-control" id="bkMiddleName">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Last Name</label>
                   <input type="text" class="form-control" id="bkLastName">
-                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Phone Number
-                  <input type="tel" class="form-control" id="bkPhone">
-                  </label>
+                  <label class="form-label">Active Phone Number</label>
+                  <input type="tel" class="form-control" id="bkPhone" placeholder="+63 9XXXXXXXXX">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Email Address
-                  <input type="email" class="form-control" id="bkEmail">
-                  </label>
+                  <label class="form-label">Active Email</label>
+                  <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Address
-                  <input type="text" class="form-control" id="bkAddress">
-                  </label>
+                  <label class="form-label">Address</label>
+                  <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
                 </div>
               </div>
             </div>

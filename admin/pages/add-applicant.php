@@ -60,7 +60,7 @@ function getSpecializationOptions() {
         'Laundry and Clothing Care',
         'Cooking and Food Service',
         'Childcare and Maternity (Yaya)',
-        'Elderly nad Special Care (Caregiver)',
+        'Elderly and Special Care (Caregiver)',
         'Pet and Outdoor Maintenance',
     ];
 }
