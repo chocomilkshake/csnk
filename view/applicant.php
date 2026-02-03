@@ -102,12 +102,12 @@
                   <a href="#" class="small" id="clearSpecs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Kasambahay" id="spec-kas"><label class="form-check-label" for="spec-kas">Kasambahay</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Nanny" id="spec-nan"><label class="form-check-label" for="spec-nan">Nanny</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cook" id="spec-cook"><label class="form-check-label" for="spec-cook">Cook</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly Care" id="spec-elder"><label class="form-check-label" for="spec-elder">Elderly Care</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="All-around Helper" id="spec-all"><label class="form-check-label" for="spec-all">All-around Helper</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Driver" id="spec-driver"><label class="form-check-label" for="spec-driver">Driver</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning and Housekeeping (General)" id="spec-kas"><label class="form-check-label" for="spec-kas">Cleaning and Housekeeping (General)</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"><label class="form-check-label" for="spec-cook">Cooking and Food Service</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly nad Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly nad Special Care (Caregiver)</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance<label></div>
                 </div>
               </div>
 
@@ -136,9 +136,7 @@
                 <div class="vstack gap-1">
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"><label class="form-check-label" for="lang-fil">Filipino</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"><label class="form-check-label" for="lang-eng">English</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Ilocano" id="lang-ilo"><label class="form-check-label" for="lang-ilo">Ilocano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Cebuano" id="lang-ceb"><label class="form-check-label" for="lang-ceb">Cebuano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Kapampangan" id="lang-kap"><label class="form-check-label" for="lang-kap">Kapampangan</label></div>
+
                 </div>
               </div>
 
@@ -176,51 +174,6 @@
       </section>
     </div>
   </main>
-
-  <!-- Include Bootstrap Icons (if not already on the page) -->
-  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
-
-  <footer class="bg-white border-top">
-    <div class="container py-4">
-      <div class="row g-4 align-items-start">
-        <div class="col-md-6">
-          <img src="../resources/img/csnklogo.png" alt="CSNK Logo" style="height:75px;">
-        </div>
-
-        <div class="col-md-6">
-          <ul class="list-unstyled text-muted mb-0">
-            <li class="mb-2">
-              <i class="bi bi-geo-alt-fill text-danger me-2"></i>
-              2F Unit 1 Eden Townhouse 2001 Eden St. Cor Pedro Gil, <br> &emsp;&ensp; Sta Ana Barangay 784, City of Manila, NCR, First District
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-telephone-fill text-danger me-2"></i>
-              +63 (02) 1234-5678
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-envelope-fill text-danger me-2"></i>
-              info@csnkmanpower.com
-            </li>
-            <li class="mb-0">
-              <i class="bi bi-clock-fill text-danger me-2"></i>
-              Mon - Sat: 8:00 AM - 5:00 PM
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <hr class="my-4">
-
-      <div class="text-center small text-muted">
-        <div>Copyright © <span id="year"></span> CSNK Manpower Agency. All Rights Reserved.</div>
-        <div class="mt-2">
-          <a class="text-muted text-decoration-none me-3" href="#">Legal Notice</a>
-          <a class="text-muted text-decoration-none me-3" href="#">Privacy Policy</a>
-          <a class="text-muted text-decoration-none" href="#">Refund Policy</a>
-        </div>
-      </div>
-    </div>
-  </footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -266,12 +219,6 @@
               </div>
               <div class="col-12 col-md-6">
                 <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — Region</div>
-                  <div class="fw-semibold" id="regionValue">—</div>
-                </div>
-              </div>
-              <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of Experience</div>
                   <div class="fw-semibold" id="yoeValue">—</div>
                 </div>
@@ -280,12 +227,6 @@
                 <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type</div>
                   <div class="fw-semibold" id="employmentValue">—</div>
-                </div>
-              </div>
-              <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Available Dates</div>
-                  <div class="fw-semibold" id="availValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
@@ -498,6 +439,54 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../resources/js/app.js"></script>
 
+
+
+
+    <!-- Include Bootstrap Icons (if not already on the page) -->
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
+
+  <footer class="bg-white border-top">
+    <div class="container py-4">
+      <div class="row g-4 align-items-start">
+        <div class="col-md-6">
+          <img src="../resources/img/csnklogo.png" alt="CSNK Logo" style="height:75px;">
+        </div>
+
+        <div class="col-md-6">
+          <ul class="list-unstyled text-muted mb-0">
+            <li class="mb-2">
+              <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+              2F Unit 1 Eden Townhouse 2001 Eden St. Cor Pedro Gil, <br> &emsp;&ensp; Sta Ana Barangay 784, City of Manila, NCR, First District
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-telephone-fill text-danger me-2"></i>
+              +63 (02) 1234-5678
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-envelope-fill text-danger me-2"></i>
+              info@csnkmanpower.com
+            </li>
+            <li class="mb-0">
+              <i class="bi bi-clock-fill text-danger me-2"></i>
+              Mon - Sat: 8:00 AM - 5:00 PM
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="text-center small text-muted">
+        <div>Copyright © <span id="year"></span> CSNK Manpower Agency. All Rights Reserved.</div>
+        <div class="mt-2">
+          <a class="text-muted text-decoration-none me-3" href="#">Legal Notice</a>
+          <a class="text-muted text-decoration-none me-3" href="#">Privacy Policy</a>
+          <a class="text-muted text-decoration-none" href="#">Refund Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <!-- Minimal safety: expose openBookingModal if app.js hasn't been patched yet -->
   <script>
     (function(){
@@ -626,4 +615,3 @@
   </script>
 </body>
 </html>
-``

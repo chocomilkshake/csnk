@@ -1,12 +1,24 @@
 <?php
+// FILE: pages/view-applicant.php
 $pageTitle = 'View Applicant';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
 $applicant = new Applicant($database);
 
+// Preserve list search (if user came from a searched list)
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim((string)$_GET['q']);
+    if (mb_strlen($q) > 200) {
+        $q = mb_substr($q, 0, 200);
+    }
+}
+
 if (!isset($_GET['id'])) {
-    redirect('applicants.php');
+    $dest = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+    redirect($dest);
+    exit;
 }
 
 $id = (int)$_GET['id'];
@@ -14,138 +26,190 @@ $applicantData = $applicant->getById($id);
 
 if (!$applicantData) {
     setFlashMessage('error', 'Applicant not found.');
-    redirect('applicants.php');
+    $dest = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+    redirect($dest);
+    exit;
 }
 
 $documents = $applicant->getDocuments($id);
 
-/**
- * ------- Helpers to render JSON fields nicely -------
- */
+/* ============================================================
+   Helpers (renderers + utilities)
+   ============================================================ */
 
 /**
- * Preferred location: JSON array -> clean string.
- * Shows first city if long (with full list as title tooltip).
+ * Preferred locations (JSON) -> HTML badges (show ALL cities)
+ * Accepts JSON array or comma-separated string fallback.
+ * Returns HTML (do not escape again on echo).
  */
-function renderPreferredLocationText(?string $json, int $maxLen = 40): array {
-    // returns [displayText, titleText]
-    if (empty($json)) return ['N/A', ''];
-    $arr = json_decode($json, true);
-    if (!is_array($arr)) {
+function renderPreferredLocationBadges(?string $json): string {
+    if ($json === null || trim($json) === '') {
+        return '<span class="text-muted">N/A</span>';
+    }
+
+    $cities = [];
+    $decoded = json_decode($json, true);
+
+    if (is_array($decoded)) {
+        foreach ($decoded as $c) {
+            if (is_string($c)) {
+                $t = trim($c);
+                if ($t !== '') $cities[] = $t;
+            }
+        }
+    } else {
+        // Fallback: support comma-separated value or raw single string
         $fallback = trim($json);
+        // Strip common wrappers like ["..."]
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
-        return [$fallback !== '' ? $fallback : 'N/A', $fallback];
+        if ($fallback !== '') {
+            $parts = array_map('trim', explode(',', $fallback));
+            foreach ($parts as $p) {
+                if ($p !== '') $cities[] = $p;
+            }
+        }
     }
-    $cities = array_values(array_filter(array_map('trim', $arr), fn($v)=>is_string($v) && $v!==''));
-    if (!$cities) return ['N/A', ''];
-    $full = implode(', ', $cities);
-    if (mb_strlen($full) > $maxLen) {
-        return [$cities[0], $full]; // show first city, keep full in title
+
+    if (empty($cities)) {
+        return '<span class="text-muted">N/A</span>';
     }
-    return [$full, $full];
+
+    // Build badges
+    $html = [];
+    foreach ($cities as $city) {
+        $safe = htmlspecialchars($city, ENT_QUOTES, 'UTF-8');
+        $html[] = '<span class="badge rounded-pill loc-pill">'.$safe.'</span>';
+    }
+    return implode(' ', $html);
 }
 
 /**
- * Educational attainment JSON -> clean multiline HTML
+ * Improved Educational Attainment Renderer
+ * - Clean card/timeline style (very readable)
+ * - Handles missing levels safely
+ * RETURNS HTML (do NOT escape again when echoing)
  */
-function renderEducationHtml(?string $json): string {
-    if (empty($json)) return '<span class="text-muted">N/A</span>';
+function renderEducationListHtml(?string $json): string {
+    if (empty($json)) {
+        return '<span class="text-muted">N/A</span>';
+    }
+
     $edu = json_decode($json, true);
     if (!is_array($edu)) {
-        return htmlspecialchars($json, ENT_QUOTES, 'UTF-8'); // fallback raw
+        return '<div>'.htmlspecialchars($json, ENT_QUOTES, 'UTF-8').'</div>';
     }
 
-    $parts = [];
+    // Config per level (order + icon)
+    $levels = [
+        'elementary'  => ['label' => 'Elementary',  'icon' => '📘'],
+        'highschool'  => ['label' => 'High School', 'icon' => '📗'],
+        'senior_high' => ['label' => 'Senior High', 'icon' => '📙'],
+        'college'     => ['label' => 'College',     'icon' => '🎓'],
+    ];
 
-    // Elementary
-    $elem = $edu['elementary'] ?? [];
-    $elemSchool = trim((string)($elem['school'] ?? ''));
-    $elemYear   = trim((string)($elem['year'] ?? ''));
-    if ($elemSchool || $elemYear) {
-        $line = 'Elementary: ' . htmlspecialchars($elemSchool, ENT_QUOTES, 'UTF-8');
-        if ($elemYear !== '') $line .= ' (' . htmlspecialchars($elemYear, ENT_QUOTES, 'UTF-8') . ')';
-        $parts[] = $line;
+    $html = '<div class="edu-timeline">';
+
+    foreach ($levels as $key => $meta) {
+        if (empty($edu[$key]) || !is_array($edu[$key])) {
+            continue;
+        }
+
+        $row = $edu[$key];
+
+        $school = trim((string)($row['school'] ?? ''));
+        $year   = trim((string)($row['year'] ?? ''));
+        $strand = trim((string)($row['strand'] ?? ''));
+        $course = trim((string)($row['course'] ?? ''));
+
+        if ($school === '' && $year === '' && $strand === '' && $course === '') {
+            continue;
+        }
+
+        $html .= '<div class="edu-item">';
+        $html .=   '<div class="edu-header">';
+        $html .=     '<span class="edu-icon">'.$meta['icon'].'</span>';
+        $html .=     '<span class="edu-level">'.htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8').'</span>';
+        if ($year !== '') {
+            $html .=   '<span class="edu-year">'.htmlspecialchars($year, ENT_QUOTES, 'UTF-8').'</span>';
+        }
+        $html .=   '</div>';
+
+        if ($school !== '') {
+            $html .= '<div class="edu-school">'.htmlspecialchars($school, ENT_QUOTES, 'UTF-8').'</div>';
+        }
+
+        if ($strand !== '' || $course !== '') {
+            $detail = $strand !== '' ? $strand : $course;
+            $html .= '<div class="edu-detail">'.htmlspecialchars($detail, ENT_QUOTES, 'UTF-8').'</div>';
+        }
+
+        $html .= '</div>';
     }
 
-    // Highschool
-    $hs = $edu['highschool'] ?? [];
-    $hsSchool = trim((string)($hs['school'] ?? ''));
-    $hsYear   = trim((string)($hs['year'] ?? ''));
-    if ($hsSchool || $hsYear) {
-        $line = 'High School: ' . htmlspecialchars($hsSchool, ENT_QUOTES, 'UTF-8');
-        if ($hsYear !== '') $line .= ' (' . htmlspecialchars($hsYear, ENT_QUOTES, 'UTF-8') . ')';
-        $parts[] = $line;
-    }
+    $html .= '</div>';
 
-    // Senior High
-    $sh = $edu['senior_high'] ?? [];
-    $shSchool = trim((string)($sh['school'] ?? ''));
-    $shStrand = trim((string)($sh['strand'] ?? ''));
-    $shYear   = trim((string)($sh['year'] ?? ''));
-    if ($shSchool || $shStrand || $shYear) {
-        $line = 'Senior High: ' . htmlspecialchars($shSchool, ENT_QUOTES, 'UTF-8');
-        $details = [];
-        if ($shStrand !== '') $details[] = htmlspecialchars($shStrand, ENT_QUOTES, 'UTF-8');
-        if ($shYear   !== '') $details[] = htmlspecialchars($shYear,   ENT_QUOTES, 'UTF-8');
-        if ($details) $line .= ' (' . implode(' • ', $details) . ')';
-        $parts[] = $line;
-    }
-
-    // College
-    $col = $edu['college'] ?? [];
-    $colSchool = trim((string)($col['school'] ?? ''));
-    $colCourse = trim((string)($col['course'] ?? ''));
-    $colYear   = trim((string)($col['year'] ?? ''));
-    if ($colSchool || $colCourse || $colYear) {
-        $line = 'College: ' . htmlspecialchars($colSchool, ENT_QUOTES, 'UTF-8');
-        $details = [];
-        if ($colCourse !== '') $details[] = htmlspecialchars($colCourse, ENT_QUOTES, 'UTF-8');
-        if ($colYear   !== '') $details[] = htmlspecialchars($colYear,   ENT_QUOTES, 'UTF-8');
-        if ($details) $line .= ' (' . implode(' • ', $details) . ')';
-        $parts[] = $line;
-    }
-
-    if (!$parts) return '<span class="text-muted">N/A</span>';
-    return htmlspecialchars(implode("\n", $parts), ENT_QUOTES, 'UTF-8');
+    return $html !== '<div class="edu-timeline"></div>' ? $html : '<span class="text-muted">N/A</span>';
 }
 
 /**
- * Work history JSON array -> multiline HTML
- * Each item: { company, years, role, location }
- * Renders: "Company — Role — Years — Location"
+ * Work history JSON array -> structured HTML list.
+ * Each item: { company, role, years, location }
+ * Returns HTML (do not escape again on echo).
  */
-function renderWorkHistoryHtml(?string $json): string {
-    if (empty($json)) return '<span class="text-muted">N/A</span>';
+function renderWorkHistoryListHtml(?string $json): string {
+    if ($json === null || trim($json) === '') {
+        return '<span class="text-muted">N/A</span>';
+    }
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
-        return htmlspecialchars($json, ENT_QUOTES, 'UTF-8'); // fallback raw
+        return '<div>'.htmlspecialchars($json, ENT_QUOTES, 'UTF-8').'</div>';
     }
-    $lines = [];
+
+    $items = [];
     foreach ($arr as $row) {
         if (!is_array($row)) continue;
+
         $company  = trim((string)($row['company']  ?? ''));
         $role     = trim((string)($row['role']     ?? ''));
         $years    = trim((string)($row['years']    ?? ''));
         $location = trim((string)($row['location'] ?? ''));
-        if ($company === '' && $role === '' && $years === '' && $location === '') continue;
 
-        $bits = [];
-        if ($company  !== '') $bits[] = $company;
-        if ($role     !== '') $bits[] = $role;
-        if ($years    !== '') $bits[] = $years;
-        if ($location !== '') $bits[] = $location;
+        if ($company === '' && $role === '' && $years === '' && $location === '') {
+            continue;
+        }
 
-        $lines[] = implode(' — ', array_map(fn($s)=>htmlspecialchars($s, ENT_QUOTES, 'UTF-8'), $bits));
+        $top = [];
+        if ($company !== '') $top[] = '<span class="fw-semibold">'.htmlspecialchars($company, ENT_QUOTES, 'UTF-8').'</span>';
+        if ($role    !== '') $top[] = htmlspecialchars($role, ENT_QUOTES, 'UTF-8');
+
+        $meta = [];
+        if ($years   !== '') $meta[] = htmlspecialchars($years, ENT_QUOTES, 'UTF-8');
+        if ($location!== '') $meta[] = htmlspecialchars($location, ENT_QUOTES, 'UTF-8');
+
+        $line = '<li class="mb-2">';
+        if (!empty($top)) {
+            $line .= implode(' — ', $top);
+        }
+        if (!empty($meta)) {
+            $line .= '<div class="text-muted small">'.implode(' • ', $meta).'</div>';
+        }
+        $line .= '</li>';
+
+        $items[] = $line;
     }
-    if (!$lines) return '<span class="text-muted">N/A</span>';
-    return implode("\n", $lines);
+
+    if (empty($items)) {
+        return '<span class="text-muted">N/A</span>';
+    }
+
+    return '<ul class="list-unstyled mb-0">'.implode('', $items).'</ul>';
 }
 
 /**
  * Render languages JSON array -> string (comma-separated)
  */
 function renderLanguages(?string $json): string {
-    if (empty($json)) return 'N/A';
+    if ($json === null || trim($json) === '') return 'N/A';
     $arr = json_decode($json, true);
     if (!is_array($arr) || empty($arr)) return 'N/A';
     $clean = array_values(array_filter(array_map('trim', $arr)));
@@ -153,11 +217,11 @@ function renderLanguages(?string $json): string {
 }
 
 /**
- * Render specialization skills JSON array -> HTML pills (red-ish ovals)
- * IMPORTANT: We escape each label ONCE and return HTML (no further escaping when echoing).
+ * Render specialization skills JSON array -> HTML pills
+ * IMPORTANT: Returns HTML (do not escape again).
  */
 function renderSkillsPills(?string $json): string {
-    if (empty($json)) return '<span class="text-muted">N/A</span>';
+    if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
     $arr = json_decode($json, true);
     if (!is_array($arr) || empty($arr)) return '<span class="text-muted">N/A</span>';
 
@@ -166,8 +230,7 @@ function renderSkillsPills(?string $json): string {
 
     $htmlParts = [];
     foreach ($clean as $label) {
-        $safe = htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); // escape once
-        // Using Bootstrap badge + custom class for red pill
+        $safe = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
         $htmlParts[] = '<span class="badge rounded-pill skill-pill">'.$safe.'</span>';
     }
     return implode(' ', $htmlParts);
@@ -186,10 +249,13 @@ function statusBadgeColor(string $status): string {
     return $map[$status] ?? 'secondary';
 }
 
-// Prepare rendered fields
-[$locationDisplay, $locationTitle] = renderPreferredLocationText($applicantData['preferred_location'] ?? '');
-$educationHtml  = renderEducationHtml($applicantData['educational_attainment'] ?? '');
-$workHtml       = renderWorkHistoryHtml($applicantData['work_history'] ?? '');
+/* ============================================================
+   Prepare data for view
+   ============================================================ */
+
+$educationHtml = renderEducationListHtml($applicantData['educational_attainment'] ?? '');
+$workHtml      = renderWorkHistoryListHtml($applicantData['work_history'] ?? '');
+$locBadgesHtml = renderPreferredLocationBadges($applicantData['preferred_location'] ?? '');
 
 // Picture URL
 $pictureUrl = !empty($applicantData['picture']) ? getFileUrl($applicantData['picture']) : null;
@@ -202,25 +268,86 @@ $alternatePhoneDisplay = ($alternatePhone !== '') ? $alternatePhone : 'N/A';
 // Languages & Specializations
 $languagesDisplay = renderLanguages($applicantData['languages'] ?? '');
 $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ?? '');
+
+// Back & Edit URLs preserving search (if any)
+$backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+$editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
 ?>
 <style>
 /* Red-ish pill style for specialization badges */
 .skill-pill{
-  background-color:#ffe5e5;   /* light red background */
-  color:#9b1c1c;               /* dark red text */
-  border:1px solid #ffc9c9;    /* soft red border */
+  background-color:#ffe5e5;
+  color:#9b1c1c;
+  border:1px solid #ffc9c9;
   padding:.45rem .65rem;
   font-weight:600;
+}
+
+/* Soft blue pill style for preferred locations */
+.loc-pill{
+  background-color:#e7f1ff;
+  color:#0b5ed7;
+  border:1px solid #cfe2ff;
+  padding:.35rem .6rem;
+  font-weight:600;
+}
+
+/* Educational Attainment Timeline */
+.edu-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.edu-item {
+  padding-left: 0.75rem;
+  border-left: 3px solid #e9ecef;
+}
+
+.edu-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+}
+
+.edu-icon {
+  font-size: 1.1rem;
+}
+
+.edu-level {
+  color: #212529;
+}
+
+.edu-year {
+  margin-left: auto;
+  font-size: .8rem;
+  background: #f1f3f5;
+  padding: .15rem .5rem;
+  border-radius: .5rem;
+  color: #495057;
+}
+
+.edu-school {
+  margin-left: 1.6rem;
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.edu-detail {
+  margin-left: 1.6rem;
+  font-size: .9rem;
+  color: #6c757d;
 }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0 fw-semibold">Applicant Details</h4>
     <div>
-        <a href="edit-applicant.php?id=<?php echo $id; ?>" class="btn btn-warning me-2">
+        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning me-2">
             <i class="bi bi-pencil me-2"></i>Edit
         </a>
-        <a href="applicants.php" class="btn btn-outline-secondary">
+        <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to List
         </a>
     </div>
@@ -234,7 +361,8 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
                     <img src="<?php echo htmlspecialchars($pictureUrl, ENT_QUOTES, 'UTF-8'); ?>"
                          alt="Profile" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
                 <?php else: ?>
-                    <div class="bg-secondary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; font-size: 3rem;">
+                    <div class="bg-secondary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 150px; height: 150px; font-size: 3rem;">
                         <?php echo strtoupper(substr($applicantData['first_name'], 0, 1)); ?>
                     </div>
                 <?php endif; ?>
@@ -251,15 +379,15 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
                 <div class="text-start mt-4">
                     <div class="mb-2">
                         <small class="text-muted">Phone (Primary)</small>
-                        <div class="fw-semibold"><?php echo $primaryPhone !== '' ? htmlspecialchars($primaryPhone) : 'N/A'; ?></div>
+                        <div class="fw-semibold"><?php echo $primaryPhone !== '' ? htmlspecialchars($primaryPhone, ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
                     </div>
                     <div class="mb-2">
                         <small class="text-muted">Phone (Alternate)</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($alternatePhoneDisplay); ?></div>
+                        <div class="fw-semibold"><?php echo htmlspecialchars($alternatePhoneDisplay, ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                     <div class="mb-2">
                         <small class="text-muted">Email</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['email'] ?? 'N/A'); ?></div>
+                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                     <div class="mb-2">
                         <small class="text-muted">Date Applied</small>
@@ -282,15 +410,14 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
                         <div class="fw-semibold"><?php echo formatDate($applicantData['date_of_birth']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <small class="text-muted">Preferred Location</small>
-                        <div class="fw-semibold" title="<?php echo htmlspecialchars($locationTitle, ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo htmlspecialchars($locationDisplay, ENT_QUOTES, 'UTF-8'); ?>
-                        </div>
+                        <small class="text-muted">Preferred Location(s)</small>
+                        <!-- HTML pills; do not escape again -->
+                        <div class="fw-semibold d-flex flex-wrap gap-2"><?php echo $locBadgesHtml; ?></div>
                     </div>
 
                     <div class="col-md-12">
                         <small class="text-muted">Address</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['address']); ?></div>
+                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['address'], ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
 
                     <div class="col-md-6">
@@ -304,12 +431,12 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
                     </div>
                     <div class="col-md-6">
                         <small class="text-muted">Employment Type</small>
-                        <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? htmlspecialchars($applicantData['employment_type']) : 'N/A'; ?></div>
+                        <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? htmlspecialchars($applicantData['employment_type'], ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
                     </div>
 
                     <div class="col-md-12">
                         <small class="text-muted">Specialization Skills</small>
-                        <!-- IMPORTANT: skills pills are HTML, DO NOT escape again -->
+                        <!-- HTML pills; do not escape again -->
                         <div class="d-flex flex-wrap gap-2"><?php echo $skillsPillsHtml; ?></div>
                     </div>
 
@@ -320,11 +447,14 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
 
                     <div class="col-md-12">
                         <small class="text-muted">Educational Attainment</small>
-                        <div class="fw-semibold" style="white-space: pre-line;"><?php echo $educationHtml; ?></div>
+                        <!-- Structured timeline HTML; do not escape again -->
+                        <div class="mt-1"><?php echo $educationHtml; ?></div>
                     </div>
+
                     <div class="col-md-12">
                         <small class="text-muted">Work History</small>
-                        <div class="fw-semibold" style="white-space: pre-line;"><?php echo $workHtml; ?></div>
+                        <!-- Structured list HTML; do not escape again -->
+                        <div class="mt-1"><?php echo $workHtml; ?></div>
                     </div>
                 </div>
             </div>
@@ -345,7 +475,8 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
                                     <i class="bi bi-file-earmark-text me-2"></i>
                                     <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
                                 </span>
-                                <a href="<?php echo htmlspecialchars(getFileUrl($doc['file_path']), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <a href="<?php echo htmlspecialchars(getFileUrl($doc['file_path']), ENT_QUOTES, 'UTF-8'); ?>"
+                                   target="_blank" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye me-1"></i>View
                                 </a>
                             </div>
@@ -357,4 +488,4 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
     </div>
 </div>
 
-<?php
+<?php require_once '../includes/footer.php'; ?>

@@ -3,11 +3,11 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'CSNK');
+define('DB_NAME', 'csnk');
 
 // Application Configuration
 define('APP_NAME', 'CSNK Admin System');
-define('APP_URL', 'http://localhost/csnk-server');
+define('APP_URL', 'http://localhost/csnk-1/admin');
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', APP_URL . '/uploads/');
 
