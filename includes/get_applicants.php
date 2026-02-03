@@ -30,13 +30,6 @@ function normalizeSkillLabel(string $label): string {
 
 function mapPrimarySpecialization(array $skills): string {
     // Exact option set from your schema/UI
-    // 'Cleaning & Housekeeping (General)'
-    // 'Laundry & Clothing Care'
-    // 'Cooking & Food Service'
-    // 'Childcare & Maternity (Yaya)'
-    // 'Elderly & Special Care (Caregiver)'
-    // 'Pet & Outdoor Maintenance'
-
     $roleMap = [
         'Cleaning & Housekeeping (General)' => 'Kasambahay',
         'Laundry & Clothing Care'           => 'Kasambahay',
@@ -48,9 +41,7 @@ function mapPrimarySpecialization(array $skills): string {
 
     foreach ($skills as $raw) {
         $skill = normalizeSkillLabel($raw);
-        if (isset($roleMap[$skill])) {
-            return $roleMap[$skill];
-        }
+        if (isset($roleMap[$skill])) return $roleMap[$skill];
     }
     return '';
 }
@@ -70,17 +61,11 @@ function initialsFromName(string $first, ?string $last): string {
 }
 
 try {
-    // Debug: Log that we're starting
-    error_log("get_applicants.php: Starting execution");
-
     $database  = new Database();
     $applicant = new Applicant($database);
 
     // Active (not deleted)
     $apps = $applicant->getAll();
-
-    // Debug: Log how many applicants we found
-    error_log("get_applicants.php: Found " . count($apps) . " applicants");
 
     // Base URLs (auto-detect http/https + host)
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -98,19 +83,20 @@ try {
         $skills      = json_decode($app['specialization_skills'] ?? '[]', true) ?: [];
         $prefLoc     = json_decode($app['preferred_location']     ?? '[]', true) ?: [];
         $langsArr    = json_decode($app['languages']              ?? '[]', true) ?: [];
+        $educAttain  = json_decode($app['educational_attainment'] ?? '[]', true);
 
-        // Normalize skills (avoid &amp;)
+        // Normalize skills (avoid &amp;amp;)
         $skills = array_values(array_filter(array_map('normalizeSkillLabel', $skills)));
 
         // Primary specialization (mapped role)
         $primaryRole = mapPrimarySpecialization($skills);
 
-        // Location city (first preferred city)
+        // Location city (first preferred city shown on card)
         $locationCity   = !empty($prefLoc) ? (string)$prefLoc[0] : 'N/A';
-        // Region: set a sane default, you can enhance later with geo mapping per city
+        // Region: basic default
         $locationRegion = 'NCR';
 
-        // Languages
+        // Languages (string for quick filter + array for detail)
         $languagesStr = implode(',', $langsArr);
 
         // Photo URL
@@ -124,36 +110,46 @@ try {
         $employmentRaw   = (string)($app['employment_type'] ?? '');
         $employmentLabel = ($employmentRaw === 'Full Time') ? 'Full-time' : (($employmentRaw === 'Part Time') ? 'Part-time' : 'Full-time');
 
-        // Availability: default created_at + 30 days
+        // Availability: default created_at + 30 days (kept for sorting/filter logic only)
         $createdAt   = $app['created_at'] ?? date('Y-m-d H:i:s');
         $availDate   = date('Y-m-d', strtotime($createdAt . ' +30 days'));
 
+        // Educational attainment display
+        // Prefer enum field if set; otherwise fall back to JSON array (join)
+        $educationLevelEnum = $app['education_level'] ?? null;
+        $educationDisplay = $educationLevelEnum ?: (is_array($educAttain) && !empty($educAttain) ? implode(', ', $educAttain) : '—');
+
         $rows[] = [
-            'id'                 => (int)$app['id'],
-            'full_name'          => trim($app['first_name'] . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . $app['last_name']),
-            'initials'           => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
-            'age'                => computeAge($app['date_of_birth'] ?? null),
+            'id'                    => (int)$app['id'],
+            'full_name'             => trim($app['first_name'] . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . $app['last_name']),
+            'initials'              => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
+            'age'                   => computeAge($app['date_of_birth'] ?? null),
 
-            'specialization'     => $primaryRole,   // main role label
-            'specializations'    => $skills,        // full list (as array)
+            'specialization'        => $primaryRole,
+            'specializations'       => $skills,
 
-            'location_city'      => $locationCity,
-            'location_region'    => $locationRegion,
+            'location_city'         => $locationCity,
+            'location_region'       => $locationRegion,
+            'preferred_locations'   => $prefLoc,   // <<< return ALL preferred locations
 
-            'years_experience'   => (int)($app['years_experience'] ?? 0),
+            'years_experience'      => (int)($app['years_experience'] ?? 0),
 
-            'employment_type'        => $employmentLabel,   // Full-time | Part-time
-            'employment_type_raw'    => $employmentRaw,     // Full Time | Part Time (DB)
+            'employment_type'       => $employmentLabel,  // Full-time | Part-time
+            'employment_type_raw'   => $employmentRaw,    // Full Time | Part Time (DB)
 
-            'availability_date'  => $availDate,
+            'availability_date'     => $availDate,
 
-            'languages'          => $languagesStr, // "English,Filipino"
-            'languages_array'    => $langsArr,     // ["English", "Filipino"]
+            'languages'             => $languagesStr,     // "English,Filipino"
+            'languages_array'       => $langsArr,         // ["English","Filipino"]
 
-            'photo_url'          => $photoUrl,
-            'photo_placeholder'  => $placeholderUrl,
+            'education_level'       => $educationLevelEnum,
+            'educational_attainment'=> $educAttain,       // raw JSON array if exists
+            'education_display'     => $educationDisplay, // computed display
 
-            'created_at'         => $createdAt
+            'photo_url'             => $photoUrl,
+            'photo_placeholder'     => $placeholderUrl,
+
+            'created_at'            => $createdAt
         ];
     }
 

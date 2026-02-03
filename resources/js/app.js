@@ -316,7 +316,7 @@ function createApplicantCard(applicant) {
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
 
-  const yoe   = `${toInt(applicant.years_experience)} yrs`;
+  const yoe   = `${toInt(applicant.years_experience)} years experience`;
 
   const fullName       = escapeHtml(applicant.full_name || '—');
   const specialization = escapeHtml(applicant.specialization || '—');
@@ -480,6 +480,9 @@ function onProfileHiddenCleanUrl(){
 
 function showApplicantModal(applicant, options = { pushState: true }) {
   const modalEl = byId('applicantModal');
+
+  const prefEl = byId('prefLocValue'); if (prefEl) prefEl.innerHTML = (Array.isArray(applicant.preferred_locations) && applicant.preferred_locations.length) ? applicant.preferred_locations.map(x=>`<span class="badge text-bg-light border me-1 mb-1">${escapeHtml(x)}</span>`).join('') : '—';
+  const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.education_level || '—';
   if (!modalEl) return;
 
   // Header area
