@@ -38,12 +38,12 @@ function mapPrimarySpecialization(array $skills): string {
     // 'Pet & Outdoor Maintenance'
 
     $roleMap = [
-        'Cleaning & Housekeeping (General)' => 'Kasambahay',
-        'Laundry & Clothing Care'           => 'Kasambahay',
-        'Cooking & Food Service'            => 'Cook',
-        'Childcare & Maternity (Yaya)'      => 'Nanny',
-        'Elderly & Special Care (Caregiver)'=> 'Elderly Care',
-        'Pet & Outdoor Maintenance'         => 'All-around Helper',
+        'Cleaning and Housekeeping (General)' => 'Kasambahay',
+        'Laundry and Clothing Care'           => 'Kasambahay',
+        'Cooking and Food Service'            => 'Cook',
+        'Childcare and Maternity (Yaya)'      => 'Nanny',
+        'Elderly and Special Care (Caregiver)'=> 'Elderly Care',
+        'Pet and Outdoor Maintenance'         => 'All-around Helper',
     ];
 
     foreach ($skills as $raw) {

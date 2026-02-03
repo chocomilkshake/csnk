@@ -58,19 +58,6 @@
 
           <!-- Divider (desktop only) -->
           <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
-
-          <!-- Date -->
-          <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
-            <i class="bi bi-calendar2-event-fill text-danger me-2 fs-5"></i>
-            <input
-              type="date"
-              class="form-control border-0 bg-transparent ps-3 min-w-0"
-              id="available_by"
-              name="available_by"
-              aria-label="Date"
-            >
-          </div>
-
           <!-- Search button -->
           <div class="d-flex align-items-center ps-2 ps-sm-3">
             <button class="btn btn-danger rounded-pill px-3 px-sm-4 view-profile-btn" type="submit">
@@ -106,7 +93,7 @@
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"><label class="form-check-label" for="spec-cook">Cooking and Food Service</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly nad Special Care (Caregiver)</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly and Special Care (Caregiver)</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance</div>
                 </div>
               </div>
