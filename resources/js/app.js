@@ -1,758 +1,797 @@
-// IIFE to avoid globals
-(function () {
-  const PAGE_SIZE_DEFAULT = 12;
+// app.js — Client listing UX (photo-top modern cards)
+// v2.6 — cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
+console.log('app.js loaded successfully - v2.6');
 
-  // --- DOM refs ---
-  const grid = document.getElementById('cardsGrid');
-  const pagination = document.getElementById('pagination');
-  const resultsCount = document.getElementById('resultsCount');
-  const searchForm = document.getElementById('searchForm');
-  const filtersForm = document.getElementById('filtersForm');
-  const yearSpan = document.getElementById('year');
-  if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+/* =========================================================
+   State
+========================================================= */
+let allApplicants = [];
+let filteredApplicants = [];
+let currentPage = 1;
+const itemsPerPage = 12;
 
-  // --- Helpers ---
-  // Data URL (relative to the page `view/applicant.html`)
-  const DATA_URL = new URL('../resources/data/applicants.json', window.location.href).toString();
-  console.log('Fetching applicants from:', DATA_URL); // <- keep this for debugging
+/* =========================================================
+   DOM
+========================================================= */
+const searchForm   = document.getElementById('searchForm');
+const filtersForm  = document.getElementById('filtersForm');
+const cardsGrid    = document.getElementById('cardsGrid');
+const resultsCount = document.getElementById('resultsCount');
+const pagination   = document.getElementById('pagination');
 
-  // Small utility helpers to make filtering safer/readable
-  const norm = (s) => String(s ?? '').toLowerCase().trim();
-  const num = (n, d = 0) => (Number.isFinite(Number(n)) ? Number(n) : d);
-  const dateOrNull = (v) => {
-    const t = Date.parse(v);
-    return Number.isFinite(t) ? new Date(t) : null;
-  };
-
-  // Debounce to avoid too many refreshes on rapid filter changes
-  function debounce(fn, delay = 250) {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), delay);
-    };
+/* =========================================================
+   Helpers
+========================================================= */
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, s => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[s]
+  ));
+}
+function byId(id) { return document.getElementById(id); }
+function toInt(n, fallback = 0){ const v = Number(n); return Number.isFinite(v) ? v : fallback; }
+function toDate(d){
+  if (!d) return null;
+  const v = new Date(d);
+  return isNaN(v) ? null : v;
+}
+function arrFromMaybe(val){
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    if (val.includes(',')) return val.split(',').map(s=>s.trim()).filter(Boolean);
+    return [val.trim()].filter(Boolean);
   }
+  return [];
+}
+function normLabel(s){
+  return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
+}
 
-  // Show/hide loading affordance
-  function setLoading(isLoading) {
-    if (isLoading) {
-      grid.setAttribute('aria-busy', 'true');
-      grid.innerHTML = `
-        <div class="d-flex align-items-center justify-content-center py-5 text-secondary">
-          <div class="spinner-border me-2" role="status" aria-label="Loading"></div>
-          Loading applicants…
-        </div>`;
-    } else {
-      grid.removeAttribute('aria-busy');
-    }
+/** Update URL with applicant ID without navigating */
+function pushApplicantId(id){
+  const url = new URL(window.location.href);
+  url.searchParams.set('applicant', String(id));
+  history.pushState({ applicant: id }, '', url);
+}
+/** Remove applicant ID from URL (on modal close) */
+function removeApplicantIdFromUrl(){
+  const url = new URL(window.location.href);
+  if (url.searchParams.has('applicant')) {
+    url.searchParams.delete('applicant');
+    history.replaceState({}, '', url);
   }
+}
 
-  // --- Data service ---
-  const DataService = {
-    cache: null,
-    async loadAll() {
-      if (this.cache) return this.cache;
+/* =========================================================
+   Skeleton loader
+========================================================= */
+function renderSkeleton(count = 8) {
+  if (!cardsGrid) return;
+  cardsGrid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const col = document.createElement('div');
+    col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
+    col.innerHTML = `
+      <article class="card app-card h-100">
+        <div class="ratio ratio-4x3 overflow-hidden shimmer"></div>
+        <div class="card-body">
+          <div class="shimmer" style="height:16px;width:70%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:55%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:62%;border-radius:6px;"></div>
+          <div class="d-flex gap-2 mt-3">
+            <div class="shimmer" style="height:26px;width:90px;border-radius:999px;"></div>
+            <div class="shimmer" style="height:26px;width:120px;border-radius:999px;"></div>
+          </div>
+        </div>
+        <div class="card-footer bg-white">
+          <div class="shimmer" style="height:40px;width:100%;border-radius:10px;"></div>
+        </div>
+      </article>
+    `;
+    cardsGrid.appendChild(col);
+  }
+}
 
-      const dataURL = DATA_URL;
+/* =========================================================
+   Image loader (safe + mixed content aware)
+========================================================= */
+function setAvatar(imgEl, src, placeholder) {
+  if (!imgEl) return;
+  const fallback = placeholder || '../resources/img/avatar_placeholder.png';
+  const isHttpsPage = location.protocol === 'https:';
+  const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
+  // Avoid mixed content on HTTPS pages
+  const useSrc = (!cleanSrc || (isHttpsPage && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
 
-      let res;
-      try {
-        res = await fetch(dataURL, { cache: 'no-store' });
-      } catch (err) {
-        throw new Error(`Network error while fetching ${dataURL}: ${err?.message || err}`);
-      }
-      if (!res.ok) {
-        throw new Error(`Failed to load ${dataURL} — HTTP ${res.status} ${res.statusText}`);
-      }
+  imgEl.loading = 'lazy';
+  imgEl.decoding = 'async';
+  imgEl.alt = imgEl.alt || 'Photo';
+  imgEl.src = useSrc || fallback;
+  imgEl.onerror = () => { imgEl.src = fallback; };
+}
 
-      let data;
-      try {
-        data = await res.json();
-      } catch (err) {
-        throw new Error(`Invalid JSON in ${dataURL}: ${err?.message || err}`);
-      }
+/* =========================================================
+   Micro UI (pills etc.)
+========================================================= */
+function employmentPill(typeLabel) {
+  const t = (typeLabel || '').toLowerCase();
+  const cls = t.includes('full') ? 'emp-full' : 'emp-part';
+  return `<span class="emp-pill ${cls}">${escapeHtml(typeLabel || '—')}</span>`;
+}
 
-      this.cache = Array.isArray(data) ? data : [];
-      return this.cache;
-    },
+/* =========================================================
+   Init
+========================================================= */
+function initApp(){
+  injectStyles();
+  renderSkeleton(8);
+  loadApplicants().then(() => {
+    setupEventListeners();
 
-    async fetchApplicants(params) {
-      const all = await this.loadAll();
-
-      // Query params (safe parsing)
-      const page  = Math.max(1, parseInt(params.get('page')  || '1', 10));
-      const limit = Math.max(1, parseInt(params.get('limit') || PAGE_SIZE_DEFAULT, 10));
-      const q = norm(params.get('q') || '');
-      const locationQ = norm(params.get('location') || '');
-      const minExp = num(params.get('min_experience') || 0, 0);
-      const availableBy = params.get('available_by');
-      const availableByDate = availableBy ? dateOrNull(availableBy) : null;
-      const sort = params.get('sort') || 'availability_asc';
-      const specs = params.getAll('specializations[]'); // assumes values match exactly what's in data
-      const emp = params.getAll('availability[]');      // same assumption
-      const langs = params.getAll('languages[]').map(norm); // match languages case-insensitively
-
-      // Filter
-      let filtered = all.filter((a) => {
-        const name = norm(a.full_name);
-        const spec = norm(a.specialization);
-        const city = norm(a.location_city);
-        const region = norm(a.location_region);
-        const yexp = num(a.years_experience, 0);
-        const availDate = dateOrNull(a.availability_date);
-
-        if (q && !(name.includes(q) || spec.includes(q) || city.includes(q))) return false;
-        if (locationQ && !(city.includes(locationQ) || region.includes(locationQ))) return false;
-        if (minExp > 0 && yexp < minExp) return false;
-        if (availableByDate && (availDate && availDate > availableByDate)) return false;
-
-        if (specs.length && !specs.includes(a.specialization)) return false;
-        if (emp.length && !emp.includes(a.employment_type)) return false;
-
-        if (langs.length) {
-          const aset = new Set(
-            String(a.languages || '')
-              .split(',')
-              .map((s) => norm(s))
-              .filter(Boolean)
-          );
-          if (!langs.some((l) => aset.has(l))) return false;
-        }
-        return true;
-      });
-
-      // Sort
-      filtered.sort((a, b) => {
-        switch (sort) {
-          case 'experience_desc':
-            return num(b.years_experience, 0) - num(a.years_experience, 0);
-          case 'newest': {
-            const da = dateOrNull(a.created_at)?.getTime() ?? 0;
-            const db = dateOrNull(b.created_at)?.getTime() ?? 0;
-            return db - da;
-          }
-          default: { // availability ascending
-            const da = dateOrNull(a.availability_date)?.getTime() ?? 0;
-            const db = dateOrNull(b.availability_date)?.getTime() ?? 0;
-            return da - db;
-          }
-        }
-      });
-
-      // Pagination
-      const total = filtered.length;
-      const pages = Math.max(1, Math.ceil(total / limit));
-      const safePage = Math.min(page, pages);
-      const start = (safePage - 1) * limit;
-      const data = filtered.slice(start, start + limit);
-
-      return { data, total, page: safePage, pages };
+    // Deep-link: auto-open modal if URL has ?applicant=ID
+    const url = new URL(window.location.href);
+    const idParam = url.searchParams.get('applicant');
+    if (idParam) {
+      const found = allApplicants.find(a => String(a.id) === String(idParam));
+      if (found) showApplicantModal(found, { pushState: false });
     }
-  };
+  });
+}
 
-  // --- Render a single applicant into the profile modal ---
-  function renderApplicantToModal(a) {
-    const escape = (s) => String(s ?? '');
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
-    // Avatar initials
-    const initials = (a.full_name || '')
-      .split(' ')
-      .map(p => p[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase() || 'AP';
+/* =========================================================
+   Data loading
+========================================================= */
+async function loadApplicants() {
+  try {
+    const response = await fetch('../includes/get_applicants.php', {
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' }
+    });
 
-  const avatarEl = document.getElementById('avatar');
-  if (avatarEl) {
-    const photo = safeImg(pickPhoto(a));
-    if (photo && !/placeholder-user\.svg$/.test(photo)) {
-      avatarEl.innerHTML = `<img src="${photo}" alt="${escapeHtml(a.full_name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-    } else {
-      avatarEl.textContent = initials;
+    if (!response.ok) {
+      throw new Error('Failed to load applicants: ' + response.status + ' ' + response.statusText);
+    }
+
+    const data = await response.json();
+    allApplicants = Array.isArray(data) ? data : [];
+    filteredApplicants = [...allApplicants];
+    renderApplicants();
+  } catch (error) {
+    console.error('Error loading applicants:', error);
+    if (cardsGrid) {
+      cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
     }
   }
+}
 
-
-    // Header fields
-    const nameEl = document.getElementById('name');
-    const roleEl = document.getElementById('primaryRole');
-    const yoeBadgeEl = document.getElementById('yoeBadge');
-    if (nameEl) nameEl.textContent = a.full_name || 'Applicant';
-    if (roleEl) roleEl.textContent = a.specialization || '—';
-    if (yoeBadgeEl) yoeBadgeEl.textContent = `${a.years_experience ?? 0} yrs`;
-
-    // Availability line
-    const availDate = Date.parse(a.availability_date);
-    const availStr = Number.isFinite(availDate)
-      ? new Date(availDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : '—';
-    const availabilityLine = document.getElementById('availabilityLine');
-    if (availabilityLine) {
-      availabilityLine.innerHTML =
-        `${escape(a.location_city) || '—'}, ${escape(a.location_region) || '—'} • ` +
-        `Available from: <strong class="text-danger-emphasis">${availStr}</strong>`;
-    }
-
-    // Specialization chips (single specialization)
-    const chips = document.getElementById('chipsContainer');
-    if (chips) {
-      chips.innerHTML = '';
-      if (a.specialization) {
-        const span = document.createElement('span');
-        span.className = 'chip';
-        span.textContent = a.specialization;
-        chips.appendChild(span);
-      }
-    }
-
-    // Basic info
-    const cityValue = document.getElementById('cityValue');
-    const regionValue = document.getElementById('regionValue');
-    const yoeValue = document.getElementById('yoeValue');
-    const empValue = document.getElementById('employmentValue');
-    const availValue = document.getElementById('availValue');
-    const langValue = document.getElementById('langValue');
-
-    if (cityValue) cityValue.textContent = a.location_city || '—';
-    if (regionValue) regionValue.textContent = a.location_region || '—';
-    if (yoeValue) yoeValue.textContent = a.years_experience ?? '—';
-    if (empValue) empValue.textContent = a.employment_type || '—';
-    if (availValue) availValue.textContent = availStr;
-
-    const langs = String(a.languages || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    if (langValue) langValue.textContent = langs.length ? langs.join(', ') : '—';
-  }
-
-let PROFILE_MODAL_INSTANCE = null;
-
-async function openProfileModal(id) {
-  const data = DataService.cache ?? await DataService.loadAll();
-  const found = data.find(x => (x.id ?? x.applicant_id) == id);
-  if (!found) return;
-
-  renderApplicantToModal(found);
-
-  const modalEl = document.getElementById('applicantModal');
-  if (!PROFILE_MODAL_INSTANCE) {
-    PROFILE_MODAL_INSTANCE = new bootstrap.Modal(modalEl);
-
-    // Clear ?id when the modal fully hides
-    modalEl.addEventListener('hidden.bs.modal', () => {
-      clearIdParam({ push: false }); // replaceState -> no extra history entry
+/* =========================================================
+   Events
+========================================================= */
+function setupEventListeners() {
+  if (searchForm) {
+    searchForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      applyFilters();
     });
   }
-  PROFILE_MODAL_INSTANCE.show();
 
-  // Optional buttons
-  const shortlistBtn = document.getElementById('shortlistBtn');
-  const messageBtn  = document.getElementById('messageBtn');
-  if (shortlistBtn) shortlistBtn.onclick = () => alert(`Shortlisted: ${found.full_name}`);
-  if (messageBtn)  messageBtn.onclick  = () => alert(`Message sent to: ${found.full_name}`);
+  if (filtersForm) {
+    filtersForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      applyFilters();
+    });
+
+    byId('clearSpecs')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('#filtersForm input[name="specializations[]"]').forEach(cb => cb.checked = false);
+      applyFilters();
+    });
+
+    byId('clearAvail')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('#filtersForm input[name="availability[]"]').forEach(cb => cb.checked = false);
+      applyFilters();
+    });
+
+    byId('clearLangs')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('#filtersForm input[name="languages[]"]').forEach(cb => cb.checked = false);
+      applyFilters();
+    });
+
+    byId('resetFilters')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      searchForm?.reset();
+      filtersForm.reset();
+      filteredApplicants = [...allApplicants];
+      currentPage = 1;
+      renderApplicants();
+    });
+
+    byId('applyFilters')?.addEventListener('click', () => applyFilters());
+  }
 }
 
-  // --- Params building ---
-  function paramsFromForms() {
-    const sParams = new URLSearchParams(new FormData(searchForm));
-    const fData = new FormData(filtersForm);
-    for (const [k, v] of fData.entries()) {
-      if (k.endsWith('[]')) sParams.append(k, v);
-      else sParams.set(k, v);
+/* =========================================================
+   Filtering + Sorting
+========================================================= */
+function applyFilters() {
+  const formData    = searchForm ? new FormData(searchForm)   : new FormData();
+  const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
+
+  const searchQuery   = (formData.get('q') || '').toLowerCase().trim();
+  const locationQuery = (formData.get('location') || '').toLowerCase().trim();
+  const availableBy   = formData.get('available_by');
+
+  const selectedSpecs = filtersData.getAll('specializations[]');
+  const selectedAvail = filtersData.getAll('availability[]'); // employment type in UI
+  const minExperience = parseInt(filtersData.get('min_experience')) || 0;
+  const selectedLangs = filtersData.getAll('languages[]');
+  const sortBy        = filtersData.get('sort');
+
+  filteredApplicants = allApplicants.filter(applicant => {
+    // Search by name or specialization (both string and array)
+    if (searchQuery) {
+      const nameMatch = String(applicant.full_name || '').toLowerCase().includes(searchQuery);
+      const primarySpecMatch = String(applicant.specialization || '').toLowerCase().includes(searchQuery);
+      const arraySpecMatch = Array.isArray(applicant.specializations)
+        ? applicant.specializations.some(s => String(s).toLowerCase().includes(searchQuery))
+        : false;
+      if (!nameMatch && !primarySpecMatch && !arraySpecMatch) return false;
     }
-    sParams.set('page', '1'); // reset page on new search/filter
-    return sParams;
-  }
 
-  // pushState for user-initiated changes (makes back button work)
-  function updateURL(params, { push = true } = {}) {
-    const u = new URL(window.location.href);
-    u.search = params.toString();
-    if (push) history.pushState({}, '', u);
-    else history.replaceState({}, '', u);
-  }
+    // Location (city)
+    if (locationQuery && !String(applicant.location_city || '').toLowerCase().includes(locationQuery)) return false;
 
-  // --- ID in URL helpers (pushState/replaceState) ---
-function setIdParam(id, { push = true } = {}) {
-  const u = new URL(window.location.href);
-  u.searchParams.set('id', String(id));
-  if (push) history.pushState({ id }, '', u);
-  else history.replaceState({ id }, '', u);
-}
-
-function clearIdParam({ push = false } = {}) {
-  const u = new URL(window.location.href);
-  if (!u.searchParams.has('id')) return;
-  u.searchParams.delete('id');
-  if (push) history.pushState({}, '', u);
-  else history.replaceState({}, '', u);
-}
-
-function getIdFromUrl() {
-  const u = new URL(window.location.href);
-  return u.searchParams.get('id');
-}
-
-  // Escaping
-  function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (m) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])
-    );
-  }
-
-  // Ensure URL used in <img> is safe-ish and fallback on error
-  function safeImg(src) {
-    const fallback = '../resources/img/placeholder-user.svg';
-    const val = String(src || '').trim();
-    if (!val) return fallback;
-    if (/^(https?:)?\/\//i.test(val) || val.startsWith('/') || val.startsWith('./') || val.startsWith('../')) {
-      return val;
+    // Available by date (kept in filters even if not shown on cards)
+    if (availableBy) {
+      const appDate = toDate(applicant.availability_date);
+      const byDate  = toDate(availableBy);
+      if (appDate && byDate && appDate > byDate) return false;
     }
-    return fallback;
+
+    // Specialization filter using specializations array (fallback to primary string)
+    if (selectedSpecs.length > 0) {
+      const applicantSpecs = Array.isArray(applicant.specializations) ? applicant.specializations : [];
+      const hasArrayMatch = selectedSpecs.some(sel => applicantSpecs.includes(sel));
+      const hasPrimaryMatch = selectedSpecs.includes(applicant.specialization);
+      if (!hasArrayMatch && !hasPrimaryMatch) return false;
+    }
+
+    // Employment type: accept both "Full Time"/"Part Time" (raw) and "Full-time"/"Part-time" (label)
+    if (selectedAvail.length > 0) {
+      const selectedNorms = selectedAvail.map(normLabel);
+      const typeNorms = [applicant.employment_type, applicant.employment_type_raw].map(normLabel);
+      const match = typeNorms.some(t => selectedNorms.includes(t));
+      if (!match) return false;
+    }
+
+    // Experience
+    if (toInt(applicant.years_experience) < minExperience) return false;
+
+    // Languages (prefer array; fallback to CSV string)
+    if (selectedLangs.length > 0) {
+      const langArr = Array.isArray(applicant.languages_array)
+        ? applicant.languages_array
+        : String(applicant.languages || '').split(',').map(s => s.trim()).filter(Boolean);
+      const hasLang = selectedLangs.some(lang => langArr.includes(lang));
+      if (!hasLang) return false;
+    }
+
+    return true;
+  });
+
+  // Sort (robust guards)
+  if (sortBy) {
+    filteredApplicants.sort((a, b) => {
+      switch (sortBy) {
+        case 'availability_asc': {
+          const da = toDate(a.availability_date);
+          const db = toDate(b.availability_date);
+          if (da && db) return da - db;
+          if (da && !db) return -1;
+          if (!da && db) return 1;
+          return 0;
+        }
+        case 'experience_desc':
+          return toInt(b.years_experience) - toInt(a.years_experience);
+        case 'newest': {
+          const ca = toDate(a.created_at);
+          const cb = toDate(b.created_at);
+          if (ca && cb) return cb - ca;
+          if (cb && !ca) return 1;
+          if (!cb && ca) return -1;
+          return 0;
+        }
+        default:
+          return 0;
+      }
+    });
   }
 
+  currentPage = 1;
+  renderApplicants();
+}
 
-  // Try common fields used in your data to find a photo URL
-  function pickPhoto(a) {
-    return a.photo || a.photo_url || a.image || a.avatar || '';
+/* =========================================================
+   Rendering
+========================================================= */
+function renderApplicants() {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex   = startIndex + itemsPerPage;
+  const list       = filteredApplicants.slice(startIndex, endIndex);
+
+  const totalResults = filteredApplicants.length;
+  const startResult  = totalResults > 0 ? startIndex + 1 : 0;
+  const endResult    = Math.min(endIndex, totalResults);
+  if (resultsCount) {
+    resultsCount.textContent = `Showing ${startResult}-${endResult} of ${totalResults} applicants`;
   }
 
+  if (!cardsGrid) return;
+  cardsGrid.innerHTML = '';
 
+  if (list.length === 0) {
+    cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-muted">No applicants found matching your criteria.</p></div>';
+    if (pagination) pagination.innerHTML = '';
+    return;
+  }
 
-  // --- Card template (with data-id and hover activator, including VIEW PROFILE & HIRE ME) ---
-  function cardTemplate(a) {
-    const availDate = Date.parse(a.availability_date);
-    const availStr = Number.isFinite(availDate)
-      ? new Date(availDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : '—';
-    const id = a.id ?? a.applicant_id ?? '';
+  list.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
+  renderPagination();
+}
 
-    const photo = safeImg(pickPhoto(a));
-    return `
-    <article class="col-12 col-md-6 col-lg-4 hover-activator" data-id="${id}">
-      <div class="card h-100">
-        <!-- Photo -->
-        <div class="ratio ratio-1x1 bg-light">
-          <img src="${photo}" alt="${escapeHtml(a.full_name)}" class="object-fit-cover w-100 h-100">
+/* =========================================================
+   Card (photo-top modern layout) — NO availability on card
+   Entire card is clickable (+ keyboard) to open the modal.
+========================================================= */
+function createApplicantCard(applicant) {
+  const col = document.createElement('div');
+  col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
+
+  const yoe   = `${toInt(applicant.years_experience)} yrs`;
+
+  const fullName       = escapeHtml(applicant.full_name || '—');
+  const specialization = escapeHtml(applicant.specialization || '—');
+  const employmentType = escapeHtml(applicant.employment_type || '—');
+  const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
+
+  const html = `
+    <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile">
+      <!-- Top photo -->
+      <div class="ratio ratio-4x3 card-photo-wrap">
+        <img class="card-photo" alt="${fullName}">
+      </div>
+
+      <!-- Body -->
+      <div class="card-body">
+        <h6 class="mb-1 app-name-title text-truncate" title="${fullName}">${fullName}</h6>
+        <div class="text-muted small mb-2 text-truncate">
+          ${specialization} • ${employmentType}
         </div>
-
-        <div class="card-body">
-          <h6 class="card-title mb-1">${escapeHtml(a.full_name)}</h6>
-          <div class="text-muted small mb-2">${escapeHtml(a.specialization)} • ${escapeHtml(a.employment_type)}</div>
-          <div class="small">
-            <i class="bi bi-geo-alt text-danger"></i>
-            ${escapeHtml(a.location_city)}, ${escapeHtml(a.location_region)}
-          </div>
-          <div class="small mt-1 d-flex flex-wrap gap-1">
-            <span class="badge text-bg-light border">${escapeHtml(a.years_experience ?? 0)} yrs</span>
-            <span class="badge text-bg-light border">Avail: ${escapeHtml(availStr)}</span>
-          </div>
+        <div class="text-muted small mb-2 text-truncate">
+          <i class="bi bi-geo-alt text-danger me-1"></i>${location}
         </div>
-
-        <div class="card-footer bg-white d-flex gap-2">
-          <a href="#" class="btn btn-sm btn-outline-dark flex-fill view-profile-btn">
-            <i class="bi bi-person-badge me-1"></i> View Profile
-          </a>
-          <a href="#" class="btn btn-sm btn btn-outline-danger text-red flex-fill hire-me-btn">
-            <i class="bi bi-briefcase me-1"></i> Hire Me
-          </a>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="meta-pill"><i class="bi bi-award me-1"></i>${yoe}</span>
         </div>
       </div>
-    </article>`;
-  }
-  
 
+      <!-- Footer: single action -->
+      <div class="card-footer bg-white">
+        <button class="btn btn-outline-dark w-100 view-profile-btn" data-applicant-id="${applicant.id}">
+          <i class="bi bi-person-badge me-1"></i> View Profile
+        </button>
+      </div>
+    </article>
+  `;
+  col.innerHTML = html;
 
-  
-  // --- Rendering ---
-  function renderGrid(json) {
-    const { data, total } = json;
-    if (!data || data.length === 0) {
-      grid.innerHTML = `<div class="text-center text-secondary py-5">No results</div>`;
-    } else {
-      grid.innerHTML = data.map(cardTemplate).join('');
+  // Photo
+  const img = col.querySelector('.card-photo');
+  setAvatar(img, applicant.photo_url, applicant.photo_placeholder);
+
+  // View Profile button
+  const viewBtn = col.querySelector('.view-profile-btn');
+  viewBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    pushApplicantId(applicant.id);
+    showApplicantModal(applicant);
+  });
+
+  // Entire card is clickable (and keyboard-accessible)
+  const card = col.querySelector('.clickable-card');
+  const open = () => {
+    pushApplicantId(applicant.id);
+    showApplicantModal(applicant);
+  };
+  card.addEventListener('click', (e) => {
+    // avoid double trigger when button is clicked
+    if (e.target.closest('.view-profile-btn')) return;
+    open();
+  });
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      open();
     }
-    resultsCount.textContent = `Showing ${data.length} of ${total} applicants`;
-    renderPagination(json.page, json.pages);
+  });
+
+  return col;
+}
+
+/* =========================================================
+   Pagination
+========================================================= */
+function renderPagination() {
+  if (!pagination) return;
+  const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
+  pagination.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const ul = document.createElement('ul');
+  ul.className = 'pagination justify-content-center';
+
+  const addPageItem = (label, disabled, handler, isActive=false) => {
+    const li = document.createElement('li');
+    li.className = `page-item ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
+    const a = document.createElement('a');
+    a.className = 'page-link';
+    a.href = '#';
+    a.innerHTML = label;
+    if (!disabled) a.addEventListener('click', (e) => { e.preventDefault(); handler && handler(); });
+    li.appendChild(a);
+    ul.appendChild(li);
+  };
+
+  addPageItem('&laquo;', currentPage === 1, () => { currentPage--; renderApplicants(); });
+
+  const windowSize = 5;
+  let start = Math.max(1, currentPage - Math.floor(windowSize/2));
+  let end   = Math.min(totalPages, start + windowSize - 1);
+  if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+
+  for (let i = start; i <= end; i++) {
+    addPageItem(String(i), false, () => { currentPage = i; renderApplicants(); }, i === currentPage);
   }
 
-  function renderPagination(page, pages) {
-    pagination.innerHTML = '';
+  addPageItem('&raquo;', currentPage === totalPages, () => { currentPage++; renderApplicants(); });
 
-    const makeItem = (label, p, disabled = false, active = false) => {
-      const li = document.createElement('li');
-      li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+  pagination.appendChild(ul);
+}
 
-      const a = document.createElement('a');
-      a.className = 'page-link';
-      a.href = '#';
-      a.textContent = label;
-      if (active) a.setAttribute('aria-current', 'page');
+/* =========================================================
+   Modal (Profile) — add "Hire Me" inside modal footer
+   + City & Region only in header
+   + Close profile then open booking (smooth handoff)
+   + Clean URL when profile modal closes
+========================================================= */
+function ensureModalFooterAndHire(applicant){
+  const modalEl = byId('applicantModal');
+  if (!modalEl) return;
 
-      a.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (disabled || active) return;
-        const params = currentParams();
-        params.set('page', String(p));
-        updateURL(params, { push: true });
-        refresh(params);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
+  // Append footer with Hire button if missing
+  let footer = modalEl.querySelector('.modal-footer');
+  if (!footer) {
+    footer = document.createElement('div');
+    footer.className = 'modal-footer d-flex justify-content-between';
+    footer.innerHTML = `
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-brand text-white" id="modalHireBtn">
+          <i class="bi bi-calendar2-check me-1"></i> Hire Me
+        </button>
+      </div>
+    `;
+    modalEl.querySelector('.modal-content')?.appendChild(footer);
+  }
 
-      li.appendChild(a);
-      return li;
+  // Make sure we don't stack multiple identical listeners for clean URL handling
+  modalEl.removeEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
+  modalEl.addEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
+
+  // (Re)bind Hire Me each time to use current applicant
+  const hireBtn = footer.querySelector('#modalHireBtn');
+  if (hireBtn) {
+    hireBtn.onclick = () => {
+      // Close profile modal first, then open booking on hidden event (one-time)
+      const profileModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      const afterHide = () => {
+        modalEl.removeEventListener('hidden.bs.modal', afterHide);
+        launchBooking(applicant);
+      };
+      modalEl.addEventListener('hidden.bs.modal', afterHide, { once: true });
+      profileModal.hide();
     };
+  }
+}
 
-    const prevDisabled = page <= 1;
-    const nextDisabled = page >= pages;
-    pagination.appendChild(makeItem('Previous', page - 1, prevDisabled));
+function onProfileHiddenCleanUrl(){
+  // Remove ?applicant= from URL when profile is closed
+  removeApplicantIdFromUrl();
+}
 
-    const span = 2;
-    const start = Math.max(1, page - span);
-    const end = Math.min(pages, page + span);
+function showApplicantModal(applicant, options = { pushState: true }) {
+  const modalEl = byId('applicantModal');
+  if (!modalEl) return;
 
-    for (let i = start; i <= end; i++) {
-      pagination.appendChild(makeItem(String(i), i, false, i === page));
+  // Preferred locations (badges) + education (from new API)
+  const prefEl = byId('prefLocValue');
+  if (prefEl) {
+    const arr = Array.isArray(applicant.preferred_locations) ? applicant.preferred_locations : [];
+    prefEl.innerHTML = arr.length
+      ? arr.map(x=>`<span class="badge text-bg-light border me-1 mb-1">${escapeHtml(x)}</span>`).join('')
+      : '—';
+  }
+  const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.education_level || '—';
+
+  // Header area
+  const avatar = byId('avatar');
+  if (avatar) {
+    if (applicant.photo_url) {
+      avatar.style.backgroundImage = `url(${applicant.photo_url})`;
+      avatar.style.backgroundSize = 'cover';
+      avatar.textContent = '';
+    } else {
+      avatar.style.backgroundImage = '';
     }
-    pagination.appendChild(makeItem('Next', page + 1, nextDisabled));
+  }
+  const nameEl = byId('name'); if (nameEl) nameEl.textContent = applicant.full_name || '—';
+  const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
+  const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs`;
+
+  // City & Region only
+  const availabilityLineEl = byId('availabilityLine');
+  if (availabilityLineEl) {
+    availabilityLineEl.textContent = `${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
   }
 
-  function currentParams() {
-    return new URLSearchParams(location.search);
+  // Specializations chips (if shown)
+  const chipsContainer = byId('chipsContainer');
+  if (chipsContainer) {
+    const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
+    chipsContainer.innerHTML = chips.length
+      ? chips.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join('')
+      : `<span class="chip">${escapeHtml(applicant.specialization || '—')}</span>`;
   }
 
-  // --- Load/refresh pipeline ---
-  async function refresh(params) {
-    try {
-      setLoading(true);
-      const json = await DataService.fetchApplicants(params);
-      renderGrid(json);
-    } catch (e) {
-      grid.innerHTML = `<div class="alert alert-danger">${escapeHtml(e.message)}</div>`;
-    } finally {
-      setLoading(false);
-    }
+  // Basic info
+  const cityEl = byId('cityValue'); if (cityEl) cityEl.textContent = applicant.location_city || '—';
+  const regionEl = byId('regionValue'); if (regionEl) regionEl.textContent = applicant.location_region || '—';
+  const yoeEl = byId('yoeValue'); if (yoeEl) yoeEl.textContent = `${toInt(applicant.years_experience)} years`;
+  const employmentEl = byId('employmentValue'); if (employmentEl) employmentEl.textContent = applicant.employment_type || '—';
+  const availEl = byId('availValue'); if (availEl) availEl.textContent = applicant.availability_date || '—';
+  const langEl = byId('langValue');
+  if (langEl) {
+    const langs = arrFromMaybe(applicant.languages);
+    langEl.textContent = langs.length ? langs.join(', ') : (applicant.languages || '—');
   }
 
-  // --- Events: search & filters ---
-  document.getElementById('applyFilters').addEventListener('click', (e) => {
-    e.preventDefault();
-    const p = paramsFromForms();
-    updateURL(p, { push: true });
-    refresh(p);
+  // Footer CTA inside modal
+  ensureModalFooterAndHire(applicant);
+
+  // Open Modal
+  const profileModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  profileModal.show();
+  modalEl.dataset.applicant = JSON.stringify(applicant);
+
+  // Push state if requested
+  if (options.pushState) pushApplicantId(applicant.id);
+}
+window.showApplicantModal = showApplicantModal;
+
+
+(function enforceButtonTypes(){
+  ['bkSubmit','bkNext','bkBack'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('type','button');
   });
+})();
 
-  document.getElementById('resetFilters').addEventListener('click', (e) => {
-    e.preventDefault();
-    searchForm.reset();
-    filtersForm.reset();
-    const p = new URLSearchParams();
-    p.set('page', '1');
-    p.set('limit', String(PAGE_SIZE_DEFAULT));
-    updateURL(p, { push: true });
-    refresh(p);
-  });
+/* =========================================================
+   Booking (Hire) — safe no-op if modal missing
+========================================================= */
+function launchBooking(applicant){
+  window._lastApplicantForBooking = applicant;
+  const modalEl = byId('bookingModal');
+  if (!modalEl || !window.bootstrap?.Modal) return;
 
-  searchForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const p = paramsFromForms();
-    updateURL(p, { push: true });
-    refresh(p);
-  });
-
-  // Debounced filter interactions
-  const debouncedFilterChange = debounce(() => {
-    const p = paramsFromForms();
-    updateURL(p, { push: true });
-    refresh(p);
-  }, 250);
-
-  filtersForm.querySelectorAll('input[type="checkbox"], input[type="range"], select').forEach((el) => {
-    el.addEventListener('change', debouncedFilterChange);
-    if (el.type === 'range') el.addEventListener('input', debouncedFilterChange);
-  });
-
-  // Clearers
-  const clear = (name) =>
-    filtersForm
-      .querySelectorAll(`[name="${name}"]`)
-      .forEach((el) => {
-        if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
-        else el.value = '';
-      });
-
-  document.getElementById('clearSpecs').addEventListener('click', (e) => {
-    e.preventDefault();
-    clear('specializations[]');
-    debouncedFilterChange();
-  });
-  document.getElementById('clearAvail').addEventListener('click', (e) => {
-    e.preventDefault();
-    clear('availability[]');
-    debouncedFilterChange();
-  });
-  document.getElementById('clearLangs').addEventListener('click', (e) => {
-    e.preventDefault();
-    clear('languages[]');
-    debouncedFilterChange();
-  });
-
-  // --- Card interactions: click + hover ---
-
-    function openProfileById(id, { pushUrl = true } = {}) {
-      if (!id) return;
-      const currentId = getIdFromUrl();
-      if (pushUrl && String(currentId) !== String(id)) {
-        setIdParam(id, { push: true });
-      } else if (!currentId) {
-        setIdParam(id, { push: false });
-      }
-      // Always open through the function that attaches the 'hidden' handler
-      openProfileModal(id);
-    }
-  
-  
-
-  // Event delegation for View Profile + Hire Me on the grid
-  grid.addEventListener('click', (e) => {
-    const hire = e.target.closest('.hire-me-btn');
-    const view = e.target.closest('.view-profile-btn');
-    const card = e.target.closest('article.hover-activator');
-    if (!hire && !view && !card) return;
-
-    e.preventDefault();
-    const host = (hire || view) ? (hire || view).closest('article.hover-activator') : card;
-    const id = host?.getAttribute('data-id');
-    if (!id) return;
-
-    if (hire) openBookingModal(id);   // show our new 5-step modal
-    else openProfileById(id);         // existing path
-  });
-
-  // === BOOKING MODAL WIZARD (Bootstrap 5) =====================================
-  let BOOKING_MODAL_INSTANCE = null;
-  const bookingEl = document.getElementById('bookingModal');
-
-  // Only wire up if the modal exists on the page
-  if (bookingEl) {
-    const stepPanes = [...bookingEl.querySelectorAll('[data-step-pane]')];
-    const stepDots  = [...bookingEl.querySelectorAll('.stepper .step')];
-    const btnNext   = bookingEl.querySelector('#bkNext');
-    const btnBack   = bookingEl.querySelector('#bkBack');
-    const btnDownload = bookingEl.querySelector('#bkDownload');
-
-    // Header (applicant summary in modal)
-    const bkAvatar = bookingEl.querySelector('#bkAvatar');
-    const bkName   = bookingEl.querySelector('#bkName');
-    const bkMeta   = bookingEl.querySelector('#bkMeta');
-
-    // Inputs
-    const selectedServices = new Set();
-    bookingEl.querySelectorAll('.oval-tag').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        btn.classList.toggle('active');
-        const name = btn.getAttribute('data-service');
-        if (btn.classList.contains('active')) selectedServices.add(name);
-        else selectedServices.delete(name);
-      });
-    });
-
-    let currentStep = 1;
-    const maxStep = 5;
-
-    // Open with a specific applicant ID
-    async function openBookingModal(id){
-      const data = DataService.cache ?? await DataService.loadAll();
-      const a = data.find(x => (x.id ?? x.applicant_id) == id);
-      if (!a) return;
-
-      // Prefill header
-      const initials = String(a.full_name || '')
-        .split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase() || 'AP';
-
-  const photo = safeImg(pickPhoto(a));
+  const bkAvatar = modalEl.querySelector('#bkAvatar');
   if (bkAvatar) {
-    if (photo && !/placeholder-user\.svg$/.test(photo)) {
-      bkAvatar.innerHTML = `<img src="${photo}" alt="${escapeHtml(a.full_name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-    } else {
-      bkAvatar.textContent = initials;
-    }
+    bkAvatar.style.backgroundImage = applicant.photo_url ? `url('${applicant.photo_url}')` : '';
+    bkAvatar.style.backgroundSize = applicant.photo_url ? 'cover' : '';
+    bkAvatar.textContent = applicant.photo_url ? '' : '';
   }
-  if (bkName) bkName.textContent = a.full_name || 'Applicant';
-  if (bkMeta) bkMeta.textContent = `${a.location_city || '—'}, ${a.location_region || '—'} • ${a.specialization || '—'}`;
+  const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || '—';
+  const bkMeta = modalEl.querySelector('#bkMeta'); if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
 
-      // Reset state
-      resetBookingWizard();
+  // Reset visuals to step 1 (if present)
+  const panes = modalEl.querySelectorAll('[data-step-pane]');
+  panes.forEach(p => p.classList.toggle('d-none', p.dataset.stepPane !== '1'));
+  modalEl.querySelectorAll('.stepper .step').forEach((s,i)=>{
+    s.classList.toggle('active', i===0);
+    s.classList.toggle('completed', false);
+  });
 
-      if (!BOOKING_MODAL_INSTANCE) BOOKING_MODAL_INSTANCE = new bootstrap.Modal(bookingEl);
-      BOOKING_MODAL_INSTANCE.show();
+  // Clear inputs
+  modalEl.querySelectorAll('.oval-tag.active').forEach(el=>el.classList.remove('active'));
+  modalEl.querySelectorAll('input[name="apptType"]').forEach(inp => inp.checked = false);
+  ['bkDate','bkTime','bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'].forEach(id => {
+    const e = modalEl.querySelector('#'+id); if (e) e.value = '';
+  });
+  const summary = modalEl.querySelector('#bkSummary'); if (summary) summary.innerHTML = '';
+  const qr = modalEl.querySelector('#bkQR'); if (qr) qr.innerHTML = '';
 
-      // Keep the selected applicant on the element to read later for confirmation
-      bookingEl.dataset.applicantId = String(id);
-    }
-    // Expose to global scope for the grid handler
-    window.openBookingModal = openBookingModal;
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+function getBookingPayload(applicant) {
+  const modalEl = byId('bookingModal');
+  const services = Array.from(modalEl.querySelectorAll('.oval-tag.active'))
+                        .map(el => el.dataset.service)
+                        .filter(Boolean);
 
-    function gotoStep(step){
-      if (step < 1 || step > maxStep) return;
-      currentStep = step;
+  const apptType = modalEl.querySelector('input[name="apptType"]:checked')?.value || '';
 
-      stepPanes.forEach(p => p.classList.toggle('d-none', parseInt(p.dataset.stepPane) !== step));
-      stepDots.forEach(s=>{
-        const n = parseInt(s.dataset.step, 10);
-        s.classList.toggle('active', n === step);
-        s.classList.toggle('completed', n < step);
-      });
+  return {
+    applicant_id:       applicant.id,
+    services:           services,
+    appointment_type:   apptType,                                        // must match your ENUM
+    date:               modalEl.querySelector('#bkDate')?.value || '',   // "YYYY-MM-DD"
+    time:               modalEl.querySelector('#bkTime')?.value || '',   // "HH:MM"
+    client_first_name:  modalEl.querySelector('#bkFirstName')?.value?.trim() || '',
+    client_middle_name: '',                                              // add if you have a field
+    client_last_name:   modalEl.querySelector('#bkLastName')?.value?.trim() || '',
+    client_phone:       modalEl.querySelector('#bkPhone')?.value?.trim() || '',
+    client_email:       modalEl.querySelector('#bkEmail')?.value?.trim() || '',
+    client_address:     modalEl.querySelector('#bkAddress')?.value?.trim() || ''
+  };
+}
 
-      btnBack.disabled = step === 1;
-      btnNext.textContent = (step === maxStep) ? 'Finish' : 'Next';
+function validateBookingPayload(payload) {
+  const missing = [];
+  for (const k of ['applicant_id','appointment_type','date','time','client_first_name','client_last_name','client_phone','client_email','client_address']) {
+    if (!payload[k]) missing.push(k);
+  }
+  if (missing.length) return 'Please complete: ' + missing.join(', ');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.client_email)) return 'Please enter a valid email.';
+  return '';
+}
 
-      if (step === 5) {
-        buildConfirmation();
-      }
-    }
+function renderBookingSummary(payload) {
+  const sumEl = byId('bkSummary');
+  if (!sumEl) return;
+  const lines = [
+    payload.services?.length ? `<div><strong>Services:</strong> ${payload.services.map(escapeHtml).join(', ')}</div>` : '',
+    `<div><strong>Interview:</strong> ${escapeHtml(payload.appointment_type)}</div>`,
+    `<div><strong>Date & Time:</strong> ${escapeHtml(payload.date)} ${escapeHtml(payload.time)}</div>`,
+    `<div><strong>Client:</strong> ${escapeHtml(payload.client_first_name)} ${escapeHtml(payload.client_last_name)}</div>`,
+    `<div><strong>Email:</strong> ${escapeHtml(payload.client_email)}</div>`,
+    payload.client_phone ? `<div><strong>Phone:</strong> ${escapeHtml(payload.client_phone)}</div>` : '',
+    payload.client_address ? `<div><strong>Address:</strong> ${escapeHtml(payload.client_address)}</div>` : ''
+  ].filter(Boolean);
+  sumEl.innerHTML = `<div class="small">${lines.join('')}</div>`;
+}
 
-    function resetBookingWizard(){
-      currentStep = 1;
-      selectedServices.clear();
-      bookingEl.querySelectorAll('.oval-tag').forEach(b=>b.classList.remove('active'));
-      bookingEl.querySelectorAll('input[name="apptType"]').forEach(r=>r.checked=false);
-      ['bkDate','bkTime','bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress']
-        .forEach(id => (bookingEl.querySelector('#'+id).value = ''));
-      gotoStep(1);
-    }
 
-    function validateStep(step){
-      if (step === 1 && selectedServices.size === 0) { toast('Please select at least one service.'); return false; }
-      if (step === 2 && !bookingEl.querySelector('input[name="apptType"]:checked')) { toast('Please choose an appointment type.'); return false; }
-      if (step === 3) {
-        const d = bookingEl.querySelector('#bkDate').value;
-        const t = bookingEl.querySelector('#bkTime').value;
-        if (!d || !t) { toast('Please select date and time.'); return false; }
-      }
-      if (step === 4) {
-        const required = ['bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'];
-        for (const id of required) {
-          if (!bookingEl.querySelector('#'+id).value.trim()) { toast('Please complete all fields.'); return false; }
-        }
-      }
-      return true;
-    }
+(function wireBookingStepsOnce(){
+  const modalEl = byId('bookingModal');
+  if (!modalEl) return;
 
-    function buildConfirmation(){
-      const apptType = bookingEl.querySelector('input[name="apptType"]:checked')?.value || '—';
-      const date = bookingEl.querySelector('#bkDate').value || '—';
-      const time = bookingEl.querySelector('#bkTime').value || '—';
-      const fn = bookingEl.querySelector('#bkFirstName').value || '—';
-      const ln = bookingEl.querySelector('#bkLastName').value || '—';
-      const phone = bookingEl.querySelector('#bkPhone').value || '—';
-      const email = bookingEl.querySelector('#bkEmail').value || '—';
-      const addr = bookingEl.querySelector('#bkAddress').value || '—';
-
-      bookingEl.querySelector('#bkSummary').innerHTML = `
-        <div><strong>Services:</strong> ${[...selectedServices].join(', ') || '—'}</div>
-        <div><strong>Type:</strong> ${apptType}</div>
-        <div><strong>Date:</strong> ${date}</div>
-        <div><strong>Time:</strong> ${time}</div>
-        <hr class="my-2">
-        <div><strong>Name:</strong> ${fn} ${ln}</div>
-        <div><strong>Phone:</strong> ${phone}</div>
-        <div><strong>Email:</strong> ${email}</div>
-        <div><strong>Address:</strong> ${addr}</div>
-      `;
-
-      // Simple placeholder "QR" (draw a pattern)
-      const qr = bookingEl.querySelector('#bkQR');
-      qr.innerHTML = '';
-      const size = 7, cell = 20;
-      qr.style.position = 'relative';
-      for (let y=0; y<size; y++){
-        for (let x=0; x<size; x++){
-          const dot = document.createElement('div');
-          dot.style.position='absolute';
-          dot.style.width = dot.style.height = (cell-2)+'px';
-          dot.style.left = (x*cell+1)+'px';
-          dot.style.top  = (y*cell+1)+'px';
-          dot.style.background = ((x+y)%2===0) ? '#000' : '#fff';
-          qr.appendChild(dot);
-        }
-      }
-    }
-
-    // Back / Next
-    btnBack.addEventListener('click', () => gotoStep(currentStep - 1));
+  // ----- Next (stepper forward) -----
+  const btnNext = byId('bkNext');
+  if (btnNext && !btnNext.dataset.bound) {
+    btnNext.dataset.bound = '1';
     btnNext.addEventListener('click', () => {
-      if (!validateStep(currentStep)) return;
-      if (currentStep < maxStep) gotoStep(currentStep + 1);
-      else {
-        toast('Booking finished. We will contact you shortly.');
-        BOOKING_MODAL_INSTANCE?.hide();
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '1') return goToBookingStep(2);
+      if (current === '2') return goToBookingStep(3);
+      if (current === '3') return goToBookingStep(4);
+      if (current === '4') {
+        const applicant = window._lastApplicantForBooking
+          || JSON.parse(byId('applicantModal')?.dataset.applicant || 'null');
+        if (!applicant) return alert('Missing applicant.');
+
+        const payload = getBookingPayload(applicant);
+        const err = validateBookingPayload(payload);
+        if (err) { alert(err); return; }
+
+        // Build review summary and move to Step 5 (NO POST HERE)
+        renderBookingSummary(payload);
+        return goToBookingStep(5);
       }
     });
+  }
 
-    btnDownload.addEventListener('click', () => {
-      // Stub for receipt download – connect to backend as needed
-      toast('Receipt download will be implemented.');
+  // ----- Back (stepper backward) -----
+  const btnBack = byId('bkBack');
+  if (btnBack && !btnBack.dataset.bound) {
+    btnBack.dataset.bound = '1';
+    btnBack.addEventListener('click', () => {
+      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
+        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
+
+      if (current === '2') return goToBookingStep(1);
+      if (current === '3') return goToBookingStep(2);
+      if (current === '4') return goToBookingStep(3);
+      if (current === '5') return goToBookingStep(4);
     });
-  } else {
-    // Fallback if the modal HTML isn't present yet
-    window.openBookingModal = function () {
-      alert('Booking modal not found on this page.');
-    };
-  }
-  // ===========================================================================
-
-  // Small toast (Bootstrap)
-  function toast(msg){
-    const el = document.createElement('div');
-    el.className = 'toast align-items-center text-bg-dark border-0 position-fixed bottom-0 end-0 m-3';
-    el.setAttribute('role','alert');
-    el.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body">${msg}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-      </div>`;
-    document.body.appendChild(el);
-    const t = new bootstrap.Toast(el, { delay: 2200 });
-    t.show();
-    el.addEventListener('hidden.bs.toast', ()=> el.remove());
   }
 
-  // Back/forward navigation support
-// Back/forward navigation support
-window.addEventListener('popstate', () => {
-  // Refresh the grid for filter/pagination params
-  refresh(currentParams()).catch(()=>{});
-
-  // Also handle modal state based on ?id
-  const id = getIdFromUrl();
-  const modalEl = document.getElementById('applicantModal');
-
-  if (id) {
-    // Open (or re-open) the modal for the current id in the URL
-    openProfileModal(id);
-  } else if (modalEl && modalEl.classList.contains('show')) {
-    // Close modal if it's open and id was removed by history nav
-    PROFILE_MODAL_INSTANCE?.hide();
-  }
-});
-// --- First load ---
-(async function firstLoad() {
-  const existingId = getIdFromUrl();  // Read ?id *before* changing the URL
-  const params = currentParams();
-
-  if (!params.get('limit')) params.set('limit', String(PAGE_SIZE_DEFAULT));
-  if (!params.get('page'))  params.set('page', '1');
-
-  // Preserve id when we write params back
-  if (existingId) params.set('id', existingId);
-
-  updateURL(params, { push: false });
-  await refresh(params);
-
-  if (existingId) {
-    openProfileById(existingId, { pushUrl: false }); // don’t add another history entry
-  }
+  
 })();
-})();
+
+
+/* =========================================================
+   Styles injection (modern professional cards)
+========================================================= */
+function injectStyles(){
+  if (document.getElementById('app-modern-card-styles')) return;
+  const css = `
+    :root{
+      --brand-red:#c40000;
+      --card-border:#e6e9ef;
+      --muted:#6b7280;
+    }
+
+    .hover-lift{ transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+    .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
+
+    .app-card{
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      overflow:hidden; /* round the top photo */
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+      background:#fff;
+      cursor:pointer;
+      outline: none;
+    }
+    .app-card:focus{ box-shadow:0 0 0 3px rgba(196,0,0,.25), 0 12px 28px rgba(0,0,0,.12); }
+
+    .card-photo-wrap{ background:#f5f6f8; position:relative; }
+    .card-photo{ width:100%; height:100%; object-fit:cover; display:block; }
+    .card-photo-wrap::after{
+      content:'';
+      position:absolute; inset:0;
+      background:linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,.02));
+      pointer-events:none;
+    }
+
+    .app-name-title{ font-weight:800; }
+    .emp-pill{
+      display:inline-block; border-radius:999px; padding:.26rem .56rem;
+      font-weight:700; font-size:.78rem; border:1px solid transparent;
+    }
+    .emp-pill.emp-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
+    .emp-pill.emp-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
+
+    .meta-pill{
+      display:inline-flex; align-items:center; gap:.35rem;
+      padding:.32rem .6rem; border-radius:999px; font-size:.78rem; font-weight:700;
+      color:#374151; background:#f3f4f6; border:1px solid #e5e7eb;
+    }
+
+    .btn-brand{ background:var(--brand-red); border-color:var(--brand-red); }
+    .btn-brand:hover{ filter:brightness(.92); }
+
+    /* Shimmer */
+    .shimmer{ position:relative; overflow:hidden; background-color:rgba(0,0,0,.06); }
+    .shimmer::after{
+      content:''; position:absolute; inset:0; transform:translateX(-100%);
+      background-image:linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 100%);
+      animation:shimmer 1.5s infinite;
+    }
+    @keyframes shimmer{ 100% { transform: translateX(100%); } }
+  `;
+  const style = document.createElement('style');
+  style.id = 'app-modern-card-styles';
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
+}
