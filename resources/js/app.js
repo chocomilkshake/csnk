@@ -1,20 +1,27 @@
 // app.js — Client listing UX (modern cards)
-// v2.2 — refined spacing, chips, pills, availability badge, cleaner pagination
-console.log('app.js loaded successfully - v2.2');
+// v2.3 — photo-top cards, clear hierarchy, soft pills, safe image loader, same working logic
+console.log('app.js loaded successfully - v2.3');
 
+/* =========================================================
+   State
+========================================================= */
 let allApplicants = [];
 let filteredApplicants = [];
 let currentPage = 1;
 const itemsPerPage = 12;
 
-// DOM elements
+/* =========================================================
+   DOM
+========================================================= */
 const searchForm   = document.getElementById('searchForm');
 const filtersForm  = document.getElementById('filtersForm');
 const cardsGrid    = document.getElementById('cardsGrid');
 const resultsCount = document.getElementById('resultsCount');
 const pagination   = document.getElementById('pagination');
 
-// ---------- Helpers ----------
+/* =========================================================
+   Helpers
+========================================================= */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, s => (
     { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[s]
@@ -28,34 +35,36 @@ function arrFromMaybe(val){
   if (!val) return [];
   if (Array.isArray(val)) return val;
   if (typeof val === 'string') {
-    // split by comma if needed
     if (val.includes(',')) return val.split(',').map(s=>s.trim()).filter(Boolean);
-    return [val.trim()];
+    return [val.trim()].filter(Boolean);
   }
   return [];
 }
 
-// Very light skeleton UI while loading
+/* =========================================================
+   Skeleton loader
+========================================================= */
 function renderSkeleton(count = 8) {
+  if (!cardsGrid) return;
   cardsGrid.innerHTML = '';
   for (let i = 0; i < count; i++) {
     const col = document.createElement('div');
     col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
     col.innerHTML = `
-      <article class="app-card h-100">
-        <div class="d-flex align-items-center">
-          <div class="app-avatar shimmer"></div>
-          <div class="flex-grow-1 ms-3">
-            <div class="shimmer" style="height:14px;width:70%;border-radius:6px;"></div>
-            <div class="shimmer mt-2" style="height:12px;width:40%;border-radius:6px;"></div>
+      <article class="card app-card-bs h-100">
+        <div class="ratio ratio-4x3 overflow-hidden shimmer"></div>
+        <div class="card-body">
+          <div class="shimmer" style="height:16px;width:70%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:50%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:60%;border-radius:6px;"></div>
+          <div class="d-flex gap-2 mt-3">
+            <div class="shimmer" style="height:26px;width:90px;border-radius:999px;"></div>
+            <div class="shimmer" style="height:26px;width:130px;border-radius:999px;"></div>
           </div>
         </div>
-        <div class="shimmer mt-3" style="height:12px;width:65%;border-radius:6px;"></div>
-        <div class="shimmer mt-2" style="height:12px;width:50%;border-radius:6px;"></div>
-        <div class="shimmer mt-2" style="height:12px;width:45%;border-radius:6px;"></div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <div class="shimmer" style="height:26px;width:38%;border-radius:999px;"></div>
-          <div class="shimmer" style="height:36px;width:120px;border-radius:10px;"></div>
+        <div class="card-footer bg-white d-flex gap-2">
+          <div class="shimmer" style="height:36px;width:100%;border-radius:10px;"></div>
+          <div class="shimmer" style="height:36px;width:100%;border-radius:10px;"></div>
         </div>
       </article>
     `;
@@ -63,73 +72,61 @@ function renderSkeleton(count = 8) {
   }
 }
 
-// Lazy-load images with fallback to placeholder
+/* =========================================================
+   Image loader (safe + mixed content aware)
+========================================================= */
 function setAvatar(imgEl, src, placeholder) {
   if (!imgEl) return;
   const fallback = placeholder || '../resources/img/avatar_placeholder.png';
+  const isHttpsPage = location.protocol === 'https:';
+  const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
+  // Avoid mixed content on HTTPS pages
+  const useSrc = (!cleanSrc || (isHttpsPage && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
+
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
-  imgEl.src = src || fallback;
+  imgEl.alt = imgEl.alt || 'Photo';
+  imgEl.src = useSrc || fallback;
   imgEl.onerror = () => { imgEl.src = fallback; };
 }
 
-// Chips rendering (pills)
-function renderChips(values = [], maxVisible = 3) {
-  const clean = (values || []).map(String).map(v => v.trim()).filter(Boolean);
-  if (!clean.length) return '';
-  const shown = clean.slice(0, maxVisible).map(v => `<span class="chip">${escapeHtml(v)}</span>`).join('');
-  const more  = clean.length > maxVisible ? `<span class="chip chip-more">+${clean.length - maxVisible}</span>` : '';
-  return shown + more;
-}
-
-// Language chips (lighter)
-function renderLangPills(values = [], maxVisible = 2) {
-  const clean = (values || []).map(String).map(v => v.trim()).filter(Boolean);
-  if (!clean.length) return '';
-  const shown = clean.slice(0, maxVisible).map(v => `<span class="lang-pill">${escapeHtml(v)}</span>`).join('');
-  const more  = clean.length > maxVisible ? `<span class="lang-pill more">+${clean.length - maxVisible}</span>` : '';
-  return shown + more;
-}
-
-// Availability badge class + text
+/* =========================================================
+   Pills / badges
+========================================================= */
 function availabilityMeta(dateStr) {
   const d = toDate(dateStr);
-  if (!d) return { text: 'Availability TBD', cls: 'badge-soft-secondary' };
+  if (!d) return { text: 'Avail: —', cls: 'meta-pill' };
+  const fmt = d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
   const today = new Date(); today.setHours(0,0,0,0);
   const dd = new Date(d);   dd.setHours(0,0,0,0);
-  const isAvailable = dd <= today;
-
-  const fmt = d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
-  return {
-    text: isAvailable ? 'Available now' : `Available ${fmt}`,
-    cls:  isAvailable ? 'badge-soft-success' : 'badge-soft-warning'
-  };
+  const isNow = dd <= today;
+  return { text: isNow ? 'Avail: Now' : `Avail: ${fmt}`, cls: isNow ? 'meta-pill success' : 'meta-pill warn' };
 }
 
-// Employment pill
 function employmentPill(typeLabel) {
   const t = (typeLabel || '').toLowerCase();
   const cls = t.includes('full') ? 'pill-full' : 'pill-part';
-  return `<span class="pill ${cls}">${escapeHtml(typeLabel || '—')}</span>`;
+  return `<span class="emp-pill ${cls}">${escapeHtml(typeLabel || '—')}</span>`;
 }
 
-// ---------- Init ----------
+/* =========================================================
+   Init
+========================================================= */
 function initApp(){
-  injectStyles();   // UI styles for modern cards
+  injectStyles();
   renderSkeleton(8);
-  loadApplicants().then(() => {
-    setupEventListeners();
-  });
+  loadApplicants().then(setupEventListeners);
 }
 
-// Run immediately if DOM already loaded, otherwise wait for event
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
 }
 
-// ---------- Data loading ----------
+/* =========================================================
+   Data loading
+========================================================= */
 async function loadApplicants() {
   try {
     const response = await fetch('../includes/get_applicants.php', {
@@ -147,13 +144,16 @@ async function loadApplicants() {
     renderApplicants();
   } catch (error) {
     console.error('Error loading applicants:', error);
-    cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
+    if (cardsGrid) {
+      cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
+    }
   }
 }
 
-// ---------- Event listeners ----------
+/* =========================================================
+   Events
+========================================================= */
 function setupEventListeners() {
-  // Search form
   if (searchForm) {
     searchForm.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -161,14 +161,12 @@ function setupEventListeners() {
     });
   }
 
-  // Filters form
   if (filtersForm) {
     filtersForm.addEventListener('submit', function(e) {
       e.preventDefault();
       applyFilters();
     });
 
-    // Clear quick-actions
     byId('clearSpecs')?.addEventListener('click', (e) => {
       e.preventDefault();
       document.querySelectorAll('#filtersForm input[name="specializations[]"]').forEach(cb => cb.checked = false);
@@ -200,7 +198,9 @@ function setupEventListeners() {
   }
 }
 
-// ---------- Filtering + Sorting ----------
+/* =========================================================
+   Filtering + Sorting
+========================================================= */
 function applyFilters() {
   const formData    = searchForm ? new FormData(searchForm)   : new FormData();
   const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
@@ -216,22 +216,22 @@ function applyFilters() {
   const sortBy        = filtersData.get('sort');
 
   filteredApplicants = allApplicants.filter(applicant => {
-    // Search: name or specialization
+    // Search by name or specialization
     if (searchQuery &&
         !String(applicant.full_name).toLowerCase().includes(searchQuery) &&
         !String(applicant.specialization).toLowerCase().includes(searchQuery)
     ) return false;
 
-    // Location
+    // Location (city)
     if (locationQuery && !String(applicant.location_city).toLowerCase().includes(locationQuery)) return false;
 
-    // Available by date
+    // Available by date (keep; you can ignore in UI if not needed)
     if (availableBy && toDate(applicant.availability_date) > toDate(availableBy)) return false;
 
-    // Specializations
+    // Specialization exact match from filter
     if (selectedSpecs.length > 0 && !selectedSpecs.includes(applicant.specialization)) return false;
 
-    // Availability (employment type)
+    // Employment type
     if (selectedAvail.length > 0 && !selectedAvail.includes(applicant.employment_type)) return false;
 
     // Experience
@@ -240,8 +240,7 @@ function applyFilters() {
     // Languages
     if (selectedLangs.length > 0) {
       const applicantLangs = String(applicant.languages || '').split(',').map(s=>s.trim()).filter(Boolean);
-      const hasMatchingLang = selectedLangs.some(lang => applicantLangs.includes(lang));
-      if (!hasMatchingLang) return false;
+      if (!selectedLangs.some(lang => applicantLangs.includes(lang))) return false;
     }
 
     return true;
@@ -267,13 +266,14 @@ function applyFilters() {
   renderApplicants();
 }
 
-// ---------- Rendering ----------
+/* =========================================================
+   Rendering
+========================================================= */
 function renderApplicants() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex   = startIndex + itemsPerPage;
   const list       = filteredApplicants.slice(startIndex, endIndex);
 
-  // Update results count
   const totalResults = filteredApplicants.length;
   const startResult  = totalResults > 0 ? startIndex + 1 : 0;
   const endResult    = Math.min(endIndex, totalResults);
@@ -281,98 +281,94 @@ function renderApplicants() {
     resultsCount.textContent = `Showing ${startResult}-${endResult} of ${totalResults} applicants`;
   }
 
-  // Clear grid
+  if (!cardsGrid) return;
   cardsGrid.innerHTML = '';
 
   if (list.length === 0) {
     cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-muted">No applicants found matching your criteria.</p></div>';
-    pagination.innerHTML = '';
+    if (pagination) pagination.innerHTML = '';
     return;
   }
 
-  // Render cards
   list.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
-
-  // Render pagination
   renderPagination();
 }
 
-// Create applicant card (refined modern layout)
+/* =========================================================
+   Card (photo-top modern layout)
+========================================================= */
 function createApplicantCard(applicant) {
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
 
-  const avail = availabilityMeta(applicant.availability_date);
   const yoe   = `${toInt(applicant.years_experience)} yrs`;
-  const age   = applicant.age ? ` • Age ${toInt(applicant.age)}` : '';
+  const avail = availabilityMeta(applicant.availability_date);
 
-  const specList = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
-  const langs    = arrFromMaybe(applicant.languages);
-
-  // Fallback if languages is comma string in your API
-  const langsFromString = !langs.length && typeof applicant.languages === 'string'
-    ? applicant.languages.split(',').map(s=>s.trim()).filter(Boolean)
-    : langs;
-
-  const specChips = renderChips(specList, 3);
-  const langsChips = renderLangPills(langsFromString, 2);
+  const fullName       = escapeHtml(applicant.full_name || '—');
+  const specialization = escapeHtml(applicant.specialization || '—');
+  const employmentType = escapeHtml(applicant.employment_type || '—');
+  const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
 
   const html = `
-    <article class="app-card h-100 hover-lift">
-      <!-- Header -->
-      <div class="d-flex align-items-center">
-        <div class="app-avatar">
-          <img class="app-avatar-img" alt="${escapeHtml(applicant.full_name)}">
-        </div>
-        <div class="ms-3 flex-grow-1 min-w-0">
-          <div class="d-flex flex-wrap align-items-center gap-2">
-            <div class="app-name text-truncate" title="${escapeHtml(applicant.full_name)}">${escapeHtml(applicant.full_name)}</div>
-            ${employmentPill(applicant.employment_type)}
-            <span class="pill pill-yoe">${escapeHtml(yoe)}</span>
-          </div>
-          <div class="app-meta small mt-1 text-truncate">
-            <i class="bi bi-geo-alt me-1"></i>${escapeHtml(applicant.location_city)}, ${escapeHtml(applicant.location_region)}
-          </div>
-        </div>
+    <article class="card app-card-bs h-100 hover-lift">
+      <!-- Top photo -->
+      <div class="ratio ratio-4x3 card-photo-wrap">
+        <img class="card-photo" alt="${fullName}">
       </div>
 
       <!-- Body -->
-      <div class="mt-3 small text-muted">
-        <div><i class="bi bi-star-fill me-1"></i>${escapeHtml(yoe)} experience${age}</div>
+      <div class="card-body">
+        <h6 class="mb-1 app-name-title text-truncate" title="${fullName}">${fullName}</h6>
+        <div class="text-muted small mb-2 text-truncate">
+          ${specialization} • ${employmentType}
+        </div>
+        <div class="text-muted small mb-2 text-truncate">
+          <i class="bi bi-geo-alt text-danger me-1"></i>${location}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="meta-pill"><i class="bi bi-award me-1"></i>${yoe}</span>
+          <span class="${avail.cls}"><i class="bi bi-calendar-event me-1"></i>${escapeHtml(avail.text)}</span>
+        </div>
       </div>
 
-      ${specChips ? `<div class="app-chips mt-2">${specChips}</div>` : ''}
-
-      ${langsChips ? `<div class="mt-2">${langsChips}</div>` : ''}
-
-      <!-- Footer -->
-      <div class="d-flex justify-content-between align-items-center mt-3">
-        <span class="badge ${avail.cls}">${escapeHtml(avail.text)}</span>
-        <button class="btn btn-sm btn-outline-dark view-profile-btn" data-applicant-id="${applicant.id}">
-          View Profile
+      <!-- Footer actions -->
+      <div class="card-footer bg-white d-flex gap-2">
+        <button class="btn btn-outline-dark w-100 view-profile-btn" data-applicant-id="${applicant.id}">
+          <i class="bi bi-person-badge me-1"></i> View Profile
+        </button>
+        <button class="btn btn-brand text-white w-100 hire-btn" data-applicant-id="${applicant.id}">
+          <i class="bi bi-calendar2-check me-1"></i> Hire Me
         </button>
       </div>
     </article>
   `;
-
   col.innerHTML = html;
 
-  // Avatar
-  const img = col.querySelector('.app-avatar-img');
+  // Photo
+  const img = col.querySelector('.card-photo');
   setAvatar(img, applicant.photo_url, applicant.photo_placeholder);
 
-  // Hook view button
-  const viewBtn = col.querySelector('.view-profile-btn');
-  viewBtn.addEventListener('click', () => showApplicantModal(applicant));
+  // Actions
+  col.querySelector('.view-profile-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showApplicantModal(applicant);
+  });
+
+  col.querySelector('.hire-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    launchBooking(applicant);  // safe no-op if booking modal doesn't exist
+  });
 
   return col;
 }
 
-// Render pagination (simple, centered, fixed HTML)
+/* =========================================================
+   Pagination
+========================================================= */
 function renderPagination() {
+  if (!pagination) return;
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
   pagination.innerHTML = '';
-
   if (totalPages <= 1) return;
 
   const ul = document.createElement('ul');
@@ -406,9 +402,10 @@ function renderPagination() {
   pagination.appendChild(ul);
 }
 
-// ---------- Modal (Profile) — City & Region only in header ----------
+/* =========================================================
+   Modal (Profile) — City & Region only in header
+========================================================= */
 function showApplicantModal(applicant) {
-  // Populate modal with applicant data
   const avatar = byId('avatar');
   if (avatar) {
     if (applicant.photo_url) {
@@ -429,11 +426,13 @@ function showApplicantModal(applicant) {
     availabilityLineEl.textContent = `${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
   }
 
-  // Specializations chips
+  // Specializations chips (if you want to show inside modal)
   const chipsContainer = byId('chipsContainer');
   if (chipsContainer) {
-    const chips = renderChips(arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization), 6);
-    chipsContainer.innerHTML = chips || `<span class="chip">${escapeHtml(applicant.specialization || '—')}</span>`;
+    const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
+    chipsContainer.innerHTML = chips.length
+      ? chips.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join('')
+      : `<span class="chip">${escapeHtml(applicant.specialization || '—')}</span>`;
   }
 
   // Basic info
@@ -442,97 +441,98 @@ function showApplicantModal(applicant) {
   const yoeEl = byId('yoeValue'); if (yoeEl) yoeEl.textContent = `${toInt(applicant.years_experience)} years`;
   const employmentEl = byId('employmentValue'); if (employmentEl) employmentEl.textContent = applicant.employment_type || '—';
   const availEl = byId('availValue'); if (availEl) availEl.textContent = applicant.availability_date || '—';
-  const langEl = byId('langValue'); if (langEl) {
+  const langEl = byId('langValue');
+  if (langEl) {
     const langs = arrFromMaybe(applicant.languages);
     langEl.textContent = langs.length ? langs.join(', ') : (applicant.languages || '—');
   }
 
-  // Show modal (Bootstrap 5)
   const modalEl = byId('applicantModal');
-  if (modalEl) {
+  if (modalEl && window.bootstrap?.Modal) {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
     modalEl.dataset.applicant = JSON.stringify(applicant);
   }
 }
-
-// Expose for other scripts
 window.showApplicantModal = showApplicantModal;
 
-// --- Style injection (cards + shimmer + pills) ---
+/* =========================================================
+   Booking (Hire Me) — safe no-op if modal missing
+========================================================= */
+function launchBooking(applicant){
+  const modalEl = byId('bookingModal');
+  if (!modalEl || !window.bootstrap?.Modal) return;
+
+  const bkAvatar = modalEl.querySelector('#bkAvatar');
+  if (bkAvatar) {
+    bkAvatar.style.backgroundImage = applicant.photo_url ? `url('${applicant.photo_url}')` : '';
+    bkAvatar.style.backgroundSize = applicant.photo_url ? 'cover' : '';
+    bkAvatar.textContent = applicant.photo_url ? '' : '';
+  }
+  const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || '—';
+  const bkMeta = modalEl.querySelector('#bkMeta'); if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
+
+  // Reset stepper visuals to step 1 (if present)
+  const panes = modalEl.querySelectorAll('[data-step-pane]');
+  panes.forEach(p => p.classList.toggle('d-none', p.dataset.stepPane !== '1'));
+  modalEl.querySelectorAll('.stepper .step').forEach((s,i)=>{
+    s.classList.toggle('active', i===0);
+    s.classList.toggle('completed', false);
+  });
+
+  // Clear previous inputs
+  modalEl.querySelectorAll('.oval-tag.active').forEach(el=>el.classList.remove('active'));
+  modalEl.querySelectorAll('input[name="apptType"]').forEach(inp => inp.checked = false);
+  ['bkDate','bkTime','bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'].forEach(id => {
+    const e = modalEl.querySelector('#'+id); if (e) e.value = '';
+  });
+  const summary = modalEl.querySelector('#bkSummary'); if (summary) summary.innerHTML = '';
+  const qr = modalEl.querySelector('#bkQR'); if (qr) qr.innerHTML = '';
+
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+/* =========================================================
+   Styles injection (photo-top card design)
+========================================================= */
 function injectStyles(){
   if (document.getElementById('app-modern-card-styles')) return;
   const css = `
     :root{
       --brand-red:#c40000;
-      --brand-black:#111;
-      --card-border:#e9ecf1;
-      --chip-bg:#fafafa;
-      --chip-border:#eee;
+      --card-border:#e6e9ef;
       --muted:#6b7280;
     }
 
-    /* Card */
-    .app-card{
+    .hover-lift{ transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+    .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
+
+    .app-card-bs{
       border:1px solid var(--card-border);
       border-radius:16px;
+      overflow:hidden; /* round the image corners */
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
       background:#fff;
-      padding:1rem;
-      box-shadow:0 2px 8px rgba(0,0,0,.05);
-      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .hover-lift:hover{
-      transform:translateY(-3px);
-      box-shadow:0 10px 24px rgba(0,0,0,.12);
-      border-color:#e2e6ed;
-    }
+    .card-photo-wrap{ background:#f5f6f8; }
+    .card-photo{ width:100%; height:100%; object-fit:cover; display:block; }
 
-    /* Avatar */
-    .app-avatar{
-      width:56px;height:56px;border-radius:50%;
-      background:#f3f4f6;border:1px solid #fff;
-      display:grid;place-items:center;overflow:hidden;flex-shrink:0;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+    .app-name-title{ font-weight:800; }
+    .emp-pill{
+      display:inline-block; border-radius:999px; padding:.26rem .56rem;
+      font-weight:700; font-size:.78rem; border:1px solid transparent;
     }
-    .app-avatar-img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .emp-pill.pill-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
+    .emp-pill.pill-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
 
-    /* Text + Pills */
-    .app-name{ font-weight:800; font-size:1rem; line-height:1; }
-    .app-meta{ color:var(--muted); }
-    .pill{
-      display:inline-block; border-radius:999px; font-weight:700; font-size:.78rem;
-      padding:.26rem .56rem; border:1px solid transparent;
+    .meta-pill{
+      display:inline-flex; align-items:center; gap:.35rem;
+      padding:.32rem .6rem; border-radius:999px; font-size:.78rem; font-weight:700;
+      color:#374151; background:#f3f4f6; border:1px solid #e5e7eb;
     }
-    .pill-yoe{ border-color:#ef4444; color:#991b1b; background:#fff; }
-    .pill-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
-    .pill-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
+    .meta-pill.success{ background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .meta-pill.warn{ background:#fffbeb; color:#b45309; border-color:#fde68a; }
 
-    /* Chips */
-    .app-chips .chip{
-      display:inline-block; padding:.38rem .66rem; border-radius:999px;
-      font-weight:700; font-size:.8rem; color:#111;
-      background:var(--chip-bg); border:1px solid var(--chip-border);
-      margin:.125rem .25rem .125rem 0;
-    }
-    .app-chips .chip-more{ background:#111; color:#fff; border-color:#111; }
-
-    /* Languages */
-    .lang-pill{
-      display:inline-block; padding:.28rem .6rem; border-radius:999px;
-      font-weight:600; font-size:.78rem; color:#374151;
-      background:#f3f4f6; border:1px solid #e5e7eb; margin:.125rem .25rem .125rem 0;
-    }
-    .lang-pill.more{ background:#e5e7eb; }
-
-    /* Availability badges */
-    .badge-soft-success{ background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-weight:700; }
-    .badge-soft-warning{ background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-weight:700; }
-    .badge-soft-secondary{ background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; font-weight:700; }
-    .badge-soft-success, .badge-soft-warning, .badge-soft-secondary{
-      padding:.35rem .6rem; border-radius:999px; font-size:.78rem;
-    }
-
-    /* Buttons */
     .btn-brand{ background:var(--brand-red); border-color:var(--brand-red); }
     .btn-brand:hover{ filter:brightness(.92); }
 
