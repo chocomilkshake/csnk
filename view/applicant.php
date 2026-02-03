@@ -106,8 +106,8 @@
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"><label class="form-check-label" for="spec-cook">Cooking and Food Service</label></div>
                   <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly nad Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly nad Special Care (Caregiver)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance<label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly nad Special Care (Caregiver)</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance</div>
                 </div>
               </div>
 
@@ -339,12 +339,14 @@
               <h6 class="mb-3">Choose Date &amp; Time</h6>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Date</label>
+                  <label class="form-label">Date
                   <input type="date" class="form-control" id="bkDate">
+                  </label>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Time</label>
+                  <label class="form-label">Time
                   <input type="time" class="form-control" id="bkTime">
+                  </label>
                 </div>
               </div>
             </div>
@@ -356,24 +358,29 @@
               <h6 class="mb-3">Basic Information</h6>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">First Name</label>
+                  <label class="form-label">First Name
                   <input type="text" class="form-control" id="bkFirstName">
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Last Name</label>
+                  <label class="form-label">Last Name
                   <input type="text" class="form-control" id="bkLastName">
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Phone Number</label>
+                  <label class="form-label">Phone Number
                   <input type="tel" class="form-control" id="bkPhone">
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Email Address</label>
+                  <label class="form-label">Email Address
                   <input type="email" class="form-control" id="bkEmail">
+                  </label>
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Address</label>
+                  <label class="form-label">Address
                   <input type="text" class="form-control" id="bkAddress">
+                  </label>
                 </div>
               </div>
             </div>

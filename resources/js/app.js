@@ -29,7 +29,6 @@ function escapeHtml(str) {
 }
 function byId(id) { return document.getElementById(id); }
 function toInt(n, fallback = 0){ const v = Number(n); return Number.isFinite(v) ? v : fallback; }
-function toDate(d){ const v = new Date(d); return isNaN(v) ? null : v; }
 
 function arrFromMaybe(val){
   if (!val) return [];
