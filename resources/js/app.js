@@ -1,6 +1,6 @@
-// app.js — Client listing UX (modern cards)
-// v2.3 — photo-top cards, clear hierarchy, soft pills, safe image loader, same working logic
-console.log('app.js loaded successfully - v2.3');
+// app.js — Client listing UX (photo-top modern cards)
+// v2.6 — cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
+console.log('app.js loaded successfully - v2.6');
 
 /* =========================================================
    State
@@ -41,6 +41,21 @@ function arrFromMaybe(val){
   return [];
 }
 
+/** Update URL with applicant ID without navigating */
+function pushApplicantId(id){
+  const url = new URL(window.location.href);
+  url.searchParams.set('applicant', String(id));
+  history.pushState({ applicant: id }, '', url);
+}
+/** Remove applicant ID from URL (on modal close) */
+function removeApplicantIdFromUrl(){
+  const url = new URL(window.location.href);
+  if (url.searchParams.has('applicant')) {
+    url.searchParams.delete('applicant');
+    history.replaceState({}, '', url);
+  }
+}
+
 /* =========================================================
    Skeleton loader
 ========================================================= */
@@ -51,20 +66,19 @@ function renderSkeleton(count = 8) {
     const col = document.createElement('div');
     col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
     col.innerHTML = `
-      <article class="card app-card-bs h-100">
+      <article class="card app-card h-100">
         <div class="ratio ratio-4x3 overflow-hidden shimmer"></div>
         <div class="card-body">
           <div class="shimmer" style="height:16px;width:70%;border-radius:6px;"></div>
-          <div class="shimmer mt-2" style="height:12px;width:50%;border-radius:6px;"></div>
-          <div class="shimmer mt-2" style="height:12px;width:60%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:55%;border-radius:6px;"></div>
+          <div class="shimmer mt-2" style="height:12px;width:62%;border-radius:6px;"></div>
           <div class="d-flex gap-2 mt-3">
             <div class="shimmer" style="height:26px;width:90px;border-radius:999px;"></div>
-            <div class="shimmer" style="height:26px;width:130px;border-radius:999px;"></div>
+            <div class="shimmer" style="height:26px;width:120px;border-radius:999px;"></div>
           </div>
         </div>
-        <div class="card-footer bg-white d-flex gap-2">
-          <div class="shimmer" style="height:36px;width:100%;border-radius:10px;"></div>
-          <div class="shimmer" style="height:36px;width:100%;border-radius:10px;"></div>
+        <div class="card-footer bg-white">
+          <div class="shimmer" style="height:40px;width:100%;border-radius:10px;"></div>
         </div>
       </article>
     `;
@@ -91,21 +105,11 @@ function setAvatar(imgEl, src, placeholder) {
 }
 
 /* =========================================================
-   Pills / badges
+   Micro UI (pills etc.)
 ========================================================= */
-function availabilityMeta(dateStr) {
-  const d = toDate(dateStr);
-  if (!d) return { text: 'Avail: —', cls: 'meta-pill' };
-  const fmt = d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
-  const today = new Date(); today.setHours(0,0,0,0);
-  const dd = new Date(d);   dd.setHours(0,0,0,0);
-  const isNow = dd <= today;
-  return { text: isNow ? 'Avail: Now' : `Avail: ${fmt}`, cls: isNow ? 'meta-pill success' : 'meta-pill warn' };
-}
-
 function employmentPill(typeLabel) {
   const t = (typeLabel || '').toLowerCase();
-  const cls = t.includes('full') ? 'pill-full' : 'pill-part';
+  const cls = t.includes('full') ? 'emp-full' : 'emp-part';
   return `<span class="emp-pill ${cls}">${escapeHtml(typeLabel || '—')}</span>`;
 }
 
@@ -115,7 +119,17 @@ function employmentPill(typeLabel) {
 function initApp(){
   injectStyles();
   renderSkeleton(8);
-  loadApplicants().then(setupEventListeners);
+  loadApplicants().then(() => {
+    setupEventListeners();
+
+    // Deep-link: auto-open modal if URL has ?applicant=ID
+    const url = new URL(window.location.href);
+    const idParam = url.searchParams.get('applicant');
+    if (idParam) {
+      const found = allApplicants.find(a => String(a.id) === String(idParam));
+      if (found) showApplicantModal(found, { pushState: false });
+    }
+  });
 }
 
 if (document.readyState === 'loading') {
@@ -225,7 +239,7 @@ function applyFilters() {
     // Location (city)
     if (locationQuery && !String(applicant.location_city).toLowerCase().includes(locationQuery)) return false;
 
-    // Available by date (keep; you can ignore in UI if not needed)
+    // Available by date (kept in filters even if not shown on cards)
     if (availableBy && toDate(applicant.availability_date) > toDate(availableBy)) return false;
 
     // Specialization exact match from filter
@@ -295,14 +309,14 @@ function renderApplicants() {
 }
 
 /* =========================================================
-   Card (photo-top modern layout)
+   Card (photo-top modern layout) — NO availability on card
+   Entire card is clickable (+ keyboard) to open the modal.
 ========================================================= */
 function createApplicantCard(applicant) {
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
 
   const yoe   = `${toInt(applicant.years_experience)} yrs`;
-  const avail = availabilityMeta(applicant.availability_date);
 
   const fullName       = escapeHtml(applicant.full_name || '—');
   const specialization = escapeHtml(applicant.specialization || '—');
@@ -310,7 +324,7 @@ function createApplicantCard(applicant) {
   const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
 
   const html = `
-    <article class="card app-card-bs h-100 hover-lift">
+    <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile">
       <!-- Top photo -->
       <div class="ratio ratio-4x3 card-photo-wrap">
         <img class="card-photo" alt="${fullName}">
@@ -327,17 +341,13 @@ function createApplicantCard(applicant) {
         </div>
         <div class="d-flex flex-wrap gap-2">
           <span class="meta-pill"><i class="bi bi-award me-1"></i>${yoe}</span>
-          <span class="${avail.cls}"><i class="bi bi-calendar-event me-1"></i>${escapeHtml(avail.text)}</span>
         </div>
       </div>
 
-      <!-- Footer actions -->
-      <div class="card-footer bg-white d-flex gap-2">
+      <!-- Footer: single action -->
+      <div class="card-footer bg-white">
         <button class="btn btn-outline-dark w-100 view-profile-btn" data-applicant-id="${applicant.id}">
           <i class="bi bi-person-badge me-1"></i> View Profile
-        </button>
-        <button class="btn btn-brand text-white w-100 hire-btn" data-applicant-id="${applicant.id}">
-          <i class="bi bi-calendar2-check me-1"></i> Hire Me
         </button>
       </div>
     </article>
@@ -348,15 +358,30 @@ function createApplicantCard(applicant) {
   const img = col.querySelector('.card-photo');
   setAvatar(img, applicant.photo_url, applicant.photo_placeholder);
 
-  // Actions
-  col.querySelector('.view-profile-btn')?.addEventListener('click', (e) => {
+  // View Profile button
+  const viewBtn = col.querySelector('.view-profile-btn');
+  viewBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    pushApplicantId(applicant.id);
     showApplicantModal(applicant);
   });
 
-  col.querySelector('.hire-btn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    launchBooking(applicant);  // safe no-op if booking modal doesn't exist
+  // Entire card is clickable (and keyboard-accessible)
+  const card = col.querySelector('.clickable-card');
+  const open = () => {
+    pushApplicantId(applicant.id);
+    showApplicantModal(applicant);
+  };
+  card.addEventListener('click', (e) => {
+    // avoid double trigger when button is clicked
+    if (e.target.closest('.view-profile-btn')) return;
+    open();
+  });
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      open();
+    }
   });
 
   return col;
@@ -403,9 +428,61 @@ function renderPagination() {
 }
 
 /* =========================================================
-   Modal (Profile) — City & Region only in header
+   Modal (Profile) — add "Hire Me" inside modal footer
+   + City & Region only in header
+   + Close profile then open booking (smooth handoff)
+   + Clean URL when profile modal closes
 ========================================================= */
-function showApplicantModal(applicant) {
+function ensureModalFooterAndHire(applicant){
+  const modalEl = byId('applicantModal');
+  if (!modalEl) return;
+
+  // Append footer with Hire button if missing
+  let footer = modalEl.querySelector('.modal-footer');
+  if (!footer) {
+    footer = document.createElement('div');
+    footer.className = 'modal-footer d-flex justify-content-between';
+    footer.innerHTML = `
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-brand text-white" id="modalHireBtn">
+          <i class="bi bi-calendar2-check me-1"></i> Hire Me
+        </button>
+      </div>
+    `;
+    modalEl.querySelector('.modal-content')?.appendChild(footer);
+  }
+
+  // Make sure we don't stack multiple identical listeners for clean URL handling
+  modalEl.removeEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
+  modalEl.addEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
+
+  // (Re)bind Hire Me each time to use current applicant
+  const hireBtn = footer.querySelector('#modalHireBtn');
+  if (hireBtn) {
+    hireBtn.onclick = () => {
+      // Close profile modal first, then open booking on hidden event (one-time)
+      const profileModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      const afterHide = () => {
+        modalEl.removeEventListener('hidden.bs.modal', afterHide);
+        launchBooking(applicant);
+      };
+      modalEl.addEventListener('hidden.bs.modal', afterHide, { once: true });
+      profileModal.hide();
+    };
+  }
+}
+
+function onProfileHiddenCleanUrl(){
+  // Remove ?applicant= from URL when profile is closed
+  removeApplicantIdFromUrl();
+}
+
+function showApplicantModal(applicant, options = { pushState: true }) {
+  const modalEl = byId('applicantModal');
+  if (!modalEl) return;
+
+  // Header area
   const avatar = byId('avatar');
   if (avatar) {
     if (applicant.photo_url) {
@@ -420,13 +497,13 @@ function showApplicantModal(applicant) {
   const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
   const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs`;
 
-  // City & Region only (no date)
+  // City & Region only
   const availabilityLineEl = byId('availabilityLine');
   if (availabilityLineEl) {
     availabilityLineEl.textContent = `${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
   }
 
-  // Specializations chips (if you want to show inside modal)
+  // Specializations chips (if shown)
   const chipsContainer = byId('chipsContainer');
   if (chipsContainer) {
     const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
@@ -447,17 +524,21 @@ function showApplicantModal(applicant) {
     langEl.textContent = langs.length ? langs.join(', ') : (applicant.languages || '—');
   }
 
-  const modalEl = byId('applicantModal');
-  if (modalEl && window.bootstrap?.Modal) {
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-    modalEl.dataset.applicant = JSON.stringify(applicant);
-  }
+  // Footer CTA inside modal
+  ensureModalFooterAndHire(applicant);
+
+  // Open Modal
+  const profileModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  profileModal.show();
+  modalEl.dataset.applicant = JSON.stringify(applicant);
+
+  // Push state if requested
+  if (options.pushState) pushApplicantId(applicant.id);
 }
 window.showApplicantModal = showApplicantModal;
 
 /* =========================================================
-   Booking (Hire Me) — safe no-op if modal missing
+   Booking (Hire) — safe no-op if modal missing
 ========================================================= */
 function launchBooking(applicant){
   const modalEl = byId('bookingModal');
@@ -472,7 +553,7 @@ function launchBooking(applicant){
   const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || '—';
   const bkMeta = modalEl.querySelector('#bkMeta'); if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
 
-  // Reset stepper visuals to step 1 (if present)
+  // Reset visuals to step 1 (if present)
   const panes = modalEl.querySelectorAll('[data-step-pane]');
   panes.forEach(p => p.classList.toggle('d-none', p.dataset.stepPane !== '1'));
   modalEl.querySelectorAll('.stepper .step').forEach((s,i)=>{
@@ -480,7 +561,7 @@ function launchBooking(applicant){
     s.classList.toggle('completed', false);
   });
 
-  // Clear previous inputs
+  // Clear inputs
   modalEl.querySelectorAll('.oval-tag.active').forEach(el=>el.classList.remove('active'));
   modalEl.querySelectorAll('input[name="apptType"]').forEach(inp => inp.checked = false);
   ['bkDate','bkTime','bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'].forEach(id => {
@@ -493,7 +574,7 @@ function launchBooking(applicant){
 }
 
 /* =========================================================
-   Styles injection (photo-top card design)
+   Styles injection (modern professional cards)
 ========================================================= */
 function injectStyles(){
   if (document.getElementById('app-modern-card-styles')) return;
@@ -507,31 +588,39 @@ function injectStyles(){
     .hover-lift{ transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
     .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
 
-    .app-card-bs{
+    .app-card{
       border:1px solid var(--card-border);
       border-radius:16px;
-      overflow:hidden; /* round the image corners */
+      overflow:hidden; /* round the top photo */
       box-shadow:0 2px 8px rgba(0,0,0,.06);
       background:#fff;
+      cursor:pointer;
+      outline: none;
     }
-    .card-photo-wrap{ background:#f5f6f8; }
+    .app-card:focus{ box-shadow:0 0 0 3px rgba(196,0,0,.25), 0 12px 28px rgba(0,0,0,.12); }
+
+    .card-photo-wrap{ background:#f5f6f8; position:relative; }
     .card-photo{ width:100%; height:100%; object-fit:cover; display:block; }
+    .card-photo-wrap::after{
+      content:'';
+      position:absolute; inset:0;
+      background:linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,.02));
+      pointer-events:none;
+    }
 
     .app-name-title{ font-weight:800; }
     .emp-pill{
       display:inline-block; border-radius:999px; padding:.26rem .56rem;
       font-weight:700; font-size:.78rem; border:1px solid transparent;
     }
-    .emp-pill.pill-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
-    .emp-pill.pill-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
+    .emp-pill.emp-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
+    .emp-pill.emp-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
 
     .meta-pill{
       display:inline-flex; align-items:center; gap:.35rem;
       padding:.32rem .6rem; border-radius:999px; font-size:.78rem; font-weight:700;
       color:#374151; background:#f3f4f6; border:1px solid #e5e7eb;
     }
-    .meta-pill.success{ background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
-    .meta-pill.warn{ background:#fffbeb; color:#b45309; border-color:#fde68a; }
 
     .btn-brand{ background:var(--brand-red); border-color:var(--brand-red); }
     .btn-brand:hover{ filter:brightness(.92); }
