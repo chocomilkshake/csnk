@@ -283,17 +283,17 @@
               <h6 class="mb-2">Tell us what work you need from this applicant</h6>
               <p class="text-muted small mb-3">Select all applicable services. This helps us prepare the interview and match expectations.</p>
               <div class="row g-2">
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cleaning & Housekeeping (General)">Cleaning & Housekeeping (General)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Laundry & Clothing Care">Laundry & Clothing Care</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cooking & Food Service">Cooking & Food Service</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Childcare & Maternity (Yaya)">Childcare & Maternity (Yaya)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Elderly & Special Care (Caregiver)">Elderly & Special Care (Caregiver)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Pet & Outdoor Maintenance">Pet & Outdoor Maintenance</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cleaning &amp; Housekeeping (General)">Cleaning &amp; Housekeeping (General)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Laundry &amp; Clothing Care">Laundry &amp; Clothing Care</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cooking &amp; Food Service">Cooking &amp; Food Service</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Childcare &amp; Maternity (Yaya)">Childcare &amp; Maternity (Yaya)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Elderly &amp; Special Care (Caregiver)">Elderly &amp; Special Care (Caregiver)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Pet &amp; Outdoor Maintenance">Pet &amp; Outdoor Maintenance</button></div>
               </div>
             </div>
           </div>
 
-          <!-- STEP 2: Appointment Type (House Visit -> Office Visit) -->
+          <!-- STEP 2: Appointment Type -->
           <div class="step-pane d-none" data-step-pane="2">
             <div class="panel mb-3">
               <h6 class="mb-3">How would you like to interview the applicant?</h6>
@@ -321,10 +321,10 @@
             </div>
           </div>
 
-          <!-- STEP 3: Date & Time (with Office Visit constraints) -->
+          <!-- STEP 3: Date & Time -->
           <div class="step-pane d-none" data-step-pane="3">
             <div class="panel mb-3">
-              <h6 class="mb-2">Choose Date & Time</h6>
+              <h6 class="mb-2">Choose Date &amp; Time</h6>
               <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
@@ -339,7 +339,7 @@
             </div>
           </div>
 
-          <!-- STEP 4: Client Information (improved labels) -->
+          <!-- STEP 4: Client Information -->
           <div class="step-pane d-none" data-step-pane="4">
             <div class="panel mb-3">
               <h6 class="mb-3">Your Details</h6>
@@ -372,9 +372,7 @@
             </div>
           </div>
 
-        
-
-          <!-- STEP 5: Review & Submit (no QR) -->
+          <!-- STEP 5: Review & Submit -->
           <div class="step-pane d-none" data-step-pane="5">
             <div class="panel mb-3">
               <h6 class="mb-3">Review Your Request</h6>
@@ -383,7 +381,6 @@
               </div>
               <div class="d-grid">
                 <button class="btn btn-brand text-white" id="bkSubmit">Submit Request</button>
-                
               </div>
             </div>
           </div>
@@ -422,6 +419,9 @@
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
   <script src="../resources/js/app.js"></script>
   <script src="../resources/js/applicant.js"></script>
 

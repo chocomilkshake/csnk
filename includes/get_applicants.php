@@ -45,12 +45,12 @@ function canonicalizeForRoleMap(string $label): string {
 function mapPrimarySpecialization(array $skills): string {
     // Canonical map (expects " & " form)
     $roleMap = [
-        'Cleaning & Housekeeping (General)'   => 'Kasambahay',
-        'Laundry & Clothing Care'             => 'Kasambahay',
+        'Cleaning & Housekeeping (General)'   => 'Housekeeping',
+        'Laundry & Clothing Care'             => 'Laundry Specialist',
         'Cooking & Food Service'              => 'Cook',
         'Childcare & Maternity (Yaya)'        => 'Nanny',
         'Elderly & Special Care (Caregiver)'  => 'Elderly Care',
-        'Pet & Outdoor Maintenance'           => 'All-around Helper',
+        'Pet & Outdoor Maintenance'           => 'Pet Care Specialist',
     ];
 
     foreach ($skills as $raw) {
@@ -80,14 +80,14 @@ try {
     $database  = new Database();
     $applicant = new Applicant($database);
 
-    // Active (not deleted)
-    $apps = $applicant->getAll();
+    // Active (not deleted, not approved)
+    $apps = $applicant->getAllForPublic();
 
     // Base URLs (auto-detect http/https + host)
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
     // Adjust this path to your project root if needed:
-    $appBase = $scheme . '://' . $host . '/csnk';
+    $appBase = $scheme . '://' . $host . '/csnk-1';
 
     $uploadsBase    = rtrim($appBase, '/') . '/admin/uploads/';
     $placeholderUrl = rtrim($appBase, '/') . '/resources/img/placeholder-user.svg';

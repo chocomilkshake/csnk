@@ -74,7 +74,6 @@
   }
   function isValidOfficeTime(timeStr){
     if (!timeStr) return false;
-    // "HH:MM"
     const [hh, mm] = timeStr.split(':').map(n=>parseInt(n,10));
     if (isNaN(hh) || isNaN(mm)) return false;
     const minutes = hh*60 + mm;
@@ -103,7 +102,6 @@
           return false;
         }
       }
-      // Basic format checks
       const phone = bookingEl.querySelector('#bkPhone').value.trim();
       const email = bookingEl.querySelector('#bkEmail').value.trim();
       if (!/^\+?\d[\d\s\-]{7,}$/.test(phone)) { toast('Please enter a valid active phone number.'); return false; }
@@ -138,7 +136,6 @@
     `;
   }
 
-  // Navigation
   btnBack.addEventListener('click', () => gotoStep(currentStep - 1));
   btnNext.addEventListener('click', ()=>{
     if (!validateStep(currentStep)) return;
@@ -146,9 +143,7 @@
     else { modal.hide(); }
   });
 
-  // Submit to backend
   btnSubmit?.addEventListener('click', async ()=>{
-    // simple re-validate
     if (!validateStep(4)) { gotoStep(4); return; }
 
     const apptType = getApptType();
@@ -175,7 +170,9 @@
       const out = await res.json();
       if (!res.ok) throw new Error(out.error || 'Failed to submit booking');
 
-      toast('Request submitted. A confirmation email was sent.', 'success');
+      // NOTE: Applicant is auto-marked On Process by backend.
+      const msg = out.status_updated ? 'Request submitted. Applicant moved to On Process.' : 'Request submitted.';
+      toast(msg, 'success');
       modal.hide();
     }catch(err){
       console.error(err);
@@ -184,30 +181,25 @@
   });
 
   function getCurrentApplicantId(){
-    // read from appended dataset in app.js -> showApplicantModal
     const modalEl = document.getElementById('applicantModal');
     try{
-      return JSON.parse(modalEl?.dataset?.applicant || '{}').id || null;
+      return JSON.parse(modalEl?.dataset.applicant || '{}').id || null;
     }catch{ return null; }
   }
 
-  // Enforce Office Visit slot automatically when selection changes:
   bookingEl.querySelectorAll('input[name="apptType"]').forEach(r=>{
     r.addEventListener('change', ()=>{
       const isOffice = isOfficeVisit();
       const dateInput = bookingEl.querySelector('#bkDate');
       const timeInput = bookingEl.querySelector('#bkTime');
       if (isOffice){
-        // Set min date = today
         const today = new Date();
         const iso = today.toISOString().slice(0,10);
         dateInput.min = iso;
-        // If selected day is Sun, bump to Monday
         if (dateInput.value && !isValidOfficeDate(dateInput.value)) {
           toast('Office Visit available Mon–Sat. Please pick another date.');
           dateInput.value = '';
         }
-        // Suggest a valid time window
         if (timeInput.value){
           if (!isValidOfficeTime(timeInput.value)){
             toast('Office Visit time is 8:00–17:00. Please adjust.');
@@ -220,9 +212,7 @@
     });
   });
 
-  // Expose helper if other scripts need to open booking
   window.launchBooking = (applicant) => {
-    // Header fill
     if (bkAvatar) {
       bkAvatar.style.backgroundImage = applicant.photo_url ? `url('${applicant.photo_url}')` : '';
       bkAvatar.style.backgroundSize = applicant.photo_url ? 'cover' : '';
@@ -231,9 +221,7 @@
     if (bkName) bkName.textContent = applicant.full_name || '—';
     if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
 
-    // Reset to step1 visuals
     gotoStep(1);
-    // Clear selections
     bookingEl.querySelectorAll('.oval-tag.active').forEach(el=>el.classList.remove('active'));
     selectedServices.clear();
     bookingEl.querySelectorAll('input[name="apptType"]').forEach(inp => inp.checked = false);

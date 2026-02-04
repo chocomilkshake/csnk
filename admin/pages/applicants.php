@@ -53,29 +53,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 
 /**
  * Load applicants and apply search (server-side filter).
- * We filter locally to avoid requiring changes in Applicant.php.
- * If you want DB-level search later, I can add it to Applicant.php cleanly.
  */
 $applicants = $applicant->getAll();
 
 /**
  * Helper: Render preferred_location JSON as clean text.
- * - Shows comma-separated cities (e.g., "Biringan City, Capiz City")
- * - If too long, show only the first city
  */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) {
         return 'N/A';
     }
-    // Attempt to decode JSON array
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
-        // In case it's not valid JSON, just strip quotes/brackets best-effort
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-    // Keep only non-empty strings
     $cities = array_values(array_filter(array_map('trim', $arr), function($v){
         return is_string($v) && $v !== '';
     }));
@@ -84,10 +77,8 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
         return 'N/A';
     }
 
-    // Prepare full label
     $full = implode(', ', $cities);
 
-    // If too long, show only the first city
     if (mb_strlen($full) > $maxLen) {
         return $cities[0];
     }
@@ -110,9 +101,8 @@ function filterApplicantsByQuery(array $rows, string $query): array {
         $suffix = (string)($app['suffix']       ?? '');
         $email  = (string)($app['email']        ?? '');
         $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999); // expand full for search
+        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
 
-        // Combine a few name variants
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
         $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
@@ -132,9 +122,7 @@ if ($q !== '') {
     $applicants = filterApplicantsByQuery($applicants, $q);
 }
 
-// Precompute query string suffix to preserve search in action links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">List of Applicants</h4>
@@ -148,7 +136,6 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     </div>
 </div>
 
-<!-- 🔎 Search bar placed BETWEEN the buttons above and the list below -->
 <div class="mb-3">
     <form method="get" action="applicants.php" class="d-flex justify-content-end">
         <div class="input-group" style="max-width: 420px;">
@@ -238,7 +225,6 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                 <td><?php echo formatDate($app['created_at']); ?></td>
                                 <td>
                                     <?php
-                                        // Keep search context when navigating
                                         $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                         $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                         $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
