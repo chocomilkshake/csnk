@@ -122,6 +122,9 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             <a href="on-process.php" class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>">
                 <i class="bi bi-hourglass-split"></i>On Process
             </a>
+            <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>">
+                <i class="bi bi-check-circle"></i>Approved
+            </a>
             <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
                 <i class="bi bi-clock-history"></i>Pending Applicants
             </a>
