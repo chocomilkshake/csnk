@@ -119,15 +119,16 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             <a href="applicants.php" class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>">
                 <i class="bi bi-people"></i>List of Applicants
             </a>
+            <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
+                <i class="bi bi-clock-history"></i>Pending Applicants
+            </a>
             <a href="on-process.php" class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>">
                 <i class="bi bi-hourglass-split"></i>On Process
             </a>
             <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>">
                 <i class="bi bi-check-circle"></i>Approved
             </a>
-            <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
-                <i class="bi bi-clock-history"></i>Pending Applicants
-            </a>
+
             <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>">
                 <i class="bi bi-trash"></i>Deleted Applicants
             </a>
