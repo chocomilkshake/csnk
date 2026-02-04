@@ -3,16 +3,28 @@
 declare(strict_types=1);
 session_start();
 
+// Load PHPMailer
+require_once __DIR__ . '/../vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 // --------------------------------------------------
 // Configuration
 // --------------------------------------------------
 $CONFIG = [
     'to_email'      => 'CSNKSupport@gmail.com',      // <-- CHANGE: destination email
-    'from_email'    => 'no-reply@example.com',   // <-- CHANGE: from header (domain you own)
-    'from_name'     => 'CSNK Manpower Agency',         // <-- CHANGE: from name
+    'from_email'    => 'CSNKno-reply@gmail.com',     // <-- CHANGE: Gmail address (if using Gmail SMTP)
+    'from_name'     => 'CSNK Manpower Agency',       // <-- CHANGE: from name
     'subject'       => 'CSNK Contact Form Submission', // <-- CHANGE: email subject
     'max_message'   => 500,
-    'enable_mail'   => true,                     // set false to skip mail() while testing
+    
+    // PHPMailer Configuration
+    'smtp_host'     => 'smtp.gmail.com',             // <-- CHANGE: SMTP host (gmail.com for Gmail)
+    'smtp_port'     => 587,                          // <-- CHANGE: SMTP port (587 for TLS)
+    'smtp_user'     => '@gmail',     // <-- CHANGE: Gmail address
+    'smtp_pass'     => '',    // <-- CHANGE: Gmail App Password (NOT regular password!)
+    'smtp_encrypt'  => PHPMailer::ENCRYPTION_STARTTLS, // TLS encryption
+    'enable_mail'   => true,                         // set false to skip email while testing
 ];
 
 // Generate CSRF token
@@ -76,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['consent'] = 'Consent is required.';
         }
 
-        // If valid, send email
+        // If valid, send email with PHPMailer
         if (!$errors) {
             $ip      = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
             $agent   = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
@@ -92,25 +104,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . "Topic: $topic\n\n"
                 . "Message:\n$message\n";
 
-            // Prevent header injection
-            $safeFromName = str_replace(["\r", "\n"], '', $CONFIG['from_name']);
-            $safeFrom     = str_replace(["\r", "\n"], '', $CONFIG['from_email']);
-            $safeSubject  = str_replace(["\r", "\n"], '', $CONFIG['subject']);
-
-            $headers = [];
-            $headers[] = "From: {$safeFromName} <{$safeFrom}>";
-            $headers[] = "Reply-To: {$email}";
-            $headers[] = "Content-Type: text/plain; charset=UTF-8";
-            $headers[] = "X-Mailer: PHP/" . phpversion();
-
             if ($CONFIG['enable_mail']) {
-                $sent = @mail($CONFIG['to_email'], $safeSubject, $body, implode("\r\n", $headers));
-                if ($sent) {
+                try {
+                    $mail = new PHPMailer(true);
+                    
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host       = $CONFIG['smtp_host'];
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = $CONFIG['smtp_user'];
+                    $mail->Password   = $CONFIG['smtp_pass'];
+                    $mail->SMTPSecure = $CONFIG['smtp_encrypt'];
+                    $mail->Port       = $CONFIG['smtp_port'];
+                    
+                    // Recipients: send to company support and a copy to the client
+                    $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
+                    // Primary recipient: company support
+                    $mail->addAddress($CONFIG['to_email']);
+                    // Also send a copy to the client who submitted the form
+                    if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                      $mail->addAddress($email);
+                    }
+                    // Keep Reply-To set to the client so support can reply directly
+                    $mail->addReplyTo($email, "$firstName $lastName");
+                    
+                    // Content
+                    $mail->isHTML(false);
+                    $mail->Subject = $CONFIG['subject'];
+                    $mail->Body    = $body;
+                    
+                    // Send
+                    $mail->send();
+                    
                     $success = true;
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
                     $_POST = []; // clear form
-                } else {
+                    
+                } catch (Exception $e) {
                     $errors['general'] = 'We could not send your message right now. Please try again later.';
+                    // Optionally log the error for debugging: error_log("Mail Error: {$mail->ErrorInfo}");
                 }
             } else {
                 $success = true; // simulated success
@@ -517,6 +549,8 @@ function invalidClass(array $errors, string $key): string {
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"> </script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
 
   <script>
 
