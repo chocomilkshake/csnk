@@ -339,38 +339,53 @@
             </div>
           </div>
 
-          <!-- STEP 4: Client Information -->
-          <div class="step-pane d-none" data-step-pane="4">
-            <div class="panel mb-3">
-              <h6 class="mb-3">Your Details</h6>
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label">First Name</label>
-                  <input type="text" class="form-control" id="bkFirstName">
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Middle Name</label>
-                  <input type="text" class="form-control" id="bkMiddleName">
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Last Name</label>
-                  <input type="text" class="form-control" id="bkLastName">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Active Phone Number</label>
-                  <input type="tel" class="form-control" id="bkPhone" placeholder="+63 9XXXXXXXXX">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Active Email</label>
-                  <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Address</label>
-                  <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+            <!-- STEP 4: Client Information -->
+            <div class="step-pane d-none" data-step-pane="4">
+              <div class="panel mb-3">
+                <h6 class="mb-3">Your Details</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="bkFirstName">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="bkMiddleName">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="bkLastName">
+                  </div>
+
+                  <!-- ✅ Phone: enforce 11 digits and must start with 09 -->
+                  <div class="col-md-6">
+                    <label class="form-label">Active Phone Number</label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="bkPhone"
+                      placeholder="09XXXXXXXXX"
+                      inputmode="numeric"
+                      pattern="^09\d{9}$"
+                      maxlength="11"
+                      minlength="11"
+                      aria-describedby="bkPhoneHelp"
+                    >
+                    <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Active Email</label>
+                    <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Address</label>
+                    <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
 
           <!-- STEP 5: Review & Submit -->
           <div class="step-pane d-none" data-step-pane="5">
