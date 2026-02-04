@@ -1,7 +1,7 @@
 <?php
 /**
  * Create Booking Request (client-facing, mysqli version)
- * Accepts JSON POST and saves to DB; returns { ok: true, booking_id }
+ * Accepts JSON POST and saves to DB; returns { ok: true, booking_id, status_updated }
  */
 declare(strict_types=1);
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/../admin/includes/config.php';
 require_once __DIR__ . '/../admin/includes/Database.php';
 
-function fail(int $code, array $payload){ http_response_code($code); echo json_encode($payload, JSON_UNESCAPED_SLASHES); exit; }
+function fail(int $code, array $payload){ http_response_code($code); echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); exit; }
 function required(array $src, string $key): string {
   if (!isset($src[$key])) fail(422, ['ok'=>false,'error'=>"Missing field: $key"]);
   $v = is_string($src[$key]) ? trim($src[$key]) : $src[$key];
@@ -109,8 +109,19 @@ try {
   $booking_id = (int)$stmt->insert_id;
   $stmt->close();
 
+  // NEW: auto-mark applicant as ON PROCESS
+  $statusUpdated = false;
+  $upd = $db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL");
+  if ($upd) {
+    $upd->bind_param('i', $applicant_id);
+    if ($upd->execute()) {
+      $statusUpdated = ($upd->affected_rows >= 0);
+    }
+    $upd->close();
+  }
+
   http_response_code(201);
-  echo json_encode(['ok'=>true, 'booking_id'=>$booking_id], JSON_UNESCAPED_SLASHES);
+  echo json_encode(['ok'=>true, 'booking_id'=>$booking_id, 'status_updated'=>$statusUpdated], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   fail(500, ['ok'=>false, 'error'=>$e->getMessage()]);
 }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 03, 2026 at 09:36 AM
+-- Generation Time: Feb 04, 2026 at 04:35 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -42,90 +42,29 @@ CREATE TABLE `activity_logs` (
 
 INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_address`, `created_at`) VALUES
 (1, 1, 'Login', 'User logged in successfully', '::1', '2026-01-28 05:38:25'),
-(2, 1, 'Add Applicant', 'Added new applicant: Renz Roann Diaz', '::1', '2026-01-30 06:44:59'),
-(3, 1, 'Update Applicant', 'Updated applicant ID: 4', '::1', '2026-01-30 07:36:50'),
-(4, 1, 'Update Applicant', 'Updated applicant ID: 4', '::1', '2026-01-30 07:37:20'),
-(5, 1, 'Delete Applicant', 'Deleted applicant ID: 4', '::1', '2026-01-30 07:38:16'),
-(6, 1, 'Delete Applicant', 'Deleted applicant ID: 3', '::1', '2026-01-30 07:38:19'),
-(7, 1, 'Delete Applicant', 'Deleted applicant ID: 2', '::1', '2026-01-30 07:38:22'),
-(8, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 2', '::1', '2026-01-30 07:38:26'),
-(9, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 3', '::1', '2026-01-30 07:38:28'),
-(10, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 4', '::1', '2026-01-30 07:38:30'),
-(11, 1, 'Add Applicant', 'Added new applicant: Renz Roann Diaz', '::1', '2026-01-30 07:41:29'),
-(12, 1, 'Update Applicant', 'Updated applicant ID: 5', '::1', '2026-01-30 07:42:01'),
-(13, 1, 'Update Applicant', 'Updated applicant ID: 5', '::1', '2026-01-30 07:55:30'),
-(14, 1, 'Add Applicant', 'Added new applicant: awdaw awdawdw', '::1', '2026-01-30 07:58:49'),
-(15, 1, 'Delete Applicant', 'Deleted applicant ID: 6', '::1', '2026-01-30 08:04:28'),
-(16, 1, 'Delete Applicant', 'Deleted applicant ID: 5', '::1', '2026-01-30 08:04:32'),
-(17, 1, 'Add Applicant', 'Added new applicant: Renz Roann Diaz', '::1', '2026-01-30 08:06:50'),
-(18, 1, 'Logout', 'User logged out', '::1', '2026-02-02 00:46:38'),
-(19, 1, 'Login', 'User logged in successfully', '::1', '2026-02-02 00:46:42'),
-(20, 1, 'Logout', 'User logged out', '::1', '2026-02-02 00:46:44'),
-(21, 1, 'Login', 'User logged in successfully', '::1', '2026-02-02 01:01:52'),
-(22, 1, 'Logout', 'User logged out', '::1', '2026-02-02 01:04:08'),
-(23, 1, 'Login', 'User logged in successfully', '::1', '2026-02-02 01:06:56'),
-(24, 1, 'Update Applicant', 'Updated applicant ID: 7', '::1', '2026-02-02 01:40:51'),
-(25, 1, 'Restore Applicant', 'Restored applicant ID: 5', '::1', '2026-02-02 01:43:28'),
-(26, 1, 'Restore Applicant', 'Restored applicant ID: 6', '::1', '2026-02-02 01:43:29'),
-(27, 1, 'Export Excel', 'Exported all applicants list', '::1', '2026-02-02 01:52:53'),
-(28, 1, 'Delete Applicant', 'Deleted applicant ID: 7', '::1', '2026-02-02 02:29:49'),
-(29, 1, 'Delete Applicant', 'Deleted applicant ID: 6', '::1', '2026-02-02 02:29:51'),
-(30, 1, 'Delete Applicant', 'Deleted applicant ID: 5', '::1', '2026-02-02 02:29:55'),
-(31, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 5', '::1', '2026-02-02 02:30:06'),
-(32, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 6', '::1', '2026-02-02 02:30:10'),
-(33, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 7', '::1', '2026-02-02 02:30:19'),
-(34, 1, 'Add Applicant', 'Added new applicant: Ryzza Mae Dizon', '::1', '2026-02-02 02:35:00'),
-(35, 1, 'Update Applicant', 'Updated applicant ID: 8', '::1', '2026-02-02 02:35:20'),
-(36, 1, 'Update Applicant', 'Updated applicant ID: 8', '::1', '2026-02-02 02:36:24'),
-(37, 1, 'Update Applicant', 'Updated applicant ID: 8', '::1', '2026-02-02 02:40:31'),
-(38, 1, 'Update Applicant', 'Updated applicant ID: 8', '::1', '2026-02-02 02:40:56'),
-(39, 1, 'Delete Applicant', 'Deleted applicant ID: 8', '::1', '2026-02-02 02:55:02'),
-(40, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 8', '::1', '2026-02-02 02:55:10'),
-(41, 1, 'Add Applicant', 'Added new applicant: Renz Roann Diaz', '::1', '2026-02-02 02:59:12'),
-(42, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:17:37'),
-(43, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:31:39'),
-(44, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:31:53'),
-(45, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:32:51'),
-(46, 1, 'Add Applicant', 'Added new applicant: Imee Marcos', '::1', '2026-02-02 03:46:22'),
-(47, 1, 'Update Applicant', 'Updated applicant ID: 10', '::1', '2026-02-02 03:47:02'),
-(48, 1, 'Update Applicant', 'Updated applicant ID: 10', '::1', '2026-02-02 03:47:12'),
-(49, 1, 'Add Applicant', 'Added new applicant: Jolly Takolokoy', '::1', '2026-02-02 03:50:33'),
-(50, 1, 'Add Applicant', 'Added new applicant: Dixon Myas', '::1', '2026-02-02 03:53:17'),
-(51, 1, 'Update Applicant', 'Updated applicant ID: 12', '::1', '2026-02-02 03:53:35'),
-(52, 1, 'Add Applicant', 'Added new applicant: Test2 awda', '::1', '2026-02-02 03:55:41'),
-(53, 1, 'Add Applicant', 'Added new applicant: Test 2 Myas', '::1', '2026-02-02 03:58:13'),
-(54, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:58:35'),
-(55, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:58:59'),
-(56, 1, 'Update Applicant', 'Updated applicant ID: 9', '::1', '2026-02-02 03:59:16'),
-(57, 1, 'Add Applicant', 'Added new applicant: Test3 awdawd', '::1', '2026-02-02 04:01:38'),
-(58, 1, 'Update Applicant', 'Updated applicant ID: 15', '::1', '2026-02-02 05:12:47'),
-(59, 1, 'Update Applicant', 'Updated applicant ID: 10', '::1', '2026-02-02 05:18:07'),
-(60, 1, 'Update Applicant', 'Updated applicant ID: 15', '::1', '2026-02-02 05:22:11'),
-(61, 1, 'Update Applicant', 'Updated applicant ID: 14', '::1', '2026-02-02 05:50:22'),
-(62, 1, 'Add Applicant', 'Added new applicant: awd awd', '::1', '2026-02-02 08:10:25'),
-(63, 1, 'Delete Applicant', 'Deleted applicant ID: 15', '::1', '2026-02-02 08:13:07'),
-(64, 1, 'Delete Applicant', 'Deleted applicant ID: 14', '::1', '2026-02-02 08:13:11'),
-(65, 1, 'Delete Applicant', 'Deleted applicant ID: 13', '::1', '2026-02-02 08:13:13'),
-(66, 1, 'Delete Applicant', 'Deleted applicant ID: 12', '::1', '2026-02-02 08:13:17'),
-(67, 1, 'Delete Applicant', 'Deleted applicant ID: 11', '::1', '2026-02-02 08:13:20'),
-(68, 1, 'Delete Applicant', 'Deleted applicant ID: 10', '::1', '2026-02-02 08:13:24'),
-(69, 1, 'Delete Applicant', 'Deleted applicant ID: 9', '::1', '2026-02-02 08:13:34'),
-(70, 1, 'Update Applicant', 'Updated applicant ID: 16', '::1', '2026-02-02 08:13:55'),
-(71, 1, 'Logout', 'User logged out', '::1', '2026-02-02 08:14:07'),
-(72, 1, 'Login', 'User logged in successfully', '::1', '2026-02-02 08:14:11'),
-(73, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 9', '::1', '2026-02-02 08:14:27'),
-(74, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 10', '::1', '2026-02-02 08:14:31'),
-(75, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 11', '::1', '2026-02-02 08:14:34'),
-(76, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 12', '::1', '2026-02-02 08:14:36'),
-(77, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 13', '::1', '2026-02-02 08:14:39'),
-(78, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 14', '::1', '2026-02-02 08:14:51'),
-(79, 1, 'Permanent Delete', 'Permanently deleted applicant ID: 15', '::1', '2026-02-02 08:14:57'),
-(80, 1, 'Login', 'User logged in successfully', '::1', '2026-02-02 11:55:56'),
-(81, 1, 'Add Applicant', 'Added new applicant: Dixon Myas', '::1', '2026-02-02 12:00:00'),
-(82, 1, 'Add Applicant', 'Added new applicant: Mhi Mha Mha', '::1', '2026-02-02 12:22:47'),
-(83, 1, 'Add Applicant', 'Added new applicant: Imee Bangag', '::1', '2026-02-02 12:58:24'),
-(84, 1, 'Login', 'User logged in successfully', '::1', '2026-02-03 00:17:53'),
-(85, 1, 'Add Applicant', 'Added new applicant: Jennifer Refer', '::1', '2026-02-03 05:16:52');
+(90, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 01:47:04'),
+(91, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 01:47:40'),
+(92, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 01:53:23'),
+(93, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 01:54:02'),
+(94, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 02:27:20'),
+(95, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 02:28:17'),
+(96, 1, 'Update Applicant', 'Updated applicant ID: 18', '::1', '2026-02-04 02:34:21'),
+(97, 1, 'Update Applicant', 'Updated applicant ID: 18', '::1', '2026-02-04 02:35:57'),
+(98, 1, 'Update Applicant', 'Updated applicant ID: 18', '::1', '2026-02-04 02:36:05'),
+(99, 1, 'Update Applicant', 'Updated applicant ID: 18', '::1', '2026-02-04 02:39:03'),
+(100, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 02:50:07'),
+(101, 1, 'Update Applicant', 'Updated applicant ID: 20', '::1', '2026-02-04 02:50:30'),
+(102, 1, 'Update Applicant', 'Updated applicant ID: 20', '::1', '2026-02-04 02:50:30'),
+(103, 1, 'Update Applicant', 'Updated applicant ID: 20', '::1', '2026-02-04 02:50:30'),
+(104, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 02:54:38'),
+(105, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 02:54:57'),
+(106, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 02:55:27'),
+(107, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 02:55:48'),
+(108, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 02:56:04'),
+(109, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 02:56:04'),
+(110, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 03:00:01'),
+(111, 1, 'Update Applicant', 'Updated applicant ID: 17', '::1', '2026-02-04 03:01:04'),
+(112, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 03:13:30');
 
 -- --------------------------------------------------------
 
@@ -192,10 +131,10 @@ CREATE TABLE `applicants` (
 --
 
 INSERT INTO `applicants` (`id`, `first_name`, `middle_name`, `last_name`, `suffix`, `phone_number`, `alt_phone_number`, `email`, `date_of_birth`, `address`, `educational_attainment`, `work_history`, `preferred_location`, `languages`, `specialization_skills`, `employment_type`, `education_level`, `years_experience`, `picture`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'pending', 1, '2026-02-02 12:00:00', '2026-02-03 06:29:00', NULL),
-(18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', 'pending', 1, '2026-02-02 12:22:47', '2026-02-03 06:28:45', NULL),
-(19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', 'pending', 1, '2026-02-02 12:58:24', '2026-02-03 06:28:32', NULL),
-(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', '', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'pending', 1, '2026-02-03 05:16:52', '2026-02-03 06:27:57', NULL);
+(17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\",\"Tondo Manila\",\"Pandacan Manila\",\"Paco Manila\",\"Pasay Manila\"]', '[\"Filipino\"]', '[\"Childcare & Maternity (Yaya)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'pending', 1, '2026-02-02 12:00:00', '2026-02-04 03:01:04', NULL),
+(18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', 'pending', 1, '2026-02-02 12:22:47', '2026-02-04 02:39:03', NULL),
+(19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', 'on_process', 1, '2026-02-02 12:58:24', '2026-02-04 03:13:30', NULL),
+(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking & Food Service\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'pending', 1, '2026-02-03 05:16:52', '2026-02-04 02:50:30', NULL);
 
 -- --------------------------------------------------------
 
@@ -259,7 +198,7 @@ CREATE TABLE `client_bookings` (
   `id` int(10) UNSIGNED NOT NULL,
   `applicant_id` int(10) UNSIGNED NOT NULL,
   `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`services_json`)),
-  `appointment_type` enum('Video Call','Audio Call','Chat','House Visit','Office Visit') NOT NULL,
+  `appointment_type` enum('Video Call','Audio Call','Chat','Office Visit') NOT NULL,
   `appointment_date` date NOT NULL,
   `appointment_time` time NOT NULL,
   `client_first_name` varchar(100) NOT NULL,
@@ -278,7 +217,7 @@ CREATE TABLE `client_bookings` (
 --
 
 INSERT INTO `client_bookings` (`id`, `applicant_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
-(13, 18, '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\",\"Pet & Outdoor Maintenance\"]', 'Video Call', '2026-02-03', '16:02:00', 'df', 'dfgh', 'fghj', '12345678912', 'ocasmcapcia@gmail.com', '1231 dfghjvgyhj', 'submitted', '2026-02-03 08:02:10', '2026-02-03 08:02:10');
+(4, 19, '[\"Cooking & Food Service\",\"Pet & Outdoor Maintenance\"]', 'Office Visit', '2026-02-25', '10:00:00', 'Renz Roann', 'B.', 'Diaz', '09270746258', 'renzdiaz.contact@gmai.com', '2461 Princess Floresca St. Pandacan, Manila', 'submitted', '2026-02-04 02:49:38', '2026-02-04 02:49:38');
 
 -- --------------------------------------------------------
 
@@ -305,7 +244,9 @@ INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login
 (3, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-02 09:06:56', '2026-02-02 16:14:07'),
 (4, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-02 16:14:11', NULL),
 (5, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-02 19:55:56', NULL),
-(6, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-03 08:17:53', NULL);
+(6, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-03 08:17:53', NULL),
+(7, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-03 21:14:08', NULL),
+(8, 1, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-04 08:33:02', NULL);
 
 --
 -- Indexes for dumped tables
@@ -348,8 +289,9 @@ ALTER TABLE `applicant_documents`
 ALTER TABLE `client_bookings`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_applicant` (`applicant_id`),
-  ADD KEY `idx_client_bookings_applicant` (`applicant_id`),
-  ADD KEY `idx_client_bookings_created` (`created_at`);
+  ADD KEY `idx_client_bookings_created_at` (`created_at`),
+  ADD KEY `idx_client_bookings_status` (`status`),
+  ADD KEY `idx_client_bookings_app_created` (`applicant_id`,`created_at`);
 
 --
 -- Indexes for table `session_logs`
@@ -367,7 +309,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -391,13 +333,13 @@ ALTER TABLE `applicant_documents`
 -- AUTO_INCREMENT for table `client_bookings`
 --
 ALTER TABLE `client_bookings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Constraints for dumped tables

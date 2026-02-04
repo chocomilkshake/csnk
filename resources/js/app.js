@@ -1,6 +1,6 @@
 // app.js — Client listing UX (photo-top modern cards)
-// v2.6 — cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
-console.log('app.js loaded successfully - v2.6');
+// v2.8 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
+console.log('app.js loaded successfully - v2.8');
 
 /* =========================================================
    State
@@ -24,7 +24,7 @@ const pagination   = document.getElementById('pagination');
 ========================================================= */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, s => (
-    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[s]
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":"&#039;" }[s]
   ));
 }
 function byId(id) { return document.getElementById(id); }
@@ -46,6 +46,8 @@ function arrFromMaybe(val){
 function normLabel(s){
   return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
 }
+
+
 
 /** Update URL with applicant ID without navigating */
 function pushApplicantId(id){
@@ -159,6 +161,7 @@ async function loadApplicants() {
     }
 
     const data = await response.json();
+
     allApplicants = Array.isArray(data) ? data : [];
     filteredApplicants = [...allApplicants];
     renderApplicants();
@@ -412,7 +415,6 @@ function createApplicantCard(applicant) {
     showApplicantModal(applicant);
   };
   card.addEventListener('click', (e) => {
-    // avoid double trigger when button is clicked
     if (e.target.closest('.view-profile-btn')) return;
     open();
   });
@@ -476,7 +478,6 @@ function ensureModalFooterAndHire(applicant){
   const modalEl = byId('applicantModal');
   if (!modalEl) return;
 
-  // Append footer with Hire button if missing
   let footer = modalEl.querySelector('.modal-footer');
   if (!footer) {
     footer = document.createElement('div');
@@ -492,15 +493,12 @@ function ensureModalFooterAndHire(applicant){
     modalEl.querySelector('.modal-content')?.appendChild(footer);
   }
 
-  // Make sure we don't stack multiple identical listeners for clean URL handling
   modalEl.removeEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
   modalEl.addEventListener('hidden.bs.modal', onProfileHiddenCleanUrl);
 
-  // (Re)bind Hire Me each time to use current applicant
   const hireBtn = footer.querySelector('#modalHireBtn');
   if (hireBtn) {
     hireBtn.onclick = () => {
-      // Close profile modal first, then open booking on hidden event (one-time)
       const profileModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
       const afterHide = () => {
         modalEl.removeEventListener('hidden.bs.modal', afterHide);
@@ -513,7 +511,6 @@ function ensureModalFooterAndHire(applicant){
 }
 
 function onProfileHiddenCleanUrl(){
-  // Remove ?applicant= from URL when profile is closed
   removeApplicantIdFromUrl();
 }
 
@@ -521,7 +518,6 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   const modalEl = byId('applicantModal');
   if (!modalEl) return;
 
-  // Preferred locations (badges) + education (from new API)
   const prefEl = byId('prefLocValue');
   if (prefEl) {
     const arr = Array.isArray(applicant.preferred_locations) ? applicant.preferred_locations : [];
@@ -531,7 +527,6 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   }
   const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.education_level || '—';
 
-  // Header area
   const avatar = byId('avatar');
   if (avatar) {
     if (applicant.photo_url) {
@@ -546,13 +541,11 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
   const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs`;
 
-  // City & Region only
   const availabilityLineEl = byId('availabilityLine');
   if (availabilityLineEl) {
     availabilityLineEl.textContent = `${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
   }
 
-  // Specializations chips (if shown)
   const chipsContainer = byId('chipsContainer');
   if (chipsContainer) {
     const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
@@ -561,7 +554,6 @@ function showApplicantModal(applicant, options = { pushState: true }) {
       : `<span class="chip">${escapeHtml(applicant.specialization || '—')}</span>`;
   }
 
-  // Basic info
   const cityEl = byId('cityValue'); if (cityEl) cityEl.textContent = applicant.location_city || '—';
   const regionEl = byId('regionValue'); if (regionEl) regionEl.textContent = applicant.location_region || '—';
   const yoeEl = byId('yoeValue'); if (yoeEl) yoeEl.textContent = `${toInt(applicant.years_experience)} years`;
@@ -573,20 +565,18 @@ function showApplicantModal(applicant, options = { pushState: true }) {
     langEl.textContent = langs.length ? langs.join(', ') : (applicant.languages || '—');
   }
 
-  // Footer CTA inside modal
   ensureModalFooterAndHire(applicant);
 
-  // Open Modal
   const profileModal = bootstrap.Modal.getOrCreateInstance(modalEl);
   profileModal.show();
   modalEl.dataset.applicant = JSON.stringify(applicant);
 
-  // Push state if requested
   if (options.pushState) pushApplicantId(applicant.id);
 }
 window.showApplicantModal = showApplicantModal;
 
 
+/* Booking: helper to enforce button types in some templates */
 (function enforceButtonTypes(){
   ['bkSubmit','bkNext','bkBack'].forEach(id => {
     const el = document.getElementById(id);
@@ -595,7 +585,7 @@ window.showApplicantModal = showApplicantModal;
 })();
 
 /* =========================================================
-   Booking (Hire) — safe no-op if modal missing
+   Booking (Hire)
 ========================================================= */
 function launchBooking(applicant){
   window._lastApplicantForBooking = applicant;
@@ -611,7 +601,6 @@ function launchBooking(applicant){
   const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || '—';
   const bkMeta = modalEl.querySelector('#bkMeta'); if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
 
-  // Reset visuals to step 1 (if present)
   const panes = modalEl.querySelectorAll('[data-step-pane]');
   panes.forEach(p => p.classList.toggle('d-none', p.dataset.stepPane !== '1'));
   modalEl.querySelectorAll('.stepper .step').forEach((s,i)=>{
@@ -619,7 +608,6 @@ function launchBooking(applicant){
     s.classList.toggle('completed', false);
   });
 
-  // Clear inputs
   modalEl.querySelectorAll('.oval-tag.active').forEach(el=>el.classList.remove('active'));
   modalEl.querySelectorAll('input[name="apptType"]').forEach(inp => inp.checked = false);
   ['bkDate','bkTime','bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'].forEach(id => {
@@ -630,104 +618,6 @@ function launchBooking(applicant){
 
   bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
-function getBookingPayload(applicant) {
-  const modalEl = byId('bookingModal');
-  const services = Array.from(modalEl.querySelectorAll('.oval-tag.active'))
-                        .map(el => el.dataset.service)
-                        .filter(Boolean);
-
-  const apptType = modalEl.querySelector('input[name="apptType"]:checked')?.value || '';
-
-  return {
-    applicant_id:       applicant.id,
-    services:           services,
-    appointment_type:   apptType,                                        // must match your ENUM
-    date:               modalEl.querySelector('#bkDate')?.value || '',   // "YYYY-MM-DD"
-    time:               modalEl.querySelector('#bkTime')?.value || '',   // "HH:MM"
-    client_first_name:  modalEl.querySelector('#bkFirstName')?.value?.trim() || '',
-    client_middle_name: '',                                              // add if you have a field
-    client_last_name:   modalEl.querySelector('#bkLastName')?.value?.trim() || '',
-    client_phone:       modalEl.querySelector('#bkPhone')?.value?.trim() || '',
-    client_email:       modalEl.querySelector('#bkEmail')?.value?.trim() || '',
-    client_address:     modalEl.querySelector('#bkAddress')?.value?.trim() || ''
-  };
-}
-
-function validateBookingPayload(payload) {
-  const missing = [];
-  for (const k of ['applicant_id','appointment_type','date','time','client_first_name','client_last_name','client_phone','client_email','client_address']) {
-    if (!payload[k]) missing.push(k);
-  }
-  if (missing.length) return 'Please complete: ' + missing.join(', ');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.client_email)) return 'Please enter a valid email.';
-  return '';
-}
-
-function renderBookingSummary(payload) {
-  const sumEl = byId('bkSummary');
-  if (!sumEl) return;
-  const lines = [
-    payload.services?.length ? `<div><strong>Services:</strong> ${payload.services.map(escapeHtml).join(', ')}</div>` : '',
-    `<div><strong>Interview:</strong> ${escapeHtml(payload.appointment_type)}</div>`,
-    `<div><strong>Date & Time:</strong> ${escapeHtml(payload.date)} ${escapeHtml(payload.time)}</div>`,
-    `<div><strong>Client:</strong> ${escapeHtml(payload.client_first_name)} ${escapeHtml(payload.client_last_name)}</div>`,
-    `<div><strong>Email:</strong> ${escapeHtml(payload.client_email)}</div>`,
-    payload.client_phone ? `<div><strong>Phone:</strong> ${escapeHtml(payload.client_phone)}</div>` : '',
-    payload.client_address ? `<div><strong>Address:</strong> ${escapeHtml(payload.client_address)}</div>` : ''
-  ].filter(Boolean);
-  sumEl.innerHTML = `<div class="small">${lines.join('')}</div>`;
-}
-
-
-(function wireBookingStepsOnce(){
-  const modalEl = byId('bookingModal');
-  if (!modalEl) return;
-
-  // ----- Next (stepper forward) -----
-  const btnNext = byId('bkNext');
-  if (btnNext && !btnNext.dataset.bound) {
-    btnNext.dataset.bound = '1';
-    btnNext.addEventListener('click', () => {
-      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
-        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
-
-      if (current === '1') return goToBookingStep(2);
-      if (current === '2') return goToBookingStep(3);
-      if (current === '3') return goToBookingStep(4);
-      if (current === '4') {
-        const applicant = window._lastApplicantForBooking
-          || JSON.parse(byId('applicantModal')?.dataset.applicant || 'null');
-        if (!applicant) return alert('Missing applicant.');
-
-        const payload = getBookingPayload(applicant);
-        const err = validateBookingPayload(payload);
-        if (err) { alert(err); return; }
-
-        // Build review summary and move to Step 5 (NO POST HERE)
-        renderBookingSummary(payload);
-        return goToBookingStep(5);
-      }
-    });
-  }
-
-  // ----- Back (stepper backward) -----
-  const btnBack = byId('bkBack');
-  if (btnBack && !btnBack.dataset.bound) {
-    btnBack.dataset.bound = '1';
-    btnBack.addEventListener('click', () => {
-      const current = Array.from(modalEl.querySelectorAll('[data-step-pane]'))
-        .find(p => !p.classList.contains('d-none'))?.dataset.stepPane;
-
-      if (current === '2') return goToBookingStep(1);
-      if (current === '3') return goToBookingStep(2);
-      if (current === '4') return goToBookingStep(3);
-      if (current === '5') return goToBookingStep(4);
-    });
-  }
-
-  
-})();
-
 
 /* =========================================================
    Styles injection (modern professional cards)

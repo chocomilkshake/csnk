@@ -6,14 +6,43 @@ class Applicant {
         $this->db = $database->getConnection();
     }
 
+    /**
+     * Admin/general: Get all applicants (optionally by a single status).
+     * - Excludes deleted by default.
+     * - Use getAllForPublic() for client-facing lists.
+     */
     public function getAll($status = null) {
-        $sql = "SELECT * FROM applicants WHERE deleted_at IS NULL";
-        if ($status) {
-            $sql .= " AND status = '" . $this->db->real_escape_string($status) . "'";
+        if ($status !== null) {
+            $sql = "SELECT * FROM applicants
+                    WHERE deleted_at IS NULL AND status = ?
+                    ORDER BY created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("s", $status);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            return $result->fetch_all(MYSQLI_ASSOC);
         }
-        $sql .= " ORDER BY created_at DESC";
+
+        $sql = "SELECT * FROM applicants WHERE deleted_at IS NULL ORDER BY created_at DESC";
         $result = $this->db->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * NEW (Client-facing): Get list for public site.
+     * - Returns only non-deleted, non-approved applicants
+     *   i.e., status IN ('pending','on_process').
+     * - Ordered by created_at DESC.
+     */
+    public function getAllForPublic(): array {
+        $sql = "SELECT *
+                FROM applicants
+                WHERE deleted_at IS NULL
+                  AND status IN ('pending','on_process')
+                ORDER BY created_at DESC";
+        $res = $this->db->query($sql);
+        if (!$res) return [];
+        return $res->fetch_all(MYSQLI_ASSOC);
     }
 
     public function getDeleted() {
@@ -150,6 +179,13 @@ class Applicant {
         return $stmt->execute();
     }
 
+    /** Convenience for booking workflow */
+    public function markOnProcess(int $id): bool {
+        $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
+
     public function getDocuments($applicantId) {
         $stmt = $this->db->prepare("SELECT * FROM applicant_documents WHERE applicant_id = ?");
         $stmt->bind_param("i", $applicantId);
@@ -193,5 +229,48 @@ class Applicant {
         $stats['deleted'] = $result->fetch_assoc()['deleted'] ?? 0;
 
         return $stats;
+    }
+
+    /**
+     * NEW: Get all "on_process" applicants with their latest client booking (if any).
+     * Returns applicant columns + aliased booking columns:
+     *  - booking_id, appointment_type, appointment_date, appointment_time,
+     *    client_first_name, client_middle_name, client_last_name, client_phone, client_email,
+     *    client_address, booking_status, booking_created_at
+     */
+    public function getOnProcessWithLatestBooking(): array {
+        $sql = "
+            SELECT
+                a.*,
+                cb.id                AS booking_id,
+                cb.appointment_type,
+                cb.appointment_date,
+                cb.appointment_time,
+                cb.client_first_name,
+                cb.client_middle_name,
+                cb.client_last_name,
+                cb.client_phone,
+                cb.client_email,
+                cb.client_address,
+                cb.status            AS booking_status,
+                cb.created_at        AS booking_created_at
+            FROM applicants a
+            LEFT JOIN (
+                SELECT c1.*
+                FROM client_bookings c1
+                INNER JOIN (
+                    SELECT applicant_id, MAX(created_at) AS max_created
+                    FROM client_bookings
+                    GROUP BY applicant_id
+                ) t ON t.applicant_id = c1.applicant_id AND t.max_created = c1.created_at
+            ) cb ON cb.applicant_id = a.id
+            WHERE a.deleted_at IS NULL
+              AND a.status = 'on_process'
+            ORDER BY a.created_at DESC
+        ";
+
+        $res = $this->db->query($sql);
+        if (!$res) return [];
+        return $res->fetch_all(MYSQLI_ASSOC);
     }
 }
