@@ -354,21 +354,24 @@
                 <h6 class="mb-3">Your Details</h6>
                 <div class="row g-3">
                   <div class="col-md-4">
-                    <label class="form-label">First Name</label>
+                    <label class="form-label">First Name
                     <input type="text" class="form-control" id="bkFirstName">
+                    </label>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Middle Name</label>
+                    <label class="form-label">Middle Name
                     <input type="text" class="form-control" id="bkMiddleName">
+                    </label>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Last Name</label>
+                    <label class="form-label">Last Name 
                     <input type="text" class="form-control" id="bkLastName">
+                    </label>
                   </div>
 
                   <!-- ✅ Phone: enforce 11 digits and must start with 09 -->
                   <div class="col-md-6">
-                    <label class="form-label">Active Phone Number</label>
+                    <label class="form-label">Active Phone Number 
                     <input
                       type="tel"
                       class="form-control"
@@ -380,16 +383,19 @@
                       minlength="11"
                       aria-describedby="bkPhoneHelp"
                     >
+                    </label>
                     <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label">Active Email</label>
+                    <label class="form-label">Active Email
                     <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
+                    </label>
                   </div>
                   <div class="col-12">
-                    <label class="form-label">Address</label>
+                    <label class="form-label">Address 
                     <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+                    </label>
                   </div>
                 </div>
               </div>
