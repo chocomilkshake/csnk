@@ -79,12 +79,18 @@
                   <a href="#" class="small" id="clearSpecs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning and Housekeeping (General)" id="spec-kas"><label class="form-check-label" for="spec-kas">Cleaning and Housekeeping (General)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"><label class="form-check-label" for="spec-cook">Cooking and Food Service</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"><label class="form-check-label" for="spec-all">Elderly and Special Care (Caregiver)</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance</label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-kas">Cleaning and Housekeeping (General)<input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning and Housekeeping (General)" id="spec-kas"></label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care<input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-cook">Cooking and Food Service<input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"></label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)<input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"></label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-all">Elderly and Special Care (Caregiver)<input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"></label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance<input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"></label></div>
                 </div>
               </div>
 
@@ -94,8 +100,9 @@
                   <a href="#" class="small" id="clearAvail">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"><label class="form-check-label" for="avail-ft">Full-time</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"><label class="form-check-label" for="avail-pt">Part-time</label></div>
+                  <div class="form-check"><label class="form-check-label" for="avail-ft">Full-time<input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"></label></div>
+
+                  <div class="form-check"><label class="form-check-label" for="avail-pt">Part-time<input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"></label></div>
                 </div>
               </div>
 
@@ -111,8 +118,8 @@
                   <a href="#" class="small" id="clearLangs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"><label class="form-check-label" for="lang-fil">Filipino</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"><label class="form-check-label" for="lang-eng">English</label></div>
+                  <div class="form-check"><label class="form-check-label" for="lang-fil">Filipino<input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"></label></div>
+                  <div class="form-check"><label class="form-check-label" for="lang-eng">English<input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"></label></div>
                 </div>
               </div>
 
@@ -328,12 +335,14 @@
               <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Date</label>
+                  <label class="form-label">Date
                   <input type="date" class="form-control" id="bkDate">
+                  </label>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Time</label>
+                  <label class="form-label">Time
                   <input type="time" class="form-control" id="bkTime">
+                  </label>
                 </div>
               </div>
             </div>
@@ -345,28 +354,34 @@
               <h6 class="mb-3">Your Details</h6>
               <div class="row g-3">
                 <div class="col-md-4">
-                  <label class="form-label">First Name</label>
+                  <label class="form-label">First Name
                   <input type="text" class="form-control" id="bkFirstName">
+                  </label>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Middle Name</label>
+                  <label class="form-label">Middle Name 
                   <input type="text" class="form-control" id="bkMiddleName">
+                  </label>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Last Name</label>
+                  <label class="form-label">Last Name
                   <input type="text" class="form-control" id="bkLastName">
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Active Phone Number</label>
+                  <label class="form-label">Active Phone Number 
                   <input type="tel" class="form-control" id="bkPhone" placeholder="+63 9XXXXXXXXX">
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Active Email</label>
+                  <label class="form-label">Active Email
                   <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
+                  </label>
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Address</label>
+                  <label class="form-label">Address
                   <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+                  </label>
                 </div>
               </div>
             </div>
@@ -424,6 +439,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../resources/js/app.js"></script>
   <script src="../resources/js/applicant.js"></script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
 
   <?php include __DIR__ . '/footer.php'; ?>
 </body>
