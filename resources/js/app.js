@@ -358,7 +358,7 @@ function createApplicantCard(applicant) {
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
 
-  const yoe   = `${toInt(applicant.years_experience)} yrs`;
+  const yoe   = `${toInt(applicant.years_experience)} yrs of experience`;
 
   const fullName       = escapeHtml(applicant.full_name || '—');
   const specialization = escapeHtml(applicant.specialization || '—');
@@ -539,7 +539,7 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   }
   const nameEl = byId('name'); if (nameEl) nameEl.textContent = applicant.full_name || '—';
   const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
-  const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs`;
+  const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs of experience`;
 
   const availabilityLineEl = byId('availabilityLine');
   if (availabilityLineEl) {
