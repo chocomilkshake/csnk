@@ -1,0 +1,58 @@
+/* Enhanced table styling for admin panels */
+/* Card container improvements */
+.table-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,.05);
+}
+
+/* Header styling */
+.table-styled thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef !important;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Optional sticky header for long lists */
+@media (min-width: 992px) {
+    .table-styled thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+}
+
+/* Inner borders */
+.table-styled > :not(caption) > * > * {
+    border-color: #e5e7eb !important;
+}
+
+/* Universal table spacing + centering */
+.table-styled th,
+.table-styled td {
+    padding: .75rem .9rem !important;
+    vertical-align: middle !important;
+}
+
+/* Slight hover highlight */
+.table-styled tbody tr:hover {
+    background: #fafafa;
+}
+
+/* Photo column fixed width */
+.tbl-photo {
+    width: 64px;
+    text-align: center;
+}
+
+/* Muted secondary text (locations, addresses, etc.) */
+.text-muted-small {
+    color: #6c757d;
+    font-size: .85rem;
+}
+
+/* Action buttons tighter */
+.table-styled .btn-group .btn {
+    padding: .25rem .5rem !important;
+}

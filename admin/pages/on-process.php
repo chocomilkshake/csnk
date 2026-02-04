@@ -4,6 +4,9 @@ $pageTitle = 'On Process Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
+
+
 // Ensure session is active (for search persistence)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
@@ -160,10 +163,10 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     </form>
 </div>
 
-<div class="card">
+<div class="card table-card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-bordered table-striped table-hover table-styled">
                 <thead>
                     <tr>
                         <th>Photo</th>
@@ -177,6 +180,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                         <th>Actions</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     <?php if (empty($applicants)): ?>
                         <tr>
@@ -185,11 +189,12 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                 <?php if ($q === ''): ?>
                                     No applicants currently on process.
                                 <?php else: ?>
-                                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                    No results for "<strong><?= htmlspecialchars($q) ?></strong>".
                                     <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
+
                     <?php else: ?>
                         <?php foreach ($applicants as $row): ?>
                             <?php
@@ -205,50 +210,72 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                 $appContact = trim(($row['phone_number'] ?? '') . ($row['email'] ? ' / ' . $row['email'] : ''));
                                 $cliContact = trim(($row['client_phone'] ?? '') . ($row['client_email'] ? ' / ' . $row['client_email'] : ''));
                             ?>
+
                             <tr>
-                                <td>
+                                <td class="tbl-photo">
                                     <?php if (!empty($row['picture'])): ?>
-                                        <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                        <img src="<?= htmlspecialchars(getFileUrl($row['picture'])) ?>"
+                                             alt="Photo"
+                                             class="rounded"
+                                             width="50" height="50"
+                                             style="object-fit: cover;">
                                     <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($row['first_name'], 0, 1)); ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                             style="width: 50px; height: 50px;">
+                                            <?= strtoupper(substr($row['first_name'], 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
+
                                 <td>
-                                    <div class="fw-semibold"><?php echo getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?></div>
-                                    <div class="text-muted small"><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'])); ?></div>
+                                    <div class="fw-semibold">
+                                        <?= getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?= htmlspecialchars(renderPreferredLocation($row['preferred_location'])); ?>
+                                    </div>
                                 </td>
+
                                 <td>
-                                    <div class="fw-semibold"><?php echo htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8'); ?></div>
-                                    <div class="text-muted small"><?php echo htmlspecialchars($row['client_address'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($clientName); ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?= htmlspecialchars($row['client_address'] ?? '—'); ?>
+                                    </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($apptType, ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars($apptDate . ' ' . $apptTime, ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars($appContact !== '' ? $appContact : '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars($cliContact !== '' ? $cliContact : '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo formatDate($row['created_at']); ?></td>
+
+                                <td><?= htmlspecialchars($apptType); ?></td>
+                                <td><?= htmlspecialchars($apptDate . ' ' . $apptTime); ?></td>
+                                <td><?= htmlspecialchars($appContact !== '' ? $appContact : '—'); ?></td>
+                                <td><?= htmlspecialchars($cliContact !== '' ? $cliContact : '—'); ?></td>
+                                <td><?= formatDate($row['created_at']); ?></td>
+
                                 <td>
                                     <div class="btn-group">
-                                        <a href="<?php echo $viewUrl; ?>" class="btn btn-sm btn-info" title="View">
+                                        <a href="<?= $viewUrl ?>" class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="<?php echo $editUrl; ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?= $editUrl ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?php echo $delUrl; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Delete this applicant? This is a soft delete.');">
+                                        <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
+                                           onclick="return confirm('Delete this applicant? This is a soft delete.');">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
+
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
+
             </table>
         </div>
     </div>
 </div>
+
+
 
 <?php require_once '../includes/footer.php'; ?>
