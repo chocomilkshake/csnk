@@ -303,7 +303,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label">Profile Picture</label>
+                    <label class="form-label">Profile Picture
                     <div class="border rounded p-2 text-center">
                         <?php if (!empty($applicantData['picture'])): ?>
                             <img src="<?= htmlspecialchars(getFileUrl($applicantData['picture']), ENT_QUOTES, 'UTF-8') ?>"
@@ -316,76 +316,87 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                         <?php endif; ?>
                     </div>
                     <input type="file" class="form-control mt-2" name="picture" accept="image/*">
+                    </label>
                     <small class="text-muted">Leave empty to keep current picture</small>
                 </div>
 
                 <div class="col-md-9">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">First Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="first_name" required
+                            <label class="form-label">First Name <span class="text-danger">*</span>
+                            <input type="text" class="form-control" name="first_name" autocomplete="given-name" required
                                    value="<?= htmlspecialchars($_POST['first_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Middle Name</label>
-                            <input type="text" class="form-control" name="middle_name"
+                            <label class="form-label">Middle Name 
+                            <input type="text" class="form-control" name="middle_name" autocomplete="additional-name"
                                    value="<?= htmlspecialchars($_POST['middle_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="last_name" required
+                            <label class="form-label">Last Name <span class="text-danger">*</span> 
+                            <input type="text" class="form-control" name="last_name" autocomplete="family-name" required
                                    value="<?= htmlspecialchars($_POST['last_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Suffix</label>
+                            <label class="form-label">Suffix
                             <input type="text" class="form-control" name="suffix"
                                    value="<?= htmlspecialchars($_POST['suffix'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
 
                         <!-- PHONE -->
                         <div class="col-md-6">
-                            <label class="form-label">Primary Phone Number <span class="text-danger">*</span></label>
+                            <label class="form-label">Primary Phone Number <span class="text-danger">*</span> 
                             <input type="tel" class="form-control" name="phone_number"
                                    placeholder="sample (09123456789)" minlength="11" maxlength="11"
                                    pattern="^09\d{9}$" required
                                    value="<?= htmlspecialchars($_POST['phone_number'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                             <div class="form-text">Must be 11 digits and start with 09.</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Alternate Phone Number</label>
+                            <label class="form-label">Alternate Phone Number 
                             <input type="tel" class="form-control" name="alt_phone_number"
                                    placeholder="sample (09123456789)" minlength="11" maxlength="11"
                                    pattern="^09\d{9}$"
                                    value="<?= htmlspecialchars($_POST['alt_phone_number'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                             <div class="form-text">Optional. If provided, must be 11 digits and start with 09.</div>
                         </div>
                         <!-- /PHONE -->
 
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email"
+                            <label class="form-label">Email 
+                            <input type="email" class="form-control" name="email" autocomplete="email"
                                    value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                            <label class="form-label">Date of Birth <span class="text-danger">*</span>
                             <input type="date" class="form-control" name="date_of_birth" required
                                    value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+                            <label class="form-label">Employment Type <span class="text-danger">*</span>
                             <select class="form-select" name="employment_type" required>
                                 <option value="">Select...</option>
                                 <option value="Full Time"  <?= (($_POST['employment_type'] ?? '') === 'Full Time') ? 'selected' : '' ?>>Full Time</option>
                                 <option value="Part Time"  <?= (($_POST['employment_type'] ?? '') === 'Part Time') ? 'selected' : '' ?>>Part Time</option>
+                                </label>
                             </select>
                         </div>
 
                         <!-- Languages (tags) -->
                         <div class="col-md-12">
-                            <label class="form-label">Languages <small class="text-muted">(press Enter to add each)</small></label>
+                            <label class="form-label">Languages <small class="text-muted">(press Enter to add each)</small> 
                             <div class="d-flex gap-2">
                                 <input type="text" id="langInput" class="form-control" placeholder="e.g., English, Filipino, Arabic">
+                                </label>
                                 <button type="button" id="addLangBtn" class="btn btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
@@ -394,8 +405,9 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                         </div>
 
                         <div class="col-md-12">
-                            <label class="form-label">Address <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="address" rows="2" required><?= htmlspecialchars($_POST['address'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                            <label class="form-label">Address <span class="text-danger">*</span>
+                            <textarea class="form-control" name="address" autocomplete="address" rows="2" required><?= htmlspecialchars($_POST['address'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -411,7 +423,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         <div class="card-body">
             <div class="row g-3 mb-2">
                 <div class="col-md-6">
-                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span></label>
+                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span>
                     <select class="form-select" name="education_level" required>
                         <option value="">Select...</option>
                         <?php $opts = getEducationLevelOptions(); $sel = $_POST['education_level'] ?? '';
@@ -421,66 +433,77 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    </label>
                 </div>
             </div>
 
             <div class="row g-3">
                 <div class="col-12"><h6 class="fw-semibold mb-2">Elementary</h6></div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name</label>
+                    <label class="form-label">School Name
                     <input type="text" class="form-control" name="edu[elementary][school]"
                            value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? ($eduArr['elementary']['school'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year</label>
+                    <label class="form-label">Year
                     <input type="text" class="form-control" name="edu[elementary][year]" placeholder="e.g., 2010 - 2016"
                            value="<?= htmlspecialchars($_POST['edu']['elementary']['year'] ?? ($eduArr['elementary']['year'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
 
                 <div class="col-12 mt-2"><h6 class="fw-semibold mb-2">High School</h6></div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name</label>
+                    <label class="form-label">School Name
                     <input type="text" class="form-control" name="edu[highschool][school]"
                            value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? ($eduArr['highschool']['school'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year</label>
+                    <label class="form-label">Year
                     <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2016 - 2020"
                            value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? ($eduArr['highschool']['year'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
 
                 <div class="col-12 mt-2"><h6 class="fw-semibold mb-2">Senior High School</h6></div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name</label>
+                    <label class="form-label">School Name
                     <input type="text" class="form-control" name="edu[senior_high][school]"
                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['school'] ?? ($eduArr['senior_high']['school'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Strand</label>
+                    <label class="form-label">Strand
                     <input type="text" class="form-control" name="edu[senior_high][strand]" placeholder="e.g., STEM, HUMSS, ABM"
                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['strand'] ?? ($eduArr['senior_high']['strand'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year</label>
+                    <label class="form-label">Year
                     <input type="text" class="form-control" name="edu[senior_high][year]" placeholder="e.g., 2020 - 2022"
                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['year'] ?? ($eduArr['senior_high']['year'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
 
                 <div class="col-12 mt-2"><h6 class="fw-semibold mb-2">College</h6></div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name</label>
+                    <label class="form-label">School Name
                     <input type="text" class="form-control" name="edu[college][school]"
                            value="<?= htmlspecialchars($_POST['edu']['college']['school'] ?? ($eduArr['college']['school'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Course</label>
+                    <label class="form-label">Course
                     <input type="text" class="form-control" name="edu[college][course]"
                            value="<?= htmlspecialchars($_POST['edu']['college']['course'] ?? ($eduArr['college']['course'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year</label>
+                    <label class="form-label">Year
                     <input type="text" class="form-control" name="edu[college][year]" placeholder="e.g., 2022 - 2026"
                            value="<?= htmlspecialchars($_POST['edu']['college']['year'] ?? ($eduArr['college']['year'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </label>
                 </div>
             </div>
         </div>
@@ -498,8 +521,9 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
             <div id="workHistoryRows" class="vstack gap-3"></div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <label class="form-label">Years of Experience (Auto)</label>
+                    <label class="form-label">Years of Experience (Auto)
                     <input type="text" id="yearsTotal" class="form-control" value="0 years" readonly>
+                    </label>
                     <div class="form-text">Computed from the “Years” column (e.g., 2019–2021 = 2; “3 years” = 3).</div>
                 </div>
             </div>
@@ -540,18 +564,19 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-8">
-                    <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add each)</small></label>
+                    <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add each)</small> 
                     <div class="d-flex gap-2 mb-2">
                         <input type="text" id="cityInput" class="form-control" placeholder="Type a city and press Enter">
                         <button type="button" id="addCityBtn" class="btn btn-outline-primary">
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
+                    </label>
                     <div id="cityTags" class="d-flex flex-wrap gap-2"></div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">Status
                     <select class="form-select" name="status">
                         <?php
                         $st = $_POST['status'] ?? $applicantData['status'];
@@ -562,6 +587,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    </label>
                 </div>
             </div>
         </div>
@@ -588,8 +614,9 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                 ];
                 foreach ($docTypes as $key => $label): ?>
                 <div class="col-md-6">
-                    <label class="form-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></label>
+                    <label class="form-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
                     <input type="file" class="form-control" name="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" accept=".pdf,.jpg,.jpeg,.png">
+                    </label>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -625,20 +652,24 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
     row.className = 'row g-2 align-items-end';
     row.innerHTML = `
       <div class="col-md-4">
-        <label class="form-label">Company Name</label>
+        <label class="form-label">Company Name
         <input type="text" class="form-control" name="work_history[${idx}][company]" value="${escapeHtml(v.company)}">
+        </label>
       </div>
       <div class="col-md-2">
-        <label class="form-label">Years</label>
+        <label class="form-label">Years
         <input type="text" class="form-control years-input" name="work_history[${idx}][years]" placeholder="e.g., 2019–2021 or 2 years" value="${escapeHtml(v.years)}">
+        </label>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Role</label>
+        <label class="form-label">Role 
         <input type="text" class="form-control" name="work_history[${idx}][role]" value="${escapeHtml(v.role)}">
+        </label>
       </div>
       <div class="col-md-2">
-        <label class="form-label">Location</label>
+        <label class="form-label">Location 
         <input type="text" class="form-control" name="work_history[${idx}][location]" placeholder="e.g., Makati City" value="${escapeHtml(v.location)}">
+        </label>
       </div>
       <div class="col-md-1 d-grid">
         <button type="button" class="btn btn-outline-danger removeRow" title="Remove"><i class="bi bi-x-lg"></i></button>

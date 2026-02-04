@@ -1,11 +1,8 @@
 <?php
-// FILE: pages/on-process.php
-$pageTitle = 'On Process Applicants';
+// FILE: pages/approved.php
+$pageTitle = 'Approved Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
-
-
-
 
 // Ensure session is active (for search persistence)
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -21,8 +18,8 @@ $applicant = new Applicant($database);
  * - Else if session has last query → use it
  */
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
-    unset($_SESSION['onproc_q']);
-    redirect('on-process.php');
+    unset($_SESSION['approved_q']);
+    redirect('approved.php');
     exit;
 }
 
@@ -32,27 +29,27 @@ if (isset($_GET['q'])) {
     if (mb_strlen($q) > 100) {
         $q = mb_substr($q, 0, 100);
     }
-    $_SESSION['onproc_q'] = $q;
-} elseif (!empty($_SESSION['onproc_q'])) {
-    $q = (string)$_SESSION['onproc_q'];
+    $_SESSION['approved_q'] = $q;
+} elseif (!empty($_SESSION['approved_q'])) {
+    $q = (string)$_SESSION['approved_q'];
 }
 
 /** Handle delete (soft delete) with search preserved */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     if ($applicant->softDelete($id)) {
-        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from On Process)");
+        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from Approved)");
         setFlashMessage('success', 'Applicant deleted successfully.');
     } else {
         setFlashMessage('error', 'Failed to delete applicant.');
     }
     $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
-    redirect('on-process.php' . $qs);
+    redirect('approved.php' . $qs);
     exit;
 }
 
-/** Load on_process applicants + latest booking data */
-$applicants = $applicant->getOnProcessWithLatestBooking();
+/** Load approved applicants */
+$applicants = $applicant->getAll('approved');
 
 /**
  * Helpers
@@ -98,25 +95,15 @@ function filterRowsByQuery(array $rows, string $query): array {
         $phone  = (string)($row['phone_number'] ?? '');
         $loc    = renderPreferredLocation($row['preferred_location'] ?? null, 999);
 
-        // Client fields (latest booking)
-        $cfn = (string)($row['client_first_name']  ?? '');
-        $cmn = (string)($row['client_middle_name'] ?? '');
-        $cln = (string)($row['client_last_name']   ?? '');
-        $cem = (string)($row['client_email']       ?? '');
-        $cph = (string)($row['client_phone']       ?? '');
-
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
         $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
         $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
 
-        $clientFull = trim($cfn . ' ' . $cmn . ' ' . $cln);
-
         $haystack = mb_strtolower(implode(' | ', [
             $first, $middle, $last, $suffix,
             $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone, $loc,
-            $clientFull, $cem, $cph
+            $email, $phone, $loc
         ]));
 
         return mb_strpos($haystack, $needle) !== false;
@@ -130,9 +117,9 @@ if ($q !== '') {
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">On Process Applicants</h4>
+    <h4 class="mb-0 fw-semibold">Approved Applicants</h4>
     <?php
-        $exportUrl = 'export-excel.php?type=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
+        $exportUrl = 'export-excel.php?type=approved' . ($q !== '' ? '&q=' . urlencode($q) : '');
     ?>
     <a href="<?php echo $exportUrl; ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -141,13 +128,13 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 
 <!-- 🔎 Search bar on the right -->
 <div class="mb-3 d-flex justify-content-end">
-    <form method="get" action="on-process.php" class="w-100" style="max-width: 420px;">
+    <form method="get" action="approved.php" class="w-100" style="max-width: 420px;">
         <div class="input-group">
             <input
                 type="text"
                 name="q"
                 class="form-control"
-                placeholder="Search on-process (applicant or client)..."
+                placeholder="Search approved applicants..."
                 value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
                 autocomplete="off"
             >
@@ -155,7 +142,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                 <i class="bi bi-search"></i>
             </button>
             <?php if ($q !== ''): ?>
-                <a class="btn btn-outline-secondary" href="on-process.php?clear=1" title="Clear">
+                <a class="btn btn-outline-secondary" href="approved.php?clear=1" title="Clear">
                     <i class="bi bi-x-lg"></i>
                 </a>
             <?php endif; ?>
@@ -171,111 +158,71 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                     <tr>
                         <th>Photo</th>
                         <th>Applicant</th>
-                        <th>Client</th>
-                        <th>Interview</th>
-                        <th>Date & Time</th>
-                        <th>Applicant Contact</th>
-                        <th>Client Contact</th>
-                        <th>Date Applied</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Preferred Location</th>
+                        <th>Date Approved</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-
                 <tbody>
                     <?php if (empty($applicants)): ?>
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-5">
+                            <td colspan="7" class="text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                                 <?php if ($q === ''): ?>
-                                    No applicants currently on process.
+                                    No approved applicants yet.
                                 <?php else: ?>
-                                    No results for "<strong><?= htmlspecialchars($q) ?></strong>".
-                                    <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
+                                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                    <a href="approved.php?clear=1" class="ms-1">Clear search</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
-
                     <?php else: ?>
                         <?php foreach ($applicants as $row): ?>
                             <?php
                                 $viewUrl = 'view-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $delUrl  = 'on-process.php?action=delete&id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-
-                                $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
-                                $clientName = $clientName !== '' ? $clientName : '—';
-                                $apptType   = $row['appointment_type'] ?? '—';
-                                $apptDate   = $row['appointment_date'] ?? '—';
-                                $apptTime   = $row['appointment_time'] ?? '—';
-                                $appContact = trim(($row['phone_number'] ?? '') . ($row['email'] ? ' / ' . $row['email'] : ''));
-                                $cliContact = trim(($row['client_phone'] ?? '') . ($row['client_email'] ? ' / ' . $row['client_email'] : ''));
+                                $delUrl  = 'approved.php?action=delete&id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                             ?>
-
                             <tr>
-                                <td class="tbl-photo">
+                                <td>
                                     <?php if (!empty($row['picture'])): ?>
-                                        <img src="<?= htmlspecialchars(getFileUrl($row['picture'])) ?>"
-                                             alt="Photo"
-                                             class="rounded"
-                                             width="50" height="50"
-                                             style="object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                     <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                             style="width: 50px; height: 50px;">
-                                            <?= strtoupper(substr($row['first_name'], 0, 1)); ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <?php echo strtoupper(substr($row['first_name'], 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
-
                                 <td>
-                                    <div class="fw-semibold">
-                                        <?= getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?>
-                                    </div>
-                                    <div class="text-muted-small">
-                                        <?= htmlspecialchars(renderPreferredLocation($row['preferred_location'])); ?>
-                                    </div>
+                                    <div class="fw-semibold"><?php echo getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?></div>
                                 </td>
-
-                                <td>
-                                    <div class="fw-semibold">
-                                        <?= htmlspecialchars($clientName); ?>
-                                    </div>
-                                    <div class="text-muted-small">
-                                        <?= htmlspecialchars($row['client_address'] ?? '—'); ?>
-                                    </div>
-                                </td>
-
-                                <td><?= htmlspecialchars($apptType); ?></td>
-                                <td><?= htmlspecialchars($apptDate . ' ' . $apptTime); ?></td>
-                                <td><?= htmlspecialchars($appContact !== '' ? $appContact : '—'); ?></td>
-                                <td><?= htmlspecialchars($cliContact !== '' ? $cliContact : '—'); ?></td>
-                                <td><?= formatDate($row['created_at']); ?></td>
-
+                                <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location']), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo formatDate($row['created_at']); ?></td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="<?= $viewUrl ?>" class="btn btn-sm btn-info" title="View">
+                                        <a href="<?php echo $viewUrl; ?>" class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="<?= $editUrl ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?php echo $editUrl; ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
-                                           onclick="return confirm('Delete this applicant? This is a soft delete.');">
+                                        <a href="<?php echo $delUrl; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Delete this applicant? This is a soft delete.');">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
-
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
-
             </table>
         </div>
     </div>
 </div>
-
-
 
 <?php require_once '../includes/footer.php'; ?>
