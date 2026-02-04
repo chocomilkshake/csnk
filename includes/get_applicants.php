@@ -87,7 +87,7 @@ try {
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
     // Adjust this path to your project root if needed:
-    $appBase = $scheme . '://' . $host . '/csnk-1';
+    $appBase = $scheme . '://' . $host . '/csnk';
 
     $uploadsBase    = rtrim($appBase, '/') . '/admin/uploads/';
     $placeholderUrl = rtrim($appBase, '/') . '/resources/img/placeholder-user.svg';
