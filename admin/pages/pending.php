@@ -140,10 +140,10 @@ $exportUrl = 'export-excel.php?type=pending' . ($q !== '' ? '&q=' . urlencode($q
     </form>
 </div>
 
-<div class="card">
+<div class="card table-card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-bordered table-striped table-hover table-styled">
                 <thead>
                     <tr>
                         <th>Photo</th>
@@ -211,5 +211,7 @@ $exportUrl = 'export-excel.php?type=pending' . ($q !== '' ? '&q=' . urlencode($q
         </div>
     </div>
 </div>
+
+
 
 <?php require_once '../includes/footer.php'; ?>
