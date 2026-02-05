@@ -167,11 +167,17 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         <div class="content-wrapper">
             <?php
             $flashMessage = getFlashMessage();
-            if ($flashMessage):
-                $alertClass = $flashMessage['type'] === 'success' ? 'alert-success' : 'alert-danger';
+            // Ensure we have an array and the expected keys to avoid null/undefined notices
+            if (!empty($flashMessage) && is_array($flashMessage)) {
+                $type = $flashMessage['type'] ?? '';
+                $alertClass = $type === 'success' ? 'alert-success' : 'alert-danger';
+                $message = $flashMessage['message'] ?? '';
+                if ($message !== '') {
             ?>
                 <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show" role="alert">
-                    <?php echo htmlspecialchars($flashMessage['message']); ?>
+                    <?php echo htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8'); ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            <?php endif; ?>
+            <?php
+                }
+            } ?>
