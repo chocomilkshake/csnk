@@ -2,6 +2,8 @@
 // v2.8 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
 console.log('app.js loaded successfully - v2.8');
 
+
+
 /* =========================================================
    State
 ========================================================= */
@@ -63,6 +65,124 @@ function removeApplicantIdFromUrl(){
     history.replaceState({}, '', url);
   }
 }
+
+
+
+// ---- CONFIG: set your app root path here, including leading and trailing slashes ----
+const APP_BASE = '/csnk/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
+
+function normalizeSlashes(url) {
+  return String(url || '').replace(/\\/g, '/').trim();
+}
+function isAbsoluteUrl(u) { return /^https?:\/\//i.test(u); }
+
+function absoluteFromAppRoot(path) {
+  if (!path) return '';
+  const p = normalizeSlashes(path);
+  if (isAbsoluteUrl(p)) return p;
+
+  // Ensure exactly one slash between origin, base and path
+  const base = APP_BASE.replace(/\/+$/,'');        // '/csnk'
+  const rel  = p.replace(/^\/+/,'');               // 'admin/uploads/video/trial1.mp4'
+  return `${location.origin}${base}/${rel}`.replace(/\/{2,}/g,'/'); // http://localhost/csnk/admin/uploads/video/trial1.mp4
+}
+
+function isIframeHost(url) { return /youtube\.com|youtu\.be|vimeo\.com/i.test(url); }
+
+function toEmbedUrl(url) {
+  try {
+    const u = new URL(url);
+    if (/youtube\.com/i.test(u.hostname)) {
+      if (u.pathname === '/watch' && u.searchParams.get('v')) {
+        return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+      }
+      return url.replace('/watch?v=', '/embed/');
+    }
+    if (/youtu\.be/i.test(u.hostname)) {
+      const id = u.pathname.replace('/', '');
+      return `https://www.youtube.com/embed/${id}`;
+    }
+    if (/vimeo\.com/i.test(u.hostname)) {
+      const id = u.pathname.split('/').filter(Boolean).pop();
+      return `https://player.vimeo.com/video/${id}`;
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
+function guessMime(url) {
+  const u = url.split('?')[0].toLowerCase();
+  if (u.endsWith('.mp4')) return 'video/mp4';
+  if (u.endsWith('.webm')) return 'video/webm';
+  if (u.endsWith('.ogg') || u.endsWith('.ogv')) return 'video/ogg';
+  return 'video/mp4';
+}
+
+function buildApplicantVideoHtml(url, video_type) {
+  const raw = (url || '').trim();
+  if (!raw) {
+    return `
+      <div class="text-center text-muted py-5">
+        <i class="bi bi-camera-video-off fs-1 d-block mb-2"></i>
+        <div>No video provided for this applicant.</div>
+      </div>
+    `;
+  }
+
+  // Check if URL is already absolute first
+  const isAbsolute = /^https?:\/\//i.test(raw);
+  
+  // Only process through absoluteFromAppRoot if it's a relative path
+  const resolved = isAbsolute ? raw : absoluteFromAppRoot(raw);
+
+  // Use DB-declared type if present, else infer by host
+  const declared = String(video_type || '').toLowerCase();
+  const useIframe = (declared === 'iframe') || (declared !== 'file' && isIframeHost(resolved));
+
+  console.debug('[Video Build]', { raw, resolved, useIframe, video_type, declared, isAbsolute });
+
+  if (useIframe) {
+    const embed = toEmbedUrl(resolved);
+    const safe  = escapeHtml(embed);
+    console.debug('[Video] Embedding iframe:', safe);
+    return `
+      <div class="ratio ratio-16x9">
+        <iframe src="${safe}" title="Applicant video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="border:0;"></iframe>
+      </div>
+    `;
+  }
+
+  const src  = escapeHtml(resolved);
+  const mime = guessMime(resolved);
+  console.debug('[Video] Native video source:', { src, mime, resolved });
+  return `
+    <video controls playsinline preload="metadata" style="width:100%; display:block; background:#000; border-radius:12px;">
+      <source src="${src}" type="${mime}">
+      Your browser does not support the video tag.
+    </video>
+  `;
+}
+
+function pauseAnyVideoIn(root) {
+  const v = root.querySelector('video');
+  if (v) { try { v.pause(); } catch(_){} }
+  const iframe = root.querySelector('iframe');
+  if (iframe && iframe.src) {
+    const s = iframe.src;
+    iframe.src = s; // reload to stop
+  }
+}
+
+function getPopoverElFor(btn) {
+  const id = btn.getAttribute('aria-describedby');
+  return id ? document.getElementById(id) : null;
+}
+
+
 
 /* =========================================================
    Skeleton loader
@@ -126,6 +246,7 @@ function employmentPill(typeLabel) {
 ========================================================= */
 function initApp(){
   injectStyles();
+  ensureVideoPopoverStyles();
   renderSkeleton(8);
   loadApplicants().then(() => {
     setupEventListeners();
@@ -510,6 +631,141 @@ function ensureModalFooterAndHire(applicant){
   }
 }
 
+
+/* =========================================================
+   Modal video popover (top-right button)
+   - Adds a small "Video" button to the modal header (right side)
+   - Shows a Bootstrap Popover with <video> or YouTube/Vimeo <iframe>
+   - Pauses video when popover or modal closes; closes on outside click
+========================================================= */
+function ensureModalVideoButton(applicant) {
+  const modalEl = byId('applicantModal');
+  if (!modalEl || !window.bootstrap?.Popover) {
+    console.warn('Bootstrap Popover not available or modal not found.');
+    return;
+  }
+
+  // ----- Ensure header + tools container -----
+  let header = modalEl.querySelector('.modal-header');
+  if (!header) {
+    header = document.createElement('div');
+    header.className = 'modal-header';
+    header.innerHTML = `
+      <h5 class="modal-title">Profile</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    `;
+    modalEl.querySelector('.modal-content')?.prepend(header);
+  }
+
+  let tools = header.querySelector('.modal-tools');
+  if (!tools) {
+    tools = document.createElement('div');
+    tools.className = 'modal-tools d-flex align-items-center gap-2 ms-auto';
+    header.appendChild(tools);
+  }
+
+  // ----- Ensure the Video button -----
+  let videoBtn = tools.querySelector('#modalVideoBtn');
+  if (!videoBtn) {
+    videoBtn = document.createElement('button');
+    videoBtn.id = 'modalVideoBtn';
+    videoBtn.type = 'button';
+    videoBtn.className = 'btn btn-sm btn-outline-secondary';
+    videoBtn.innerHTML = `<i class="bi bi-camera-video me-1"></i> Video`;
+    videoBtn.title = 'Play introduction video';
+    tools.appendChild(videoBtn);
+  }
+
+  // ----- Bind data from applicant -----
+  const videoUrl  = (applicant && typeof applicant.video_url === 'string' && applicant.video_url.trim() !== '')
+    ? applicant.video_url.trim()
+    : '';
+  const videoType = (applicant && applicant.video_type) ? String(applicant.video_type).trim() : '';
+
+  console.debug('[Video] Applicant:', {
+    id: applicant?.id,
+    raw_url: applicant?.video_url,
+    trimmed_url: videoUrl,
+    type: videoType
+  });
+
+  videoBtn.dataset.videoUrl  = videoUrl;
+  videoBtn.dataset.videoType = videoType;
+
+  // Hide button if no video URL
+  if (!videoUrl) {
+    videoBtn.style.display = 'none';
+    return;
+  }
+  videoBtn.style.display = '';
+
+  // ----- (Re)create the Popover instance -----
+  const existing = bootstrap.Popover.getInstance(videoBtn);
+  if (existing) existing.dispose();
+
+  const pop = new bootstrap.Popover(videoBtn, {
+    html: true,
+    trigger: 'manual',
+    placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
+    sanitize: false,       // we provide safe markup
+    container: modalEl,
+    template: `
+      <div class="popover video-popover" role="tooltip">
+        <div class="popover-arrow"></div>
+        <div class="popover-body p-0"></div>
+      </div>
+    `,
+    content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
+  });
+
+  // ----- Toggle -----
+  videoBtn.onclick = () => {
+    const isShown = !!videoBtn.getAttribute('aria-describedby');
+    isShown ? pop.hide() : pop.show();
+  };
+
+  // ----- Outside click to close + pause on hide -----
+  const onShown = () => {
+    const popEl = getPopoverElFor(videoBtn);
+
+    // Helpful: log the resolved absolute URL that the player will use
+    try {
+      const raw = videoBtn.dataset.videoUrl || '';
+      const resolved = absoluteFromAppRoot(raw);
+      console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
+    } catch(_) {}
+
+    const onDocClick = (e) => {
+      if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
+        pop.hide();
+      }
+    };
+    document.addEventListener('mousedown', onDocClick, { capture: true });
+    videoBtn._video_onDocClick = onDocClick;
+  };
+
+  const onHidden = () => {
+    const popEl = getPopoverElFor(videoBtn);
+    if (popEl) pauseAnyVideoIn(popEl);
+    if (videoBtn._video_onDocClick) {
+      document.removeEventListener('mousedown', videoBtn._video_onDocClick, { capture: true });
+      videoBtn._video_onDocClick = null;
+    }
+  };
+
+  videoBtn.addEventListener('shown.bs.popover', onShown);
+  videoBtn.addEventListener('hide.bs.popover', onHidden);
+
+  // ----- Also hide the popover when the modal closes -----
+  if (!modalEl.dataset.videoPopoverBound) {
+    modalEl.addEventListener('hide.bs.modal', () => {
+      const inst = bootstrap.Popover.getInstance(videoBtn);
+      if (inst) inst.hide();
+    });
+    modalEl.dataset.videoPopoverBound = '1';
+  }
+}
+
 function onProfileHiddenCleanUrl(){
   removeApplicantIdFromUrl();
 }
@@ -566,6 +822,7 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   }
 
   ensureModalFooterAndHire(applicant);
+  ensureModalVideoButton(applicant);
 
   const profileModal = bootstrap.Modal.getOrCreateInstance(modalEl);
   profileModal.show();
@@ -682,6 +939,35 @@ function injectStyles(){
   `;
   const style = document.createElement('style');
   style.id = 'app-modern-card-styles';
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
+}
+
+/* =========================================================
+   Styles: video popover
+========================================================= */
+function ensureVideoPopoverStyles(){
+  if (document.getElementById('video-popover-styles')) return;
+  const css = `
+  /* Make it look like a mini-player panel */
+.video-popover{
+  width: min(92vw, 760px);
+  max-width: min(92vw, 760px);
+}
+@media (min-width: 992px){ /* lg+ screens */
+  .video-popover {
+    width: 680px; /* or 820px, your call */
+  }
+}
+.video-popover .popover-body{ padding:0; }
+.video-popover .ratio > iframe,
+.video-popover video{ border-radius:12px; }
+
+    /* Keep the header tools tidy */
+    .modal-header .modal-tools .btn{ white-space: nowrap; }
+  `;
+  const style = document.createElement('style');
+  style.id = 'video-popover-styles';
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
 }
