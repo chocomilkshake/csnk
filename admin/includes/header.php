@@ -20,80 +20,30 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --sidebar-width: 260px;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
+        :root { --sidebar-width: 260px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width);
-            background: #fff;
-            border-right: 1px solid #e5e7eb;
-            overflow-y: auto;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width);
+            background: #fff; border-right: 1px solid #e5e7eb; overflow-y: auto; z-index: 1000;
         }
-        .main-content {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            background: #f8f9fa;
-        }
-        .navbar-top {
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 1rem 1.5rem;
-        }
-        .sidebar-brand {
-            padding: 1.5rem 1rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e40af;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .sidebar-menu {
-            padding: 1rem 0;
-        }
+        .main-content { margin-left: var(--sidebar-width); min-height: 100vh; background: #f8f9fa; }
+        .navbar-top { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 1rem 1.5rem; }
+        .sidebar-brand { padding: 1.5rem 1rem; font-size: 1.5rem; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-menu { padding: 1rem 0; }
         .sidebar-item {
-            display: block;
-            padding: 0.75rem 1.5rem;
-            color: #4b5563;
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
+            display: block; padding: 0.75rem 1.5rem; color: #4b5563; text-decoration: none;
+            transition: all 0.2s; border-left: 3px solid transparent;
         }
-        .sidebar-item:hover {
-            background: #f3f4f6;
-            color: #1e40af;
-        }
-        .sidebar-item.active {
-            background: #eff6ff;
-            color: #1e40af;
-            border-left-color: #1e40af;
-        }
-        .sidebar-item i {
-            width: 20px;
-            margin-right: 0.75rem;
-        }
-        .sidebar-submenu {
-            padding-left: 3rem;
-        }
-        .content-wrapper {
-            padding: 2rem;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .stat-card {
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-4px);
-        }
+        .sidebar-item:hover { background: #f3f4f6; color: #1e40af; }
+        .sidebar-item.active { background: #eff6ff; color: #1e40af; border-left-color: #1e40af; }
+        .sidebar-item i { width: 20px; margin-right: 0.75rem; }
+        .sidebar-submenu { padding-left: 3rem; }
+        .content-wrapper { padding: 2rem; }
+        .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); }
+
+
     </style>
 </head>
 <body>
@@ -153,9 +103,15 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <div class="main-content">
         <nav class="navbar-top d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold"><?php echo $pageTitle ?? 'Dashboard'; ?></h5>
-            <div class="d-flex align-items-center">
-                <span class="me-3">Welcome, <strong><?php echo htmlspecialchars($currentUser['full_name']); ?></strong></span>
-                <?php if ($currentUser['avatar']): ?>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Fullscreen Lock Toggle -->
+                <button id="btnFullscreen" type="button" class="btn btn-outline-secondary btn-sm" title="Toggle Fullscreen Lock">
+                    <i class="bi bi-arrows-fullscreen me-1" id="fsIcon"></i>
+                    <span id="fsText" class="d-none d-sm-inline">Lock Fullscreen</span>
+                </button>
+
+                <span class="ms-2 me-3">Welcome, <strong><?php echo htmlspecialchars($currentUser['full_name']); ?></strong></span>
+                <?php if (!empty($currentUser['avatar'])): ?>
                     <img src="<?php echo getFileUrl($currentUser['avatar']); ?>" alt="Avatar" class="rounded-circle" width="40" height="40">
                 <?php else: ?>
                     <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
@@ -164,6 +120,8 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 <?php endif; ?>
             </div>
         </nav>
+
+
 
         <div class="content-wrapper">
             <?php
@@ -176,3 +134,69 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
+
+<script>
+(function(){
+  const KEY = 'csnk_fullscreen_lock';
+  const btn = document.getElementById('btnFullscreen');
+  const icon = document.getElementById('fsIcon');
+  const text = document.getElementById('fsText');
+
+  function isLocked(){ return localStorage.getItem(KEY) === '1'; }
+  function setLocked(v){ localStorage.setItem(KEY, v ? '1' : '0'); updateUi(); }
+
+  function updateUi(){
+    if (isLocked()) {
+      icon.classList.remove('bi-arrows-fullscreen');
+      icon.classList.add('bi-fullscreen-exit');
+      if (text) text.textContent = 'Exit Fullscreen';
+    } else {
+      icon.classList.remove('bi-fullscreen-exit');
+      icon.classList.add('bi-arrows-fullscreen');
+      if (text) text.textContent = 'Lock Fullscreen';
+    }
+  }
+
+  function inFullscreen(){
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  }
+
+  async function enterFullscreen(){
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+    } catch(e) { /* ignore */ }
+  }
+  async function exitFullscreen(){
+    try {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      else if (document.msExitFullscreen) await document.msExitFullscreen();
+    } catch(e) { /* ignore */ }
+  }
+
+  btn?.addEventListener('click', async () => {
+    if (!isLocked()) {
+      setLocked(true);
+      if (!inFullscreen()) await enterFullscreen();
+    } else {
+      setLocked(false);
+      if (inFullscreen()) await exitFullscreen();
+    }
+    updateUi();
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if (isLocked() && !inFullscreen()) {
+      enterFullscreen();
+    }
+  });
+
+  updateUi();
+  if (isLocked() && !inFullscreen()) {
+    enterFullscreen();
+  }
+})();
+</script>
