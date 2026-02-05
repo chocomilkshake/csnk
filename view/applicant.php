@@ -164,7 +164,7 @@
       <div class="modal-content shadow border-0 rounded-4">
         <div class="modal-header border-0">
           <h1 class="modal-title fs-5 fw-bold">Applicant Profile</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          
         </div>
 
         <!-- Body IDs must match app.js -->
