@@ -13,7 +13,7 @@ $context = stream_context_create([
 
 $result = file_get_contents($url, false, $context);
 
-if ($result === false) {
+if ($result === false) {asdasdasdas
     echo "ERROR: Could not fetch from API\n";
     echo "Check if Apache/XAMPP is running and the path is correct\n";
 } else {
