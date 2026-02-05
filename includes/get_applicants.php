@@ -45,12 +45,12 @@ function canonicalizeForRoleMap(string $label): string {
 function mapPrimarySpecialization(array $skills): string {
     // Canonical map (expects " & " form)
     $roleMap = [
-        'Cleaning & Housekeeping (General)'   => 'Kasambahay',
-        'Laundry & Clothing Care'             => 'Kasambahay',
+        'Cleaning & Housekeeping (General)'   => 'Housekeeping',
+        'Laundry & Clothing Care'             => 'Laundry Specialist',
         'Cooking & Food Service'              => 'Cook',
         'Childcare & Maternity (Yaya)'        => 'Nanny',
         'Elderly & Special Care (Caregiver)'  => 'Elderly Care',
-        'Pet & Outdoor Maintenance'           => 'All-around Helper',
+        'Pet & Outdoor Maintenance'           => 'Pet Care Specialist',
     ];
 
     foreach ($skills as $raw) {
@@ -80,8 +80,8 @@ try {
     $database  = new Database();
     $applicant = new Applicant($database);
 
-    // Active (not deleted)
-    $apps = $applicant->getAll();
+    // Active (not deleted, not approved)
+    $apps = $applicant->getAllForPublic();
 
     // Base URLs (auto-detect http/https + host)
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -142,6 +142,28 @@ try {
         $educationDisplay = $educationLevelEnum
             ?: ((is_array($educAttain) && !empty($educAttain)) ? implode(', ', $educAttain) : '—');
 
+        // Video URL (same logic as photo: absolute URL respected, else join with uploads base)
+        $videoUrl = '';
+        if (!empty($app['video_url'])) {
+            // Normalize Windows backslashes to forward slashes
+            $normalized = str_replace('\\', '/', (string)$app['video_url']);
+            $videoRelative = ltrim($normalized, '/');
+            if (preg_match('~^https?://~i', $videoRelative)) {
+                $videoUrl = $videoRelative; // already absolute (YouTube/Vimeo link)
+            } elseif (preg_match('~^admin/uploads/~i', $videoRelative)) {
+                // Path already includes admin/uploads/ prefix, use it directly
+                $videoUrl = $appBase . '/' . $videoRelative;
+            } else {
+                // Local file without prefix, add uploads base
+                $videoUrl = $uploadsBase . $videoRelative;
+            }
+        }
+
+        // Video type: normalize to 'iframe' or 'file' (from enum field)
+        // If video_type is 'iframe', trust it; otherwise default to 'file' for local videos
+        $videoTypeRaw = strtolower($app['video_type'] ?? 'iframe');
+        $videoType = ($videoTypeRaw === 'file') ? 'file' : 'iframe';
+
         $rows[] = [
             'id'                      => (int)$app['id'],
             'full_name'               => trim(($app['first_name'] ?? '') . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . ($app['last_name'] ?? '')),
@@ -171,6 +193,9 @@ try {
 
             'photo_url'               => $photoUrl,
             'photo_placeholder'       => $placeholderUrl,
+
+            'video_url'               => $videoUrl,
+            'video_type'              => $videoType,
 
             'created_at'              => $createdAt
         ];

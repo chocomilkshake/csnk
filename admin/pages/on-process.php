@@ -4,6 +4,9 @@ $pageTitle = 'On Process Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
+
+
 // Ensure session is active (for search persistence)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
@@ -12,7 +15,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $applicant = new Applicant($database);
 
 /**
- * --- Search Memory Behavior (consistent with applicants.php & deleted.php) ---
+ * --- Search Memory Behavior (consistent) ---
  * - If ?clear=1 → clear stored search and redirect to clean list
  * - If ?q=...  → store in session and use
  * - Else if session has last query → use it
@@ -26,7 +29,6 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
-    // Guard against very long input
     if (mb_strlen($q) > 100) {
         $q = mb_substr($q, 0, 100);
     }
@@ -35,17 +37,25 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['onproc_q'];
 }
 
-/**
- * Load "on_process" applicants.
- * If Applicant::getAll($status) already filters by status, we can fetch then filter in-PHP by search.
- * If you prefer DB-level search, send me Applicant.php and I’ll add a prepared-statement search.
- */
-$applicants = $applicant->getAll('on_process');
+/** Handle delete (soft delete) with search preserved */
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $id = (int)$_GET['id'];
+    if ($applicant->softDelete($id)) {
+        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from On Process)");
+        setFlashMessage('success', 'Applicant deleted successfully.');
+    } else {
+        setFlashMessage('error', 'Failed to delete applicant.');
+    }
+    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+    redirect('on-process.php' . $qs);
+    exit;
+}
+
+/** Load on_process applicants + latest booking data */
+$applicants = $applicant->getOnProcessWithLatestBooking();
 
 /**
- * Helper: Render preferred_location JSON as clean text.
- * - Shows comma-separated cities (e.g., "Biringan City, Capiz City")
- * - If too long, show only the first city
+ * Helpers
  */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) {
@@ -72,33 +82,41 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     return $full;
 }
 
-/**
- * Helper: Apply a case-insensitive contains filter across multiple fields.
- */
-function filterApplicantsByQuery(array $rows, string $query): array {
+function filterRowsByQuery(array $rows, string $query): array {
     if ($query === '') return $rows;
-
     $needle = mb_strtolower($query);
 
-    return array_values(array_filter($rows, function(array $app) use ($needle) {
-        $first  = (string)($app['first_name']   ?? '');
-        $middle = (string)($app['middle_name']  ?? '');
-        $last   = (string)($app['last_name']    ?? '');
-        $suffix = (string)($app['suffix']       ?? '');
-        $email  = (string)($app['email']        ?? '');
-        $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
+    return array_values(array_filter($rows, function(array $row) use ($needle) {
+        // Applicant name fields
+        $first  = (string)($row['first_name']   ?? '');
+        $middle = (string)($row['middle_name']  ?? '');
+        $last   = (string)($row['last_name']    ?? '');
+        $suffix = (string)($row['suffix']       ?? '');
 
-        // Combine a few name variants
+        // Applicant contacts
+        $email  = (string)($row['email']        ?? '');
+        $phone  = (string)($row['phone_number'] ?? '');
+        $loc    = renderPreferredLocation($row['preferred_location'] ?? null, 999);
+
+        // Client fields (latest booking)
+        $cfn = (string)($row['client_first_name']  ?? '');
+        $cmn = (string)($row['client_middle_name'] ?? '');
+        $cln = (string)($row['client_last_name']   ?? '');
+        $cem = (string)($row['client_email']       ?? '');
+        $cph = (string)($row['client_phone']       ?? '');
+
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
         $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
         $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
 
+        $clientFull = trim($cfn . ' ' . $cmn . ' ' . $cln);
+
         $haystack = mb_strtolower(implode(' | ', [
             $first, $middle, $last, $suffix,
             $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone, $loc
+            $email, $phone, $loc,
+            $clientFull, $cem, $cph
         ]));
 
         return mb_strpos($haystack, $needle) !== false;
@@ -106,16 +124,14 @@ function filterApplicantsByQuery(array $rows, string $query): array {
 }
 
 if ($q !== '') {
-    $applicants = filterApplicantsByQuery($applicants, $q);
+    $applicants = filterRowsByQuery($applicants, $q);
 }
 
-// For preserving the search in action links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">On Process Applicants</h4>
     <?php
-        // Export URL, carry search parameter so export can filter if supported
         $exportUrl = 'export-excel.php?type=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
     ?>
     <a href="<?php echo $exportUrl; ?>" class="btn btn-success">
@@ -123,7 +139,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     </a>
 </div>
 
-<!-- 🔎 Search bar placed on the RIGHT side under the Export Excel button -->
+<!-- 🔎 Search bar on the right -->
 <div class="mb-3 d-flex justify-content-end">
     <form method="get" action="on-process.php" class="w-100" style="max-width: 420px;">
         <div class="input-group">
@@ -131,7 +147,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                 type="text"
                 name="q"
                 class="form-control"
-                placeholder="Search on-process applicants..."
+                placeholder="Search on-process (applicant or client)..."
                 value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
                 autocomplete="off"
             >
@@ -147,76 +163,119 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     </form>
 </div>
 
-<div class="card">
+<div class="card table-card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-bordered table-striped table-hover table-styled">
                 <thead>
                     <tr>
                         <th>Photo</th>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Email</th>
-                        <th>Location</th>
+                        <th>Applicant</th>
+                        <th>Client</th>
+                        <th>Interview</th>
+                        <th>Date & Time</th>
+                        <th>Applicant Contact</th>
+                        <th>Client Contact</th>
                         <th>Date Applied</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     <?php if (empty($applicants)): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-5">
+                            <td colspan="9" class="text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                                 <?php if ($q === ''): ?>
                                     No applicants currently on process.
                                 <?php else: ?>
-                                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                    No results for "<strong><?= htmlspecialchars($q) ?></strong>".
                                     <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
+
                     <?php else: ?>
-                        <?php foreach ($applicants as $app): ?>
+                        <?php foreach ($applicants as $row): ?>
+                            <?php
+                                $viewUrl = 'view-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $editUrl = 'edit-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $delUrl  = 'on-process.php?action=delete&id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                                $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
+                                $clientName = $clientName !== '' ? $clientName : '—';
+                                $apptType   = $row['appointment_type'] ?? '—';
+                                $apptDate   = $row['appointment_date'] ?? '—';
+                                $apptTime   = $row['appointment_time'] ?? '—';
+                                $appContact = trim(($row['phone_number'] ?? '') . ($row['email'] ? ' / ' . $row['email'] : ''));
+                                $cliContact = trim(($row['client_phone'] ?? '') . ($row['client_email'] ? ' / ' . $row['client_email'] : ''));
+                            ?>
+
                             <tr>
-                                <td>
-                                    <?php if (!empty($app['picture'])): ?>
-                                        <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                <td class="tbl-photo">
+                                    <?php if (!empty($row['picture'])): ?>
+                                        <img src="<?= htmlspecialchars(getFileUrl($row['picture'])) ?>"
+                                             alt="Photo"
+                                             class="rounded"
+                                             width="50" height="50"
+                                             style="object-fit: cover;">
                                     <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($app['first_name'], 0, 1)); ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                             style="width: 50px; height: 50px;">
+                                            <?= strtoupper(substr($row['first_name'], 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
+
                                 <td>
-                                    <strong><?php echo getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']); ?></strong>
+                                    <div class="fw-semibold">
+                                        <?= getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?= htmlspecialchars(renderPreferredLocation($row['preferred_location'])); ?>
+                                    </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($app['phone_number']); ?></td>
-                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A'); ?></td>
-                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                                <td><?php echo formatDate($app['created_at']); ?></td>
+
                                 <td>
-                                    <?php
-                                        // Preserve search context when navigating
-                                        $viewUrl = 'view-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                        $editUrl = 'edit-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                    ?>
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($clientName); ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?= htmlspecialchars($row['client_address'] ?? '—'); ?>
+                                    </div>
+                                </td>
+
+                                <td><?= htmlspecialchars($apptType); ?></td>
+                                <td><?= htmlspecialchars($apptDate . ' ' . $apptTime); ?></td>
+                                <td><?= htmlspecialchars($appContact !== '' ? $appContact : '—'); ?></td>
+                                <td><?= htmlspecialchars($cliContact !== '' ? $cliContact : '—'); ?></td>
+                                <td><?= formatDate($row['created_at']); ?></td>
+
+                                <td>
                                     <div class="btn-group">
-                                        <a href="<?php echo $viewUrl; ?>" class="btn btn-sm btn-info" title="View">
+                                        <a href="<?= $viewUrl ?>" class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="<?php echo $editUrl; ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?= $editUrl ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
+                                           onclick="return confirm('Delete this applicant? This is a soft delete.');">
+                                            <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
+
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
+
             </table>
         </div>
     </div>
 </div>
+
+
 
 <?php require_once '../includes/footer.php'; ?>
