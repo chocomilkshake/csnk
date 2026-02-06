@@ -87,7 +87,7 @@
 
                   <div class="form-check"><label class="form-check-label" for="spec-kas">Cleaning and Housekeeping (General)<input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning and Housekeeping (General)" id="spec-kas"></label></div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care<input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care</label></div>
+                  <div class="form-check"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care<input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan"></label></div>
 
                   <div class="form-check"><label class="form-check-label" for="spec-cook">Cooking and Food Service<input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"></label></div>
 

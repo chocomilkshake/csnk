@@ -249,14 +249,14 @@ function initApp(){
   injectStyles();
   ensureVideoPopoverStyles();
   renderSkeleton(8);
-  loadApplicants().then(() => {
+  fetchApplicants({ page: 1 }).then(() => {
     setupEventListeners();
 
     // Deep-link: auto-open modal if URL has ?applicant=ID
     const url = new URL(window.location.href);
     const idParam = url.searchParams.get('applicant');
     if (idParam) {
-      const found = allApplicants.find(a => String(a.id) === String(idParam));
+      const found = filteredApplicants.find(a => String(a.id) === String(idParam));
       if (found) showApplicantModal(found, { pushState: false });
     }
   });
@@ -271,27 +271,54 @@ if (document.readyState === 'loading') {
 /* =========================================================
    Data loading
 ========================================================= */
-async function loadApplicants() {
+// Server-driven fetch (supports filters, pagination)
+let serverTotal = 0;
+let serverPerPage = itemsPerPage;
+
+async function fetchApplicants(options = {}) {
+  // options may include page and per_page
+  const page = options.page || 1;
+  const per_page = options.per_page || serverPerPage || itemsPerPage;
+
+  // Build params from current forms
+  const params = new URLSearchParams();
+  const formData    = searchForm ? new FormData(searchForm)   : new FormData();
+  const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
+
+  const q = (formData.get('q') || '').trim(); if (q) params.set('q', q);
+  const location = (formData.get('location') || '').trim(); if (location) params.set('location', location);
+  const available_by = (formData.get('available_by') || '').trim(); if (available_by) params.set('available_by', available_by);
+  const minExp = parseInt(filtersData.get('min_experience')) || 0; if (minExp > 0) params.set('min_experience', String(minExp));
+  const sortBy = (filtersData.get('sort') || '').trim(); if (sortBy) params.set('sort', sortBy);
+
+  // multiple values: specializations[] and languages[]
+  const specs = filtersData.getAll('specializations[]');
+  specs.forEach(s => params.append('specializations[]', s));
+  const langs = filtersData.getAll('languages[]');
+  langs.forEach(l => params.append('languages[]', l));
+
+  params.set('page', String(page));
+  params.set('per_page', String(per_page));
+
   try {
-    const response = await fetch('../includes/get_applicants.php', {
-      cache: 'no-store',
-      headers: { 'Accept': 'application/json' }
-    });
+    renderSkeleton(6);
+    const url = '../includes/get_applicants.php?' + params.toString();
+    const res = await fetch(url, { cache: 'no-store', headers: { 'Accept':'application/json' } });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const json = await res.json();
 
-    if (!response.ok) {
-      throw new Error('Failed to load applicants: ' + response.status + ' ' + response.statusText);
-    }
+    if (json.error) throw new Error(json.error);
 
-    const data = await response.json();
+    // Set local state
+    filteredApplicants = Array.isArray(json.data) ? json.data : [];
+    serverTotal = Number(json.total || 0);
+    serverPerPage = Number(json.per_page || per_page);
+    currentPage = Number(json.page || page);
 
-    allApplicants = Array.isArray(data) ? data : [];
-    filteredApplicants = [...allApplicants];
     renderApplicants();
-  } catch (error) {
-    console.error('Error loading applicants:', error);
-    if (cardsGrid) {
-      cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
-    }
+  } catch (err) {
+    console.error('Error fetching applicants:', err);
+    if (cardsGrid) cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
   }
 }
 
@@ -304,12 +331,21 @@ function setupEventListeners() {
       e.preventDefault();
       applyFilters();
     });
+
+    // Live search (debounced) for smoother UX
+    const qInput = searchForm.querySelector('input[name="q"]');
+    if (qInput) qInput.addEventListener('input', debounce(() => applyFilters(), 250));
   }
 
   if (filtersForm) {
     filtersForm.addEventListener('submit', function(e) {
       e.preventDefault();
       applyFilters();
+    });
+
+    // Auto-apply when any filter changes (debounced)
+    filtersForm.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', debounce(() => applyFilters(), 220));
     });
 
     byId('clearSpecs')?.addEventListener('click', (e) => {
@@ -334,9 +370,8 @@ function setupEventListeners() {
       e.preventDefault();
       searchForm?.reset();
       filtersForm.reset();
-      filteredApplicants = [...allApplicants];
       currentPage = 1;
-      renderApplicants();
+      fetchApplicants({ page: 1 });
     });
 
     byId('applyFilters')?.addEventListener('click', () => applyFilters());
@@ -345,8 +380,32 @@ function setupEventListeners() {
 
 /* =========================================================
    Filtering + Sorting
+   - Normalizes specialization labels so "&" and "and" variants match
+   - Location search matches city, region and preferred locations
+   - Languages matching is case-insensitive
+   - Debounced input + auto-apply for a smooth UX
 ========================================================= */
-function applyFilters() {
+
+// Simple debounce helper
+function debounce(fn, wait = 300){
+  let t = null;
+  return function(...args){
+    clearTimeout(t);
+    t = setTimeout(()=> fn.apply(this, args), wait);
+  };
+}
+
+// Normalize values for comparison (lowercase, collapse spaces/dashes, replace &/and)
+function cmpNorm(val){
+  if (val == null) return '';
+  return String(val).toLowerCase().replace(/\s+|[-_]/g, '').replace(/&|and/g, 'and').trim();
+}
+
+const debouncedApplyFilters = debounce(applyFiltersRaw, 220);
+
+function applyFilters() { debouncedApplyFilters(); }
+
+async function applyFiltersRaw(){
   const formData    = searchForm ? new FormData(searchForm)   : new FormData();
   const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
 
@@ -360,101 +419,24 @@ function applyFilters() {
   const selectedLangs = filtersData.getAll('languages[]');
   const sortBy        = filtersData.get('sort');
 
-  filteredApplicants = allApplicants.filter(applicant => {
-    // Search by name or specialization (both string and array)
-    if (searchQuery) {
-      const nameMatch = String(applicant.full_name || '').toLowerCase().includes(searchQuery);
-      const primarySpecMatch = String(applicant.specialization || '').toLowerCase().includes(searchQuery);
-      const arraySpecMatch = Array.isArray(applicant.specializations)
-        ? applicant.specializations.some(s => String(s).toLowerCase().includes(searchQuery))
-        : false;
-      if (!nameMatch && !primarySpecMatch && !arraySpecMatch) return false;
-    }
+  const selectedSpecNorms = selectedSpecs.map(cmpNorm);
+  const selectedLangNorms = selectedLangs.map(s => String(s || '').toLowerCase());
 
-    // Location (city)
-    if (locationQuery && !String(applicant.location_city || '').toLowerCase().includes(locationQuery)) return false;
-
-    // Available by date (kept in filters even if not shown on cards)
-    if (availableBy) {
-      const appDate = toDate(applicant.availability_date);
-      const byDate  = toDate(availableBy);
-      if (appDate && byDate && appDate > byDate) return false;
-    }
-
-    // Specialization filter using specializations array (fallback to primary string)
-    if (selectedSpecs.length > 0) {
-      const applicantSpecs = Array.isArray(applicant.specializations) ? applicant.specializations : [];
-      const hasArrayMatch = selectedSpecs.some(sel => applicantSpecs.includes(sel));
-      const hasPrimaryMatch = selectedSpecs.includes(applicant.specialization);
-      if (!hasArrayMatch && !hasPrimaryMatch) return false;
-    }
-
-    // Employment type: accept both "Full Time"/"Part Time" (raw) and "Full-time"/"Part-time" (label)
-    if (selectedAvail.length > 0) {
-      const selectedNorms = selectedAvail.map(normLabel);
-      const typeNorms = [applicant.employment_type, applicant.employment_type_raw].map(normLabel);
-      const match = typeNorms.some(t => selectedNorms.includes(t));
-      if (!match) return false;
-    }
-
-    // Experience
-    if (toInt(applicant.years_experience) < minExperience) return false;
-
-    // Languages (prefer array; fallback to CSV string)
-    if (selectedLangs.length > 0) {
-      const langArr = Array.isArray(applicant.languages_array)
-        ? applicant.languages_array
-        : String(applicant.languages || '').split(',').map(s => s.trim()).filter(Boolean);
-      const hasLang = selectedLangs.some(lang => langArr.includes(lang));
-      if (!hasLang) return false;
-    }
-
-    return true;
-  });
-
-  // Sort (robust guards)
-  if (sortBy) {
-    filteredApplicants.sort((a, b) => {
-      switch (sortBy) {
-        case 'availability_asc': {
-          const da = toDate(a.availability_date);
-          const db = toDate(b.availability_date);
-          if (da && db) return da - db;
-          if (da && !db) return -1;
-          if (!da && db) return 1;
-          return 0;
-        }
-        case 'experience_desc':
-          return toInt(b.years_experience) - toInt(a.years_experience);
-        case 'newest': {
-          const ca = toDate(a.created_at);
-          const cb = toDate(b.created_at);
-          if (ca && cb) return cb - ca;
-          if (cb && !ca) return 1;
-          if (!cb && ca) return -1;
-          return 0;
-        }
-        default:
-          return 0;
-      }
-    });
-  }
-
+  // For server-side filtering we simply request page 1 with current filters
   currentPage = 1;
-  renderApplicants();
+  await fetchApplicants({ page: 1 });
 }
 
 /* =========================================================
    Rendering
 ========================================================= */
 function renderApplicants() {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex   = startIndex + itemsPerPage;
-  const list       = filteredApplicants.slice(startIndex, endIndex);
+  const perPage = serverPerPage || itemsPerPage;
+  const list = filteredApplicants; // server already returns the requested page
 
-  const totalResults = filteredApplicants.length;
-  const startResult  = totalResults > 0 ? startIndex + 1 : 0;
-  const endResult    = Math.min(endIndex, totalResults);
+  const totalResults = serverTotal || list.length;
+  const startResult  = (totalResults > 0) ? ((currentPage - 1) * perPage) + 1 : 0;
+  const endResult    = startResult + list.length - 1;
   if (resultsCount) {
     resultsCount.textContent = `Showing ${startResult}-${endResult} of ${totalResults} applicants`;
   }
@@ -555,7 +537,8 @@ function createApplicantCard(applicant) {
 ========================================================= */
 function renderPagination() {
   if (!pagination) return;
-  const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
+  const perPage = serverPerPage || itemsPerPage;
+  const totalPages = Math.ceil((serverTotal || filteredApplicants.length) / perPage);
   pagination.innerHTML = '';
   if (totalPages <= 1) return;
 
@@ -574,7 +557,7 @@ function renderPagination() {
     ul.appendChild(li);
   };
 
-  addPageItem('&laquo;', currentPage === 1, () => { currentPage--; renderApplicants(); });
+  addPageItem('&laquo;', currentPage === 1, () => { if (currentPage > 1) fetchApplicants({ page: currentPage - 1 }); });
 
   const windowSize = 5;
   let start = Math.max(1, currentPage - Math.floor(windowSize/2));
@@ -582,10 +565,10 @@ function renderPagination() {
   if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
 
   for (let i = start; i <= end; i++) {
-    addPageItem(String(i), false, () => { currentPage = i; renderApplicants(); }, i === currentPage);
+    addPageItem(String(i), false, () => { fetchApplicants({ page: i }); }, i === currentPage);
   }
 
-  addPageItem('&raquo;', currentPage === totalPages, () => { currentPage++; renderApplicants(); });
+  addPageItem('&raquo;', currentPage === totalPages, () => { if (currentPage < totalPages) fetchApplicants({ page: currentPage + 1 }); });
 
   pagination.appendChild(ul);
 }

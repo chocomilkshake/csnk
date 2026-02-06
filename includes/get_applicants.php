@@ -80,8 +80,121 @@ try {
     $database  = new Database();
     $applicant = new Applicant($database);
 
-    // Active (not deleted, not approved)
-    $apps = $applicant->getAllForPublic();
+    // Pagination / filters (from GET)
+    $page       = max(1, (int)($_GET['page'] ?? 1));
+    $per_page   = min(100, max(1, (int)($_GET['per_page'] ?? 12)));
+    $offset     = ($page - 1) * $per_page;
+
+    $q          = trim((string)($_GET['q'] ?? ''));
+    $location   = trim((string)($_GET['location'] ?? ''));
+    $minExp     = (int)($_GET['min_experience'] ?? 0);
+    $availableBy = trim((string)($_GET['available_by'] ?? ''));
+    $sort       = trim((string)($_GET['sort'] ?? ''));
+
+    // Multi-value filters (arrays)
+    $selectedSpecs = $_GET['specializations'] ?? [];
+    if (!is_array($selectedSpecs) && $selectedSpecs !== '') {
+        $selectedSpecs = array_filter(array_map('trim', explode(',', (string)$selectedSpecs)));
+    }
+    $selectedLangs = $_GET['languages'] ?? [];
+    if (!is_array($selectedLangs) && $selectedLangs !== '') {
+        $selectedLangs = array_filter(array_map('trim', explode(',', (string)$selectedLangs)));
+    }
+
+    // Build WHERE clauses and bind params dynamically
+    $where = ["deleted_at IS NULL"];
+    $types = '';
+    $values = [];
+
+    if ($q !== '') {
+        $where[] = "(CONCAT_WS(' ', first_name, middle_name, last_name) LIKE ? OR specialization_skills LIKE ? OR email LIKE ? OR preferred_location LIKE ? )";
+        $like = "%{$q}%";
+        $types .= 'ssss';
+        $values[] = $like; $values[] = $like; $values[] = $like; $values[] = $like;
+    }
+
+    if ($location !== '') {
+        $where[] = "(location_city LIKE ? OR location_region LIKE ? OR preferred_location LIKE ? )";
+        $likeLoc = "%{$location}%";
+        $types .= 'sss';
+        $values[] = $likeLoc; $values[] = $likeLoc; $values[] = $likeLoc;
+    }
+
+    if (!empty($selectedSpecs)) {
+        $parts = [];
+        foreach ($selectedSpecs as $spec) {
+            $parts[] = "specialization_skills LIKE ?";
+            $types .= 's'; $values[] = "%{$spec}%";
+        }
+        $where[] = '(' . implode(' OR ', $parts) . ')';
+    }
+
+    if (!empty($selectedLangs)) {
+        $parts = [];
+        foreach ($selectedLangs as $lang) {
+            $parts[] = "languages LIKE ?";
+            $types .= 's'; $values[] = "%{$lang}%";
+        }
+        $where[] = '(' . implode(' OR ', $parts) . ')';
+    }
+
+    if ($minExp > 0) {
+        $where[] = 'years_experience >= ?';
+        $types .= 'i'; $values[] = $minExp;
+    }
+
+    if ($availableBy !== '') {
+        // Compare computed availability = created_at + 30 days <= availableBy
+        $where[] = "DATE_ADD(created_at, INTERVAL 30 DAY) <= ?";
+        $types .= 's'; $values[] = $availableBy;
+    }
+
+    // Sorting
+    switch ($sort) {
+        case 'availability_asc':
+            $orderBy = 'DATE_ADD(created_at, INTERVAL 30 DAY) ASC';
+            break;
+        case 'experience_desc':
+            $orderBy = 'years_experience DESC';
+            break;
+        case 'newest':
+        default:
+            $orderBy = 'created_at DESC';
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    // Total count
+    $countSql = "SELECT COUNT(*) AS cnt FROM applicants WHERE {$whereSql}";
+    $mysqli = $database->getConnection();
+    $countStmt = $mysqli->prepare($countSql);
+    if ($types !== '') {
+        // bind params to count statement
+        $tmp = array_merge([$types], $values);
+        $refs = [];
+        foreach ($tmp as $k => $v) $refs[$k] = &$tmp[$k];
+        call_user_func_array([$countStmt, 'bind_param'], $refs);
+    }
+    $countStmt->execute();
+    $countRes = $countStmt->get_result();
+    $totalRow = $countRes->fetch_assoc();
+    $total = (int)($totalRow['cnt'] ?? 0);
+
+    // Data query with LIMIT
+    $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY {$orderBy} LIMIT ?, ?";
+    $stmt = $mysqli->prepare($sql);
+
+    // bind params + offset, per_page (offset/per_page are integers)
+    $bindTypes = $types . 'ii';
+    $bindValues = array_merge($values, [$offset, $per_page]);
+    $tmp = array_merge([$bindTypes], $bindValues);
+    $refs = [];
+    foreach ($tmp as $k => $v) $refs[$k] = &$tmp[$k];
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $apps = $result->fetch_all(MYSQLI_ASSOC);
 
     // Base URLs (auto-detect http/https + host)
     $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -201,7 +314,13 @@ try {
         ];
     }
 
-    echo json_encode($rows, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    // Return paginated response with metadata
+    echo json_encode([
+        'data' => $rows,
+        'total' => $total,
+        'page' => $page,
+        'per_page' => $per_page
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
