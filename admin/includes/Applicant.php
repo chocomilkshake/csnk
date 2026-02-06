@@ -155,6 +155,30 @@ class Applicant {
         return $stmt->execute();
     }
 
+    /**
+     * Update video fields for an applicant
+     */
+    public function updateVideoFields($id, $videoData) {
+        $sql = "UPDATE applicants SET
+                    video_url = ?, video_provider = ?, video_type = ?, 
+                    video_title = ?, video_thumbnail_url = ?, video_duration_seconds = ?
+                WHERE id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
+            "sssssii",
+            $videoData['video_url'],
+            $videoData['video_provider'],
+            $videoData['video_type'],
+            $videoData['video_title'],
+            $videoData['video_thumbnail_url'],
+            $videoData['video_duration_seconds'],
+            $id
+        );
+
+        return $stmt->execute();
+    }
+
     public function softDelete($id) {
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?");
         $stmt->bind_param("i", $id);
