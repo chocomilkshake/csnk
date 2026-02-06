@@ -5,6 +5,10 @@ $pageTitle = 'Add New Applicant';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
+
+
+
 $applicant = new Applicant($database);
 $errors = [];
 
