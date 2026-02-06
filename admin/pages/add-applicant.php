@@ -235,6 +235,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // ---- Video uploads (optional - save first one to applicants table) ----
+            if (isset($_FILES['videos']) && is_array($_FILES['videos']['name']) && count($_FILES['videos']['name']) > 0) {
+                // Take the first video file
+                $videoFile = [
+                    'name' => $_FILES['videos']['name'][0],
+                    'type' => $_FILES['videos']['type'][0],
+                    'tmp_name' => $_FILES['videos']['tmp_name'][0],
+                    'error' => $_FILES['videos']['error'][0],
+                    'size' => $_FILES['videos']['size'][0],
+                ];
+
+                if ($videoFile['error'] === UPLOAD_ERR_OK) {
+                    $vidPath = uploadFile($videoFile, 'video');
+                    if ($vidPath) {
+                        // Update applicant with video info
+                        $videoData = [
+                            'video_url' => $vidPath,
+                            'video_provider' => 'file',
+                            'video_type' => 'file',
+                            'video_title' => isset($_POST['video_title']) ? sanitizeInput($_POST['video_title']) : pathinfo($videoFile['name'], PATHINFO_FILENAME),
+                            'video_thumbnail_url' => null,
+                            'video_duration_seconds' => null,
+                        ];
+                        $applicant->updateVideoFields($applicantId, $videoData);
+                    }
+                }
+            }
+
             $auth->logActivity($_SESSION['admin_id'], 'Add Applicant', "Added new applicant: $firstName $lastName");
             setFlashMessage('success', 'Applicant added successfully!');
             redirect('applicants.php');
@@ -600,6 +628,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label">Passport</label>
                     <input type="file" class="form-control" name="passport" accept=".pdf,.jpg,.jpeg,.png">
                 </div>
+                <div class="col-12 mt-3">
+                    <label class="form-label">Video (optional)</label>
+                    <div id="videoDropArea" class="border rounded p-3 text-center" style="min-height:110px; cursor:pointer; background:#f8f9fa;">
+                        <div id="videoDropPlaceholder" class="text-muted">
+                            <i class="bi bi-cloud-upload me-1"></i>Drag &amp; drop a video here or click to browse
+                        </div>
+                        <video id="videoPreview" class="mt-2 rounded" style="max-width:100%; max-height:300px; display:none;"></video>
+                    </div>
+                    <input type="file" class="form-control d-none" id="videoInput" name="videos[]" accept="video/*">
+                    <div id="videoMetaInfo" class="mt-2" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span id="videoFileName" class="text-truncate fw-semibold"></span>
+                            <button type="button" id="clearVideoBtn" class="btn btn-sm btn-outline-danger">Clear</button>
+                        </div>
+                        <small class="text-muted" id="videoFileSize"></small>
+                    </div>
+                    <div class="col-md-6 mt-2">
+                        <label class="form-label">Video Title (optional)</label>
+                        <input type="text" class="form-control" id="videoTitle" name="video_title" placeholder="e.g., Work Portfolio Video" value="<?= htmlspecialchars($_POST['video_title'] ?? '') ?>">
+                    </div>
+                    <div class="form-text mt-2">Supported: mp4, mov, webm, mkv, avi. Max 200MB.</div>
+                </div>
             </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-between">
@@ -912,6 +962,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (Array.isArray(postedLangs)) {
     postedLangs.forEach(l => addLangTag(l));
   }
+  // ---------- Video drag & drop with preview ----------
+  const videoDrop = document.getElementById('videoDropArea');
+  const videoInput = document.getElementById('videoInput');
+  const videoPreview = document.getElementById('videoPreview');
+  const videoDropPlaceholder = document.getElementById('videoDropPlaceholder');
+  const videoMetaInfo = document.getElementById('videoMetaInfo');
+  const videoFileName = document.getElementById('videoFileName');
+  const videoFileSize = document.getElementById('videoFileSize');
+  const clearVideoBtn = document.getElementById('clearVideoBtn');
+
+  function displayVideo(file) {
+    if (!file || file.type.indexOf('video') !== 0) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      videoPreview.src = e.target.result;
+      videoPreview.style.display = 'block';
+      videoDropPlaceholder.style.display = 'none';
+      videoMetaInfo.style.display = 'block';
+      videoFileName.textContent = file.name;
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      videoFileSize.textContent = `${sizeMB} MB`;
+      videoDrop.classList.remove('bg-light', 'border-primary');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearVideo() {
+    videoInput.value = '';
+    videoPreview.src = '';
+    videoPreview.style.display = 'none';
+    videoDropPlaceholder.style.display = 'block';
+    videoMetaInfo.style.display = 'none';
+    videoDrop.classList.remove('bg-light', 'border-primary');
+  }
+
+  videoDrop.addEventListener('click', () => videoInput.click());
+  clearVideoBtn.addEventListener('click', clearVideo);
+
+  ['dragenter','dragover'].forEach(evt => {
+    videoDrop.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      videoDrop.classList.add('bg-light', 'border-primary');
+    });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    videoDrop.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (evt !== 'drop') videoDrop.classList.remove('bg-light', 'border-primary');
+    });
+  });
+
+  videoDrop.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    const files = dt.files;
+    if (!files || files.length === 0) return;
+    // Take first video only
+    videoInput.value = '';
+    if (files[0].type.indexOf('video') !== 0) {
+      alert('Please select a video file.');
+      return;
+    }
+    // Manually set the file (this is a workaround, since FileList is read-only)
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(files[0]);
+    videoInput.files = dataTransfer.files;
+    displayVideo(files[0]);
+  });
+
+  videoInput.addEventListener('change', (e) => {
+    const files = e.target.files || [];
+    if (files.length > 0) {
+      displayVideo(files[0]);
+    }
+  });
+
 })();
 </script>
 

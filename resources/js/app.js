@@ -69,7 +69,8 @@ function removeApplicantIdFromUrl(){
 
 
 // ---- CONFIG: set your app root path here, including leading and trailing slashes ----
-const APP_BASE = '/csnk/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
+// NOTE: this must match your server mount (e.g., '/csnk-1/' for this project)
+const APP_BASE = '/csnk-1/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
 
 function normalizeSlashes(url) {
   return String(url || '').replace(/\\/g, '/').trim();
@@ -640,10 +641,11 @@ function ensureModalFooterAndHire(applicant){
 ========================================================= */
 function ensureModalVideoButton(applicant) {
   const modalEl = byId('applicantModal');
-  if (!modalEl || !window.bootstrap?.Popover) {
-    console.warn('Bootstrap Popover not available or modal not found.');
+  if (!modalEl) {
+    console.warn('Modal not found.');
     return;
   }
+  const hasPopover = !!(window.bootstrap?.Popover);
 
   // ----- Ensure header + tools container -----
   let header = modalEl.querySelector('.modal-header');
@@ -686,7 +688,8 @@ function ensureModalVideoButton(applicant) {
     id: applicant?.id,
     raw_url: applicant?.video_url,
     trimmed_url: videoUrl,
-    type: videoType
+    type: videoType,
+    hasPopover
   });
 
   videoBtn.dataset.videoUrl  = videoUrl;
@@ -699,70 +702,87 @@ function ensureModalVideoButton(applicant) {
   }
   videoBtn.style.display = '';
 
-  // ----- (Re)create the Popover instance -----
-  const existing = bootstrap.Popover.getInstance(videoBtn);
-  if (existing) existing.dispose();
+  if (hasPopover) {
+    // Use Bootstrap Popover if available
+    const existing = bootstrap.Popover.getInstance(videoBtn);
+    if (existing) existing.dispose();
 
-  const pop = new bootstrap.Popover(videoBtn, {
-    html: true,
-    trigger: 'manual',
-    placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
-    sanitize: false,       // we provide safe markup
-    container: modalEl,
-    template: `
-      <div class="popover video-popover" role="tooltip">
-        <div class="popover-arrow"></div>
-        <div class="popover-body p-0"></div>
-      </div>
-    `,
-    content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
-  });
+    const pop = new bootstrap.Popover(videoBtn, {
+      html: true,
+      trigger: 'manual',
+      placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
+      sanitize: false,       // we provide safe markup
+      container: modalEl,
+      template: `
+        <div class="popover video-popover" role="tooltip">
+          <div class="popover-arrow"></div>
+          <div class="popover-body p-0"></div>
+        </div>
+      `,
+      content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
+    });
 
-  // ----- Toggle -----
-  videoBtn.onclick = () => {
-    const isShown = !!videoBtn.getAttribute('aria-describedby');
-    isShown ? pop.hide() : pop.show();
-  };
+    // Toggle popover
+    videoBtn.onclick = () => {
+      const isShown = !!videoBtn.getAttribute('aria-describedby');
+      isShown ? pop.hide() : pop.show();
+    };
 
-  // ----- Outside click to close + pause on hide -----
-  const onShown = () => {
-    const popEl = getPopoverElFor(videoBtn);
+    // Outside click to close + pause on hide
+    const onShown = () => {
+      const popEl = getPopoverElFor(videoBtn);
 
-    // Helpful: log the resolved absolute URL that the player will use
-    try {
-      const raw = videoBtn.dataset.videoUrl || '';
-      const resolved = absoluteFromAppRoot(raw);
-      console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
-    } catch(_) {}
+      // Helpful: log the resolved absolute URL that the player will use
+      try {
+        const raw = videoBtn.dataset.videoUrl || '';
+        const resolved = absoluteFromAppRoot(raw);
+        console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
+      } catch(_) {}
 
-    const onDocClick = (e) => {
-      if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
-        pop.hide();
+      const onDocClick = (e) => {
+        if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
+          pop.hide();
+        }
+      };
+      document.addEventListener('mousedown', onDocClick, { capture: true });
+      videoBtn._video_onDocClick = onDocClick;
+    };
+
+    const onHidden = () => {
+      const popEl = getPopoverElFor(videoBtn);
+      if (popEl) pauseAnyVideoIn(popEl);
+      if (videoBtn._video_onDocClick) {
+        document.removeEventListener('mousedown', videoBtn._video_onDocClick, { capture: true });
+        videoBtn._video_onDocClick = null;
       }
     };
-    document.addEventListener('mousedown', onDocClick, { capture: true });
-    videoBtn._video_onDocClick = onDocClick;
-  };
 
-  const onHidden = () => {
-    const popEl = getPopoverElFor(videoBtn);
-    if (popEl) pauseAnyVideoIn(popEl);
-    if (videoBtn._video_onDocClick) {
-      document.removeEventListener('mousedown', videoBtn._video_onDocClick, { capture: true });
-      videoBtn._video_onDocClick = null;
+    videoBtn.addEventListener('shown.bs.popover', onShown);
+    videoBtn.addEventListener('hide.bs.popover', onHidden);
+
+    // ----- Also hide the popover when the modal closes -----
+    if (!modalEl.dataset.videoPopoverBound) {
+      modalEl.addEventListener('hide.bs.modal', () => {
+        const inst = bootstrap.Popover.getInstance(videoBtn);
+        if (inst) inst.hide();
+      });
+      modalEl.dataset.videoPopoverBound = '1';
     }
-  };
+  } else {
+    // Fallback: open a simple video modal when Popover isn't available
+    videoBtn.onclick = () => openVideoFallbackModal(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType);
 
-  videoBtn.addEventListener('shown.bs.popover', onShown);
-  videoBtn.addEventListener('hide.bs.popover', onHidden);
-
-  // ----- Also hide the popover when the modal closes -----
-  if (!modalEl.dataset.videoPopoverBound) {
-    modalEl.addEventListener('hide.bs.modal', () => {
-      const inst = bootstrap.Popover.getInstance(videoBtn);
-      if (inst) inst.hide();
-    });
-    modalEl.dataset.videoPopoverBound = '1';
+    // Ensure the fallback modal is hidden when profile modal closes
+    if (!modalEl.dataset.videoFallbackBound) {
+      modalEl.addEventListener('hide.bs.modal', () => {
+        const fb = byId('applicantVideoModal');
+        if (fb) {
+          const inst = bootstrap.Modal.getInstance(fb);
+          if (inst) inst.hide();
+        }
+      });
+      modalEl.dataset.videoFallbackBound = '1';
+    }
   }
 }
 
@@ -970,4 +990,45 @@ function ensureVideoPopoverStyles(){
   style.id = 'video-popover-styles';
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
+}
+
+// Fallback modal for video playback when Bootstrap Popover isn't available
+function openVideoFallbackModal(rawUrl, videoType) {
+  const modalId = 'applicantVideoModal';
+  let modal = byId(modalId);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Introduction Video</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-3 video-modal-body"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Pause video on hide
+    modal.addEventListener('hide.bs.modal', () => pauseAnyVideoIn(modal));
+  }
+
+  const body = modal.querySelector('.video-modal-body');
+  if (body) {
+    // Build content using existing helper (it will resolve relative URLs)
+    body.innerHTML = buildApplicantVideoHtml(rawUrl, videoType);
+  }
+
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  } else {
+    // Last resort: open video in new tab/window
+    const resolved = absoluteFromAppRoot(rawUrl);
+    window.open(resolved || rawUrl, '_blank');
+  }
 }

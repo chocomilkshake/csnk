@@ -460,6 +460,23 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
             </div>
         </div>
 
+        <?php if (!empty($applicantData['video_url'])): ?>
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-film me-2"></i>
+                    <?php echo !empty($applicantData['video_title']) ? htmlspecialchars($applicantData['video_title'], ENT_QUOTES, 'UTF-8') : 'Video'; ?>
+                </h5>
+            </div>
+            <div class="card-body">
+                <video controls preload="metadata" style="width:100%; max-height:500px; background:#000;">
+                    <source src="<?php echo htmlspecialchars(getFileUrl($applicantData['video_url']), ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="card">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 fw-semibold">Documents</h5>
