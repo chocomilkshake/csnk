@@ -312,6 +312,10 @@ async function fetchApplicants(options = {}) {
   params.set('page', String(page));
   params.set('per_page', String(per_page));
 
+  // Forward rotate opt-out flag if present in URL (e.g., ?rotate=0)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('rotate') === '0') params.set('rotate', '0');
+
   try {
     renderSkeleton(6);
     const url = '../includes/get_applicants.php?' + params.toString();
@@ -326,6 +330,30 @@ async function fetchApplicants(options = {}) {
     serverTotal = Number(json.total || 0);
     serverPerPage = Number(json.per_page || per_page);
     currentPage = Number(json.page || page);
+
+    // --- Auto Rumble / Round-robin rotation ---
+    // Rotates the order of applicants on each full page load to avoid always showing the same
+    // applicants at the top. Use URL param `?rotate=0` to disable for testing.
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rotateDisabled = urlParams.get('rotate') === '0';
+      if (!rotateDisabled && filteredApplicants.length > 1) {
+        const key = 'csnk_applicants_rotate_index';
+        let idx = parseInt(localStorage.getItem(key) || '0', 10);
+        if (!Number.isFinite(idx) || idx < 0) idx = 0;
+        const len = filteredApplicants.length;
+        const shift = idx % len;
+        if (shift !== 0) {
+          filteredApplicants = filteredApplicants.slice(shift).concat(filteredApplicants.slice(0, shift));
+        }
+        // Advance pointer for next page load
+        idx = (idx + 1) % len;
+        localStorage.setItem(key, String(idx));
+        console.debug('[AutoRumble] rotated by', shift, 'next idx', idx);
+      }
+    } catch (err) {
+      console.warn('AutoRumble rotation failed:', err);
+    }
 
     renderApplicants();
   } catch (err) {

@@ -243,13 +243,29 @@ try {
     $totalRow = $countRes->fetch_assoc();
     $total = (int)($totalRow['cnt'] ?? 0);
 
-    // Data query with LIMIT
-    $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY {$orderBy} LIMIT ?, ?";
+    // Determine rotation seed (daily by default) and whether rotation is disabled via ?rotate=0
+    $rotateEnabled = !isset($_GET['rotate']) || $_GET['rotate'] !== '0';
+    $seed = date('Ymd'); // daily seed; change to date('YmdH') for hourly, etc.
+
+    // Data query with deterministic pseudo-random ordering using CRC32(id + seed)
+    if ($rotateEnabled) {
+        $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY CRC32(CONCAT(id, ?)) ASC, {$orderBy} LIMIT ?, ?";
+    } else {
+        $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY {$orderBy} LIMIT ?, ?";
+    }
+
     $stmt = $mysqli->prepare($sql);
 
     // bind params + offset, per_page (offset/per_page are integers)
-    $bindTypes = $types . 'ii';
-    $bindValues = array_merge($values, [$offset, $per_page]);
+    if ($rotateEnabled) {
+        // add seed (s) before offset/per_page (ii)
+        $bindTypes = $types . 'sii';
+        $bindValues = array_merge($values, [$seed, $offset, $per_page]);
+    } else {
+        $bindTypes = $types . 'ii';
+        $bindValues = array_merge($values, [$offset, $per_page]);
+    }
+
     $tmp = array_merge([$bindTypes], $bindValues);
     $refs = [];
     foreach ($tmp as $k => $v) $refs[$k] = &$tmp[$k];
