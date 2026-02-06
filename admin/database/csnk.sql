@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 05, 2026 at 06:46 AM
+-- Generation Time: Feb 06, 2026 at 06:21 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -78,7 +78,9 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (123, 1, 'Login', 'User logged in successfully', '::1', '2026-02-04 07:35:54'),
 (124, 1, 'Delete Account', 'Deleted admin account ID: 3', '::1', '2026-02-04 07:35:59'),
 (125, 1, 'Update Applicant', 'Updated applicant ID: 19', '::1', '2026-02-04 07:37:21'),
-(126, 1, 'Login', 'User logged in successfully', '::1', '2026-02-05 00:21:47');
+(126, 1, 'Login', 'User logged in successfully', '::1', '2026-02-05 00:21:47'),
+(127, 1, 'Add Applicant', 'Added new applicant: Annie You Okay', '::1', '2026-02-06 03:54:26'),
+(128, 1, 'Update Applicant', 'Updated applicant ID: 22', '::1', '2026-02-06 03:54:51');
 
 -- --------------------------------------------------------
 
@@ -154,7 +156,8 @@ INSERT INTO `applicants` (`id`, `first_name`, `middle_name`, `last_name`, `suffi
 (17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\",\"Tondo Manila\",\"Pandacan Manila\",\"Paco Manila\",\"Pasay Manila\"]', '[\"Filipino\"]', '[\"Childcare & Maternity (Yaya)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'admin/uploads/video/trial1.mp4', 'file', 'file', 'Video', NULL, NULL, 'pending', 1, '2026-02-02 12:00:00', '2026-02-05 03:07:51', NULL),
 (18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 1, '2026-02-02 12:22:47', '2026-02-04 05:46:49', NULL),
 (19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 1, '2026-02-02 12:58:24', '2026-02-04 07:37:21', NULL),
-(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking & Food Service\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 1, '2026-02-03 05:16:52', '2026-02-05 03:20:33', NULL);
+(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking & Food Service\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 1, '2026-02-03 05:16:52', '2026-02-05 03:20:33', NULL),
+(22, 'Annie', 'Are', 'You Okay', '', '09123861273', '09971286128', 'zinnerbro@gmail.com', '1995-04-17', '1223 kjlabmkdawkdkbawhdawdw', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2010 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\"]', 'Part Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6985660b79316_1770350091.jpg', 'video/698565f248a69_1770350066.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', 1, '2026-02-06 03:54:26', '2026-02-06 03:54:51', NULL);
 
 -- --------------------------------------------------------
 
@@ -206,7 +209,15 @@ INSERT INTO `applicant_documents` (`id`, `applicant_id`, `document_type`, `file_
 (149, 20, 'nbi', 'documents/698184c4d7908_1770095812.jpg', '2026-02-03 05:16:52'),
 (150, 20, 'police_clearance', 'documents/698184c4d9126_1770095812.jpg', '2026-02-03 05:16:52'),
 (151, 20, 'tin_id', 'documents/698184c4da8fc_1770095812.jpg', '2026-02-03 05:16:52'),
-(152, 20, 'passport', 'documents/698184c4dbe86_1770095812.jpg', '2026-02-03 05:16:52');
+(152, 20, 'passport', 'documents/698184c4dbe86_1770095812.jpg', '2026-02-03 05:16:52'),
+(153, 22, 'brgy_clearance', 'documents/698565f23f917_1770350066.jpg', '2026-02-06 03:54:26'),
+(154, 22, 'birth_certificate', 'documents/698565f240bfa_1770350066.jpg', '2026-02-06 03:54:26'),
+(155, 22, 'sss', 'documents/698565f241b61_1770350066.jpg', '2026-02-06 03:54:26'),
+(156, 22, 'pagibig', 'documents/698565f242a04_1770350066.jpg', '2026-02-06 03:54:26'),
+(157, 22, 'nbi', 'documents/698565f2438fb_1770350066.jpg', '2026-02-06 03:54:26'),
+(158, 22, 'police_clearance', 'documents/698565f244ccf_1770350066.jpg', '2026-02-06 03:54:26'),
+(159, 22, 'tin_id', 'documents/698565f246001_1770350066.jpg', '2026-02-06 03:54:26'),
+(160, 22, 'passport', 'documents/698565f2476fd_1770350066.jpg', '2026-02-06 03:54:26');
 
 -- --------------------------------------------------------
 
@@ -334,7 +345,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -346,13 +357,13 @@ ALTER TABLE `admin_users`
 -- AUTO_INCREMENT for table `applicants`
 --
 ALTER TABLE `applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `applicant_documents`
 --
 ALTER TABLE `applicant_documents`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=161;
 
 --
 -- AUTO_INCREMENT for table `client_bookings`
