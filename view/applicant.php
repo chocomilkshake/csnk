@@ -8,12 +8,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CSNK Manpower Agency – Kasambahay Applicants</title>
+
+  <!-- CSS: Bootstrap, Icons, App styles -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="../resources/css/app.css" rel="stylesheet">
 
-
-    <!-- Bootstrap & Icons -->
+  <!-- (Optional duplicate, safe to keep if you prefer pinned versions) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -78,6 +79,8 @@
           </div>
           <div class="offcanvas-body">
             <form id="filtersForm" class="d-grid gap-3">
+
+              <!-- Specialization -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Specialization</span>
@@ -85,62 +88,118 @@
                 </div>
                 <div class="vstack gap-1">
 
-                  <div class="form-check"><label class="form-check-label" for="spec-kas">Cleaning and Housekeeping (General)<input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning and Housekeeping (General)" id="spec-kas"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-kas">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning &amp; Housekeeping (General)" id="spec-kas">
+                      Cleaning &amp; Housekeeping (General)
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-nan">Laundry and Clothing Care<input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry and Clothing Care" id="spec-nan"><label class="form-check-label" for="spec-nan"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-nan">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry &amp; Clothing Care" id="spec-nan">
+                      Laundry &amp; Clothing Care
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-cook">Cooking and Food Service<input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking and Food Service" id="spec-cook"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-cook">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking &amp; Food Service" id="spec-cook">
+                      Cooking &amp; Food Service
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-elder">Childcare and Maternity (Yaya)<input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare and Maternity (Yaya)" id="spec-elder"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-elder">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare &amp; Maternity (Yaya)" id="spec-elder">
+                      Childcare &amp; Maternity (Yaya)
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-all">Elderly and Special Care (Caregiver)<input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly and Special Care (Caregiver)" id="spec-all"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-all">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly &amp; Special Care (Caregiver)" id="spec-all">
+                      Elderly &amp; Special Care (Caregiver)
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="spec-driver">Pet and Outdoor Maintenance<input class="form-check-input" type="checkbox" name="specializations[]" value="Pet and Outdoor Maintenance" id="spec-driver"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-driver">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Pet &amp; Outdoor Maintenance" id="spec-driver">
+                      Pet &amp; Outdoor Maintenance
+                    </label>
+                  </div>
+
                 </div>
               </div>
 
+              <!-- Availability -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Availability</span>
                   <a href="#" class="small" id="clearAvail">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><label class="form-check-label" for="avail-ft">Full-time<input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="avail-ft">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft">
+                      Full-time
+                    </label>
+                  </div>
 
-                  <div class="form-check"><label class="form-check-label" for="avail-pt">Part-time<input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="avail-pt">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt">
+                      Part-time
+                    </label>
+                  </div>
                 </div>
               </div>
 
+              <!-- Experience -->
               <div>
                 <label class="fw-semibold mb-1" for="exp-range">Experience (min years)</label>
                 <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1" value="0" oninput="this.nextElementSibling.value=this.value">
                 <output class="small">0</output>
               </div>
 
+              <!-- Languages -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Languages</span>
                   <a href="#" class="small" id="clearLangs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><label class="form-check-label" for="lang-fil">Filipino<input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"></label></div>
-                  <div class="form-check"><label class="form-check-label" for="lang-eng">English<input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"></label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="lang-fil">
+                      <input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil">
+                      Filipino
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="lang-eng">
+                      <input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng">
+                      English
+                    </label>
+                  </div>
                 </div>
               </div>
 
+              <!-- Sort -->
               <div>
                 <label class="fw-semibold mb-1" for="sort">Sort by</label>
                 <select class="form-select" id="sort" name="sort">
                   <option value="availability_asc">Availability: Earliest</option>
                   <option value="experience_desc">Experience: Highest</option>
-                  <option value="newest">Newest</option>
+                  <option value="newest" selected>Newest</option>
                 </select>
               </div>
 
               <div class="d-grid gap-1">
-                <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                <button class="btn btn-primary" id="applyFilters" type="button">Apply Filters</button>
                 <a class="btn btn-outline-secondary" href="#" id="resetFilters">Reset</a>
               </div>
+
             </form>
           </div>
         </div>
@@ -169,7 +228,6 @@
       <div class="modal-content shadow border-0 rounded-4">
         <div class="modal-header border-0">
           <h1 class="modal-title fs-5 fw-bold">Applicant Profile</h1>
-          
         </div>
 
         <!-- Body IDs must match app.js -->
@@ -289,7 +347,7 @@
             </div>
           </div>
 
-          <!-- STEP 1: Services (rephrased) -->
+          <!-- STEP 1: Services -->
           <div class="step-pane" data-step-pane="1">
             <div class="panel mb-3">
               <h6 class="mb-2">Tell us what work you need from this applicant</h6>
@@ -341,42 +399,42 @@
               <div class="row g-3">
                 <div class="col-12 col-md-6">
                   <label class="form-label">Date
-                  <input type="date" class="form-control" id="bkDate">
+                    <input type="date" class="form-control" id="bkDate">
                   </label>
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="form-label">Time
-                  <input type="time" class="form-control" id="bkTime">
+                    <input type="time" class="form-control" id="bkTime">
                   </label>
                 </div>
               </div>
             </div>
           </div>
 
-            <!-- STEP 4: Client Information -->
-            <div class="step-pane d-none" data-step-pane="4">
-              <div class="panel mb-3">
-                <h6 class="mb-3">Your Details</h6>
-                <div class="row g-3">
-                  <div class="col-md-4">
-                    <label class="form-label">First Name
+          <!-- STEP 4: Client Information -->
+          <div class="step-pane d-none" data-step-pane="4">
+            <div class="panel mb-3">
+              <h6 class="mb-3">Your Details</h6>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">First Name
                     <input type="text" class="form-control" id="bkFirstName">
-                    </label>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Middle Name
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Middle Name
                     <input type="text" class="form-control" id="bkMiddleName">
-                    </label>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Last Name 
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Last Name
                     <input type="text" class="form-control" id="bkLastName">
-                    </label>
-                  </div>
+                  </label>
+                </div>
 
-                  <!-- ✅ Phone: enforce 11 digits and must start with 09 -->
-                  <div class="col-md-6">
-                    <label class="form-label">Active Phone Number 
+                <!-- Phone: enforce 11 digits and must start with 09 -->
+                <div class="col-md-6">
+                  <label class="form-label">Active Phone Number
                     <input
                       type="tel"
                       class="form-control"
@@ -388,24 +446,23 @@
                       minlength="11"
                       aria-describedby="bkPhoneHelp"
                     >
-                    </label>
-                    <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
-                  </div>
+                  </label>
+                  <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
+                </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Active Email
+                <div class="col-md-6">
+                  <label class="form-label">Active Email
                     <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
-                    </label>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label">Address 
+                  </label>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Address
                     <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
-                    </label>
-                  </div>
+                  </label>
                 </div>
               </div>
             </div>
-
+          </div>
 
           <!-- STEP 5: Review & Submit -->
           <div class="step-pane d-none" data-step-pane="5">
@@ -453,19 +510,18 @@
     .oval-tag.active,.oval-tag:hover{ background:var(--brand-red); color:#fff; }
   </style>
 
+  <!-- JS: Bootstrap bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-
-
+  <!-- App scripts -->
   <script src="../resources/js/app.js"></script>
   <script src="../resources/js/applicant.js"></script>
   <!-- Policy Modals Handler -->
   <script src="../resources/js/policy-modals.js"></script>
 
-<?php include __DIR__ . '/footer.php'; ?>
+  <?php include __DIR__ . '/footer.php'; ?>
 
-  <!-- Bootstrap JS (bundle includes Popper) -->
+  <!-- (Optional duplicate Bootstrap bundle) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Policy Modals Handler -->
 </body>
 </html>

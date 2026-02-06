@@ -4,6 +4,9 @@
  * - CORS enabled
  * - Returns normalized, client-friendly fields
  * - Robust photo URLs + safe fallbacks
+ * - FIXES:
+ *    * Availability filtering (Full-time / Part-time)
+ *    * Specialization filtering tolerant of "&" vs "and" variants
  */
 
 header('Content-Type: application/json');
@@ -62,6 +65,28 @@ function mapPrimarySpecialization(array $skills): string {
     return '';
 }
 
+/**
+ * Generate tolerant variants for specialization LIKEs.
+ * e.g., "Laundry & Clothing Care" => ["Laundry & Clothing Care", "Laundry and Clothing Care"]
+ *       "Cleaning and Housekeeping (General)" => ["Cleaning and Housekeeping (General)", "Cleaning & Housekeeping (General)"]
+ */
+function andAmpVariants(string $label): array {
+    $a = trim(htmlspecialchars_decode($label, ENT_QUOTES));
+    // Collapse spaces
+    $a = preg_replace('/\s+/', ' ', $a);
+
+    // Build variants
+    $withAmp = preg_replace('/\s*(?:&|and)\s*/i', ' & ', $a);
+    $withAnd = preg_replace('/\s*(?:&|and)\s*/i', ' and ', $a);
+
+    // Unique, preserve order preference: as-provided first, then the alternate
+    $out = [];
+    foreach ([$a, $withAmp, $withAnd] as $v) {
+        if ($v !== '' && !in_array($v, $out, true)) $out[] = $v;
+    }
+    return $out;
+}
+
 function computeAge(?string $dob): ?int {
     if (empty($dob)) return null;
     $d = DateTime::createFromFormat('Y-m-d', $dob);
@@ -101,6 +126,12 @@ try {
         $selectedLangs = array_filter(array_map('trim', explode(',', (string)$selectedLangs)));
     }
 
+    // NEW: Availability from UI (Full-time / Part-time)
+    $availability = $_GET['availability'] ?? [];
+    if (!is_array($availability) && $availability !== '') {
+        $availability = array_filter(array_map('trim', explode(',', (string)$availability)));
+    }
+
     // Build WHERE clauses and bind params dynamically
     $where = ["deleted_at IS NULL"];
     $types = '';
@@ -120,15 +151,23 @@ try {
         $values[] = $likeLoc; $values[] = $likeLoc; $values[] = $likeLoc;
     }
 
+    // Specializations: tolerant of "&" vs "and"
     if (!empty($selectedSpecs)) {
-        $parts = [];
+        $specParts = [];
         foreach ($selectedSpecs as $spec) {
-            $parts[] = "specialization_skills LIKE ?";
-            $types .= 's'; $values[] = "%{$spec}%";
+            $variants = andAmpVariants($spec);
+            foreach ($variants as $v) {
+                $specParts[] = "specialization_skills LIKE ?";
+                $types .= 's';
+                $values[] = '%' . $v . '%';
+            }
         }
-        $where[] = '(' . implode(' OR ', $parts) . ')';
+        if (!empty($specParts)) {
+            $where[] = '(' . implode(' OR ', $specParts) . ')';
+        }
     }
 
+    // Languages
     if (!empty($selectedLangs)) {
         $parts = [];
         foreach ($selectedLangs as $lang) {
@@ -138,9 +177,33 @@ try {
         $where[] = '(' . implode(' OR ', $parts) . ')';
     }
 
+    // Experience (min years)
     if ($minExp > 0) {
         $where[] = 'years_experience >= ?';
         $types .= 'i'; $values[] = $minExp;
+    }
+
+    // NEW: Availability => employment_type tolerance (Full Time / Part Time)
+    if (!empty($availability)) {
+        // Normalize incoming values to tokens: 'fulltime' or 'parttime'
+        $want = [];
+        foreach ($availability as $a) {
+            $t = strtolower(preg_replace('/[\s\-]/', '', $a));
+            if (in_array($t, ['fulltime', 'parttime'], true)) $want[$t] = true;
+        }
+        if (!empty($want)) {
+            $in = [];
+            // We will match by REPLACE(LOWER(employment_type), ' ', '') IN (...)
+            // This covers 'Full Time', 'fulltime', 'Full-time' etc.
+            $where[] = "("
+                . "REPLACE(LOWER(employment_type), ' ', '') IN ("
+                . implode(',', array_fill(0, count($want), '?'))
+                . ")"
+                . ")";
+            foreach (array_keys($want) as $k) {
+                $types .= 's'; $values[] = $k; // 'fulltime' or 'parttime'
+            }
+        }
     }
 
     if ($availableBy !== '') {
@@ -212,12 +275,12 @@ try {
         $skills      = json_decode($app['specialization_skills'] ?? '[]', true) ?: [];
         $prefLoc     = json_decode($app['preferred_location']     ?? '[]', true) ?: [];
         $langsArr    = json_decode($app['languages']              ?? '[]', true) ?: [];
-        $educAttain  = json_decode($app['educational_attainment'] ?? '[]', true);
+        $educAttain  = json_decode($app['educational_attainment'] ?? '[]', true) ?: [];
 
-        // Normalize skills (avoid &amp;amp;amp;)
+        // Normalize skills (avoid excessive HTML entities)
         $skills = array_values(array_filter(array_map('normalizeSkillLabel', $skills)));
 
-        // Primary specialization (mapped role) – handles both "&" and "and" variants
+        // Primary specialization (mapped role) – tolerant of &/and
         $primaryRole = mapPrimarySpecialization($skills);
 
         // Location city (first preferred city shown on card)
@@ -250,30 +313,25 @@ try {
         $availDate   = date('Y-m-d', strtotime($createdAt . ' +30 days'));
 
         // Educational attainment display
-        // Prefer enum field if set; otherwise fall back to JSON array (join)
         $educationLevelEnum = $app['education_level'] ?? null;
         $educationDisplay = $educationLevelEnum
             ?: ((is_array($educAttain) && !empty($educAttain)) ? implode(', ', $educAttain) : '—');
 
-        // Video URL (same logic as photo: absolute URL respected, else join with uploads base)
+        // Video URL
         $videoUrl = '';
         if (!empty($app['video_url'])) {
-            // Normalize Windows backslashes to forward slashes
             $normalized = str_replace('\\', '/', (string)$app['video_url']);
             $videoRelative = ltrim($normalized, '/');
             if (preg_match('~^https?://~i', $videoRelative)) {
-                $videoUrl = $videoRelative; // already absolute (YouTube/Vimeo link)
+                $videoUrl = $videoRelative; // YouTube/Vimeo
             } elseif (preg_match('~^admin/uploads/~i', $videoRelative)) {
-                // Path already includes admin/uploads/ prefix, use it directly
                 $videoUrl = $appBase . '/' . $videoRelative;
             } else {
-                // Local file without prefix, add uploads base
                 $videoUrl = $uploadsBase . $videoRelative;
             }
         }
 
-        // Video type: normalize to 'iframe' or 'file' (from enum field)
-        // If video_type is 'iframe', trust it; otherwise default to 'file' for local videos
+        // Video type
         $videoTypeRaw = strtolower($app['video_type'] ?? 'iframe');
         $videoType = ($videoTypeRaw === 'file') ? 'file' : 'iframe';
 
@@ -288,7 +346,7 @@ try {
 
             'location_city'           => $locationCity,
             'location_region'         => $locationRegion,
-            'preferred_locations'     => $prefLoc,   // return ALL preferred locations
+            'preferred_locations'     => $prefLoc,
 
             'years_experience'        => (int)($app['years_experience'] ?? 0),
 
@@ -301,8 +359,8 @@ try {
             'languages_array'         => $langsArr,         // ["English","Filipino"]
 
             'education_level'         => $educationLevelEnum,
-            'educational_attainment'  => $educAttain,       // raw JSON array if exists
-            'education_display'       => $educationDisplay, // computed display
+            'educational_attainment'  => $educAttain,
+            'education_display'       => $educationDisplay,
 
             'photo_url'               => $photoUrl,
             'photo_placeholder'       => $placeholderUrl,

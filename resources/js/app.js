@@ -1,8 +1,7 @@
 // app.js — Client listing UX (photo-top modern cards)
-// v2.8 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
-console.log('app.js loaded successfully - v2.8');
-
-
+// v2.9 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
+//        + Auto Rumble: newest pinned on top, remaining shuffle on each refresh (client-side)
+console.log('app.js loaded successfully - v2.9');
 
 /* =========================================================
    State
@@ -11,6 +10,17 @@ let allApplicants = [];
 let filteredApplicants = [];
 let currentPage = 1;
 const itemsPerPage = 12;
+
+/* =========================================================
+   Auto Rumble (client-side unbiased rotation)
+   - Keeps newest applicants on top
+   - Randomizes the rest on every page load/refresh
+   - Applies only when sort === 'newest' (default) to not break other sorts
+========================================================= */
+const RUMBLE_ENABLED = true;                 // Master switch
+const RUMBLE_ONLY_ON_SORT_NEWEST = true;     // Respect user sorting; rumble only when 'Newest'
+const PIN_NEWEST_COUNT = 4;                  // Keep the first N newest items pinned at the top (page-level)
+const PIN_WITHIN_DAYS = 0;                   // Alternative: if > 0, pin all created within X days (overrides count)
 
 /* =========================================================
    DOM
@@ -49,8 +59,6 @@ function normLabel(s){
   return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
 }
 
-
-
 /** Update URL with applicant ID without navigating */
 function pushApplicantId(id){
   const url = new URL(window.location.href);
@@ -65,8 +73,6 @@ function removeApplicantIdFromUrl(){
     history.replaceState({}, '', url);
   }
 }
-
-
 
 // ---- CONFIG: set your app root path here, including leading and trailing slashes ----
 // NOTE: this must match your server mount (e.g., '/csnk-1/' for this project)
@@ -183,8 +189,6 @@ function getPopoverElFor(btn) {
   return id ? document.getElementById(id) : null;
 }
 
-
-
 /* =========================================================
    Skeleton loader
 ========================================================= */
@@ -292,9 +296,17 @@ async function fetchApplicants(options = {}) {
   const sortBy = (filtersData.get('sort') || '').trim(); if (sortBy) params.set('sort', sortBy);
 
   // multiple values: specializations[] and languages[]
-  const specs = filtersData.getAll('specializations[]');
+  let specs = filtersData.getAll('specializations[]');
+  // fallback: collect checked boxes directly if FormData returns nothing (handles malformed markup browsers might tolerate differently)
+  if (!specs || specs.length === 0) {
+    specs = Array.from(document.querySelectorAll('input[name="specializations[]"]:checked')).map(el => el.value);
+  }
   specs.forEach(s => params.append('specializations[]', s));
-  const langs = filtersData.getAll('languages[]');
+
+  let langs = filtersData.getAll('languages[]');
+  if (!langs || langs.length === 0) {
+    langs = Array.from(document.querySelectorAll('input[name="languages[]"]:checked')).map(el => el.value);
+  }
   langs.forEach(l => params.append('languages[]', l));
 
   params.set('page', String(page));
@@ -347,6 +359,10 @@ function setupEventListeners() {
     filtersForm.querySelectorAll('input, select').forEach(el => {
       el.addEventListener('change', debounce(() => applyFilters(), 220));
     });
+
+    // Also listen to range input in real time (min experience)
+    const expRange = filtersForm.querySelector('input[name="min_experience"]');
+    if (expRange) expRange.addEventListener('input', debounce(() => applyFilters(), 180));
 
     byId('clearSpecs')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -428,6 +444,70 @@ async function applyFiltersRaw(){
 }
 
 /* =========================================================
+   Auto Rumble helpers
+========================================================= */
+function getCurrentSortValue() {
+  try {
+    return (filtersForm?.querySelector('#sort')?.value || 'newest').trim();
+  } catch { return 'newest'; }
+}
+
+function randomSource() {
+  // Use crypto if available for better randomness; fallback to Math.random
+  try {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] / 0x100000000;
+  } catch { return Math.random(); }
+}
+
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(randomSource() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function isWithinDays(dateStr, days) {
+  const d = toDate(dateStr);
+  if (!d || !Number.isFinite(days) || days <= 0) return false;
+  const now = new Date();
+  const delta = now - d; // ms
+  return delta <= (days * 24 * 60 * 60 * 1000);
+}
+
+function rumbleApplicants(list) {
+  // Ensure we don’t mutate original list
+  const ordered = list.slice(); // server already returns sorted by chosen 'sort'
+  // Decide if rumble should apply under current sort selection
+  const sortVal = getCurrentSortValue();
+  if (!RUMBLE_ENABLED) return ordered;
+  if (RUMBLE_ONLY_ON_SORT_NEWEST && sortVal !== 'newest') return ordered;
+
+  let pinned = [];
+  let rest = [];
+
+  if (PIN_WITHIN_DAYS > 0) {
+    pinned = ordered.filter(a => isWithinDays(a.created_at, PIN_WITHIN_DAYS));
+    // Keep pinned in true 'newest' order:
+    pinned.sort((a, b) => (toDate(b.created_at) - toDate(a.created_at)));
+    const pinnedIds = new Set(pinned.map(a => a.id));
+    rest = ordered.filter(a => !pinnedIds.has(a.id));
+  } else if (PIN_NEWEST_COUNT > 0) {
+    pinned = ordered.slice(0, PIN_NEWEST_COUNT);
+    rest = ordered.slice(PIN_NEWEST_COUNT);
+  } else {
+    // No pinning; fully shuffle (still respects sort gate)
+    return shuffleArray(ordered);
+  }
+
+  const shuffledRest = shuffleArray(rest);
+  return [...pinned, ...shuffledRest];
+}
+
+/* =========================================================
    Rendering
 ========================================================= */
 function renderApplicants() {
@@ -450,7 +530,10 @@ function renderApplicants() {
     return;
   }
 
-  list.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
+  // 🔀 Apply Auto Rumble here (pin newest on top, shuffle the rest per refresh)
+  const displayList = rumbleApplicants(list);
+
+  displayList.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
   renderPagination();
 }
 
@@ -614,7 +697,6 @@ function ensureModalFooterAndHire(applicant){
     };
   }
 }
-
 
 /* =========================================================
    Modal video popover (top-right button)
@@ -835,7 +917,6 @@ function showApplicantModal(applicant, options = { pushState: true }) {
 }
 window.showApplicantModal = showApplicantModal;
 
-
 /* Booking: helper to enforce button types in some templates */
 (function enforceButtonTypes(){
   ['bkSubmit','bkNext','bkBack'].forEach(id => {
@@ -895,6 +976,7 @@ function injectStyles(){
     .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
 
     .app-card{
+      border:1px solid (--card-border, #e6e9ef);
       border:1px solid var(--card-border);
       border-radius:16px;
       overflow:hidden; /* round the top photo */
