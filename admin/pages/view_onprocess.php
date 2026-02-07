@@ -4,9 +4,7 @@ $pageTitle = 'View On-Process (Applicant + Client)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// We assume $database (mysqli connection wrapper) and helpers (redirect, formatDate, getFileUrl, getFullName, setFlashMessage)
-// are available from header.php as they are in your existing pages.
-
+// We assume $database (mysqli), and helpers: redirect, formatDate, getFileUrl, getFullName, setFlashMessage
 $applicant = new Applicant($database);
 
 /**
@@ -21,7 +19,6 @@ if (isset($_GET['q'])) {
 }
 
 if (!isset($_GET['id'])) {
-    // Go back to On Process list (preserve search)
     $dest = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
     redirect($dest);
     exit;
@@ -40,7 +37,7 @@ try {
     $applicantData = $res ? $res->fetch_assoc() : false;
 } catch (Throwable $e) {
     $applicantData = false;
-} 
+}
 
 if (!$applicantData) {
     setFlashMessage('error', 'Applicant not found.');
@@ -75,10 +72,10 @@ try {
     $latestBooking = $res ? $res->fetch_assoc() : null;
 } catch (Throwable $e) {
     $latestBooking = null;
-} 
+}
 
 /**
- * Load all bookings (optional section below)
+ * Load all bookings (for accordion)
  */
 $allBookings = [];
 try {
@@ -97,7 +94,7 @@ try {
 }
 
 /* ============================================================
-   Helpers (renderers + utilities) - same design as reference
+   Helpers (renderers + utilities)
    ============================================================ */
 
 function safe(?string $s): string {
@@ -211,9 +208,7 @@ function renderEducationListHtml(?string $json): string {
 }
 
 /**
- * Work history JSON array -> structured HTML list.
- * Each item: { company, role, years, location }
- * Returns HTML (do not escape again).
+ * Work history JSON array -> structured HTML list (do not escape again).
  */
 function renderWorkHistoryListHtml(?string $json): string {
     if ($json === null || trim($json) === '') {
@@ -245,7 +240,7 @@ function renderWorkHistoryListHtml(?string $json): string {
         if ($years   !== '') $meta[] = safe($years);
         if ($location!== '') $meta[] = safe($location);
 
-        $line = '<li class="mb-2">';
+        $line = '<li class="mb-1">';
         if (!empty($top)) {
             $line .= implode(' — ', $top);
         }
@@ -264,9 +259,7 @@ function renderWorkHistoryListHtml(?string $json): string {
     return '<ul class="list-unstyled mb-0">'.implode('', $items).'</ul>';
 }
 
-/**
- * Render languages JSON array -> string
- */
+/** Languages JSON -> string */
 function renderLanguages(?string $json): string {
     if ($json === null || trim($json) === '') return 'N/A';
     $arr = json_decode($json, true);
@@ -275,10 +268,7 @@ function renderLanguages(?string $json): string {
     return $clean ? safe(implode(', ', $clean)) : 'N/A';
 }
 
-/**
- * Render specialization skills JSON array -> HTML pills
- * Returns HTML (do not escape again).
- */
+/** Skills JSON -> HTML pills */
 function renderSkillsPills(?string $json): string {
     if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
     $arr = json_decode($json, true);
@@ -294,9 +284,7 @@ function renderSkillsPills(?string $json): string {
     return implode(' ', $htmlParts);
 }
 
-/**
- * Status badge color map (applicant)
- */
+/** Applicant status -> badge color */
 function statusBadgeColor(string $status): string {
     $map = [
         'pending'    => 'warning',
@@ -307,9 +295,7 @@ function statusBadgeColor(string $status): string {
     return $map[$status] ?? 'secondary';
 }
 
-/**
- * Booking status badge color map
- */
+/** Booking status -> badge color */
 function bookingStatusBadgeColor(string $status): string {
     $map = [
         'submitted' => 'secondary',
@@ -319,17 +305,12 @@ function bookingStatusBadgeColor(string $status): string {
     return $map[$status] ?? 'secondary';
 }
 
-/**
- * Render services_json from client_bookings
- * - Accepts: array of strings OR array of objects with common name keys
- * - Returns HTML (do not escape again)
- */
+/** Services JSON from client_bookings -> HTML pills */
 function renderServicesHtml(?string $json): string {
     if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
     $data = json_decode($json, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        // Show raw if invalid JSON
         return '<div>'.safe($json).'</div>';
     }
 
@@ -340,7 +321,6 @@ function renderServicesHtml(?string $json): string {
                 $label = trim($item);
                 if ($label !== '') $labels[] = $label;
             } elseif (is_array($item)) {
-                // Try common keys
                 $keyOrder = ['name', 'label', 'service', 'title'];
                 $found = null;
                 foreach ($keyOrder as $k) {
@@ -350,26 +330,20 @@ function renderServicesHtml(?string $json): string {
                     }
                 }
                 if ($found !== null) $labels[] = $found;
-                else {
-                    // Last resort: stringify compact form
-                    $labels[] = trim((string)json_encode($item, JSON_UNESCAPED_UNICODE));
-                }
+                else $labels[] = trim((string)json_encode($item, JSON_UNESCAPED_UNICODE));
             }
         }
 
         if (!empty($labels)) {
             $html = [];
             foreach ($labels as $lbl) {
-                $html[] = '<span class="badge rounded-pill bg-light text-dark border" style="padding:.4rem .6rem; font-weight:600;">'.safe($lbl).'</span>';
+                $html[] = '<span class="badge rounded-pill bg-light text-dark border" style="padding:.3rem .55rem; font-weight:600;">'.safe($lbl).'</span>';
             }
-            return '<div class="d-flex flex-wrap gap-2">'.implode(' ', $html).'</div>';
+            return '<div class="d-flex flex-wrap gap-1">'.implode(' ', $html).'</div>';
         }
-
-        // Empty array structure
         return '<span class="text-muted">N/A</span>';
     }
 
-    // Non-array JSON (object, scalar)
     return '<div>'.safe(json_encode($data, JSON_UNESCAPED_UNICODE)).'</div>';
 }
 
@@ -381,29 +355,53 @@ $educationHtml = renderEducationListHtml($applicantData['educational_attainment'
 $workHtml      = renderWorkHistoryListHtml($applicantData['work_history'] ?? '');
 $locBadgesHtml = renderPreferredLocationBadges($applicantData['preferred_location'] ?? '');
 
-// Picture URL
 $pictureUrl = !empty($applicantData['picture']) ? getFileUrl($applicantData['picture']) : null;
 
-// Phones
 $primaryPhone   = trim((string)($applicantData['phone_number'] ?? ''));
 $alternatePhone = trim((string)($applicantData['alt_phone_number'] ?? ''));
 $alternatePhoneDisplay = ($alternatePhone !== '') ? $alternatePhone : 'N/A';
 
-// Languages & Specializations
 $languagesDisplay = renderLanguages($applicantData['languages'] ?? '');
 $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ?? '');
 
-// Back & Edit URLs preserving search (if any)
 $backUrl = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
 ?>
 <style>
+/* Compact visual tweaks to fit both columns above the fold */
+:root{
+  --card-pad-y: .75rem;
+  --card-pad-x: .9rem;
+}
+.card.compact > .card-header,
+.card.compact > .card-body{
+  padding: var(--card-pad-y) var(--card-pad-x);
+}
+.card-header h5{
+  font-size: 1rem;
+}
+.small-label{
+  font-size: .75rem;
+  color:#6c757d;
+  display:block;
+  margin-bottom: .15rem;
+}
+.value{
+  font-weight:600;
+  line-height: 1.1;
+}
+.value-sm{
+  font-weight:600;
+  line-height: 1.1;
+  font-size:.95rem;
+}
+
 /* Red-ish pill style for specialization badges */
 .skill-pill{
   background-color:#ffe5e5;
   color:#9b1c1c;
   border:1px solid #ffc9c9;
-  padding:.45rem .65rem;
+  padding:.25rem .5rem;
   font-weight:600;
 }
 
@@ -412,7 +410,7 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   background-color:#e7f1ff;
   color:#0b5ed7;
   border:1px solid #cfe2ff;
-  padding:.35rem .6rem;
+  padding:.25rem .5rem;
   font-weight:600;
 }
 
@@ -420,339 +418,357 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
 .edu-timeline {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: .6rem;
+}
+.edu-item { padding-left: 0.5rem; border-left: 3px solid #e9ecef; }
+.edu-header { display:flex; align-items:center; gap:.4rem; font-weight:600; }
+.edu-icon { font-size: 1rem; }
+.edu-level { color:#212529; font-size:.95rem; }
+.edu-year { margin-left:auto; font-size:.75rem; background:#f1f3f5; padding:.05rem .4rem; border-radius:.35rem; color:#495057; }
+.edu-school { margin-left:1.3rem; font-weight:600; color:#0d6efd; font-size:.95rem;}
+.edu-detail { margin-left:1.3rem; font-size:.85rem; color:#6c757d; }
+
+/* Avatar */
+.avatar-compact{
+  width: 110px; height:110px; object-fit:cover;
 }
 
-.edu-item {
-  padding-left: 0.75rem;
-  border-left: 3px solid #e9ecef;
+/* Two-column details list */
+.dl2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:.5rem .75rem;
 }
 
-.edu-header {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  font-weight: 600;
+/* Layout: keep both main cards side-by-side */
+@media (min-width: 1200px){
+  .no-wrap-row{ display:flex; gap:1rem; }
+  .no-wrap-row > .col-left,
+  .no-wrap-row > .col-right{ flex:1; min-width:0; }
 }
 
-.edu-icon {
-  font-size: 1.1rem;
+/* Collapsible section headers spacing tighter */
+.accordion-button{ padding:.5rem .9rem; font-weight:600; }
+.accordion-body{ padding:.5rem .9rem; }
+
+/* Utility */
+.text-truncate-2{
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.text-truncate-1{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 
-.edu-level {
-  color: #212529;
-}
-
-.edu-year {
-  margin-left: auto;
-  font-size: .8rem;
-  background: #f1f3f5;
-  padding: .15rem .5rem;
-  border-radius: .5rem;
-  color: #495057;
-}
-
-.edu-school {
-  margin-left: 1.6rem;
-  font-weight: 600;
-  color: #0d6efd;
-}
-
-.edu-detail {
-  margin-left: 1.6rem;
-  font-size: .9rem;
-  color: #6c757d;
-}
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0 fw-semibold">Applicant + Client (On Process)</h4>
-    <div>
-        <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning me-2">
-            <i class="bi bi-pencil me-2"></i>Edit Applicant
-        </a>
-        <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-2"></i>Back to On Process
-        </a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0 fw-semibold">Applicant + Client (On Process)</h4>
+  <div class="d-flex gap-2">
+    <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit Applicant
+    </a>
+    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back to On Process
+    </a>
+  </div>
 </div>
 
-<div class="row">
-    <!-- Left column: Applicant Summary -->
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-body text-center">
-                <?php if ($pictureUrl): ?>
-                    <img src="<?php echo safe($pictureUrl); ?>"
-                         alt="Profile" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
-                <?php else: ?>
-                    <div class="bg-secondary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
-                         style="width: 150px; height: 150px; font-size: 3rem;">
-                        <?php echo strtoupper(substr($applicantData['first_name'], 0, 1)); ?>
-                    </div>
-                <?php endif; ?>
-
-                <h5 class="fw-bold mb-1">
-                    <?php echo getFullName($applicantData['first_name'], $applicantData['middle_name'], $applicantData['last_name'], $applicantData['suffix']); ?>
-                </h5>
-
-                <?php $badgeColor = statusBadgeColor($applicantData['status']); ?>
-                <span class="badge bg-<?php echo $badgeColor; ?> mb-3">
-                    <?php echo ucfirst(str_replace('_', ' ', (string)$applicantData['status'])); ?>
-                </span>
-
-                <div class="text-start mt-4">
-                    <div class="mb-2">
-                        <small class="text-muted">Phone (Primary)</small>
-                        <div class="fw-semibold"><?php echo $primaryPhone !== '' ? safe($primaryPhone) : 'N/A'; ?></div>
-                    </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Phone (Alternate)</small>
-                        <div class="fw-semibold"><?php echo safe($alternatePhoneDisplay); ?></div>
-                    </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Email</small>
-                        <div class="fw-semibold"><?php echo safe($applicantData['email'] ?? 'N/A'); ?></div>
-                    </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Date Applied</small>
-                        <div class="fw-semibold"><?php echo formatDate($applicantData['created_at']); ?></div>
-                    </div>
-                </div>
+<!-- MAIN ROW: Applicant (left) + Client (right). Designed to fit without page scroll on typical admin screens -->
+<div class="no-wrap-row">
+  <!-- Applicant Panel -->
+  <div class="col-left">
+    <div class="card compact mb-3">
+      <div class="card-header bg-white py-2">
+        <h5 class="mb-0 fw-semibold d-flex align-items-center">
+          <i class="bi bi-person-badge me-2"></i>Applicant
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <?php if (!empty($pictureUrl)): ?>
+            <img src="<?php echo safe($pictureUrl); ?>" alt="Profile" class="rounded-circle avatar-compact">
+          <?php else: ?>
+            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center avatar-compact" style="font-size:2.2rem;">
+              <?php echo strtoupper(substr($applicantData['first_name'], 0, 1)); ?>
             </div>
+          <?php endif; ?>
+
+          <div class="flex-grow-1">
+            <div class="fw-bold" style="font-size:1.05rem;">
+              <?php echo getFullName($applicantData['first_name'], $applicantData['middle_name'], $applicantData['last_name'], $applicantData['suffix']); ?>
+            </div>
+            <?php $badgeColor = statusBadgeColor((string)$applicantData['status']); ?>
+            <span class="badge bg-<?php echo $badgeColor; ?> me-2"><?php echo ucfirst(str_replace('_',' ', (string)$applicantData['status'])); ?></span>
+            <small class="text-muted">Applied: <?php echo formatDate($applicantData['created_at']); ?></small>
+          </div>
+        </div>
+
+        <div class="dl2">
+          <div>
+            <span class="small-label">Phone (Primary)</span>
+            <div class="value-sm"><?php echo $primaryPhone !== '' ? safe($primaryPhone) : 'N/A'; ?></div>
+          </div>
+          <div>
+            <span class="small-label">Phone (Alternate)</span>
+            <div class="value-sm"><?php echo safe($alternatePhoneDisplay); ?></div>
+          </div>
+          <div>
+            <span class="small-label">Email</span>
+            <div class="value-sm text-truncate-1"><?php echo safe($applicantData['email'] ?? 'N/A'); ?></div>
+          </div>
+          <div>
+            <span class="small-label">DOB</span>
+            <div class="value-sm"><?php echo formatDate($applicantData['date_of_birth']); ?></div>
+          </div>
+          <div>
+            <span class="small-label">Experience</span>
+            <div class="value-sm">
+              <?php $yrs = (int)($applicantData['years_experience'] ?? 0); echo $yrs . ($yrs === 1 ? ' year' : ' years'); ?>
+            </div>
+          </div>
+          <div>
+            <span class="small-label">Employment</span>
+            <div class="value-sm"><?php echo !empty($applicantData['employment_type']) ? safe($applicantData['employment_type']) : 'N/A'; ?></div>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <span class="small-label">Address</span>
+          <div class="value text-truncate-2"><?php echo safe($applicantData['address']); ?></div>
+        </div>
+
+        <div class="mt-2">
+          <span class="small-label">Preferred Location(s)</span>
+          <div class="d-flex flex-wrap gap-1"><?php echo $locBadgesHtml; ?></div>
+        </div>
+
+        <div class="mt-2">
+          <span class="small-label">Skills</span>
+          <div class="d-flex flex-wrap gap-1"><?php echo $skillsPillsHtml; ?></div>
+        </div>
+
+        <div class="mt-2">
+          <span class="small-label">Languages</span>
+          <div class="value-sm"><?php echo $languagesDisplay; ?></div>
         </div>
 
         <?php if (!empty($applicantData['video_url'])): ?>
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">
-                    <i class="bi bi-film me-2"></i>
-                    <?php echo !empty($applicantData['video_title']) ? safe($applicantData['video_title']) : 'Video'; ?>
-                </h5>
-            </div>
-            <div class="card-body">
-                <?php
-                    // If your system expects file-based videos here, you can keep it as <video>.
-                    // Otherwise handle iframe providers if needed (youtube/vimeo) based on your schema.
-                ?>
-                <video controls preload="metadata" style="width:100%; max-height:500px; background:#000;">
-                    <source src="<?php echo safe(getFileUrl($applicantData['video_url'])); ?>" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </div>
+          <div class="mt-2">
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applicantVideoModal">
+              <i class="bi bi-play-circle me-1"></i>Preview Video
+            </button>
+          </div>
         <?php endif; ?>
+      </div>
     </div>
+  </div>
 
-    <!-- Right column: Applicant Details + Client Booking -->
-    <div class="col-md-8">
-        <!-- Applicant Personal Info -->
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">Applicant Information</h5>
+  <!-- Client Panel -->
+  <div class="col-right">
+    <div class="card compact mb-3">
+      <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
+        <h5 class="mb-0 fw-semibold d-flex align-items-center">
+          <i class="bi bi-people me-2"></i>Latest Client Booking
+        </h5>
+        <?php if ($latestBooking): ?>
+          <?php $bColor = bookingStatusBadgeColor((string)$latestBooking['status']); ?>
+          <span class="badge bg-<?php echo $bColor; ?> text-uppercase"><?php echo safe($latestBooking['status']); ?></span>
+        <?php endif; ?>
+      </div>
+      <div class="card-body">
+        <?php if (!$latestBooking): ?>
+          <p class="text-muted mb-0">No client booking found for this applicant.</p>
+        <?php else: ?>
+          <?php
+            $clientName = trim(($latestBooking['client_first_name'] ?? '') . ' ' . ($latestBooking['client_middle_name'] ?? '') . ' ' . ($latestBooking['client_last_name'] ?? ''));
+            $clientName = $clientName !== '' ? $clientName : '—';
+          ?>
+          <div class="mb-2">
+            <span class="small-label">Client</span>
+            <div class="value-sm"><?php echo safe($clientName); ?></div>
+          </div>
+
+          <div class="dl2">
+            <div>
+              <span class="small-label">Client Email</span>
+              <div class="value-sm text-truncate-1"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <small class="text-muted">Date of Birth</small>
-                        <div class="fw-semibold"><?php echo formatDate($applicantData['date_of_birth']); ?></div>
-                    </div>
-                    <div class="col-md-6">
-                        <small class="text-muted">Preferred Location(s)</small>
-                        <div class="fw-semibold d-flex flex-wrap gap-2"><?php echo $locBadgesHtml; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Address</small>
-                        <div class="fw-semibold"><?php echo safe($applicantData['address']); ?></div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <small class="text-muted">Years of Experience</small>
-                        <div class="fw-semibold">
-                            <?php
-                                $yrs = isset($applicantData['years_experience']) ? (int)$applicantData['years_experience'] : 0;
-                                echo $yrs . ($yrs === 1 ? ' year' : ' years');
-                            ?>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <small class="text-muted">Employment Type</small>
-                        <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? safe($applicantData['employment_type']) : 'N/A'; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Specialization Skills</small>
-                        <div class="d-flex flex-wrap gap-2"><?php echo $skillsPillsHtml; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Languages</small>
-                        <div class="fw-semibold"><?php echo $languagesDisplay; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Educational Attainment</small>
-                        <div class="mt-1"><?php echo $educationHtml; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Work History</small>
-                        <div class="mt-1"><?php echo $workHtml; ?></div>
-                    </div>
-                </div>
+            <div>
+              <span class="small-label">Client Phone</span>
+              <div class="value-sm"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
             </div>
-        </div>
-
-        <!-- Client Booking (Latest) -->
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <h5 class="mb-0 fw-semibold d-flex align-items-center">
-                    <i class="bi bi-people me-2"></i> Latest Client Booking
-                </h5>
-                <?php if ($latestBooking): ?>
-                    <?php $bColor = bookingStatusBadgeColor((string)$latestBooking['status']); ?>
-                    <span class="badge bg-<?php echo $bColor; ?> text-uppercase"><?php echo safe($latestBooking['status']); ?></span>
-                <?php endif; ?>
+            <div>
+              <span class="small-label">Appointment</span>
+              <div class="value-sm"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
             </div>
-            <div class="card-body">
-                <?php if (!$latestBooking): ?>
-                    <p class="text-muted mb-0">No client booking found for this applicant.</p>
-                <?php else: ?>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <small class="text-muted">Client Name</small>
-                            <?php
-                                $clientName = trim(($latestBooking['client_first_name'] ?? '') . ' ' . ($latestBooking['client_middle_name'] ?? '') . ' ' . ($latestBooking['client_last_name'] ?? ''));
-                                $clientName = $clientName !== '' ? $clientName : '—';
-                            ?>
-                            <div class="fw-semibold"><?php echo safe($clientName); ?></div>
-                        </div>
-                        <div class="col-md-6">
-                            <small class="text-muted">Client Address</small>
-                            <div class="fw-semibold"><?php echo safe($latestBooking['client_address'] ?? '—'); ?></div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <small class="text-muted">Client Email</small>
-                            <div class="fw-semibold"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
-                        </div>
-                        <div class="col-md-6">
-                            <small class="text-muted">Client Phone</small>
-                            <div class="fw-semibold"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <small class="text-muted">Appointment Type</small>
-                            <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Appointment Date</small>
-                            <div class="fw-semibold"><?php echo !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—'; ?></div>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Appointment Time</small>
-                            <div class="fw-semibold"><?php echo !empty($latestBooking['appointment_time']) ? safe($latestBooking['appointment_time']) : '—'; ?></div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <small class="text-muted">Services</small>
-                            <div class="mt-1"><?php echo renderServicesHtml($latestBooking['services_json'] ?? null); ?></div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <small class="text-muted">Created</small>
-                            <div class="fw-semibold"><?php echo !empty($latestBooking['created_at']) ? formatDate($latestBooking['created_at']) : '—'; ?></div>
-                        </div>
-                        <div class="col-md-6">
-                            <small class="text-muted">Updated</small>
-                            <div class="fw-semibold"><?php echo !empty($latestBooking['updated_at']) ? formatDate($latestBooking['updated_at']) : '—'; ?></div>
-                        </div>
-                    </div>
-                <?php endif; ?>
+            <div>
+              <span class="small-label">Date &amp; Time</span>
+              <div class="value-sm">
+                <?php
+                  $d = !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—';
+                  $t = !empty($latestBooking['appointment_time']) ? safe($latestBooking['appointment_time']) : '';
+                  echo trim($d . ' ' . $t);
+                ?>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- All Bookings (Optional overview) -->
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold"><i class="bi bi-list-ul me-2"></i>All Client Bookings for Applicant</h5>
-            </div>
-            <div class="card-body">
-                <?php if (empty($allBookings)): ?>
-                    <p class="text-muted mb-0">No bookings yet.</p>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-hover table-styled mb-0">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Appointment</th>
-                                    <th>Date & Time</th>
-                                    <th>Client</th>
-                                    <th>Contacts</th>
-                                    <th>Services</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($allBookings as $i => $b): ?>
-                                    <?php
-                                        $cName = trim(($b['client_first_name'] ?? '') . ' ' . ($b['client_middle_name'] ?? '') . ' ' . ($b['client_last_name'] ?? ''));
-                                        $cName = $cName !== '' ? $cName : '—';
-                                        $dt = trim(($b['appointment_date'] ?? '').' '.($b['appointment_time'] ?? ''));
-                                        $badge = bookingStatusBadgeColor((string)$b['status']);
-                                    ?>
-                                    <tr>
-                                        <td><?php echo (int)($i + 1); ?></td>
-                                        <td><?php echo safe($b['appointment_type'] ?? '—'); ?></td>
-                                        <td><?php echo (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—') . ' ' . (!empty($b['appointment_time']) ? safe($b['appointment_time']) : ''); ?></td>
-                                        <td><?php echo safe($cName); ?></td>
-                                        <td>
-                                            <div><?php echo safe($b['client_email'] ?? '—'); ?></div>
-                                            <div class="text-muted small"><?php echo safe($b['client_phone'] ?? '—'); ?></div>
-                                        </td>
-                                        <td><?php echo renderServicesHtml($b['services_json'] ?? null); ?></td>
-                                        <td><span class="badge bg-<?php echo $badge; ?>"><?php echo safe($b['status']); ?></span></td>
-                                        <td><?php echo !empty($b['created_at']) ? formatDate($b['created_at']) : '—'; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+          <div class="mt-2">
+            <span class="small-label">Client Address</span>
+            <div class="value text-truncate-2"><?php echo safe($latestBooking['client_address'] ?? '—'); ?></div>
+          </div>
 
-        <!-- Documents -->
-        <div class="card">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold"><i class="bi bi-folder2-open me-2"></i>Documents</h5>
-            </div>
-            <div class="card-body">
-                <?php if (empty($documents)): ?>
-                    <p class="text-muted mb-0">No documents uploaded yet.</p>
-                <?php else: ?>
-                    <div class="list-group">
-                        <?php foreach ($documents as $doc): ?>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    <?php echo ucfirst(str_replace('_', ' ', (string)$doc['document_type'])); ?>
-                                </span>
-                                <a href="<?php echo safe(getFileUrl($doc['file_path'])); ?>"
-                                   target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </a>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+          <div class="mt-2">
+            <span class="small-label">Services</span>
+            <div class="mt-1"><?php echo renderServicesHtml($latestBooking['services_json'] ?? null); ?></div>
+          </div>
 
+          <div class="dl2 mt-2">
+            <div>
+              <span class="small-label">Created</span>
+              <div class="value-sm"><?php echo !empty($latestBooking['created_at']) ? formatDate($latestBooking['created_at']) : '—'; ?></div>
+            </div>
+            <div>
+              <span class="small-label">Updated</span>
+              <div class="value-sm"><?php echo !empty($latestBooking['updated_at']) ? formatDate($latestBooking['updated_at']) : '—'; ?></div>
+            </div>
+          </div>
+        <?php endif; ?>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- SECOND ROW: Collapsible sections to avoid pushing content below the fold -->
+<div class="accordion" id="extraInfoAccordion">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
+        More Applicant Details (Education & Work)
+      </button>
+    </h2>
+    <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
+      <div class="accordion-body">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card compact">
+              <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Educational Attainment</h5></div>
+              <div class="card-body"><?php echo $educationHtml; ?></div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card compact">
+              <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Work History</h5></div>
+              <div class="card-body"><?php echo $workHtml; ?></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?php if (!empty($allBookings)): ?>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingTwo">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAllBookings" aria-expanded="false" aria-controls="collapseAllBookings">
+        All Client Bookings for Applicant
+      </button>
+    </h2>
+    <div id="collapseAllBookings" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#extraInfoAccordion">
+      <div class="accordion-body">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped table-hover table-styled mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Appointment</th>
+                <th>Date &amp; Time</th>
+                <th>Client</th>
+                <th>Contacts</th>
+                <th>Services</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($allBookings as $i => $b): ?>
+                <?php
+                  $cName = trim(($b['client_first_name'] ?? '') . ' ' . ($b['client_middle_name'] ?? '') . ' ' . ($b['client_last_name'] ?? ''));
+                  $cName = $cName !== '' ? $cName : '—';
+                  $badge = bookingStatusBadgeColor((string)$b['status']);
+                ?>
+                <tr>
+                  <td><?php echo (int)($i + 1); ?></td>
+                  <td><?php echo safe($b['appointment_type'] ?? '—'); ?></td>
+                  <td><?php echo (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—') . ' ' . (!empty($b['appointment_time']) ? safe($b['appointment_time']) : ''); ?></td>
+                  <td><?php echo safe($cName); ?></td>
+                  <td>
+                    <div><?php echo safe($b['client_email'] ?? '—'); ?></div>
+                    <div class="text-muted small"><?php echo safe($b['client_phone'] ?? '—'); ?></div>
+                  </td>
+                  <td><?php echo renderServicesHtml($b['services_json'] ?? null); ?></td>
+                  <td><span class="badge bg-<?php echo $badge; ?>"><?php echo safe($b['status']); ?></span></td>
+                  <td><?php echo !empty($b['created_at']) ? formatDate($b['created_at']) : '—'; ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingThree">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
+        Applicant Documents
+      </button>
+    </h2>
+    <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#extraInfoAccordion">
+      <div class="accordion-body">
+        <?php if (empty($documents)): ?>
+          <p class="text-muted mb-0">No documents uploaded yet.</p>
+        <?php else: ?>
+          <div class="list-group">
+            <?php foreach ($documents as $doc): ?>
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                  <i class="bi bi-file-earmark-text me-2"></i>
+                  <?php echo ucfirst(str_replace('_', ' ', (string)$doc['document_type'])); ?>
+                </span>
+                <a href="<?php echo safe(getFileUrl($doc['file_path'])); ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye me-1"></i>View
+                </a>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<?php if (!empty($applicantData['video_url'])): ?>
+<div class="modal fade" id="applicantVideoModal" tabindex="-1" aria-labelledby="applicantVideoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title" id="applicantVideoModalLabel">
+          <i class="bi bi-film me-2"></i><?php echo !empty($applicantData['video_title']) ? safe($applicantData['video_title']) : 'Applicant Video'; ?>
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-2">
+        <video controls preload="metadata" style="width:100%; max-height:70vh; background:#000;">
+          <source src="<?php echo safe(getFileUrl($applicantData['video_url'])); ?>" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php require_once '../includes/footer.php'; ?>
