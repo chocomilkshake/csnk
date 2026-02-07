@@ -26,6 +26,9 @@ if (!isset($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
+/** Print mode toggle */
+$isPrint = (isset($_GET['print']) && $_GET['print'] === '1');
+
 /**
  * Load Applicant (ensure not deleted)
  */
@@ -75,7 +78,7 @@ try {
 }
 
 /**
- * Load all bookings (for accordion)
+ * Load all bookings (for table + modals)
  */
 $allBookings = [];
 try {
@@ -142,10 +145,7 @@ function renderPreferredLocationBadges(?string $json): string {
     return implode(' ', $html);
 }
 
-/**
- * Educational Attainment Renderer (timeline style)
- * Returns HTML (do not escape again).
- */
+/** Educational Attainment Renderer (timeline style) */
 function renderEducationListHtml(?string $json): string {
     if (empty($json)) {
         return '<span class="text-muted">N/A</span>';
@@ -207,9 +207,7 @@ function renderEducationListHtml(?string $json): string {
     return $html !== '<div class="edu-timeline"></div>' ? $html : '<span class="text-muted">N/A</span>';
 }
 
-/**
- * Work history JSON array -> structured HTML list (do not escape again).
- */
+/** Work history JSON array -> structured HTML list (do not escape again). */
 function renderWorkHistoryListHtml(?string $json): string {
     if ($json === null || trim($json) === '') {
         return '<span class="text-muted">N/A</span>';
@@ -364,8 +362,9 @@ $alternatePhoneDisplay = ($alternatePhone !== '') ? $alternatePhone : 'N/A';
 $languagesDisplay = renderLanguages($applicantData['languages'] ?? '');
 $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ?? '');
 
-$backUrl = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
-$editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+$backUrl  = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+$editUrl  = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+$printUrl = 'view-onprocess.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '') . '&print=1';
 ?>
 <style>
 /* Compact visual tweaks to fit both columns above the fold */
@@ -430,7 +429,7 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
 
 /* Avatar */
 .avatar-compact{
-  width: 110px; height:110px; object-fit:cover;
+  width: 110px; height:110px; object-fit:cover; border-radius:50%;
 }
 
 /* Two-column details list */
@@ -459,24 +458,43 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 
+/* Print view optimizations */
+@media print{
+  .no-print, .btn, .accordion-button, .modal { display:none !important; }
+  .card { border:none; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .loc-pill, .skill-pill { border:1px solid #ccc; }
+}
 </style>
 
+<?php if ($isPrint): ?>
+<!-- PRINT HEADER -->
+<div class="mb-3">
+  <h3 class="fw-semibold">Applicant + Client (On Process)</h3>
+  <div class="text-muted">Printed on: <?php echo safe(date('F d, Y h:i A')); ?></div>
+  <hr>
+</div>
+<?php else: ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0 fw-semibold">Applicant + Client (On Process)</h4>
-  <div class="d-flex gap-2">
-    <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning btn-sm">
-      <i class="bi bi-pencil me-1"></i>Edit Applicant
+  <div class="d-flex gap-2 no-print">
+    <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-outline-dark">
+      <i class="bi bi-printer me-1"></i> Print / Save as PDF
     </a>
-    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Back to On Process
+    <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning">
+      <i class="bi bi-pencil me-1"></i> Edit Applicant
+    </a>
+    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to On Process
     </a>
   </div>
 </div>
+<?php endif; ?>
 
 <!-- MAIN ROW: Applicant (left) + Client (right). Designed to fit without page scroll on typical admin screens -->
-<div class="no-wrap-row">
+<div class="<?php echo $isPrint ? '' : 'no-wrap-row'; ?>">
   <!-- Applicant Panel -->
-  <div class="col-left">
+  <div class="<?php echo $isPrint ? 'mb-3' : 'col-left'; ?>">
     <div class="card compact mb-3">
       <div class="card-header bg-white py-2">
         <h5 class="mb-0 fw-semibold d-flex align-items-center">
@@ -486,7 +504,7 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
       <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-2">
           <?php if (!empty($pictureUrl)): ?>
-            <img src="<?php echo safe($pictureUrl); ?>" alt="Profile" class="rounded-circle avatar-compact">
+            <img src="<?php echo safe($pictureUrl); ?>" alt="Profile" class="avatar-compact">
           <?php else: ?>
             <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center avatar-compact" style="font-size:2.2rem;">
               <?php echo strtoupper(substr($applicantData['first_name'], 0, 1)); ?>
@@ -552,8 +570,8 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
           <div class="value-sm"><?php echo $languagesDisplay; ?></div>
         </div>
 
-        <?php if (!empty($applicantData['video_url'])): ?>
-          <div class="mt-2">
+        <?php if (!empty($applicantData['video_url']) && !$isPrint): ?>
+          <div class="mt-2 no-print">
             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applicantVideoModal">
               <i class="bi bi-play-circle me-1"></i>Preview Video
             </button>
@@ -564,7 +582,7 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   </div>
 
   <!-- Client Panel -->
-  <div class="col-right">
+  <div class="<?php echo $isPrint ? '' : 'col-right'; ?>">
     <div class="card compact mb-3">
       <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
         <h5 class="mb-0 fw-semibold d-flex align-items-center">
@@ -639,43 +657,32 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   </div>
 </div>
 
-<!-- SECOND ROW: Collapsible sections to avoid pushing content below the fold -->
-<div class="accordion" id="extraInfoAccordion">
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingOne">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
-        More Applicant Details (Education & Work)
-      </button>
-    </h2>
-    <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
-      <div class="accordion-body">
-        <div class="row g-3">
-          <div class="col-lg-6">
-            <div class="card compact">
-              <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Educational Attainment</h5></div>
-              <div class="card-body"><?php echo $educationHtml; ?></div>
-            </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="card compact">
-              <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Work History</h5></div>
-              <div class="card-body"><?php echo $workHtml; ?></div>
-            </div>
-          </div>
-        </div>
-      </div>
+<!-- SECOND ROW: Either printed full or accordions -->
+<?php if ($isPrint): ?>
+  <!-- PRINT: Show all detail sections expanded -->
+
+  <div class="card compact mb-3">
+    <div class="card-header bg-white py-2">
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Educational Attainment</h5>
     </div>
+    <div class="card-body"><?php echo $educationHtml; ?></div>
   </div>
 
-  <?php if (!empty($allBookings)): ?>
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingTwo">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAllBookings" aria-expanded="false" aria-controls="collapseAllBookings">
-        All Client Bookings for Applicant
-      </button>
-    </h2>
-    <div id="collapseAllBookings" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#extraInfoAccordion">
-      <div class="accordion-body">
+  <div class="card compact mb-3">
+    <div class="card-header bg-white py-2">
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Work History</h5>
+    </div>
+    <div class="card-body"><?php echo $workHtml; ?></div>
+  </div>
+
+  <div class="card compact mb-3">
+    <div class="card-header bg-white py-2">
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-list-ul me-2"></i>All Client Bookings for Applicant</h5>
+    </div>
+    <div class="card-body">
+      <?php if (empty($allBookings)): ?>
+        <p class="text-muted mb-0">No bookings yet.</p>
+      <?php else: ?>
         <div class="table-responsive">
           <table class="table table-bordered table-striped table-hover table-styled mb-0">
             <thead>
@@ -714,43 +721,244 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
             </tbody>
           </table>
         </div>
-      </div>
+      <?php endif; ?>
     </div>
   </div>
-  <?php endif; ?>
 
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingThree">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
-        Applicant Documents
-      </button>
-    </h2>
-    <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#extraInfoAccordion">
-      <div class="accordion-body">
-        <?php if (empty($documents)): ?>
-          <p class="text-muted mb-0">No documents uploaded yet.</p>
-        <?php else: ?>
-          <div class="list-group">
-            <?php foreach ($documents as $doc): ?>
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                  <i class="bi bi-file-earmark-text me-2"></i>
-                  <?php echo ucfirst(str_replace('_', ' ', (string)$doc['document_type'])); ?>
-                </span>
-                <a href="<?php echo safe(getFileUrl($doc['file_path'])); ?>" target="_blank" class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-eye me-1"></i>View
-                </a>
+  <div class="card compact">
+    <div class="card-header bg-white py-2">
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-folder2-open me-2"></i>Documents</h5>
+    </div>
+    <div class="card-body">
+      <?php if (empty($documents)): ?>
+        <p class="text-muted mb-0">No documents uploaded yet.</p>
+      <?php else: ?>
+        <div class="list-group">
+          <?php foreach ($documents as $doc): ?>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                <i class="bi bi-file-earmark-text me-2"></i>
+                <?php echo ucfirst(str_replace('_', ' ', (string)$doc['document_type'])); ?>
+              </span>
+              <a href="<?php echo safe(getFileUrl($doc['file_path'])); ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye me-1"></i>View
+              </a>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <script>
+    // Auto-trigger browser print in print mode
+    window.addEventListener('load', function(){ window.print(); });
+  </script>
+
+<?php else: ?>
+
+  <!-- NON-PRINT: Use accordions to keep above the fold -->
+  <div class="accordion" id="extraInfoAccordion">
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOne">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
+          More Applicant Details (Education & Work)
+        </button>
+      </h2>
+      <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
+        <div class="accordion-body">
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="card compact">
+                <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Educational Attainment</h5></div>
+                <div class="card-body"><?php echo $educationHtml; ?></div>
               </div>
-            <?php endforeach; ?>
+            </div>
+            <div class="col-lg-6">
+              <div class="card compact">
+                <div class="card-header bg-white py-2"><h5 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Work History</h5></div>
+                <div class="card-body"><?php echo $workHtml; ?></div>
+              </div>
+            </div>
           </div>
-        <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Bookings with Actions -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingTwo">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAllBookings" aria-expanded="false" aria-controls="collapseAllBookings">
+          All Client Bookings for Applicant
+        </button>
+      </h2>
+      <div id="collapseAllBookings" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#extraInfoAccordion">
+        <div class="accordion-body">
+          <?php if (empty($allBookings)): ?>
+            <p class="text-muted mb-0">No bookings yet.</p>
+          <?php else: ?>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped table-hover table-styled mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Appointment</th>
+                    <th>Date &amp; Time</th>
+                    <th>Client</th>
+                    <th>Contacts</th>
+                    <th>Services</th>
+                    <th>Status</th>
+                    <th class="text-center">Actions</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($allBookings as $i => $b): ?>
+                    <?php
+                      $cName  = trim(($b['client_first_name'] ?? '') . ' ' . ($b['client_middle_name'] ?? '') . ' ' . ($b['client_last_name'] ?? ''));
+                      $cName  = $cName !== '' ? $cName : '—';
+                      $badge  = bookingStatusBadgeColor((string)$b['status']);
+                      $cid    = isset($b['id']) ? (int)$b['id'] : $i;
+                      $email  = trim((string)($b['client_email'] ?? ''));
+                      $phone  = trim((string)($b['client_phone'] ?? ''));
+                      $subject = rawurlencode('Inquiry re: Appointment with '.$cName);
+                      $bodyLines = [
+                        'Hello '.$cName.',',
+                        '',
+                        'This is regarding your appointment.',
+                        (!empty($b['appointment_date']) ? 'Date: '.formatDate($b['appointment_date']) : ''),
+                        (!empty($b['appointment_time']) ? 'Time: '.$b['appointment_time'] : ''),
+                        '',
+                        'Thank you,'
+                      ];
+                      $body = rawurlencode(implode("\n", array_filter($bodyLines)));
+                      $mailto = 'mailto:'.rawurlencode($email).'?subject='.$subject.'&body='.$body;
+                      $modalId = 'contactModal'.$cid;
+                    ?>
+                    <tr>
+                      <td><?php echo (int)($i + 1); ?></td>
+                      <td><?php echo safe($b['appointment_type'] ?? '—'); ?></td>
+                      <td><?php echo (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—') . ' ' . (!empty($b['appointment_time']) ? safe($b['appointment_time']) : ''); ?></td>
+                      <td><?php echo safe($cName); ?></td>
+                      <td>
+                        <div><?php echo safe($email !== '' ? $email : '—'); ?></div>
+                        <div class="text-muted small"><?php echo safe($phone !== '' ? $phone : '—'); ?></div>
+                      </td>
+                      <td><?php echo renderServicesHtml($b['services_json'] ?? null); ?></td>
+                      <td><span class="badge bg-<?php echo $badge; ?>"><?php echo safe($b['status']); ?></span></td>
+                      <td class="text-center">
+                        <div class="btn-group">
+                          <a href="<?php echo safe($mailto); ?>" class="btn btn-sm btn-outline-primary" title="Email Client">
+                            <i class="bi bi-envelope"></i>
+                          </a>
+                          <button type="button" class="btn btn-sm btn-outline-success" title="Show Contact" data-bs-toggle="modal" data-bs-target="#<?php echo safe($modalId); ?>">
+                            <i class="bi bi-telephone"></i>
+                          </button>
+                        </div>
+                      </td>
+                      <td><?php echo !empty($b['created_at']) ? formatDate($b['created_at']) : '—'; ?></td>
+                    </tr>
+
+                    <!-- Contact Modal (per booking) -->
+                    <div class="modal fade" id="<?php echo safe($modalId); ?>" tabindex="-1" aria-labelledby="<?php echo safe($modalId); ?>Label" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="<?php echo safe($modalId); ?>Label">
+                              <i class="bi bi-person-lines-fill me-2"></i>Client Contact
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="mb-3">
+                              <div class="small-label">Client</div>
+                              <div class="value"><?php echo safe($cName); ?></div>
+                            </div>
+                            <div class="row g-3">
+                              <div class="col-md-6">
+                                <div class="small-label">Email</div>
+                                <div class="d-flex align-items-center gap-2">
+                                  <i class="bi bi-envelope text-muted"></i>
+                                  <?php if ($email !== ''): ?>
+                                    <a href="mailto:<?php echo safe($email); ?>" class="value-sm text-decoration-none"><?php echo safe($email); ?></a>
+                                  <?php else: ?>
+                                    <span class="text-muted">N/A</span>
+                                  <?php endif; ?>
+                                </div>
+                              </div>
+                              <div class="col-md-6">
+                                <div class="small-label">Phone</div>
+                                <div class="d-flex align-items-center gap-2">
+                                  <i class="bi bi-telephone text-muted"></i>
+                                  <?php if ($phone !== ''): ?>
+                                    <a href="tel:<?php echo safe($phone); ?>" class="value-sm text-decoration-none"><?php echo safe($phone); ?></a>
+                                  <?php else: ?>
+                                    <span class="text-muted">N/A</span>
+                                  <?php endif; ?>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <?php if ($email !== ''): ?>
+                              <a href="<?php echo safe($mailto); ?>" class="btn btn-primary">
+                                <i class="bi bi-envelope me-1"></i>Email
+                              </a>
+                            <?php endif; ?>
+                            <?php if ($phone !== ''): ?>
+                              <a href="tel:<?php echo safe($phone); ?>" class="btn btn-success">
+                                <i class="bi bi-telephone me-1"></i>Call
+                              </a>
+                            <?php endif; ?>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingThree">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
+          Applicant Documents
+        </button>
+      </h2>
+      <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#extraInfoAccordion">
+        <div class="accordion-body">
+          <?php if (empty($documents)): ?>
+            <p class="text-muted mb-0">No documents uploaded yet.</p>
+          <?php else: ?>
+            <div class="list-group">
+              <?php foreach ($documents as $doc): ?>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <span>
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    <?php echo ucfirst(str_replace('_', ' ', (string)$doc['document_type'])); ?>
+                  </span>
+                  <a href="<?php echo safe(getFileUrl($doc['file_path'])); ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i>View
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Video Modal -->
-<?php if (!empty($applicantData['video_url'])): ?>
+<?php endif; ?>
+
+<!-- Video Modal (non-print only) -->
+<?php if (!empty($applicantData['video_url']) && !$isPrint): ?>
 <div class="modal fade" id="applicantVideoModal" tabindex="-1" aria-labelledby="applicantVideoModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
