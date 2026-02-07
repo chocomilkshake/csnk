@@ -37,8 +37,10 @@ function isPdfPath(string $p): bool {
 /* Load Applicant */
 try {
     $stmt = $database->prepare("SELECT * FROM applicants WHERE id = ? AND (status <> 'deleted' OR status IS NULL) LIMIT 1");
-    $stmt->bind_param("i", $id); $stmt->execute();
-    $res = $stmt->get_result(); $applicantData = $res ? $res->fetch_assoc() : false;
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $applicantData = $res ? $res->fetch_assoc() : false;
 } catch (Throwable $e) { $applicantData = false; }
 if (!$applicantData) {
     setFlashMessage('error', 'Applicant not found.');
@@ -50,30 +52,35 @@ if (!$applicantData) {
 $latestBooking = null;
 try {
     $stmt = $database->prepare("SELECT * FROM client_bookings WHERE applicant_id = ? ORDER BY created_at DESC LIMIT 1");
-    $stmt->bind_param("i", $id); $stmt->execute();
-    $res = $stmt->get_result(); $latestBooking = $res ? $res->fetch_assoc() : null;
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $latestBooking = $res ? $res->fetch_assoc() : null;
 } catch (Throwable $e) { $latestBooking = null; }
 
 /* All Bookings (complete) */
 $allBookings = [];
 try {
     $stmt = $database->prepare("SELECT * FROM client_bookings WHERE applicant_id = ? ORDER BY created_at DESC");
-    $stmt->bind_param("i", $id); $stmt->execute();
-    $res = $stmt->get_result(); $allBookings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $allBookings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 } catch (Throwable $e) { $allBookings = []; }
 $totalBookings = count($allBookings);
 
-/* Documents (limit to 8 for total of 9 pages inc. page 1) */
+/* Documents (limit to 8 for a total of 9 pages inc. page 1) */
 $documents = [];
 if (method_exists($applicant, 'getDocuments')) {
     $docs = $applicant->getDocuments($id) ?: [];
-    $documents = array_slice($docs, 0, 8); // ensure exact 9 pages: 1 summary + up to 8 docs
+    $documents = array_slice($docs, 0, 8); // 1 summary page + up to 8 documents = 9 pages
 }
 
-/* Badge/line renderers (Bootstrap utilities only) */
+/* Render helpers (Bootstrap utilities only) */
 function renderBadgesFromJson(?string $json, string $badgeClass = 'bg-light text-primary border', int $max = 0): string {
     if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
-    $arr = json_decode($json, true); $items = [];
+    $arr = json_decode($json, true);
+    $items = [];
     if (is_array($arr)) {
         foreach ($arr as $v) if (is_string($v) && trim($v) !== '') $items[] = trim($v);
     } else {
@@ -88,12 +95,17 @@ function renderBadgesFromJson(?string $json, string $badgeClass = 'bg-light text
 }
 function renderServicesBadges(?string $json, int $max = 0): string {
     if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
-    $data = json_decode($json, true); if (json_last_error() !== JSON_ERROR_NONE) return '<span class="text-muted">'.safe(truncate($json, 60)).'</span>';
+    $data = json_decode($json, true);
+    if (json_last_error() !== JSON_ERROR_NONE) return '<span class="text-muted">'.safe(truncate($json, 60)).'</span>';
     $labels = [];
     if (is_array($data)) {
         foreach ($data as $item) {
             if (is_string($item) && trim($item) !== '') $labels[] = trim($item);
-            elseif (is_array($item)) foreach (['name','label','service','title'] as $k) if (!empty($item[$k]) && is_string($item[$k])) { $labels[] = trim($item[$k]); break; }
+            elseif (is_array($item)) {
+                foreach (['name','label','service','title'] as $k) {
+                    if (!empty($item[$k]) && is_string($item[$k])) { $labels[] = trim($item[$k]); break; }
+                }
+            }
         }
     }
     if (!$labels) return '<span class="text-muted">N/A</span>';
@@ -139,8 +151,15 @@ $csnkLogo = '../resources/img/csnk-logo.png';
 <title>Print — Applicant + Client</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Print isolation + page sizing -->
+<!-- Print isolation + page sizing + maximal doc fit -->
 <style>
+  /* Tuning variables for legal page utilization */
+  :root{
+    --page-m: 10mm;       /* matches @page margin */
+    --doc-head: 6mm;      /* header band on each document page */
+    --doc-gap: 2mm;       /* small spacing under header */
+  }
+
   /* Hide app chrome; only print #print-root */
   #app-shell, header, nav, aside, footer, .sidebar, .navbar, .pc-sidebar, .pc-header, .page-header { display:none !important; }
   @media print {
@@ -148,8 +167,9 @@ $csnkLogo = '../resources/img/csnk-logo.png';
     #print-root, #print-root * { visibility: visible !important; }
     #print-root { position: absolute; left:0; top:0; width:100%; }
   }
+
   /* Legal 8.5x14 portrait with modest margins */
-  @page { size: legal portrait; margin: 10mm; }
+  @page { size: legal portrait; margin: var(--page-m); }
 
   /* ---- Print table for All Client Bookings ---- */
   .print-table { width:100%; border-collapse:collapse; table-layout: fixed; font-size:11px; }
@@ -157,17 +177,24 @@ $csnkLogo = '../resources/img/csnk-logo.png';
   .print-table thead th { background:#f8f9fa; font-weight:700; }
   .wrap-any { word-break: break-word; }
 
-  /* Define column widths to keep layout readable on PDF */
+  /* Column widths to keep layout readable on PDF */
   .col-num { width:26px; }
-  .col-client { width:26%; }
-  .col-type { width:12%; }
-  .col-datetime { width:26%; }
-  .col-status { width:11%; text-transform:uppercase; }
+  .col-client { width:28%; }
+  .col-type { width:14%; }
+  .col-datetime { width:28%; }
+  .col-status { width:10%; text-transform:uppercase; }
 
-  /* ---- One page per document, no added padding/margins ---- */
+  /* ---- One page per document, maximized printable area, no blank pages ---- */
   .doc-sheet { page-break-before: always; margin: 0; padding: 0; }
-  .doc-header { display:flex; justify-content:space-between; align-items:center; gap:.5rem; margin: 0 0 4px 0; padding: 0 8px; }
-  .doc-fit { display:block; width:100%; height: calc(100vh - 28mm); object-fit: contain; }
+  .doc-header { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding: 0 6mm; min-height: var(--doc-head); margin: 0 0 var(--doc-gap) 0; }
+  .doc-fit,
+  .doc-embed {
+    display:block;
+    width: 100%;
+    height: calc(100vh - (var(--page-m) * 2) - var(--doc-head) - var(--doc-gap));
+    object-fit: contain;    /* change to 'cover' if you prefer edge-to-edge even if cropped */
+    border: 0;
+  }
 </style>
 </head>
 <body class="bg-white">
@@ -178,7 +205,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="d-flex align-items-center gap-2">
       <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:48px;">
-      <div class="fw-bold">Applicant & Clients</div>
+      <div class="fw-bold">Applicant &amp; Clients</div>
     </div>
     <div class="text-muted small">Printed on: <?php echo safe(date('M d, Y h:i A')); ?></div>
   </div>
@@ -388,9 +415,10 @@ $csnkLogo = '../resources/img/csnk-logo.png';
             <tbody>
               <?php foreach ($allBookings as $i => $b): ?>
                 <?php
-                  $cName = trim(($b['client_first_name'] ?? '').' '.($b['client_middle_name'] ?? '').' '.($b['client_last_name'] ?? '')); if ($cName==='') $cName='—';
-                  $dt    = (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—');
-                  $tm    = (!empty($b['appointment_time']) ? $b['appointment_time'] : '');
+                  $cName = trim(($b['client_first_name'] ?? '').' '.($b['client_middle_name'] ?? '').' '.($b['client_last_name'] ?? ''));
+                  if ($cName==='') $cName='—';
+                  $dt  = (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—');
+                  $tm  = (!empty($b['appointment_time']) ? $b['appointment_time'] : '');
                 ?>
                 <tr>
                   <td class="text-center"><?php echo $i+1; ?></td>
@@ -433,7 +461,12 @@ $csnkLogo = '../resources/img/csnk-logo.png';
         <?php if (isImagePath($path)): ?>
           <img src="<?php echo safe($url); ?>" alt="Document" class="doc-fit">
         <?php elseif (isPdfPath($path)): ?>
-          <embed src="<?php echo safe($url); ?>" type="application/pdf" class="doc-fit">
+          <object data="<?php echo safe($url); ?>" type="application/pdf" class="doc-embed">
+            <div class="p-3 small">
+              PDF preview not available. Open:
+              <a href="<?php echo safe($url); ?>" target="_blank"><?php echo safe(basename($path)); ?></a>
+            </div>
+          </object>
         <?php else: ?>
           <div class="p-3">
             <div class="mb-2">File type not previewable. Open or download:</div>
@@ -450,7 +483,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
 
 <script>
   // Auto-open print dialog on load (Save as PDF)
-  window.addEventListener('load', function(){ try { window.print(); } catch(e) {} });
+  window.addEventListener('load', function(){ try { window.print(); } catch(e){} });
 </script>
 
 </body>
