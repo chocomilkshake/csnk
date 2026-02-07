@@ -196,7 +196,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                     <?php else: ?>
                         <?php foreach ($applicants as $row): ?>
                             <?php
-                                $viewUrl = 'view-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $viewUrl = 'view_onprocess.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $delUrl  = 'on-process.php?action=delete&id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
 
