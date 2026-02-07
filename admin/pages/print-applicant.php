@@ -177,8 +177,8 @@ $csnkLogo = '../resources/img/csnk-logo.png';
   <!-- PAGE 1: Header -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="d-flex align-items-center gap-2">
-      <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:28px;">
-      <div class="fw-bold">Applicant + Client (On Process)</div>
+      <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:48px;">
+      <div class="fw-bold">Applicant & Clients</div>
     </div>
     <div class="text-muted small">Printed on: <?php echo safe(date('M d, Y h:i A')); ?></div>
   </div>
@@ -421,10 +421,10 @@ $csnkLogo = '../resources/img/csnk-logo.png';
     <section class="doc-sheet">
       <div class="doc-header small">
         <div class="d-flex align-items-center gap-2">
-          <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:22px;">
+          <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:48px;">
           <span class="fw-semibold">Document: <?php echo safe(ucfirst(str_replace('_',' ', $type))); ?></span>
         </div>
-        <div class="text-muted">Applicant: <?php echo $fullName; ?></div>
+        <div class="text-muted">Applicant Name: <?php echo $fullName; ?></div>
       </div>
 
       <?php if ($url === ''): ?>
