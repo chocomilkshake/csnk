@@ -1,6 +1,6 @@
 <?php
-// FILE: pages/print-applicant.php
-$pageTitle = 'Print — Applicant + Client';
+// FILE: pages/CSNK-Applicant.php
+$pageTitle = 'CSNK - Applicant Withdrawal';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
@@ -203,7 +203,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
   <!-- PAGE 1: Header -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="d-flex align-items-center gap-2">
-      <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:48px;">
+      <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:58px;">
       <div class="fw-bold">Applicant &amp; Clients</div>
     </div>
     <div class="text-muted small">Printed on: <?php echo safe(date('M d, Y h:i A')); ?></div>
@@ -437,43 +437,55 @@ $csnkLogo = '../resources/img/csnk-logo.png';
     <?php endif; ?>
   </div>
 
-  <!-- PAGES 2..N (up to 8): One document per page, full legal -->
-  <?php foreach ($documents as $doc): ?>
-    <?php
-      $type = (string)($doc['document_type'] ?? 'document');
-      $path = (string)($doc['file_path'] ?? '');
-      $url  = $path !== '' ? getFileUrl($path) : '';
-    ?>
-    <section class="doc-sheet">
-      <div class="doc-header small">
-        <div class="d-flex align-items-center gap-2">
-          <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:48px;">
-          <span class="fw-semibold">Document: <?php echo safe(ucfirst(str_replace('_',' ', $type))); ?></span>
+<!-- PAGES 2..N (up to 8): One document per page, full legal -->
+<?php foreach ($documents as $doc): ?>
+  <?php
+    $type = (string)($doc['document_type'] ?? 'document');
+    $path = (string)($doc['file_path'] ?? '');
+    $url  = $path !== '' ? getFileUrl($path) : '';
+  ?>
+  <section class="doc-sheet">
+
+    <!-- HEADER: Logo on top, Document label below -->
+    <div class="doc-header small">
+      <div class="d-flex flex-column align-items-start">
+        <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:58px;">
+        <div class="fw-semibold mt-1">
+          Document: <?php echo safe(ucfirst(str_replace('_',' ', $type))); ?>
         </div>
-        <div class="text-muted">Applicant Name: <?php echo $fullName; ?></div>
       </div>
 
-      <?php if ($url === ''): ?>
-        <div class="p-3">Document file missing.</div>
-      <?php else: ?>
-        <?php if (isImagePath($path)): ?>
-          <img src="<?php echo safe($url); ?>" alt="Document" class="doc-fit">
-        <?php elseif (isPdfPath($path)): ?>
-          <object data="<?php echo safe($url); ?>" type="application/pdf" class="doc-embed">
-            <div class="p-3 small">
-              PDF preview not available. Open:
-              <a href="<?php echo safe($url); ?>" target="_blank"><?php echo safe(basename($path)); ?></a>
-            </div>
-          </object>
-        <?php else: ?>
-          <div class="p-3">
-            <div class="mb-2">File type not previewable. Open or download:</div>
-            <a href="<?php echo safe($url); ?>" target="_blank"><?php echo safe(basename($path)); ?></a>
+      <div class="text-muted">
+        Applicant Name: <?php echo $fullName; ?>
+      </div>
+    </div>
+
+    <?php if ($url === ''): ?>
+      <div class="p-3">Document file missing.</div>
+    <?php else: ?>
+      <?php if (isImagePath($path)): ?>
+        <img src="<?php echo safe($url); ?>" alt="Document" class="doc-fit">
+      <?php elseif (isPdfPath($path)): ?>
+        <object data="<?php echo safe($url); ?>" type="application/pdf" class="doc-embed">
+          <div class="p-3 small">
+            PDF preview not available.
+            <a href="<?php echo safe($url); ?>" target="_blank">
+              <?php echo safe(basename($path)); ?>
+            </a>
           </div>
-        <?php endif; ?>
+        </object>
+      <?php else: ?>
+        <div class="p-3">
+          <div class="mb-2">File type not previewable. Open or download:</div>
+          <a href="<?php echo safe($url); ?>" target="_blank">
+            <?php echo safe(basename($path)); ?>
+          </a>
+        </div>
       <?php endif; ?>
-    </section>
-  <?php endforeach; ?>
+    <?php endif; ?>
+
+  </section>
+<?php endforeach; ?>
 
 </div><!-- /print-root -->
 
