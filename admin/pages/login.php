@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </form>
 
                         <div class="text-center mt-4">
-                            <small class="text-muted">Default login: <strong>csnk</strong> / <strong>admin123</strong></small>
+                            <small class="text-muted">By: <strong>IT</strong>-<strong>Interns</strong></small>
                         </div>
 
                     </div>
