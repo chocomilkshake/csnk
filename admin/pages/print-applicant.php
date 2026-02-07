@@ -7,7 +7,7 @@ require_once '../includes/Applicant.php';
 // From header.php: $database (mysqli), helpers: redirect(), formatDate(), getFileUrl(), getFullName(), setFlashMessage()
 $applicant = new Applicant($database);
 
-/* Optional filter */
+/* Optional search (for back links if ever needed) */
 $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
@@ -16,12 +16,12 @@ if (isset($_GET['q'])) {
 
 /* Require applicant id */
 if (!isset($_GET['id'])) {
-    $dest = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
-    redirect($dest); exit;
+    redirect('on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : ''));
+    exit;
 }
 $id = (int)$_GET['id'];
 
-/* Helpers */
+/* Utilities */
 function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function truncate(?string $s, int $len = 140): string {
     $s = (string)$s; return (mb_strlen($s) > $len) ? (mb_substr($s, 0, $len - 1) . '…') : $s;
@@ -42,7 +42,8 @@ try {
 } catch (Throwable $e) { $applicantData = false; }
 if (!$applicantData) {
     setFlashMessage('error', 'Applicant not found.');
-    redirect('on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '')); exit;
+    redirect('on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : ''));
+    exit;
 }
 
 /* Latest Booking */
@@ -53,7 +54,7 @@ try {
     $res = $stmt->get_result(); $latestBooking = $res ? $res->fetch_assoc() : null;
 } catch (Throwable $e) { $latestBooking = null; }
 
-/* All Bookings (complete list) */
+/* All Bookings (complete) */
 $allBookings = [];
 try {
     $stmt = $database->prepare("SELECT * FROM client_bookings WHERE applicant_id = ? ORDER BY created_at DESC");
@@ -62,10 +63,11 @@ try {
 } catch (Throwable $e) { $allBookings = []; }
 $totalBookings = count($allBookings);
 
-/* Documents */
+/* Documents (limit to 8 for total of 9 pages inc. page 1) */
 $documents = [];
 if (method_exists($applicant, 'getDocuments')) {
-    $documents = $applicant->getDocuments($id);
+    $docs = $applicant->getDocuments($id) ?: [];
+    $documents = array_slice($docs, 0, 8); // ensure exact 9 pages: 1 summary + up to 8 docs
 }
 
 /* Badge/line renderers (Bootstrap utilities only) */
@@ -121,6 +123,7 @@ $email       = (string)($applicantData['email'] ?? 'N/A');
 $prefLoc     = renderBadgesFromJson($applicantData['preferred_location'] ?? '', 'bg-light text-primary border', 6);
 $skills      = renderBadgesFromJson($applicantData['specialization_skills'] ?? '', 'bg-light text-danger border', 8);
 $languages   = renderLanguagesLine($applicantData['languages'] ?? '');
+
 $clientName  = ($latestBooking ? trim(($latestBooking['client_first_name'] ?? '').' '.($latestBooking['client_middle_name'] ?? '').' '.($latestBooking['client_last_name'] ?? '')) : '—');
 if ($clientName === '') $clientName = '—';
 $apptDateTime = (function($b){ if (!$b) return '—'; $d = !empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—'; $t = !empty($b['appointment_time']) ? $b['appointment_time'] : ''; return trim($d.' '.$t) ?: '—'; })($latestBooking);
@@ -136,7 +139,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
 <title>Print — Applicant + Client</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Print isolation + page sizing (tailwind/bs utilities for the rest) -->
+<!-- Print isolation + page sizing -->
 <style>
   /* Hide app chrome; only print #print-root */
   #app-shell, header, nav, aside, footer, .sidebar, .navbar, .pc-sidebar, .pc-header, .page-header { display:none !important; }
@@ -145,19 +148,33 @@ $csnkLogo = '../resources/img/csnk-logo.png';
     #print-root, #print-root * { visibility: visible !important; }
     #print-root { position: absolute; left:0; top:0; width:100%; }
   }
-  /* Legal 8.5x14 portrait, modest margins */
+  /* Legal 8.5x14 portrait with modest margins */
   @page { size: legal portrait; margin: 10mm; }
-  /* Page breaks for documents */
-  .page-break { page-break-before: always; }
-  .doc-page { height: 100vh; }
-  .doc-fit { width:100%; height: calc(100vh - 20mm); object-fit: contain; }
+
+  /* ---- Print table for All Client Bookings ---- */
+  .print-table { width:100%; border-collapse:collapse; table-layout: fixed; font-size:11px; }
+  .print-table th, .print-table td { border:1px solid #dee2e6; padding:4px 6px; vertical-align:top; }
+  .print-table thead th { background:#f8f9fa; font-weight:700; }
+  .wrap-any { word-break: break-word; }
+
+  /* Define column widths to keep layout readable on PDF */
+  .col-num { width:26px; }
+  .col-client { width:26%; }
+  .col-type { width:12%; }
+  .col-datetime { width:26%; }
+  .col-status { width:11%; text-transform:uppercase; }
+
+  /* ---- One page per document, no added padding/margins ---- */
+  .doc-sheet { page-break-before: always; margin: 0; padding: 0; }
+  .doc-header { display:flex; justify-content:space-between; align-items:center; gap:.5rem; margin: 0 0 4px 0; padding: 0 8px; }
+  .doc-fit { display:block; width:100%; height: calc(100vh - 28mm); object-fit: contain; }
 </style>
 </head>
 <body class="bg-white">
 
 <div id="print-root" class="container-fluid p-3">
 
-  <!-- Top bar -->
+  <!-- PAGE 1: Header -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="d-flex align-items-center gap-2">
       <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:28px;">
@@ -166,7 +183,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
     <div class="text-muted small">Printed on: <?php echo safe(date('M d, Y h:i A')); ?></div>
   </div>
 
-  <!-- PAGE 1: Applicant + Latest Client Booking + All Client Bookings (complete) -->
+  <!-- PAGE 1: Two columns (Applicant | Latest Client Booking + All Client Bookings) -->
   <div class="row g-2">
     <!-- Applicant -->
     <div class="col-6">
@@ -259,9 +276,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
                   }
                 }
                 echo '</ul>';
-              } else {
-                echo '<div class="text-muted">N/A</div>';
-              }
+              } else { echo '<div class="text-muted">N/A</div>'; }
             ?>
           </div>
 
@@ -282,9 +297,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
                   if ($parts) echo '<li class="small">'.safe(truncate(implode(' — ', $parts), 88)).'</li>';
                 }
                 echo '</ul>';
-              } else {
-                echo '<div class="text-muted">N/A</div>';
-              }
+              } else { echo '<div class="text-muted">N/A</div>'; }
             ?>
           </div>
         </div>
@@ -293,6 +306,7 @@ $csnkLogo = '../resources/img/csnk-logo.png';
 
     <!-- Latest Client Booking + All Client Bookings -->
     <div class="col-6">
+      <!-- Latest Client Booking -->
       <div class="border rounded p-2 mb-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <div class="fw-semibold small d-flex align-items-center gap-2">
@@ -307,11 +321,8 @@ $csnkLogo = '../resources/img/csnk-logo.png';
           <div class="row g-2 small">
             <div class="col-12">
               <div class="text-muted">Client</div>
-              <div class="fw-semibold text-truncate">
-                <?php echo $clientName !== '' ? safe($clientName) : '—'; ?>
-              </div>
+              <div class="fw-semibold text-truncate"><?php echo $clientName !== '' ? safe($clientName) : '—'; ?></div>
             </div>
-
             <div class="col-6">
               <div class="text-muted">Client Email</div>
               <div class="fw-semibold text-truncate"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
@@ -320,12 +331,10 @@ $csnkLogo = '../resources/img/csnk-logo.png';
               <div class="text-muted">Client Phone</div>
               <div class="fw-semibold text-truncate"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
             </div>
-
             <div class="col-12">
               <div class="text-muted">Client Address</div>
               <div class="fw-semibold"><?php echo safe(truncate($latestBooking['client_address'] ?? '—')); ?></div>
             </div>
-
             <div class="col-6">
               <div class="text-muted">Appointment Type</div>
               <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
@@ -334,12 +343,10 @@ $csnkLogo = '../resources/img/csnk-logo.png';
               <div class="text-muted">Date &amp; Time</div>
               <div class="fw-semibold"><?php echo safe($apptDateTime); ?></div>
             </div>
-
             <div class="col-12">
               <div class="text-muted">Services</div>
               <div class="d-flex flex-wrap gap-1"><?php echo $servicesBadges; ?></div>
             </div>
-
             <div class="col-6">
               <div class="text-muted">Created</div>
               <div class="fw-semibold"><?php echo !empty($latestBooking['created_at']) ? safe(formatDate($latestBooking['created_at'])) : '—'; ?></div>
@@ -352,92 +359,99 @@ $csnkLogo = '../resources/img/csnk-logo.png';
         <?php endif; ?>
       </div>
 
-      <!-- All Client Bookings (complete list, compact) -->
+      <!-- All Client Bookings (Complete, print-optimized table) -->
       <div class="border rounded p-2">
         <div class="fw-semibold small d-flex align-items-center gap-2 mb-1">
           <i class="bi bi-list-ul"></i> All Client Bookings (Complete)
         </div>
+
         <?php if (empty($allBookings)): ?>
           <div class="text-muted small">No bookings yet.</div>
         <?php else: ?>
-          <div class="table-responsive">
-            <table class="table table-sm table-bordered mb-0 small align-middle">
-              <thead class="table-light">
+          <table class="print-table">
+            <colgroup>
+              <col class="col-num" />
+              <col class="col-client" />
+              <col class="col-type" />
+              <col class="col-datetime" />
+              <col class="col-status" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Date &amp; Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($allBookings as $i => $b): ?>
+                <?php
+                  $cName = trim(($b['client_first_name'] ?? '').' '.($b['client_middle_name'] ?? '').' '.($b['client_last_name'] ?? '')); if ($cName==='') $cName='—';
+                  $dt    = (!empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—');
+                  $tm    = (!empty($b['appointment_time']) ? $b['appointment_time'] : '');
+                ?>
                 <tr>
-                  <th>#</th>
-                  <th>Client</th>
-                  <th>Type</th>
-                  <th>Date &amp; Time</th>
-                  <th>Status</th>
+                  <td class="text-center"><?php echo $i+1; ?></td>
+                  <td class="wrap-any">
+                    <div class="fw-semibold"><?php echo safe($cName); ?></div>
+                    <div class="text-muted"><?php echo safe($b['client_email'] ?? '—'); ?></div>
+                    <div class="text-muted"><?php echo safe($b['client_phone'] ?? '—'); ?></div>
+                  </td>
+                  <td class="wrap-any"><?php echo safe($b['appointment_type'] ?? '—'); ?></td>
+                  <td class="wrap-any"><?php echo safe(trim($dt.' '.$tm)); ?></td>
+                  <td class="text-center wrap-any"><?php echo safe(strtoupper((string)($b['status'] ?? ''))); ?></td>
                 </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($allBookings as $i => $b): ?>
-                  <?php
-                    $cName = trim(($b['client_first_name'] ?? '').' '.($b['client_middle_name'] ?? '').' '.($b['client_last_name'] ?? '')); if ($cName==='') $cName='—';
-                    $dt = ( !empty($b['appointment_date']) ? formatDate($b['appointment_date']) : '—' ) . ( !empty($b['appointment_time']) ? (' '.$b['appointment_time']) : '' );
-                  ?>
-                  <tr>
-                    <td><?php echo $i+1; ?></td>
-                    <td class="text-truncate" style="max-width:120px"><?php echo safe($cName); ?></td>
-                    <td><?php echo safe($b['appointment_type'] ?? '—'); ?></td>
-                    <td class="text-truncate" style="max-width:120px"><?php echo safe($dt); ?></td>
-                    <td class="text-uppercase"><?php echo safe($b['status'] ?? ''); ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
         <?php endif; ?>
       </div>
     </div>
   </div>
 
-  <!-- PAGES 2..N: One page per document (full page) -->
-  <?php if (!empty($documents)): ?>
-    <?php foreach ($documents as $index => $doc): ?>
-      <?php
-        $type = (string)($doc['document_type'] ?? 'document');
-        $path = (string)($doc['file_path'] ?? '');
-        $url  = $path !== '' ? getFileUrl($path) : '';
-      ?>
-      <div class="page-break"></div>
-      <div class="p-3 doc-page">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="d-flex align-items-center gap-2">
-            <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:22px;">
-            <div class="fw-semibold">Document: <?php echo safe(ucfirst(str_replace('_',' ', $type))); ?></div>
-          </div>
-          <div class="text-muted small">Applicant: <?php echo $fullName; ?></div>
+  <!-- PAGES 2..N (up to 8): One document per page, full legal, no extra blank pages -->
+  <?php foreach ($documents as $doc): ?>
+    <?php
+      $type = (string)($doc['document_type'] ?? 'document');
+      $path = (string)($doc['file_path'] ?? '');
+      $url  = $path !== '' ? getFileUrl($path) : '';
+    ?>
+    <section class="doc-sheet">
+      <div class="doc-header small">
+        <div class="d-flex align-items-center gap-2">
+          <img src="<?php echo safe($csnkLogo); ?>" alt="CSNK" style="height:22px;">
+          <span class="fw-semibold">Document: <?php echo safe(ucfirst(str_replace('_',' ', $type))); ?></span>
         </div>
-
-        <?php if ($url === ''): ?>
-          <div class="alert alert-warning p-2 small">Document file missing.</div>
-        <?php else: ?>
-          <?php if (isImagePath($path)): ?>
-            <img src="<?php echo safe($url); ?>" alt="Document" class="doc-fit d-block mx-auto">
-          <?php elseif (isPdfPath($path)): ?>
-            <object data="<?php echo safe($url); ?>" type="application/pdf" class="w-100" style="height: calc(100vh - 20mm);">
-              <div class="small">
-                PDF preview not available. Open:
-                <a href="<?php echo safe($url); ?>" target="_blank"><?php echo safe(basename($path)); ?></a>
-              </div>
-            </object>
-          <?php else: ?>
-            <div class="border rounded p-3">
-              <div class="mb-2">File type not previewable. Open or download the file:</div>
-              <a href="<?php echo safe($url); ?>" target="_blank" class="text-decoration-none">
-                <?php echo safe(basename($path)); ?>
-              </a>
-            </div>
-          <?php endif; ?>
-        <?php endif; ?>
+        <div class="text-muted">Applicant: <?php echo $fullName; ?></div>
       </div>
-    <?php endforeach; ?>
-  <?php endif; ?>
+
+      <?php if ($url === ''): ?>
+        <div class="p-3">Document file missing.</div>
+      <?php else: ?>
+        <?php if (isImagePath($path)): ?>
+          <img src="<?php echo safe($url); ?>" alt="Document" class="doc-fit">
+        <?php elseif (isPdfPath($path)): ?>
+          <embed src="<?php echo safe($url); ?>" type="application/pdf" class="doc-fit">
+        <?php else: ?>
+          <div class="p-3">
+            <div class="mb-2">File type not previewable. Open or download:</div>
+            <a href="<?php echo safe($url); ?>" target="_blank" class="text-decoration-none">
+              <?php echo safe(basename($path)); ?>
+            </a>
+          </div>
+        <?php endif; ?>
+      <?php endif; ?>
+    </section>
+  <?php endforeach; ?>
 
 </div><!-- /print-root -->
 
-<script>window.addEventListener('load', function(){ try{ window.print(); }catch(e){} });</script>
+<script>
+  // Auto-open print dialog on load (Save as PDF)
+  window.addEventListener('load', function(){ try { window.print(); } catch(e) {} });
+</script>
+
 </body>
 </html>
