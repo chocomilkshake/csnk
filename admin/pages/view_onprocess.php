@@ -467,28 +467,32 @@ $printUrl = 'view-onprocess.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)
 }
 </style>
 
+<?php
+// Make sure $id and $q are already set above this
+$printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencode($q) : '');
+?>
 <?php if ($isPrint): ?>
-<!-- PRINT HEADER -->
-<div class="mb-3">
-  <h3 class="fw-semibold">Applicant + Client (On Process)</h3>
-  <div class="text-muted">Printed on: <?php echo safe(date('F d, Y h:i A')); ?></div>
-  <hr>
-</div>
-<?php else: ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0 fw-semibold">Applicant + Client (On Process)</h4>
-  <div class="d-flex gap-2 no-print">
-    <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-outline-dark">
-      <i class="bi bi-printer me-1"></i> Print / Save as PDF
-    </a>
-    <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning">
-      <i class="bi bi-pencil me-1"></i> Edit Applicant
-    </a>
-    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Back to On Process
-    </a>
+  <!-- PRINT HEADER -->
+  <div class="mb-3">
+    <h3 class="fw-semibold">Applicant + Client (On Process)</h3>
+    <div class="text-muted">Printed on: <?php echo safe(date('F d, Y h:i A')); ?></div>
+    <hr>
   </div>
-</div>
+<?php else: ?>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-semibold">Applicant + Client (On Process)</h4>
+    <div class="d-flex gap-2 no-print">
+      <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-dark">
+        <i class="bi bi-printer me-1"></i> Print / Save as PDF
+      </a>
+      <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning">
+        <i class="bi bi-pencil me-1"></i> Edit Applicant
+      </a>
+      <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to On Process
+      </a>
+    </div>
+  </div>
 <?php endif; ?>
 
 <!-- MAIN ROW: Applicant (left) + Client (right). Designed to fit without page scroll on typical admin screens -->
