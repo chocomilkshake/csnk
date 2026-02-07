@@ -262,10 +262,10 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         <a href="<?= $editUrl ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
+                                        <!-- <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
                                            onclick="return confirm('Delete this applicant? This is a soft delete.');">
                                             <i class="bi bi-trash"></i>
-                                        </a>
+                                        </a> -->
                                     </div>
                                 </td>
                             </tr>
