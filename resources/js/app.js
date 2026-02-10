@@ -559,7 +559,20 @@ function renderApplicants() {
   }
 
   // 🔀 Apply Auto Rumble here (pin newest on top, shuffle the rest per refresh)
-  const displayList = rumbleApplicants(list);
+  let displayList = rumbleApplicants(list);
+
+  // Read excluded statuses from the container (e.g., data-exclude-status="approved") and filter them out
+  try {
+    const excludeAttr = cardsGrid?.dataset?.excludeStatus || '';
+    if (excludeAttr) {
+      const excludeSet = new Set(excludeAttr.split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+      if (excludeSet.size > 0) {
+        displayList = displayList.filter(a => !excludeSet.has(String(a.status || '').toLowerCase()));
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to apply exclude filter for applicants:', e);
+  }
 
   displayList.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
   renderPagination();
@@ -579,9 +592,10 @@ function createApplicantCard(applicant) {
   const specialization = escapeHtml(applicant.specialization || '—');
   const employmentType = escapeHtml(applicant.employment_type || '—');
   const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
+  const status         = escapeHtml(String(applicant.status || '').toLowerCase());
 
   const html = `
-    <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile">
+    <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile" data-status="${status}">
       <!-- Top photo -->
       <div class="ratio ratio-4x3 card-photo-wrap">
         <img class="card-photo" alt="${fullName}">
