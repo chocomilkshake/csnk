@@ -594,7 +594,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 
                         <div class="col-md-12">
                             <label class="form-label">Address <span class="text-danger">*</span>
-                            <textarea class="form-control" name="address" autocomplete="address" rows="2" required><?= htmlspecialchars($_POST['address'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                            <textarea class="form-control" name="address" autocomplete="address" rows="2" required style="width:600px"><?= htmlspecialchars($_POST['address'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                             </label>
                         </div>
                     </div>
