@@ -367,6 +367,9 @@ async function fetchApplicants(options = {}) {
   } catch (err) {
     console.error('Error fetching applicants:', err);
     if (cardsGrid) cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
+  } finally {
+    // allow the next poll/request
+    fetchApplicants._inFlight = false;
   }
 }
 

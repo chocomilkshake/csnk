@@ -212,7 +212,8 @@
           <div class="d-none d-lg-block"><i class="bi bi-grid"></i></div>
         </div>
 
-        <div id="cardsGrid" class="row g-3" aria-live="polite"></div>
+        <!-- NOTE: data-exclude-status added for clarity and future JS use -->
+        <div id="cardsGrid" class="row g-3" aria-live="polite" data-exclude-status="approved"></div>
 
         <!-- Pagination -->
         <nav class="mt-4" aria-label="Applicants pagination">
@@ -523,5 +524,82 @@
 
   <!-- (Optional duplicate Bootstrap bundle) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- 🔒 Auto-hide any applicant whose status is "approved" (client display) -->
+  <script>
+    (function(){
+      // Configure status values we consider "approved"
+      const APPROVED_VALUES = new Set(['approved', 'approve', 'approval']);
+
+      const grid = document.getElementById('cardsGrid');
+      if (!grid) return;
+
+      // Heuristics to detect status on a rendered card item
+      function isApprovedCard(cardRoot){
+        // 1) Look for data attributes commonly used
+        const attrNames = ['status', 'applicantStatus', 'state'];
+        for (const name of attrNames){
+          const val = cardRoot.getAttribute('data-' + name) || (cardRoot.dataset ? cardRoot.dataset[name] : '');
+          if (val && APPROVED_VALUES.has(String(val).toLowerCase())) return true;
+        }
+
+        // 2) Hidden inputs that might carry status
+        const hidden = cardRoot.querySelector('input[type="hidden"][name="status"], input[type="hidden"][name="applicant_status"]');
+        if (hidden && APPROVED_VALUES.has(String(hidden.value || '').toLowerCase())) return true;
+
+        // 3) Badges / labels containing the word "Approved"
+        const statusNodes = cardRoot.querySelectorAll('.badge, .status, [class*="status"], [data-label="status"]');
+        for (const el of statusNodes){
+          const txt = (el.textContent || '').trim().toLowerCase();
+          if (txt.includes('approved')) return true;
+        }
+        return false;
+      }
+
+      function purgeApproved(container){
+        // Cards may be direct columns with a .card inside, or cards directly
+        const candidates = container.querySelectorAll(':scope > .col, :scope > [class*="col-"], :scope > .card, :scope > *');
+        candidates.forEach(node => {
+          const card = node.matches('.card') ? node : (node.querySelector('.card') || node);
+          if (card && isApprovedCard(card)) {
+            node.remove();
+          }
+        });
+
+        // Update "Showing X of Y applicants" if present
+        const countEl = document.getElementById('resultsCount');
+        if (countEl) {
+          // Count remaining visible items in the grid (top-level items)
+          const remaining = grid.querySelectorAll(':scope > .col, :scope > [class*="col-"], :scope > *').length;
+          // Try to preserve the "of Y" when already present
+          const text = countEl.textContent || '';
+          const match = text.match(/of\s+(\d+)/i);
+          const total = match ? match[1] : remaining;
+          countEl.textContent = `Showing ${remaining} of ${total} applicants`;
+        }
+      }
+
+      // Initial pass after DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => purgeApproved(grid));
+      } else {
+        purgeApproved(grid);
+      }
+
+      // Observe dynamic changes (when applicant.js repaints/paginates)
+      const mo = new MutationObserver(muts => {
+        for (const m of muts) {
+          if (m.type === 'childList' && (m.addedNodes && m.addedNodes.length)) {
+            purgeApproved(grid);
+            break;
+          }
+        }
+      });
+      mo.observe(grid, { childList: true, subtree: true });
+
+      // Optional: expose a hook, in case your JS wants to call it explicitly
+      window.removeApprovedFromClientList = () => purgeApproved(grid);
+    })();
+  </script>
 </body>
 </html>
