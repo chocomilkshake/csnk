@@ -83,43 +83,76 @@ class Auth {
      * @return bool True on success
      */
     public function login(string $username, string $password): bool {
-        // Fetch active user by username
-        $sql = "SELECT * FROM admin_users WHERE username = ? AND status = 'active' LIMIT 1";
-        if (!$stmt = $this->db->prepare($sql)) {
-            return false;
-        }
-
-        $stmt->bind_param("s", $username);
-        if (!$stmt->execute()) {
-            $stmt->close();
-            return false;
-        }
-
-        $result = $stmt->get_result();
-        if ($result && $result->num_rows === 1) {
-            $user = $result->fetch_assoc();
-            $stmt->close();
-
-            if (isset($user['password']) && password_verify($password, $user['password'])) {
-                // Set session
-                $_SESSION['admin_id'] = (int)$user['id'];
-                $_SESSION['admin_username'] = (string)$user['username'];
-                $_SESSION['admin_name'] = isset($user['full_name']) ? (string)$user['full_name'] : (string)$user['username'];
-                $_SESSION['admin_role'] = isset($user['role']) ? (string)$user['role'] : 'admin';
-                $_SESSION['admin_avatar'] = isset($user['avatar']) ? (string)$user['avatar'] : null;
-
-                // Log session + activity
-                $this->logSession((int)$user['id']);
-                $this->logActivity((int)$user['id'], 'Login', 'User logged in successfully');
-
-                return true;
-            }
-        } else {
-            if ($stmt) { $stmt->close(); }
-        }
-
+    $username = trim($username);
+    if ($username === '' || strlen($username) > 64) {
         return false;
     }
+
+    // Fetch only needed fields
+    $sql = "SELECT id, username, password AS password_hash, full_name, role, avatar
+            FROM admin_users
+            WHERE username = ? AND status = 'active'
+            LIMIT 1";
+    if (!$stmt = $this->db->prepare($sql)) {
+        return false;
+    }
+
+    $stmt->bind_param("s", $username);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return false;
+    }
+
+    $result = $stmt->get_result();
+    if (!$result || $result->num_rows !== 1) {
+        $stmt->close();
+        return false;
+    }
+
+    $user = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!isset($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
+        return false;
+    }
+
+    // Optional: upgrade hash
+    if (defined('PASSWORD_ARGON2ID')) {
+        $algo = PASSWORD_ARGON2ID;
+    } else {
+        $algo = PASSWORD_BCRYPT;
+    }
+    if (password_needs_rehash($user['password_hash'], $algo)) {
+        $newHash = password_hash($password, $algo);
+        if ($upd = $this->db->prepare("UPDATE admin_users SET password = ? WHERE id = ?")) {
+            $upd->bind_param('si', $newHash, $user['id']);
+            $upd->execute();
+            $upd->close();
+        }
+    }
+
+    // Rotate session ID to prevent fixation
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_regenerate_id(true);
+    }
+
+    // Set session
+    $_SESSION['admin_id']       = (int)$user['id'];
+    $_SESSION['admin_username'] = (string)$user['username'];
+    $_SESSION['admin_name']     = isset($user['full_name']) ? (string)$user['full_name'] : (string)$user['username'];
+    $_SESSION['admin_role']     = isset($user['role']) ? (string)$user['role'] : 'admin';
+    $_SESSION['admin_avatar']   = isset($user['avatar']) ? (string)$user['avatar'] : null;
+
+    // Optional: bind session and set idle timer
+    $_SESSION['session_fp']     = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
+    $_SESSION['last_activity']  = time();
+
+    // Log session + activity
+    $this->logSession((int)$user['id']);
+    $this->logActivity((int)$user['id'], 'Login', 'User logged in successfully');
+
+    return true;
+}
 
     /**
      * Logout current admin, update session log, and destroy session.
@@ -133,7 +166,9 @@ class Auth {
         }
 
         // Destroy session safely
-        if (session_status() === PHP_SESSION_ACTIVE) {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+
             // Unset all session variables
             $_SESSION = [];
             // Delete session cookie
@@ -169,28 +204,27 @@ class Auth {
      * Fetch the current logged-in admin user record.
      */
     public function getCurrentUser(): ?array {
-        if (!$this->isLoggedIn()) {
-            return null;
-        }
-
-        $adminId = (int)$_SESSION['admin_id'];
-        $sql = "SELECT * FROM admin_users WHERE id = ? LIMIT 1";
-        if (!$stmt = $this->db->prepare($sql)) {
-            return null;
-        }
-
-        $stmt->bind_param("i", $adminId);
-        if (!$stmt->execute()) {
-            $stmt->close();
-            return null;
-        }
-
-        $result = $stmt->get_result();
-        $user = $result ? $result->fetch_assoc() : null;
-        $stmt->close();
-
-        return $user ?: null;
+    if (!$this->isLoggedIn()) {
+        return null;
     }
+    $adminId = (int)$_SESSION['admin_id'];
+    $sql = "SELECT id, username, full_name, role, avatar, status, created_at
+            FROM admin_users
+            WHERE id = ?
+            LIMIT 1";
+    if (!$stmt = $this->db->prepare($sql)) {
+        return null;
+    }
+    $stmt->bind_param("i", $adminId);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return null;
+    }
+    $result = $stmt->get_result();
+    $user = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+    return $user ?: null;
+}
 
     /**
      * Insert a new session log on successful login.

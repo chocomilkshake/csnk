@@ -6,6 +6,17 @@ require_once '../includes/Auth.php';
 $database = new Database();
 $auth = new Auth($database);
 
+// -----------------------------
+// CSRF: Ensure session started (ideally done in config.php)
+// and create a CSRF token for the login form.
+// -----------------------------
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+if (empty($_SESSION['csrf_login'])) {
+    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+}
+
 if ($auth->isLoggedIn()) {
     header('Location: dashboard.php');
     exit();
@@ -13,18 +24,71 @@ if ($auth->isLoggedIn()) {
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+// ----------------------------------------
+// BRUTE-FORCE THROTTLE
+// ----------------------------------------
+if (!isset($_SESSION['login_attempts'])) {
+    $_SESSION['login_attempts'] = [
+        'count' => 0,
+        'first_attempt' => time()
+    ];
+}
 
-    if (empty($username) || empty($password)) {
-        $error = 'Please fill in all fields.';
+$windowSeconds = 300; // 5 minutes
+$maxAttempts = 5;
+
+// Reset if window passed
+if (time() - $_SESSION['login_attempts']['first_attempt'] > $windowSeconds) {
+    $_SESSION['login_attempts'] = [
+        'count' => 0,
+        'first_attempt' => time()
+    ];
+}
+
+// If exceeded attempts, show lockout message (no CAPTCHA text)
+if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
+    $error = 'Too many failed attempts. Please wait a few minutes and try again.';
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // -----------------------------
+    // CSRF: Validate token before handling credentials
+    // -----------------------------
+    $csrf = $_POST['csrf_login'] ?? '';
+    $tokenValid = hash_equals($_SESSION['csrf_login'] ?? '', $csrf);
+
+    if (!$tokenValid) {
+        $error = 'Security verification failed.';
+        // Optionally rotate the token on failure to avoid stuck sessions
+        $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
     } else {
-        if ($auth->login($username, $password)) {
-            header('Location: dashboard.php');
-            exit();
+        // Optional input normalization
+        $username = trim((string)($_POST['username'] ?? ''));
+        if (strlen($username) > 64) { $username = substr($username, 0, 64); }
+        $password = (string)($_POST['password'] ?? '');
+
+        if ($username === '' || $password === '') {
+            $error = 'Please fill in all fields.';
         } else {
-            $error = 'Invalid username or password.';
+            // If currently throttled, block processing here too (defense in depth)
+            if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
+                $error = 'Too many failed attempts. Please wait a few minutes and try again.';
+            } else if ($auth->login($username, $password)) {
+                // Rotate CSRF and reset throttle BEFORE redirect
+                $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+                $_SESSION['login_attempts'] = [
+                    'count' => 0,
+                    'first_attempt' => time()
+                ];
+                header('Location: dashboard.php');
+                exit();
+            } else {
+                $error = 'Invalid username or password.';
+                // CSRF: rotate token on failed attempt as well
+                $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+                // Failed login increments counter
+                $_SESSION['login_attempts']['count']++;
+            }
         }
     }
 }
@@ -73,12 +137,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php if (!empty($error)): ?>
                             <div class="alert alert-danger d-flex align-items-center" role="alert">
                                 <i class="bi bi-exclamation-circle me-2"></i>
-                                <div><?php echo htmlspecialchars($error); ?></div>
+                                <div><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
                             </div>
                         <?php endif; ?>
 
                         <!-- Form -->
                         <form method="POST" action="" autocomplete="on" novalidate>
+                            <!-- CSRF: hidden token -->
+                            <input type="hidden" name="csrf_login"
+                                   value="<?php echo htmlspecialchars($_SESSION['csrf_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+
                             <div class="mb-3">
                                 <label for="username" class="form-label fw-semibold">Username</label>
                                 <div class="input-group">
@@ -181,4 +249,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </body>
 </html>
-``

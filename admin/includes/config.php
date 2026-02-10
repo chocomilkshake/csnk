@@ -17,6 +17,16 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+
+    session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',      // set if you use a specific domain
+    'secure'   => true,    // require HTTPS in prod
+    'httponly' => true,
+    'samesite' => 'Lax',   // 'Strict' if you can, 'None' requires Secure
+]);
+
     session_start();
 } else {
     // Session already active — avoid changing session ini settings or calling session_start() again.
