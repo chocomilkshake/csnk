@@ -244,43 +244,7 @@ $printUrl = 'print-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q
           <span class="badge bg-<?php echo $bColor; ?> text-uppercase"><?php echo safe($latestBooking['status']); ?></span>
         <?php endif; ?>
       </div>
-      <div class="card-body">
-        <?php if (!$latestBooking): ?>
-          <p class="text-muted mb-0">No client booking found for this applicant.</p>
-        <?php else: ?>
-          <?php
-            $clientName = trim(($latestBooking['client_first_name'] ?? '') . ' ' . ($latestBooking['client_middle_name'] ?? '') . ' ' . ($latestBooking['client_last_name'] ?? ''));
-            if ($clientName === '') $clientName = '—';
-          ?>
-          <div class="mb-2">
-            <div class="text-muted small">Client</div>
-            <div class="fw-semibold"><?php echo safe($clientName); ?></div>
-          </div>
 
-          <div class="row g-2">
-            <div class="col-6">
-              <div class="text-muted small">Client Email</div>
-              <div class="fw-semibold text-truncate"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
-            </div>
-            <div class="col-6">
-              <div class="text-muted small">Client Phone</div>
-              <div class="fw-semibold"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
-            </div>
-            <div class="col-6">
-              <div class="text-muted small">Appointment</div>
-              <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
-            </div>
-            <div class="col-6">
-              <div class="text-muted small">Date &amp; Time</div>
-              <div class="fw-semibold">
-                <?php
-                  $d = !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—';
-                  $t = !empty($latestBooking['appointment_time']) ? $latestBooking['appointment_time'] : '';
-                  echo safe(trim($d . ' ' . $t));
-                ?>
-              </div>
-            </div>
-          </div>
 
           <div class="mt-2">
             <div class="text-muted small">Client Address</div>
