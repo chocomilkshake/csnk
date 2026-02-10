@@ -421,34 +421,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
   </div>
 </div>
 
-<!-- ACCORDIONS: More details -->
-<div class="accordion mt-3" id="extraInfoAccordion">
 
-  <!-- Applicant Details (Education & Work) -->
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingOne">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
-        More Applicant Details (Education &amp; Work)
-      </button>
-    </h2>
-    <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
-      <div class="accordion-body">
-        <div class="row g-3">
-          <div class="col-lg-6">
-            <div class="card">
-              <div class="card-header bg-white py-2"><h6 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Educational Attainment</h6></div>
-              <div class="card-body"><?php echo $educationHtml; ?></div>
-            </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="card">
-              <div class="card-header bg-white py-2"><h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Work History</h6></div>
-              <div class="card-body"><?php echo $workHtml; ?></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- All Bookings with Actions -->
