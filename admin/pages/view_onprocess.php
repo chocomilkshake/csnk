@@ -621,26 +621,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
   </div>
 </div>
 
-<!-- Video Modal -->
-<?php if (!empty($applicantData['video_url'])): ?>
-<div class="modal fade" id="applicantVideoModal" tabindex="-1" aria-labelledby="applicantVideoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h6 class="modal-title" id="applicantVideoModalLabel">
-          <i class="bi bi-film me-2"></i><?php echo !empty($applicantData['video_title']) ? safe($applicantData['video_title']) : 'Applicant Video'; ?>
-        </h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-2">
-        <video controls preload="metadata" class="w-100" style="max-height:70vh; background:#000;">
-          <source src="<?php echo safe(getFileUrl($applicantData['video_url'])); ?>" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    </div>
-  </div>
-</div>
+
 <?php endif; ?>
 
 <?php require_once '../includes/footer.php'; ?>
