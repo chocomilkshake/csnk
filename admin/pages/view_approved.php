@@ -185,48 +185,7 @@ $printUrl = 'print-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q
 
 
           <!-- Educational Attainment -->
-          <div class="col-12">
-            <div class="text-muted small">Educational Attainment</div>
-            <?php
-              $eduArr = json_decode($applicantData['educational_attainment'] ?? '', true);
-              if (is_array($eduArr)) {
-                $labels = ['elementary'=>'Elementary','highschool'=>'High School','senior_high'=>'Senior High','college'=>'College'];
-                echo '<ul class="mb-0 ps-3">';
-                foreach ($labels as $k=>$label) {
-                  if (!empty($eduArr[$k]) && is_array($eduArr[$k])) {
-                    $row = $eduArr[$k]; $parts = [];
-                    if (!empty($row['school'])) $parts[] = $row['school'];
-                    if (!empty($row['strand'])) $parts[] = $row['strand'];
-                    if (!empty($row['course'])) $parts[] = $row['course'];
-                    if (!empty($row['year']))   $parts[] = $row['year'];
-                    if ($parts) echo '<li class="small">'.safe($label).': '.safe(implode(' • ', $parts)).'</li>';
-                  }
-                }
-                echo '</ul>';
-              } else { echo '<div class="text-muted">N/A</div>'; }
-            ?>
-          </div>
-
-          <!-- Work History -->
-          <div class="col-12">
-            <div class="text-muted small">Work History</div>
-            <?php
-              $workArr = json_decode($applicantData['work_history'] ?? '', true);
-              if (is_array($workArr) && $workArr) {
-                echo '<ul class="mb-0 ps-3">';
-                foreach ($workArr as $w) {
-                  if (!is_array($w)) continue;
-                  $parts = [];
-                  if (!empty($w['company']))  $parts[] = $w['company'];
-                  if (!empty($w['role']))     $parts[] = $w['role'];
-                  if (!empty($w['years']))    $parts[] = $w['years'];
-                  if (!empty($w['location'])) $parts[] = $w['location'];
-                  if ($parts) echo '<li class="small">'.safe(implode(' — ', $parts)).'</li>';
-                }
-                echo '</ul>';
-              } else { echo '<div class="text-muted">N/A</div>'; }
-            ?>
-          </div>
+        
         </div>
       </div>
     </div>
