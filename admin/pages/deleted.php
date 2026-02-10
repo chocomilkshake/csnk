@@ -108,15 +108,14 @@ if ($q !== '') {
 
 // For preserving the search in action links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+
+// Export URL — call the includes exporter directly so the button downloads the .xlsx
+$exportUrl = '../includes/excel_deleted-applicants.php' . ($q !== '' ? '?q=' . urlencode($q) : '');
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Deleted Applicants</h4>
     <div>
-        <?php
-            // Export deleted applicants; pass q so export can filter if supported
-            $exportUrl = 'export-excel.php?type=deleted' . ($q !== '' ? '&q=' . urlencode($q) : '');
-        ?>
-        <a href="<?php echo $exportUrl; ?>" class="btn btn-success">
+        <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
             <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
         </a>
     </div>
@@ -183,15 +182,15 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
                                              style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($app['first_name'], 0, 1)); ?>
+                                            <?php echo strtoupper(substr((string)$app['first_name'], 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <strong><?php echo getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']); ?></strong>
                                 </td>
-                                <td><?php echo htmlspecialchars($app['phone_number']); ?></td>
-                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars((string)$app['phone_number'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string)($app['email'] ?? 'N/A'), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo formatDate($app['deleted_at']); ?></td>
                                 <td>
                                     <?php
@@ -199,10 +198,10 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         $permaUrl   = 'deleted.php?action=permanent_delete&id=' . (int)$app['id'] . $preserveQ;
                                     ?>
                                     <div class="btn-group">
-                                        <a href="<?php echo $restoreUrl; ?>" class="btn btn-sm btn-success" title="Restore">
+                                        <a href="<?php echo htmlspecialchars($restoreUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-success" title="Restore">
                                             <i class="bi bi-arrow-counterclockwise"></i> Restore
                                         </a>
-                                        <a href="<?php echo $permaUrl; ?>" class="btn btn-sm btn-danger delete-btn" title="Permanent Delete"
+                                        <a href="<?php echo htmlspecialchars($permaUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Permanent Delete"
                                            onclick="return confirm('This will permanently delete the applicant. Continue?');">
                                             <i class="bi bi-trash-fill"></i> Delete Forever
                                         </a>
@@ -216,7 +215,5 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
         </div>
     </div>
 </div>
-
-
 
 <?php require_once '../includes/footer.php'; ?>

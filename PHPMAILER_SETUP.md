@@ -29,15 +29,15 @@ Edit `view/contactUs.php` and update the CONFIG array:
 
 ```php
 $CONFIG = [
-    'to_email'      => 'CSNKSupport@gmail.com',      // Recipient email
-    'from_email'    => 'csnkmanila06@gmail.com',     // Your Gmail address
+    'to_email'      => 'csnkmanila@gmail.com',      // Recipient email
+    'from_email'    => 'csnkmanila@gmail.com',     // Your Gmail address
     'from_name'     => 'CSNK Manpower Agency',
     'subject'       => 'CSNK Contact Form Submission',
     'max_message'   => 500,
     'smtp_host'     => 'smtp.gmail.com',
     'smtp_port'     => 587,
-    'smtp_user'     => 'csnkmanila06@gmail.com',     // Your Gmail address
-    'smtp_pass'     => 'xxxx xxxx xxxx xxxx',        // Paste your 16-char App Password here
+    'smtp_user'     => 'csnkmanila@gmail.com',     // Your Gmail address
+    'smtp_pass'     => 'hqyp ljaf kwyd fkzo',        // Paste your 16-char App Password here
     'smtp_encrypt'  => PHPMailer::ENCRYPTION_STARTTLS,
     'enable_mail'   => true,
 ];

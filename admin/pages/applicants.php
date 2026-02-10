@@ -52,7 +52,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 }
 
 /**
- * Load applicants and apply search (server-side filter).
+ * Load applicants and apply search (server-side filter then local refine).
+ * getAll() → show active/non-deleted applicants across statuses.
  */
 $applicants = $applicant->getAll();
 
@@ -123,14 +124,15 @@ if ($q !== '') {
 }
 
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+$exportUrl = '../includes/excel_applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">List of Applicants</h4>
     <div>
-        <a href="export-excel.php?type=all<?php echo $q !== '' ? '&q=' . urlencode($q) : ''; ?>" class="btn btn-success me-2">
+        <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success me-2">
             <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
         </a>
-        <a href="add-applicant.php<?php echo $q !== '' ? '?q=' . urlencode($q) : ''; ?>" class="btn btn-primary">
+        <a href="add-applicant.php<?php echo $q !== '' ? ('?q=' . urlencode($q)) : ''; ?>" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Add New Applicant
         </a>
     </div>
@@ -196,18 +198,16 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($app['first_name'], 0, 1)); ?>
+                                            <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <strong><?php echo getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']); ?></strong>
+                                    <strong><?php echo htmlspecialchars(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']), ENT_QUOTES, 'UTF-8'); ?></strong>
                                 </td>
-                                <td><?php echo htmlspecialchars($app['phone_number']); ?></td>
-                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A'); ?></td>
-                                <td>
-                                    <?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'])); ?>
-                                </td>
+                                <td><?php echo htmlspecialchars($app['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
                                     <?php
                                     $statusColors = [
@@ -219,10 +219,10 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                     $badgeColor = $statusColors[$app['status']] ?? 'secondary';
                                     ?>
                                     <span class="badge bg-<?php echo $badgeColor; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
+                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $app['status'])), ENT_QUOTES, 'UTF-8'); ?>
                                     </span>
                                 </td>
-                                <td><?php echo formatDate($app['created_at']); ?></td>
+                                <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
                                     <?php
                                         $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
@@ -230,13 +230,13 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                     ?>
                                     <div class="btn-group">
-                                        <a href="<?php echo $viewUrl; ?>" class="btn btn-sm btn-info" title="View">
+                                        <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="<?php echo $editUrl; ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?php echo $delUrl; ?>" class="btn btn-sm btn-danger delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                        <a href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -249,7 +249,5 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
         </div>
     </div>
 </div>
-
-
 
 <?php require_once '../includes/footer.php'; ?>

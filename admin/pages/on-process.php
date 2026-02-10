@@ -4,9 +4,6 @@ $pageTitle = 'On Process Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-
-
-
 // Ensure session is active (for search persistence)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
@@ -132,7 +129,8 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">On Process Applicants</h4>
     <?php
-        $exportUrl = 'export-excel.php?type=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
+        // Updated to use the unified exporter file with type=on_process, and preserve ?q
+        $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
     ?>
     <a href="<?php echo $exportUrl; ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -173,7 +171,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                         <th>Applicant</th>
                         <th>Client</th>
                         <th>Interview</th>
-                        <th>Date & Time</th>
+                        <th>Date &amp; Time</th>
                         <th>Applicant Contact</th>
                         <th>Client Contact</th>
                         <th>Date Applied</th>
@@ -189,7 +187,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                 <?php if ($q === ''): ?>
                                     No applicants currently on process.
                                 <?php else: ?>
-                                    No results for "<strong><?= htmlspecialchars($q) ?></strong>".
+                                    No results for "<strong><?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?></strong>".
                                     <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
                                 <?php endif; ?>
                             </td>
@@ -198,23 +196,28 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                     <?php else: ?>
                         <?php foreach ($applicants as $row): ?>
                             <?php
-                                $viewUrl = 'view-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $viewUrl = 'view_onprocess.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $delUrl  = 'on-process.php?action=delete&id=' . (int)$row['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
 
                                 $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
                                 $clientName = $clientName !== '' ? $clientName : '—';
                                 $apptType   = $row['appointment_type'] ?? '—';
-                                $apptDate   = $row['appointment_date'] ?? '—';
-                                $apptTime   = $row['appointment_time'] ?? '—';
-                                $appContact = trim(($row['phone_number'] ?? '') . ($row['email'] ? ' / ' . $row['email'] : ''));
-                                $cliContact = trim(($row['client_phone'] ?? '') . ($row['client_email'] ? ' / ' . $row['client_email'] : ''));
+                                $apptDate   = $row['appointment_date'] ?? '';
+                                $apptTime   = $row['appointment_time'] ?? '';
+                                $dateTimeDisplay = trim($apptDate . ' ' . $apptTime);
+                                $dateTimeDisplay = $dateTimeDisplay !== '' ? $dateTimeDisplay : '—';
+
+                                $appContact = trim(($row['phone_number'] ?? '') . (($row['email'] ?? '') !== '' ? ' / ' . $row['email'] : ''));
+                                $appContact = $appContact !== '' ? $appContact : '—';
+                                $cliContact = trim(($row['client_phone'] ?? '') . (($row['client_email'] ?? '') !== '' ? ' / ' . $row['client_email'] : ''));
+                                $cliContact = $cliContact !== '' ? $cliContact : '—';
                             ?>
 
                             <tr>
                                 <td class="tbl-photo">
                                     <?php if (!empty($row['picture'])): ?>
-                                        <img src="<?= htmlspecialchars(getFileUrl($row['picture'])) ?>"
+                                        <img src="<?= htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8') ?>"
                                              alt="Photo"
                                              class="rounded"
                                              width="50" height="50"
@@ -222,7 +225,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
                                              style="width: 50px; height: 50px;">
-                                            <?= strtoupper(substr($row['first_name'], 0, 1)); ?>
+                                            <?= strtoupper(substr($row['first_name'], 0, 1)) ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -232,23 +235,23 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         <?= getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']); ?>
                                     </div>
                                     <div class="text-muted-small">
-                                        <?= htmlspecialchars(renderPreferredLocation($row['preferred_location'])); ?>
+                                        <?= htmlspecialchars(renderPreferredLocation($row['preferred_location']), ENT_QUOTES, 'UTF-8'); ?>
                                     </div>
                                 </td>
 
                                 <td>
                                     <div class="fw-semibold">
-                                        <?= htmlspecialchars($clientName); ?>
+                                        <?= htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8'); ?>
                                     </div>
                                     <div class="text-muted-small">
-                                        <?= htmlspecialchars($row['client_address'] ?? '—'); ?>
+                                        <?= htmlspecialchars($row['client_address'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
                                     </div>
                                 </td>
 
-                                <td><?= htmlspecialchars($apptType); ?></td>
-                                <td><?= htmlspecialchars($apptDate . ' ' . $apptTime); ?></td>
-                                <td><?= htmlspecialchars($appContact !== '' ? $appContact : '—'); ?></td>
-                                <td><?= htmlspecialchars($cliContact !== '' ? $cliContact : '—'); ?></td>
+                                <td><?= htmlspecialchars($apptType, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($dateTimeDisplay, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($appContact, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($cliContact, ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?= formatDate($row['created_at']); ?></td>
 
                                 <td>
@@ -259,10 +262,10 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         <a href="<?= $editUrl ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
+                                        <!-- <a href="<?= $delUrl ?>" class="btn btn-sm btn-danger" title="Delete"
                                            onclick="return confirm('Delete this applicant? This is a soft delete.');">
                                             <i class="bi bi-trash"></i>
-                                        </a>
+                                        </a> -->
                                     </div>
                                 </td>
                             </tr>
@@ -275,7 +278,5 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
         </div>
     </div>
 </div>
-
-
 
 <?php require_once '../includes/footer.php'; ?>

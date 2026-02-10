@@ -107,7 +107,7 @@ if ($q !== '') {
 
 // Preserve the search in action links and export URL
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-$exportUrl = 'export-excel.php?type=pending' . ($q !== '' ? '&q=' . urlencode($q) : '');
+$exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Pending Applicants</h4>
@@ -173,22 +173,30 @@ $exportUrl = 'export-excel.php?type=pending' . ($q !== '' ? '&q=' . urlencode($q
                             <tr>
                                 <td>
                                     <?php if (!empty($app['picture'])): ?>
-                                        <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                        <img
+                                            src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            alt="Photo"
+                                            class="rounded"
+                                            width="50"
+                                            height="50"
+                                            style="object-fit: cover;"
+                                        >
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
                                              style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($app['first_name'], 0, 1)); ?>
+                                            <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <strong><?php echo getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']); ?></strong>
+                                    <strong>
+                                        <?php echo htmlspecialchars(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']), ENT_QUOTES, 'UTF-8'); ?>
+                                    </strong>
                                 </td>
-                                <td><?php echo htmlspecialchars($app['phone_number']); ?></td>
-                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A'); ?></td>
-                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                                <td><?php echo formatDate($app['created_at']); ?></td>
+                                <td><?php echo htmlspecialchars($app['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($app['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
                                     <?php
                                         $viewUrl = 'view-applicant.php?id=' . (int)$app['id'] . $preserveQ;
@@ -211,7 +219,5 @@ $exportUrl = 'export-excel.php?type=pending' . ($q !== '' ? '&q=' . urlencode($q
         </div>
     </div>
 </div>
-
-
 
 <?php require_once '../includes/footer.php'; ?>

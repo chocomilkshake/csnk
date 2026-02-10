@@ -119,7 +119,8 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Approved Applicants</h4>
     <?php
-        $exportUrl = 'export-excel.php?type=approved' . ($q !== '' ? '&q=' . urlencode($q) : '');
+        // 🔁 Point to the new exporter. Preserve ?q= when present.
+        $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
     ?>
     <a href="<?php echo $exportUrl; ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -211,9 +212,9 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                         <a href="<?php echo $editUrl; ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?php echo $delUrl; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Delete this applicant? This is a soft delete.');">
+                                        <!-- <a href="<?php echo $delUrl; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Delete this applicant? This is a soft delete.');">
                                             <i class="bi bi-trash"></i>
-                                        </a>
+                                        </a> -->
                                     </div>
                                 </td>
                             </tr>

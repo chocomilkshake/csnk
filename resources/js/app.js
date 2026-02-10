@@ -1,8 +1,7 @@
 // app.js — Client listing UX (photo-top modern cards)
-// v2.8 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
-console.log('app.js loaded successfully - v2.8');
-
-
+// v2.9 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
+//        + Auto Rumble: newest pinned on top, remaining shuffle on each refresh (client-side)
+console.log('app.js loaded successfully - v2.9');
 
 /* =========================================================
    State
@@ -11,6 +10,17 @@ let allApplicants = [];
 let filteredApplicants = [];
 let currentPage = 1;
 const itemsPerPage = 12;
+
+/* =========================================================
+   Auto Rumble (client-side unbiased rotation)
+   - Keeps newest applicants on top
+   - Randomizes the rest on every page load/refresh
+   - Applies only when sort === 'newest' (default) to not break other sorts
+========================================================= */
+const RUMBLE_ENABLED = true;                 // Master switch
+const RUMBLE_ONLY_ON_SORT_NEWEST = true;     // Respect user sorting; rumble only when 'Newest'
+const PIN_NEWEST_COUNT = 4;                  // Keep the first N newest items pinned at the top (page-level)
+const PIN_WITHIN_DAYS = 0;                   // Alternative: if > 0, pin all created within X days (overrides count)
 
 /* =========================================================
    DOM
@@ -49,8 +59,6 @@ function normLabel(s){
   return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
 }
 
-
-
 /** Update URL with applicant ID without navigating */
 function pushApplicantId(id){
   const url = new URL(window.location.href);
@@ -66,10 +74,9 @@ function removeApplicantIdFromUrl(){
   }
 }
 
-
-
 // ---- CONFIG: set your app root path here, including leading and trailing slashes ----
-const APP_BASE = '/csnk/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
+// NOTE: this must match your server mount (e.g., '/csnk-1/' for this project)
+const APP_BASE = '/csnk-1/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
 
 function normalizeSlashes(url) {
   return String(url || '').replace(/\\/g, '/').trim();
@@ -182,8 +189,6 @@ function getPopoverElFor(btn) {
   return id ? document.getElementById(id) : null;
 }
 
-
-
 /* =========================================================
    Skeleton loader
 ========================================================= */
@@ -248,14 +253,14 @@ function initApp(){
   injectStyles();
   ensureVideoPopoverStyles();
   renderSkeleton(8);
-  loadApplicants().then(() => {
+  fetchApplicants({ page: 1 }).then(() => {
     setupEventListeners();
 
     // Deep-link: auto-open modal if URL has ?applicant=ID
     const url = new URL(window.location.href);
     const idParam = url.searchParams.get('applicant');
     if (idParam) {
-      const found = allApplicants.find(a => String(a.id) === String(idParam));
+      const found = filteredApplicants.find(a => String(a.id) === String(idParam));
       if (found) showApplicantModal(found, { pushState: false });
     }
   });
@@ -270,27 +275,90 @@ if (document.readyState === 'loading') {
 /* =========================================================
    Data loading
 ========================================================= */
-async function loadApplicants() {
+// Server-driven fetch (supports filters, pagination)
+let serverTotal = 0;
+let serverPerPage = itemsPerPage;
+
+async function fetchApplicants(options = {}) {
+  // options may include page and per_page
+  const page = options.page || 1;
+  const per_page = options.per_page || serverPerPage || itemsPerPage;
+
+  // Build params from current forms
+  const params = new URLSearchParams();
+  const formData    = searchForm ? new FormData(searchForm)   : new FormData();
+  const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
+
+  const q = (formData.get('q') || '').trim(); if (q) params.set('q', q);
+  const location = (formData.get('location') || '').trim(); if (location) params.set('location', location);
+  const available_by = (formData.get('available_by') || '').trim(); if (available_by) params.set('available_by', available_by);
+  const minExp = parseInt(filtersData.get('min_experience')) || 0; if (minExp > 0) params.set('min_experience', String(minExp));
+  const sortBy = (filtersData.get('sort') || '').trim(); if (sortBy) params.set('sort', sortBy);
+
+  // multiple values: specializations[] and languages[]
+  let specs = filtersData.getAll('specializations[]');
+  // fallback: collect checked boxes directly if FormData returns nothing (handles malformed markup browsers might tolerate differently)
+  if (!specs || specs.length === 0) {
+    specs = Array.from(document.querySelectorAll('input[name="specializations[]"]:checked')).map(el => el.value);
+  }
+  specs.forEach(s => params.append('specializations[]', s));
+
+  let langs = filtersData.getAll('languages[]');
+  if (!langs || langs.length === 0) {
+    langs = Array.from(document.querySelectorAll('input[name="languages[]"]:checked')).map(el => el.value);
+  }
+  langs.forEach(l => params.append('languages[]', l));
+
+  params.set('page', String(page));
+  params.set('per_page', String(per_page));
+
+  // Forward rotate opt-out flag if present in URL (e.g., ?rotate=0)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('rotate') === '0') params.set('rotate', '0');
+
   try {
-    const response = await fetch('../includes/get_applicants.php', {
-      cache: 'no-store',
-      headers: { 'Accept': 'application/json' }
-    });
+    renderSkeleton(6);
+    const url = '../includes/get_applicants.php?' + params.toString();
+    const res = await fetch(url, { cache: 'no-store', headers: { 'Accept':'application/json' } });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const json = await res.json();
 
-    if (!response.ok) {
-      throw new Error('Failed to load applicants: ' + response.status + ' ' + response.statusText);
+    if (json.error) throw new Error(json.error);
+
+    // Set local state
+    filteredApplicants = Array.isArray(json.data) ? json.data : [];
+    serverTotal = Number(json.total || 0);
+    serverPerPage = Number(json.per_page || per_page);
+    currentPage = Number(json.page || page);
+
+    // --- Auto Rumble / Round-robin rotation ---
+    // Rotates the order of applicants on each full page load to avoid always showing the same
+    // applicants at the top. Use URL param `?rotate=0` to disable for testing.
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rotateDisabled = urlParams.get('rotate') === '0';
+      if (!rotateDisabled && filteredApplicants.length > 1) {
+        const key = 'csnk_applicants_rotate_index';
+        let idx = parseInt(localStorage.getItem(key) || '0', 10);
+        if (!Number.isFinite(idx) || idx < 0) idx = 0;
+        const len = filteredApplicants.length;
+        const shift = idx % len;
+        if (shift !== 0) {
+          filteredApplicants = filteredApplicants.slice(shift).concat(filteredApplicants.slice(0, shift));
+        }
+        // Advance pointer for next page load
+        idx = (idx + 1) % len;
+        localStorage.setItem(key, String(idx));
+        console.debug('[AutoRumble] rotated by', shift, 'next idx', idx);
+      }
+    } catch (err) {
+      console.warn('AutoRumble rotation failed:', err);
     }
 
-    const data = await response.json();
-
-    allApplicants = Array.isArray(data) ? data : [];
-    filteredApplicants = [...allApplicants];
     renderApplicants();
-  } catch (error) {
-    console.error('Error loading applicants:', error);
-    if (cardsGrid) {
-      cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
-    }
+  } catch (err) {
+    console.error('Error fetching applicants:', err);
+    if (cardsGrid) cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
   }
 }
 
@@ -303,6 +371,10 @@ function setupEventListeners() {
       e.preventDefault();
       applyFilters();
     });
+
+    // Live search (debounced) for smoother UX
+    const qInput = searchForm.querySelector('input[name="q"]');
+    if (qInput) qInput.addEventListener('input', debounce(() => applyFilters(), 250));
   }
 
   if (filtersForm) {
@@ -310,6 +382,15 @@ function setupEventListeners() {
       e.preventDefault();
       applyFilters();
     });
+
+    // Auto-apply when any filter changes (debounced)
+    filtersForm.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', debounce(() => applyFilters(), 220));
+    });
+
+    // Also listen to range input in real time (min experience)
+    const expRange = filtersForm.querySelector('input[name="min_experience"]');
+    if (expRange) expRange.addEventListener('input', debounce(() => applyFilters(), 180));
 
     byId('clearSpecs')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -333,9 +414,8 @@ function setupEventListeners() {
       e.preventDefault();
       searchForm?.reset();
       filtersForm.reset();
-      filteredApplicants = [...allApplicants];
       currentPage = 1;
-      renderApplicants();
+      fetchApplicants({ page: 1 });
     });
 
     byId('applyFilters')?.addEventListener('click', () => applyFilters());
@@ -344,8 +424,32 @@ function setupEventListeners() {
 
 /* =========================================================
    Filtering + Sorting
+   - Normalizes specialization labels so "&" and "and" variants match
+   - Location search matches city, region and preferred locations
+   - Languages matching is case-insensitive
+   - Debounced input + auto-apply for a smooth UX
 ========================================================= */
-function applyFilters() {
+
+// Simple debounce helper
+function debounce(fn, wait = 300){
+  let t = null;
+  return function(...args){
+    clearTimeout(t);
+    t = setTimeout(()=> fn.apply(this, args), wait);
+  };
+}
+
+// Normalize values for comparison (lowercase, collapse spaces/dashes, replace &/and)
+function cmpNorm(val){
+  if (val == null) return '';
+  return String(val).toLowerCase().replace(/\s+|[-_]/g, '').replace(/&|and/g, 'and').trim();
+}
+
+const debouncedApplyFilters = debounce(applyFiltersRaw, 220);
+
+function applyFilters() { debouncedApplyFilters(); }
+
+async function applyFiltersRaw(){
   const formData    = searchForm ? new FormData(searchForm)   : new FormData();
   const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
 
@@ -359,101 +463,88 @@ function applyFilters() {
   const selectedLangs = filtersData.getAll('languages[]');
   const sortBy        = filtersData.get('sort');
 
-  filteredApplicants = allApplicants.filter(applicant => {
-    // Search by name or specialization (both string and array)
-    if (searchQuery) {
-      const nameMatch = String(applicant.full_name || '').toLowerCase().includes(searchQuery);
-      const primarySpecMatch = String(applicant.specialization || '').toLowerCase().includes(searchQuery);
-      const arraySpecMatch = Array.isArray(applicant.specializations)
-        ? applicant.specializations.some(s => String(s).toLowerCase().includes(searchQuery))
-        : false;
-      if (!nameMatch && !primarySpecMatch && !arraySpecMatch) return false;
-    }
+  const selectedSpecNorms = selectedSpecs.map(cmpNorm);
+  const selectedLangNorms = selectedLangs.map(s => String(s || '').toLowerCase());
 
-    // Location (city)
-    if (locationQuery && !String(applicant.location_city || '').toLowerCase().includes(locationQuery)) return false;
+  // For server-side filtering we simply request page 1 with current filters
+  currentPage = 1;
+  await fetchApplicants({ page: 1 });
+}
 
-    // Available by date (kept in filters even if not shown on cards)
-    if (availableBy) {
-      const appDate = toDate(applicant.availability_date);
-      const byDate  = toDate(availableBy);
-      if (appDate && byDate && appDate > byDate) return false;
-    }
+/* =========================================================
+   Auto Rumble helpers
+========================================================= */
+function getCurrentSortValue() {
+  try {
+    return (filtersForm?.querySelector('#sort')?.value || 'newest').trim();
+  } catch { return 'newest'; }
+}
 
-    // Specialization filter using specializations array (fallback to primary string)
-    if (selectedSpecs.length > 0) {
-      const applicantSpecs = Array.isArray(applicant.specializations) ? applicant.specializations : [];
-      const hasArrayMatch = selectedSpecs.some(sel => applicantSpecs.includes(sel));
-      const hasPrimaryMatch = selectedSpecs.includes(applicant.specialization);
-      if (!hasArrayMatch && !hasPrimaryMatch) return false;
-    }
+function randomSource() {
+  // Use crypto if available for better randomness; fallback to Math.random
+  try {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] / 0x100000000;
+  } catch { return Math.random(); }
+}
 
-    // Employment type: accept both "Full Time"/"Part Time" (raw) and "Full-time"/"Part-time" (label)
-    if (selectedAvail.length > 0) {
-      const selectedNorms = selectedAvail.map(normLabel);
-      const typeNorms = [applicant.employment_type, applicant.employment_type_raw].map(normLabel);
-      const match = typeNorms.some(t => selectedNorms.includes(t));
-      if (!match) return false;
-    }
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(randomSource() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-    // Experience
-    if (toInt(applicant.years_experience) < minExperience) return false;
+function isWithinDays(dateStr, days) {
+  const d = toDate(dateStr);
+  if (!d || !Number.isFinite(days) || days <= 0) return false;
+  const now = new Date();
+  const delta = now - d; // ms
+  return delta <= (days * 24 * 60 * 60 * 1000);
+}
 
-    // Languages (prefer array; fallback to CSV string)
-    if (selectedLangs.length > 0) {
-      const langArr = Array.isArray(applicant.languages_array)
-        ? applicant.languages_array
-        : String(applicant.languages || '').split(',').map(s => s.trim()).filter(Boolean);
-      const hasLang = selectedLangs.some(lang => langArr.includes(lang));
-      if (!hasLang) return false;
-    }
+function rumbleApplicants(list) {
+  // Ensure we don’t mutate original list
+  const ordered = list.slice(); // server already returns sorted by chosen 'sort'
+  // Decide if rumble should apply under current sort selection
+  const sortVal = getCurrentSortValue();
+  if (!RUMBLE_ENABLED) return ordered;
+  if (RUMBLE_ONLY_ON_SORT_NEWEST && sortVal !== 'newest') return ordered;
 
-    return true;
-  });
+  let pinned = [];
+  let rest = [];
 
-  // Sort (robust guards)
-  if (sortBy) {
-    filteredApplicants.sort((a, b) => {
-      switch (sortBy) {
-        case 'availability_asc': {
-          const da = toDate(a.availability_date);
-          const db = toDate(b.availability_date);
-          if (da && db) return da - db;
-          if (da && !db) return -1;
-          if (!da && db) return 1;
-          return 0;
-        }
-        case 'experience_desc':
-          return toInt(b.years_experience) - toInt(a.years_experience);
-        case 'newest': {
-          const ca = toDate(a.created_at);
-          const cb = toDate(b.created_at);
-          if (ca && cb) return cb - ca;
-          if (cb && !ca) return 1;
-          if (!cb && ca) return -1;
-          return 0;
-        }
-        default:
-          return 0;
-      }
-    });
+  if (PIN_WITHIN_DAYS > 0) {
+    pinned = ordered.filter(a => isWithinDays(a.created_at, PIN_WITHIN_DAYS));
+    // Keep pinned in true 'newest' order:
+    pinned.sort((a, b) => (toDate(b.created_at) - toDate(a.created_at)));
+    const pinnedIds = new Set(pinned.map(a => a.id));
+    rest = ordered.filter(a => !pinnedIds.has(a.id));
+  } else if (PIN_NEWEST_COUNT > 0) {
+    pinned = ordered.slice(0, PIN_NEWEST_COUNT);
+    rest = ordered.slice(PIN_NEWEST_COUNT);
+  } else {
+    // No pinning; fully shuffle (still respects sort gate)
+    return shuffleArray(ordered);
   }
 
-  currentPage = 1;
-  renderApplicants();
+  const shuffledRest = shuffleArray(rest);
+  return [...pinned, ...shuffledRest];
 }
 
 /* =========================================================
    Rendering
 ========================================================= */
 function renderApplicants() {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex   = startIndex + itemsPerPage;
-  const list       = filteredApplicants.slice(startIndex, endIndex);
+  const perPage = serverPerPage || itemsPerPage;
+  const list = filteredApplicants; // server already returns the requested page
 
-  const totalResults = filteredApplicants.length;
-  const startResult  = totalResults > 0 ? startIndex + 1 : 0;
-  const endResult    = Math.min(endIndex, totalResults);
+  const totalResults = serverTotal || list.length;
+  const startResult  = (totalResults > 0) ? ((currentPage - 1) * perPage) + 1 : 0;
+  const endResult    = startResult + list.length - 1;
   if (resultsCount) {
     resultsCount.textContent = `Showing ${startResult}-${endResult} of ${totalResults} applicants`;
   }
@@ -467,7 +558,10 @@ function renderApplicants() {
     return;
   }
 
-  list.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
+  // 🔀 Apply Auto Rumble here (pin newest on top, shuffle the rest per refresh)
+  const displayList = rumbleApplicants(list);
+
+  displayList.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
   renderPagination();
 }
 
@@ -479,7 +573,7 @@ function createApplicantCard(applicant) {
   const col = document.createElement('div');
   col.className = 'col-12 col-sm-6 col-lg-4 col-xl-3';
 
-  const yoe   = `${toInt(applicant.years_experience)} yrs`;
+  const yoe   = `${toInt(applicant.years_experience)} yrs of experience`;
 
   const fullName       = escapeHtml(applicant.full_name || '—');
   const specialization = escapeHtml(applicant.specialization || '—');
@@ -554,7 +648,8 @@ function createApplicantCard(applicant) {
 ========================================================= */
 function renderPagination() {
   if (!pagination) return;
-  const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
+  const perPage = serverPerPage || itemsPerPage;
+  const totalPages = Math.ceil((serverTotal || filteredApplicants.length) / perPage);
   pagination.innerHTML = '';
   if (totalPages <= 1) return;
 
@@ -573,7 +668,7 @@ function renderPagination() {
     ul.appendChild(li);
   };
 
-  addPageItem('&laquo;', currentPage === 1, () => { currentPage--; renderApplicants(); });
+  addPageItem('&laquo;', currentPage === 1, () => { if (currentPage > 1) fetchApplicants({ page: currentPage - 1 }); });
 
   const windowSize = 5;
   let start = Math.max(1, currentPage - Math.floor(windowSize/2));
@@ -581,10 +676,10 @@ function renderPagination() {
   if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
 
   for (let i = start; i <= end; i++) {
-    addPageItem(String(i), false, () => { currentPage = i; renderApplicants(); }, i === currentPage);
+    addPageItem(String(i), false, () => { fetchApplicants({ page: i }); }, i === currentPage);
   }
 
-  addPageItem('&raquo;', currentPage === totalPages, () => { currentPage++; renderApplicants(); });
+  addPageItem('&raquo;', currentPage === totalPages, () => { if (currentPage < totalPages) fetchApplicants({ page: currentPage + 1 }); });
 
   pagination.appendChild(ul);
 }
@@ -631,7 +726,6 @@ function ensureModalFooterAndHire(applicant){
   }
 }
 
-
 /* =========================================================
    Modal video popover (top-right button)
    - Adds a small "Video" button to the modal header (right side)
@@ -640,10 +734,11 @@ function ensureModalFooterAndHire(applicant){
 ========================================================= */
 function ensureModalVideoButton(applicant) {
   const modalEl = byId('applicantModal');
-  if (!modalEl || !window.bootstrap?.Popover) {
-    console.warn('Bootstrap Popover not available or modal not found.');
+  if (!modalEl) {
+    console.warn('Modal not found.');
     return;
   }
+  const hasPopover = !!(window.bootstrap?.Popover);
 
   // ----- Ensure header + tools container -----
   let header = modalEl.querySelector('.modal-header');
@@ -686,7 +781,8 @@ function ensureModalVideoButton(applicant) {
     id: applicant?.id,
     raw_url: applicant?.video_url,
     trimmed_url: videoUrl,
-    type: videoType
+    type: videoType,
+    hasPopover
   });
 
   videoBtn.dataset.videoUrl  = videoUrl;
@@ -699,70 +795,87 @@ function ensureModalVideoButton(applicant) {
   }
   videoBtn.style.display = '';
 
-  // ----- (Re)create the Popover instance -----
-  const existing = bootstrap.Popover.getInstance(videoBtn);
-  if (existing) existing.dispose();
+  if (hasPopover) {
+    // Use Bootstrap Popover if available
+    const existing = bootstrap.Popover.getInstance(videoBtn);
+    if (existing) existing.dispose();
 
-  const pop = new bootstrap.Popover(videoBtn, {
-    html: true,
-    trigger: 'manual',
-    placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
-    sanitize: false,       // we provide safe markup
-    container: modalEl,
-    template: `
-      <div class="popover video-popover" role="tooltip">
-        <div class="popover-arrow"></div>
-        <div class="popover-body p-0"></div>
-      </div>
-    `,
-    content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
-  });
+    const pop = new bootstrap.Popover(videoBtn, {
+      html: true,
+      trigger: 'manual',
+      placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
+      sanitize: false,       // we provide safe markup
+      container: modalEl,
+      template: `
+        <div class="popover video-popover" role="tooltip">
+          <div class="popover-arrow"></div>
+          <div class="popover-body p-0"></div>
+        </div>
+      `,
+      content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
+    });
 
-  // ----- Toggle -----
-  videoBtn.onclick = () => {
-    const isShown = !!videoBtn.getAttribute('aria-describedby');
-    isShown ? pop.hide() : pop.show();
-  };
+    // Toggle popover
+    videoBtn.onclick = () => {
+      const isShown = !!videoBtn.getAttribute('aria-describedby');
+      isShown ? pop.hide() : pop.show();
+    };
 
-  // ----- Outside click to close + pause on hide -----
-  const onShown = () => {
-    const popEl = getPopoverElFor(videoBtn);
+    // Outside click to close + pause on hide
+    const onShown = () => {
+      const popEl = getPopoverElFor(videoBtn);
 
-    // Helpful: log the resolved absolute URL that the player will use
-    try {
-      const raw = videoBtn.dataset.videoUrl || '';
-      const resolved = absoluteFromAppRoot(raw);
-      console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
-    } catch(_) {}
+      // Helpful: log the resolved absolute URL that the player will use
+      try {
+        const raw = videoBtn.dataset.videoUrl || '';
+        const resolved = absoluteFromAppRoot(raw);
+        console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
+      } catch(_) {}
 
-    const onDocClick = (e) => {
-      if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
-        pop.hide();
+      const onDocClick = (e) => {
+        if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
+          pop.hide();
+        }
+      };
+      document.addEventListener('mousedown', onDocClick, { capture: true });
+      videoBtn._video_onDocClick = onDocClick;
+    };
+
+    const onHidden = () => {
+      const popEl = getPopoverElFor(videoBtn);
+      if (popEl) pauseAnyVideoIn(popEl);
+      if (videoBtn._video_onDocClick) {
+        document.removeEventListener('mousedown', videoBtn._video_onDocClick, { capture: true });
+        videoBtn._video_onDocClick = null;
       }
     };
-    document.addEventListener('mousedown', onDocClick, { capture: true });
-    videoBtn._video_onDocClick = onDocClick;
-  };
 
-  const onHidden = () => {
-    const popEl = getPopoverElFor(videoBtn);
-    if (popEl) pauseAnyVideoIn(popEl);
-    if (videoBtn._video_onDocClick) {
-      document.removeEventListener('mousedown', videoBtn._video_onDocClick, { capture: true });
-      videoBtn._video_onDocClick = null;
+    videoBtn.addEventListener('shown.bs.popover', onShown);
+    videoBtn.addEventListener('hide.bs.popover', onHidden);
+
+    // ----- Also hide the popover when the modal closes -----
+    if (!modalEl.dataset.videoPopoverBound) {
+      modalEl.addEventListener('hide.bs.modal', () => {
+        const inst = bootstrap.Popover.getInstance(videoBtn);
+        if (inst) inst.hide();
+      });
+      modalEl.dataset.videoPopoverBound = '1';
     }
-  };
+  } else {
+    // Fallback: open a simple video modal when Popover isn't available
+    videoBtn.onclick = () => openVideoFallbackModal(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType);
 
-  videoBtn.addEventListener('shown.bs.popover', onShown);
-  videoBtn.addEventListener('hide.bs.popover', onHidden);
-
-  // ----- Also hide the popover when the modal closes -----
-  if (!modalEl.dataset.videoPopoverBound) {
-    modalEl.addEventListener('hide.bs.modal', () => {
-      const inst = bootstrap.Popover.getInstance(videoBtn);
-      if (inst) inst.hide();
-    });
-    modalEl.dataset.videoPopoverBound = '1';
+    // Ensure the fallback modal is hidden when profile modal closes
+    if (!modalEl.dataset.videoFallbackBound) {
+      modalEl.addEventListener('hide.bs.modal', () => {
+        const fb = byId('applicantVideoModal');
+        if (fb) {
+          const inst = bootstrap.Modal.getInstance(fb);
+          if (inst) inst.hide();
+        }
+      });
+      modalEl.dataset.videoFallbackBound = '1';
+    }
   }
 }
 
@@ -795,7 +908,7 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   }
   const nameEl = byId('name'); if (nameEl) nameEl.textContent = applicant.full_name || '—';
   const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
-  const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs`;
+  const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs of experience`;
 
   const availabilityLineEl = byId('availabilityLine');
   if (availabilityLineEl) {
@@ -831,7 +944,6 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   if (options.pushState) pushApplicantId(applicant.id);
 }
 window.showApplicantModal = showApplicantModal;
-
 
 /* Booking: helper to enforce button types in some templates */
 (function enforceButtonTypes(){
@@ -892,6 +1004,7 @@ function injectStyles(){
     .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
 
     .app-card{
+      border:1px solid (--card-border, #e6e9ef);
       border:1px solid var(--card-border);
       border-radius:16px;
       overflow:hidden; /* round the top photo */
@@ -970,4 +1083,45 @@ function ensureVideoPopoverStyles(){
   style.id = 'video-popover-styles';
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
+}
+
+// Fallback modal for video playback when Bootstrap Popover isn't available
+function openVideoFallbackModal(rawUrl, videoType) {
+  const modalId = 'applicantVideoModal';
+  let modal = byId(modalId);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Introduction Video</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-3 video-modal-body"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Pause video on hide
+    modal.addEventListener('hide.bs.modal', () => pauseAnyVideoIn(modal));
+  }
+
+  const body = modal.querySelector('.video-modal-body');
+  if (body) {
+    // Build content using existing helper (it will resolve relative URLs)
+    body.innerHTML = buildApplicantVideoHtml(rawUrl, videoType);
+  }
+
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  } else {
+    // Last resort: open video in new tab/window
+    const resolved = absoluteFromAppRoot(rawUrl);
+    window.open(resolved || rawUrl, '_blank');
+  }
 }

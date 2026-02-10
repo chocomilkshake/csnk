@@ -4,8 +4,10 @@ function uploadFile($file, $folder = 'general') {
         return false;
     }
 
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx'];
-    $maxFileSize = 5 * 1024 * 1024; // 5MB
+    // Allow common document/image types plus common video containers
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'mp4', 'mov', 'webm', 'ogg', 'mkv', 'avi', 'mpeg'];
+    // Increase limit to allow larger video files (200MB)
+    $maxFileSize = 200 * 1024 * 1024; // 200MB
 
     $fileName = $file['name'];
     $fileSize = $file['size'];
