@@ -183,9 +183,112 @@ $printUrl = 'print-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q
       </div>
       <div class="card-body">
 
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <?php if (!empty($pictureUrl)): ?>
+            <img src="<?php echo safe($pictureUrl); ?>" alt="Photo" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;">
+          <?php else: ?>
+            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width:100px;height:100px;">
+              <span class="fw-bold fs-2"><?php echo strtoupper(substr($applicantData['first_name'], 0, 1)); ?></span>
+            </div>
+          <?php endif; ?>
+
+          <div class="min-w-0">
+            <div class="fw-bold fs-5 text-truncate"><?php echo $fullName; ?></div>
+            <div class="text-muted small">Applied: <?php echo safe(formatDate($applicantData['created_at'])); ?></div>
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="text-muted small">Phone (Primary)</div>
+            <div class="fw-semibold"><?php echo $primaryPhone !== '' ? safe($primaryPhone) : 'N/A'; ?></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Phone (Alternate)</div>
+            <div class="fw-semibold"><?php echo $altPhone !== '' ? safe($altPhone) : 'N/A'; ?></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Email</div>
+            <div class="fw-semibold text-truncate"><?php echo safe($email); ?></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Date of Birth</div>
+            <div class="fw-semibold"><?php echo safe(formatDate($applicantData['date_of_birth'])); ?></div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Experience</div>
+            <div class="fw-semibold">
+              <?php $yrs = (int)($applicantData['years_experience'] ?? 0); echo $yrs . ($yrs === 1 ? ' year' : ' years'); ?>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Employment</div>
+            <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? safe($applicantData['employment_type']) : 'N/A'; ?></div>
+          </div>
+
+          <div class="col-12">
+            <div class="text-muted small">Address</div>
+            <div class="fw-semibold"><?php echo safe($applicantData['address']); ?></div>
+          </div>
+
+          <div class="col-12">
+            <div class="text-muted small">Preferred Location(s)</div>
+            <div class="d-flex flex-wrap gap-1"><?php echo $prefLocBadges; ?></div>
+          </div>
+
+          <div class="col-12">
+            <div class="text-muted small">Specialization Skills</div>
+            <div class="d-flex flex-wrap gap-1"><?php echo $skillsBadges; ?></div>
+          </div>
+
+          <div class="col-12">
+            <div class="text-muted small">Languages</div>
+            <div class="fw-semibold"><?php echo $languagesDisplay; ?></div>
+          </div>
 
           <!-- Educational Attainment -->
-        
+          <div class="col-12">
+            <div class="text-muted small">Educational Attainment</div>
+            <?php
+              $eduArr = json_decode($applicantData['educational_attainment'] ?? '', true);
+              if (is_array($eduArr)) {
+                $labels = ['elementary'=>'Elementary','highschool'=>'High School','senior_high'=>'Senior High','college'=>'College'];
+                echo '<ul class="mb-0 ps-3">';
+                foreach ($labels as $k=>$label) {
+                  if (!empty($eduArr[$k]) && is_array($eduArr[$k])) {
+                    $row = $eduArr[$k]; $parts = [];
+                    if (!empty($row['school'])) $parts[] = $row['school'];
+                    if (!empty($row['strand'])) $parts[] = $row['strand'];
+                    if (!empty($row['course'])) $parts[] = $row['course'];
+                    if (!empty($row['year']))   $parts[] = $row['year'];
+                    if ($parts) echo '<li class="small">'.safe($label).': '.safe(implode(' • ', $parts)).'</li>';
+                  }
+                }
+                echo '</ul>';
+              } else { echo '<div class="text-muted">N/A</div>'; }
+            ?>
+          </div>
+
+          <!-- Work History -->
+          <div class="col-12">
+            <div class="text-muted small">Work History</div>
+            <?php
+              $workArr = json_decode($applicantData['work_history'] ?? '', true);
+              if (is_array($workArr) && $workArr) {
+                echo '<ul class="mb-0 ps-3">';
+                foreach ($workArr as $w) {
+                  if (!is_array($w)) continue;
+                  $parts = [];
+                  if (!empty($w['company']))  $parts[] = $w['company'];
+                  if (!empty($w['role']))     $parts[] = $w['role'];
+                  if (!empty($w['years']))    $parts[] = $w['years'];
+                  if (!empty($w['location'])) $parts[] = $w['location'];
+                  if ($parts) echo '<li class="small">'.safe(implode(' — ', $parts)).'</li>';
+                }
+                echo '</ul>';
+              } else { echo '<div class="text-muted">N/A</div>'; }
+            ?>
+          </div>
         </div>
       </div>
     </div>
@@ -203,7 +306,43 @@ $printUrl = 'print-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q
           <span class="badge bg-<?php echo $bColor; ?> text-uppercase"><?php echo safe($latestBooking['status']); ?></span>
         <?php endif; ?>
       </div>
+      <div class="card-body">
+        <?php if (!$latestBooking): ?>
+          <p class="text-muted mb-0">No client booking found for this applicant.</p>
+        <?php else: ?>
+          <?php
+            $clientName = trim(($latestBooking['client_first_name'] ?? '') . ' ' . ($latestBooking['client_middle_name'] ?? '') . ' ' . ($latestBooking['client_last_name'] ?? ''));
+            if ($clientName === '') $clientName = '—';
+          ?>
+          <div class="mb-2">
+            <div class="text-muted small">Client</div>
+            <div class="fw-semibold"><?php echo safe($clientName); ?></div>
+          </div>
 
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="text-muted small">Client Email</div>
+              <div class="fw-semibold text-truncate"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted small">Client Phone</div>
+              <div class="fw-semibold"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted small">Appointment</div>
+              <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted small">Date &amp; Time</div>
+              <div class="fw-semibold">
+                <?php
+                  $d = !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—';
+                  $t = !empty($latestBooking['appointment_time']) ? $latestBooking['appointment_time'] : '';
+                  echo safe(trim($d . ' ' . $t));
+                ?>
+              </div>
+            </div>
+          </div>
 
           <div class="mt-2">
             <div class="text-muted small">Client Address</div>
