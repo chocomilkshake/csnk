@@ -37,7 +37,7 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['approved_q'];
 }
 
-/** Handle delete (soft delete) with search preserved (kept as-is) */
+/** Handle delete (soft delete) with search preserved */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     if ($applicant->softDelete($id)) {
@@ -67,7 +67,7 @@ if (
     if (in_array($to, $allowedStatuses, true)) {
         $updated = false;
 
-        // Prefer Applicant::updateStatus if available, else ::update, else direct PDO
+        // Prefer Applicant::updateStatus if available, else ::update, else direct PDO fallback
         if (method_exists($applicant, 'updateStatus')) {
             $updated = (bool) $applicant->updateStatus($id, $to);
         } elseif (method_exists($applicant, 'update')) {
@@ -170,13 +170,34 @@ if ($q !== '') {
 
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
-<!-- ===== Modern dropdown styling for "Change Status" (self-contained) ===== -->
+<!-- ===== Make dropdowns easy to click (no clipping, opens upward) ===== -->
 <style>
+    /* Keep horizontal scroll if needed, but allow dropdowns to exceed vertically */
+    .table-card .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible !important; /* important: let dropdowns render outside */
+    }
+    /* Ensure the Actions cell can show overflowed dropdowns */
+    td.actions-cell {
+        position: relative;
+        overflow: visible !important;
+        z-index: 9999; /* keep above table borders and other elements */
+    }
+
+    /* Modern dropdown style (same look as other pages) */
     .dd-modern .dropdown-menu {
+        position: absolute; /* make sure it can float outside the cell */
+        z-index: 1200; /* higher than table elements */
         border-radius: .75rem; /* rounded-xl */
         border: 1px solid #e5e7eb; /* slate-200 */
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         overflow: hidden;
+        white-space: nowrap;
+    }
+    /* For dropup variant ensure it opens upward and is not clipped */
+    .dropup .dropdown-menu {
+        bottom: 100%;
+        top: auto;
     }
     .dd-modern .dropdown-item {
         display: flex;
@@ -206,7 +227,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Approved Applicants</h4>
     <?php
-        // 🔁 Export URL. Preserve ?q= when present.
+        // Export URL. Preserve ?q when present.
         $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
     ?>
     <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
@@ -283,8 +304,12 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                             <tr>
                                 <td>
                                     <?php if (!empty($row['picture'])): ?>
-                                        <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                        <img
+                                            src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            alt="Photo"
+                                            class="rounded"
+                                            width="50" height="50"
+                                            style="object-fit: cover;">
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                             <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
@@ -298,8 +323,8 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                 <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td>
-                                    <div class="btn-group dd-modern">
+                                <td class="actions-cell">
+                                    <div class="btn-group dd-modern dropup">
                                         <!-- View -->
                                         <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                            class="btn btn-sm btn-info" title="View">
@@ -311,10 +336,11 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                                             <i class="bi bi-pencil"></i>
                                         </a>
 
-                                        <!-- Change Status Dropdown -->
+                                        <!-- Change Status Dropdown (opens upward, not clipped) -->
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                                 data-bs-toggle="dropdown"
+                                                data-bs-display="static"
                                                 aria-expanded="false"
                                                 title="Change Status">
                                             <i class="bi bi-arrow-left-right me-1"></i> Status
