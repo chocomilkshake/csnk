@@ -134,6 +134,10 @@ try {
 
     // Build WHERE clauses and bind params dynamically
     $where = ["deleted_at IS NULL"];
+
+    // Public API: exclude applicants that are already approved — they should not be shown to clients
+    $where[] = "LOWER(TRIM(status)) != 'approved'";
+
     $types = '';
     $values = [];
 
@@ -356,6 +360,9 @@ try {
             'full_name'               => trim(($app['first_name'] ?? '') . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . ($app['last_name'] ?? '')),
             'initials'                => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
             'age'                     => computeAge($app['date_of_birth'] ?? null),
+
+            // STATUS (important for client-side filtering)
+            'status'                  => strtolower(trim((string)($app['status'] ?? ''))),
 
             'specialization'          => $primaryRole,
             'specializations'         => $skills,
