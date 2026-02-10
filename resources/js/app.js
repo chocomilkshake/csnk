@@ -78,6 +78,10 @@ function removeApplicantIdFromUrl(){
 // NOTE: this must match your server mount (e.g., '/csnk-1/' for this project)
 const APP_BASE = '/csnk-1/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
 
+// Polling interval (ms) — keeps the listing up-to-date when admin updates statuses
+// Set to 0 to disable. Reasonable default: 15 seconds.
+const POLL_INTERVAL_MS = 15000;
+
 function normalizeSlashes(url) {
   return String(url || '').replace(/\\/g, '/').trim();
 }
@@ -280,6 +284,10 @@ let serverTotal = 0;
 let serverPerPage = itemsPerPage;
 
 async function fetchApplicants(options = {}) {
+  // prevent overlapping requests
+  if (fetchApplicants._inFlight) return;
+  fetchApplicants._inFlight = true;
+
   // options may include page and per_page
   const page = options.page || 1;
   const per_page = options.per_page || serverPerPage || itemsPerPage;
