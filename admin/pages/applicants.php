@@ -65,10 +65,12 @@ if (isset($_GET['status'])) {
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     if ($applicant->softDelete($id)) {
-        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id");
-        setFlashMessage('success', 'Applicant deleted successfully.');
+        if (isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
+            $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id");
+        }
+        if (function_exists('setFlashMessage')) setFlashMessage('success', 'Applicant deleted successfully.');
     } else {
-        setFlashMessage('error', 'Failed to delete applicant.');
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Failed to delete applicant.');
     }
 
     $params = [];
@@ -334,6 +336,17 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
                         </tr>
                     <?php else: ?>
                         <?php foreach ($applicants as $app): ?>
+                            <?php
+                                $currentStatus = (string)($app['status'] ?? '');
+                                $params = [];
+                                if ($q !== '') $params['q'] = $q;
+                                if ($status !== 'all') $params['status'] = $status;
+                                $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
+
+                                $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . $tail;
+                                $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . $tail;
+                                $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . $tail;
+                            ?>
                             <tr>
                                 <td>
                                     <?php if (!empty($app['picture'])): ?>
@@ -358,34 +371,29 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
                                         'approved'   => 'success',
                                         'deleted'    => 'secondary'
                                     ];
-                                    $badgeColor = $statusColors[$app['status']] ?? 'secondary';
+                                    $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
                                     ?>
                                     <span class="badge bg-<?php echo $badgeColor; ?>">
-                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $app['status'])), ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $currentStatus)), ENT_QUOTES, 'UTF-8'); ?>
                                     </span>
                                 </td>
                                 <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
-                                    <?php
-                                        $params = [];
-                                        if ($q !== '') $params['q'] = $q;
-                                        if ($status !== 'all') $params['status'] = $status;
-                                        $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
-
-                                        $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . $tail;
-                                        $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . $tail;
-                                        $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . $tail;
-                                    ?>
                                     <div class="btn-group">
+                                        <!-- View (always) -->
                                         <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        <!-- Edit (always) -->
                                         <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <!-- Delete only if status === pending -->
+                                        <?php if ($currentStatus === 'pending'): ?>
+                                            <a href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
