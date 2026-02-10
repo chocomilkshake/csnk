@@ -180,25 +180,91 @@ if ($status !== 'all') $exportParams['status'] = $status;
 $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' . http_build_query($exportParams)) : '');
 
 ?>
+<!-- ===== Modern, professional status button styles (self-contained) ===== -->
+<style>
+    .status-group {
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;          /* slate-200 */
+        border-radius: 1rem;                 /* rounded-2xl */
+        background: rgba(255,255,255,0.85);  /* white/85 */
+        backdrop-filter: saturate(140%) blur(2px);
+        box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.10);
+    }
+    .status-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .45rem .9rem;
+        border-radius: .75rem;               /* rounded-xl */
+        font-size: .875rem;                  /* text-sm */
+        font-weight: 500;                    /* medium */
+        text-decoration: none;
+        border: 1px solid #cbd5e1;           /* slate-300 */
+        color: #334155;                      /* slate-700 */
+        background: #ffffff;
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .status-btn:hover {
+        transform: translateY(-2px);
+        background: #f8fafc;                 /* slate-50 */
+        border-color: #94a3b8;               /* slate-400 */
+        box-shadow: 0 6px 12px rgba(15, 23, 42, .06);
+    }
+    .status-btn:focus {
+        outline: 3px solid rgba(99,102,241,.35); /* indigo-500 ring */
+        outline-offset: 2px;
+    }
+    .status-btn--active {
+        color: #fff;
+        border-color: #4f46e5;               /* indigo-600 */
+        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); /* indigo-500 -> 600 */
+        box-shadow: 0 8px 18px rgba(79,70,229,.25);
+    }
+    .status-btn--active:hover {
+        background: linear-gradient(180deg, #5457ee 0%, #463fd3 100%);
+        border-color: #463fd3;
+        transform: translateY(-2px);
+    }
+    .status-icon {
+        font-size: .95em;
+        line-height: 1;
+        opacity: .9;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-start mb-3">
     <div>
         <h4 class="mb-1 fw-semibold">List of Applicants</h4>
-        <!-- Status filter buttons (top-left) -->
-        <div class="btn-group mt-2" role="group" aria-label="Status filters">
+        <!-- Status filter buttons (modern) -->
+        <div class="mt-2">
             <?php
-                // Helper to render a status button
-                function statusBtn(string $label, string $value, string $currentStatus): string {
-                    $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
-                    $btnClass = $isActive ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-primary';
-                    $qParam   = isset($_SESSION['applicants_q']) && $_SESSION['applicants_q'] !== '' ? ('&q=' . urlencode((string)$_SESSION['applicants_q'])) : '';
-                    $href     = 'applicants.php?status=' . urlencode($value) . $qParam;
-                    return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="' . $btnClass . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
-                }
+            /**
+             * Renders a modern status button that preserves current search,
+             * highlights the active status, and uses Bootstrap Icons.
+             */
+            function renderStatusBtnModern(string $label, string $value, string $currentStatus, string $q = '', string $icon = ''): string {
+                $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
+                $href = 'applicants.php?status=' . urlencode($value);
+                if ($q !== '') $href .= '&q=' . urlencode($q);
 
-                echo statusBtn('All', 'all', $status);
-                echo statusBtn('Pending', 'pending', $status);
-                echo statusBtn('On-Process', 'on_process', $status);
-                echo statusBtn('Hired', 'approved', $status);
+                $classes = 'status-btn' . ($isActive ? ' status-btn--active' : '');
+
+                $iconHtml = $icon !== '' ? '<i class="status-icon ' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '"></i>' : '';
+                return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="' . $classes . '">' .
+                        $iconHtml . '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></a>';
+            }
+
+            $qParam = $_SESSION['applicants_q'] ?? '';
+
+            echo '<div class="status-group">';
+                echo renderStatusBtnModern('All',        'all',        $status, $qParam, 'bi bi-list-ul');
+                echo renderStatusBtnModern('Pending',    'pending',    $status, $qParam, 'bi bi-hourglass-split');
+                echo renderStatusBtnModern('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat');
+                echo renderStatusBtnModern('Hired',      'approved',   $status, $qParam, 'bi bi-check2-circle');
+            echo '</div>';
             ?>
         </div>
     </div>
