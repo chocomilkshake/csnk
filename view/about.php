@@ -1,3 +1,4 @@
+
 <?php
   // Set the active page for navbar highlighting
   $page = 'about';
@@ -6,118 +7,332 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CSNK Manpower Agency</title>
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-  <!-- Your app stylesheet (consolidated hero styles live here) -->
-  <!-- <link href="/resources/css/about.css" rel="stylesheet"> -->
 </head>
 <body class="bg-light">
 
 <!-- ✅ Reusable Navbar -->
 <?php include __DIR__ . '/navbar.php'; ?>
 
-
 <!-- ===================== -->
-<!-- Page Content Starts -->
+<!-- Page Content Starts   -->
 <!-- ===================== -->
 
 <style>
-  /* Section baseline: light page, hero has its own backdrop only inside this section */
+  /* ---------- Base / utilities applicable to this page ---------- */
+  img, svg { max-width: 100%; height: auto; }
+
+  /* ---------- HERO SECTION ---------- */
   .hero-section {
-    background-color: #f8f9fb; /* very light to match page */
+    background-color: #f8f9fb;
+    position: relative;
+    isolation: isolate; /* keep background layers behind content */
+    padding: clamp(2rem, 6vw, 5rem) 0;
   }
 
-  /* Optional subtle grid like your reference (very faint) */
-  .hero-grid {
+  /* Background layers */
+  .hero-grid,
+  .hero-gradient {
+    position: absolute; inset: 0;
+    z-index: 0;
     pointer-events: none;
+  }
+  .hero-grid {
     opacity: .22;
     background-image:
       linear-gradient(to right, rgba(0,0,0,.06) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
-    background-size: 32px 32px, 32px 32px; /* grid spacing */
+    background-size: 32px 32px, 32px 32px;
     mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,.85) 40%, rgba(0,0,0,.6) 70%, rgba(0,0,0,0) 100%);
   }
-
-  /* Gradient that covers only this section, with a gentle fade at edges */
   .hero-gradient {
-    pointer-events: none; /* content remains interactive */
-    /* Layer 1: soft red radial glow behind content (left) */
     background:
       radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
-      /* Layer 2: subtle darker radial near image (right) */
       radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17,17,17,0) 60%),
-      /* Layer 3: very light vertical wash */
       linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.25) 60%, rgba(255, 84, 84, 0) 100%);
-    /* Fade the gradient at the top/bottom so it blends with the page */
-    mask-image:
-      linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 10%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 10%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
   }
 
-  /* Make big heading closer to your reference look */
+  /* Keep actual content above background layers */
+  .hero-section .container { position: relative; z-index: 1; }
+
+  /* Headings (desktop) */
   @media (min-width: 992px) {
     .hero-section .display-4 { font-size: 3rem; line-height: 1.1; }
   }
 
-  /* Optional: differentiate the active pill visually */
-  .hero-section .btn-light.active {
-    background: #111;
-    color: #fff;
-  }
-
-  /* Tiny fade/slide animation for swaps */
+  /* Smooth swap animation */
   .fade-swap { transition: opacity .22s ease, transform .22s ease; }
   .is-swapping { opacity: 0; transform: translateY(6px); }
 
-  /* ========== Right image: no container background + easy sizing ========== */
-.hero-visual {
-  justify-content: center;
+  /* ---------- PILL BAR (shrink-to-content & scrollable) ---------- */
+
+  /* Wrapper: only scrolls when needed */
+  .hero-pills-abs-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Pill bar: fit to content, not full width */
+  #heroPills {
+    display: inline-flex;        /* makes white capsule hug its content */
+    width: max-content;          /* shrink-wrap */
+    max-width: 100%;             /* never overflow the container */
+    gap: .5rem;
+    align-items: center;
+    padding: .5rem .6rem;        /* capsule padding */
+    border-radius: 999px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.08);
+    overflow: visible;           /* keep nice shadows visible */
+    flex-wrap: nowrap;           /* one row; wrapper handles scroll on small screens */
+    scroll-snap-type: x proximity;
+    background: #fff;            /* ensure white capsule */
+  }
+
+  #heroPills .btn {
+    flex: 0 0 auto;              /* no shrinking */
+    white-space: nowrap;         /* keep labels on one line */
+    scroll-snap-align: start;
+  }
+
+  .hero-section .btn-light.active { background: #111; color: #fff; }
+
+  /* Center the capsule on md+ (optional) */
+  @media (min-width: 768px) {
+    .hero-pills-abs-wrapper {
+      display: flex;
+      justify-content: flex-start; /* change to center if you want centered pills */
+    }
+  }
+
+  /* ---------- Hero visual (image) ---------- */
+  .hero-visual { display: flex; justify-content: center; }
+  .hero-image-wrap {
+    background: transparent;
+    border-radius: 1rem;
+    filter: drop-shadow(0 12px 22px rgba(0,0,0,.18));
+    width: clamp(260px, 40vw, 520px);  /* desktop-preferred width */
+  }
+  .hero-image-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  /* ---------- Responsive fixes (small → medium) ---------- */
+
+  /* Let hero content breathe on xs; avoid clipping */
+  @media (max-width: 575.98px) {
+    .hero-section { overflow: visible !important; }
+    .hero-title-wrap .display-4 { font-size: 2rem; line-height: 1.2; }
+    .hero-lead-wrap .lead { font-size: 1rem; }
+  }
+
+  /* On < lg, center the image and remove desktop offsets entirely */
+  @media (max-width: 991.98px) {
+    .hero-image-wrap {
+      margin: 0 auto !important;
+      transform: none !important;
+      width: min(85vw, 420px);
+    }
+  }
+
+  /* ---------- Carousel image heights by breakpoint (if you later add slide images) ---------- */
+  .carousel-img {
+    width: 100%;
+    height: 340px;
+    object-fit: cover;
+  }
+  @media (max-width: 575.98px) { .carousel-img { height: 220px; } }
+  @media (min-width: 576px) and (max-width: 991.98px) { .carousel-img { height: 280px; } }
+
+  /* Extra room around pills on phones */
+  @media (max-width: 575.98px) {
+    .hero-pills-abs-wrapper { margin-bottom: .5rem; }
+    .hero-pills-spacer { height: 0; }
+  }
+
+  /* ===================== */
+  /* TRAINING GALLERY CSS  */
+  /* ===================== */
+  .training-gallery .btn-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  .training-gallery .gallery-grid {
+    display: grid;
+    gap: 1rem;
+    /* Mobile: simple one-column grid */
+    grid-template-columns: 1fr;
+  }
+
+  /* Tablet */
+  @media (min-width: 576px) {
+    .training-gallery .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Desktop – collage layout:
+       a b d
+       a c d
+  */
+  @media (min-width: 992px) {
+    .training-gallery .gallery-grid {
+      grid-template-columns: 3fr 2fr 3fr;
+      grid-template-rows: auto auto;
+      grid-template-areas: "a b d" "a c d";
+    }
+    .training-gallery .gallery-item[data-area="a"] { grid-area: a; }
+    .training-gallery .gallery-item[data-area="b"] { grid-area: b; }
+    .training-gallery .gallery-item[data-area="c"] { grid-area: c; }
+    .training-gallery .gallery-item[data-area="d"] { grid-area: d; }
+  }
+
+  .training-gallery .gallery-item {
+    position: relative; border-radius: 1rem; overflow: hidden; background: #f8f9fa;
+    transition: transform .25s ease, box-shadow .25s ease;
+    cursor: zoom-in;
+  }
+  .training-gallery .gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.12);
+  }
+
+  /* Aspect ratios to echo the reference */
+  .training-gallery .gallery-item[data-area="a"],
+  .training-gallery .gallery-item[data-area="d"] { aspect-ratio: 3 / 4; }   /* tall */
+  .training-gallery .gallery-item[data-area="b"],
+  .training-gallery .gallery-item[data-area="c"] { aspect-ratio: 4 / 3; }   /* wide-ish */
+
+  .training-gallery .gallery-item img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+
+  /* Dots styling */
+  .training-gallery .gallery-dots button {
+    width: 28px; height: 4px; border-radius: 999px;
+    background-color: #d9dbe1; border: 0; margin: 0 .18rem;
+  }
+  .training-gallery .gallery-dots button.active { background-color: #2f315a; }
+
+  /* Modal image fits nicely on dark backdrop */
+  #galleryModal .modal-content { background: #000; }
+  #galleryModalImg { max-height: 82vh; object-fit: contain; }
+
+  /* ====================== */
+/* FINAL CTA (Hire Now!)  */
+/* ====================== */
+.cta-hire {
+  /* Soft white card with subtle, directionally-lit gradient like your ref */
+  background:
+    /* top-left warm highlight */
+    radial-gradient(800px 260px at 8% 5%, rgba(255,170,120,.18), rgba(255,170,120,0) 60%),
+    /* bottom-right cool fade */
+    radial-gradient(1000px 320px at 92% 110%, rgba(12,32,76,.08), rgba(12,32,76,0) 60%),
+    /* gentle vertical wash */
+    linear-gradient(180deg, #ffffff 0%, #fbfcff 60%, #f7f9fc 100%);
+  border-radius: 1.25rem;
+  padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3.5vw, 2rem);
+  box-shadow:
+    0 20px 40px rgba(13, 29, 54, 0.06),
+    0 1px 0 rgba(255,255,255,0.6) inset;
 }
 
-.hero-image-wrap {
-  background: transparent;                  /* no box background */
-  width: clamp(260px, 40vw, 520px);         /* <<< adjust size here */
-  border-radius: 1rem;                      /* keeps the soft rounded outline (no fill) */
-  filter: drop-shadow(0 12px 22px rgba(0,0,0,.18)); /* optional soft shadow */
-  margin-right: 16px;  /* + right, - left  */
-  margin-top: -50px;    /* move slightly upward */
-  transform: translateX(40px); /* tiny push to the right */
-
+.cta-row {
+  display: grid;
+  /* Title left, button right on md+; single column on mobile */
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: clamp(.75rem, 2vw, 1rem);
+}
+@media (min-width: 768px) {
+  .cta-row { grid-template-columns: 1fr auto; }
 }
 
-.hero-image-wrap img {
-  display: block;
-  width: 100%;
-  height: auto;          /* keep proportions */
-  object-fit: contain;   /* no cropping */
-  background: transparent !important;
+.cta-title {
+  font-weight: 800;
+  font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+  color: #1b1d22;
+  margin: 0;
+  line-height: 1.35;
 }
 
-
-/* Mobile: bring it back to center and remove negative margins */
-@media (max-width: 991.98px){
-  .hero-visual { justify-content: center; }
-  .hero-image-wrap { margin: 0; transform:none; }
+.cta-actions {
+  display: flex;
+  justify-content: flex-start;   /* mobile */
+}
+@media (min-width: 768px) {
+  .cta-actions { justify-content: flex-end; } /* button to the far right on md+ */
 }
 
+/* Button */
+.cta-btn {
+  --grad-a: #ff7a3d;   /* warm orange */
+  --grad-b: #ffb04a;   /* soft orange-yellow */
+  background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: .85rem 1.5rem;
+  font-weight: 700;
+  letter-spacing: .2px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  box-shadow: 0 12px 26px rgba(255, 122, 61, .28);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  position: relative;              /* for decorative ticks */
+  isolation: isolate;              /* keep inner effects confined */
+  white-space: nowrap;
+}
+.cta-btn:hover,
+.cta-btn:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(255, 122, 61, .34);
+  filter: brightness(1.03);
+  color: #fff;
+}
+
+/* Decorative side marks to echo the ref’s “spark” shape */
+.cta-btn::after {
+  content: "✦ ✦ ✦";
+  font-size: .85rem;
+  color: #ffa95a;
+  position: absolute;
+  right: -2rem;                    /* sits outside the button’s right edge */
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: .95;
+  pointer-events: none;
+}
+@media (max-width: 575.98px) {
+  .cta-btn::after { right: -1.6rem; font-size: .8rem; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cta-btn { transition: none !important; }
+}
 </style>
 
 <!-- HERO -->
-<section class="hero-section position-relative overflow-hidden py-5 py-lg-6">
-  <!-- faint grid & gradient (these are behind content via CSS) -->
-  <div class="hero-grid w-100 h-100 position-absolute top-0 start-0"></div>
-  <div class="hero-gradient w-100 h-100 position-absolute top-0 start-0"></div>
+<section class="hero-section">
+  <!-- background layers -->
+  <div class="hero-grid"></div>
+  <div class="hero-gradient"></div>
 
-  <div class="container position-relative">
+  <div class="container">
     <div class="row align-items-center g-4 g-lg-5">
 
       <!-- LEFT: Text + pills -->
-      <div class="col-lg-6 position-relative">
-
+      <div class="col-12 col-lg-6">
         <div class="hero-title-wrap mb-2">
           <h1 id="heroTitle" class="display-4 fw-bold mb-0 fade-swap">
             Get to know CSNK Manpower Agency
@@ -131,10 +346,10 @@
           </p>
         </div>
 
-        <!-- Absolutely‑positioned pill bar -->
+        <!-- Pills -->
         <div class="hero-pills-abs-wrapper">
           <div id="heroPills"
-               class="bg-white rounded-pill shadow-sm px-2 py-2 d-inline-flex align-items-center gap-2 flex-wrap"
+               class="rounded-pill px-3 py-2 d-inline-flex align-items-center"
                role="tablist" aria-label="Hero options">
 
             <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
@@ -146,8 +361,8 @@
                     women by connecting them with safe, legitimate, and rewarding employment opportunities. 
                     Through proper screening, guidance, and documentation, we ensure that every home receives 
                     trustworthy service, while every applicant receives a fair chance to build a better future."
-                    data-img="../resources/img/MrRog.png"
-                    data-img-alt="Clients getting onboarding help">
+                    data-img="../resources/img/overview.png"
+                    data-img-alt="Overview image">
               Overview
             </button>
 
@@ -162,470 +377,176 @@
                     companies under the SMC GROUP OF COMPANY in 2006. Since then, Mr. Lansang has remained 
                     committed to ensuring that CSNK carries out its mission with integrity."
                     data-img="../resources/img/MrRog.png"
-                    data-img-alt="Team collaborating on documents">
-              CSNK Founder
-            </button>
-
-            <button type="button" class="btn btn-light rounded-pill px-3 py-2"
-                    role="tab" aria-selected="false"
-                    data-title="Trusted Partner Companies"
-                    data-lead="We collaborate with vetted partners to ensure smooth placements."
-                    data-img="../resources/img/PartnerCompanies.png"
-                    data-img-alt="Handshake with company representative">
-              Partner Companies
+                    data-img-alt="Founder image">
+              Founder
             </button>
           </div>
         </div>
 
-        <!-- Spacer reserves space under the floating pills -->
+        <!-- Spacer (kept for layout compatibility) -->
         <div class="hero-pills-spacer"></div>
       </div>
 
-    <!-- RIGHT: Image (updated) -->
-    <div class="col-lg-6 hero-visual">
-    <div class="hero-image-wrap rounded-4">
-        <img id="heroImg"
-            src="/resources/img/hero1.jpg"
-            alt="Clients getting onboarding help"
-            class="fade-swap">
-    </div>
-    </div>
-
+      <!-- RIGHT: Image -->
+      <div class="col-12 col-lg-6 hero-visual">
+        <div class="hero-image-wrap rounded-4">
+          <img id="heroImg"
+               src="/resources/img/hero1.jpg"
+               alt="Hero visual"
+               class="img-fluid fade-swap">
+        </div>
+      </div>
 
     </div>
   </div>
 </section>
 
-
-<!-- Slideshow (Card Style Carousel - Auto Only, Same Heights) -->
-<section class="py-4 bg-dark">
+<!-- ===================== -->
+<!-- Training Gallery -->
+<!-- ===================== -->
+<section id="training-gallery" class="training-gallery py-5 bg-white">
   <div class="container">
-    <div id="csnkCarouselCards"
-         class="carousel slide"
-         data-bs-ride="carousel"
-         data-bs-interval="4000"
-         data-bs-touch="true"
-         data-bs-pause="false">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h1 fw-bold mb-0">Gallery</h2>
 
-      <!-- Dots / Indicators -->
-      <div class="carousel-indicators">
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="2" aria-label="Slide 3"></button>
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="3" aria-label="Slide 4"></button>
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="4" aria-label="Slide 5"></button>
-        <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="5" aria-label="Slide 6"></button>
+      <!-- Desktop/Tablet arrows -->
+      <div class="d-none d-sm-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary btn-icon" type="button"
+                data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button class="btn btn-outline-secondary btn-icon" type="button"
+                data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
       </div>
+    </div>
 
+    <div id="galleryCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
+      <!-- Slides -->
       <div class="carousel-inner">
-        <!-- (slides unchanged) -->
+
         <!-- Slide 1 -->
         <div class="carousel-item active">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero1.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 1"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">CSNK Manpower Agency</span>
-                      <h3 class="fw-bold mt-3 mb-2">Trusted Domestic Recruitment</h3>
-                      <p class="text-muted mb-4">Connecting families with screened housemaids and nannies through verified processes.</p>
-
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-circle-check text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">Verified Processing</div>
-                          <div class="small text-muted">Clear steps from start to finish</div>
-                        </div>
-                      </div>
-
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#about" class="btn btn-danger rounded-pill px-4">
-                          Learn More <i class="fa-solid fa-arrow-right ms-2"></i>
-                        </a>
-                        <a href="#contact" class="btn btn-outline-secondary rounded-pill px-4">Contact</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="gallery-grid">
+            <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
+              <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 1">
+            </a>
+            <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
+              <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 2">
+            </a>
+            <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
+              <img src="https://tinyurl.com/55nwhff7" alt="Training photo 3">
+            </a>
+            <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
+              <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 4">
+            </a>
           </div>
         </div>
 
         <!-- Slide 2 -->
         <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero2.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 2"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Fast and Clear Process</span>
-                      <h3 class="fw-bold mt-3 mb-2">Professional Processing</h3>
-                      <p class="text-muted mb-4">We help applicants prepare requirements and complete each step efficiently.</p>
-
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-file-circle-check text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">Requirements Support</div>
-                          <div class="small text-muted">Checklists, updates, and assistance</div>
-                        </div>
-                      </div>
-
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#contact" class="btn btn-danger rounded-pill px-4">
-                          Contact Us <i class="fa-solid fa-phone ms-2"></i>
-                        </a>
-                        <a href="#applicants" class="btn btn-outline-secondary rounded-pill px-4">Applicants</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="gallery-grid">
+            <a href="https://tinyurl.com/4bkcuuwn" class="gallery-item" data-area="a" data-full="https://tinyurl.com/4bkcuuwn">
+              <img src="https://tinyurl.com/4bkcuuwn" alt="Training photo 5">
+            </a>
+            <a href="https://tinyurl.com/ye7xubh2" class="gallery-item" data-area="b" data-full="https://tinyurl.com/ye7xubh2">
+              <img src="https://tinyurl.com/ye7xubh2" alt="Training photo 6">
+            </a>
+            <a href="https://tinyurl.com/4fty8ztf" class="gallery-item" data-area="c" data-full="https://tinyurl.com/4fty8ztf">
+              <img src="https://tinyurl.com/4fty8ztf" alt="Training photo 7">
+            </a>
+            <a href="https://tinyurl.com/2mky2xyz" class="gallery-item" data-area="d" data-full="https://tinyurl.com/2mky2xyz">
+              <img src="https://tinyurl.com/2mky2xyz" alt="Training photo 8">
+            </a>
           </div>
         </div>
 
         <!-- Slide 3 -->
         <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero3.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 3"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Safety and Compliance</span>
-                      <h3 class="fw-bold mt-3 mb-2">Verified and Secure</h3>
-                      <p class="text-muted mb-4">We prioritize screening, verification, and proper documentation.</p>
-
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-shield-halved text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">Safety First</div>
-                          <div class="small text-muted">Compliance‑focused recruitment process</div>
-                        </div>
-                      </div>
-
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#applicants" class="btn btn-danger rounded-pill px-4">
-                          View Applicants <i class="fa-solid fa-users ms-2"></i>
-                        </a>
-                        <a href="#about" class="btn btn-outline-secondary rounded-pill px-4">About CSNK</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="gallery-grid">
+            <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
+              <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 9">
+            </a>
+            <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
+              <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 10">
+            </a>
+            <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
+              <img src="https://tinyurl.com/55nwhff7" alt="Training photo 11">
+            </a>
+            <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
+              <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 12">
+            </a>
           </div>
         </div>
 
-        <!-- Slide 4 -->
-        <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero4.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 4"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Trusted Assistance</span>
-                      <h3 class="fw-bold mt-3 mb-2">Guided Step by Step</h3>
-                      <p class="text-muted mb-4">We assist applicants in every stage, from requirements to deployment.</p>
+      </div>
 
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-handshake text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">Friendly Support</div>
-                          <div class="small text-muted">Clear updates and simple guidance</div>
-                        </div>
-                      </div>
+      <!-- Mobile arrows -->
+      <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      </button>
+      <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      </button>
 
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#contact" class="btn btn-danger rounded-pill px-4">Message Us</a>
-                        <a href="#about" class="btn btn-outline-secondary rounded-pill px-4">Learn More</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <!-- Dots -->
+      <div class="carousel-indicators gallery-dots mt-4">
+        <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content bg-black border-0">
+        <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="p-2 p-sm-3">
+          <img id="galleryModalImg" src="" alt="Training photo" class="img-fluid w-100 rounded-3">
         </div>
-
-        <!-- Slide 5 -->
-        <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero5.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 5"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Quality Service</span>
-                      <h3 class="fw-bold mt-3 mb-2">Reliable Processing</h3>
-                      <p class="text-muted mb-4">We maintain quality standards to deliver a smooth and organized process.</p>
-
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-star text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">High Standards</div>
-                          <div class="small text-muted">Professional handling and coordination</div>
-                        </div>
-                      </div>
-
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#about" class="btn btn-danger rounded-pill px-4">About Us</a>
-                        <a href="#contact" class="btn btn-outline-secondary rounded-pill px-4">Get in Touch</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Slide 6 -->
-        <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-12 col-lg-10 col-xl-9">
-              <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="row g-0">
-                  <div class="col-md-6">
-                    <img src="/resources/img/hero6.jpg"
-                         class="w-100"
-                         alt="CSNK Slide 6"
-                         style="height:340px; object-fit:cover;">
-                  </div>
-                  <div class="col-md-6 bg-white">
-                    <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                      <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Global Opportunities</span>
-                      <h3 class="fw-bold mt-3 mb-2">Work Abroad Ready</h3>
-                      <p class="text-muted mb-4">We connect applicants to employers through trusted channels.</p>
-
-                      <div class="d-flex gap-3 mb-3">
-                        <i class="fa-solid fa-globe text-danger fs-4"></i>
-                        <div>
-                          <div class="fw-semibold">Network Reach</div>
-                          <div class="small text-muted">Better opportunities with proper support</div>
-                        </div>
-                      </div>
-
-                      <div class="mt-2 d-flex flex-wrap gap-2">
-                        <a href="#applicants" class="btn btn-danger rounded-pill px-4">Apply Now</a>
-                        <a href="#contact" class="btn btn-outline-secondary rounded-pill px-4">Directions</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div> <!-- /.carousel-inner -->
-    </div> <!-- /#csnkCarouselCards -->
+      </div>
+    </div>
   </div>
 </section>
 
-
-<!-- Why Choose CSNK -->
-<section id="about" class="py-5 bg-light">
-  <!-- (unchanged content) -->
-  <?php /* Keeping this section exactly as you sent. */ ?>
+<!-- ====================== -->
+<!-- FINAL CTA: Hire Now!  -->
+<!-- ====================== -->
+<section class="py-4 py-md-5">
   <div class="container">
+    <div class="cta-hire">
+      <div class="cta-row">
+        <p class="cta-title">
+          Hire reliable, properly screened Household Service Workers (HSWs)
+          for your home.
+        </p>
 
-    <!-- Section Header -->
-    <div class="text-center mb-5">
-      <span class="text-uppercase text-muted fw-semibold small">Why Choose</span>
-
-      <div class="my-2">
-        <img src="/resources/img/whychoose.png" alt="CSNK Manpower Agency" class="img-fluid" style="height:60px;">
-      </div>
-
-      <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-          <p class="text-muted mb-0">
-            CSNK Manpower Agency specializes in the recruitment and placement of qualified housemaids and nannies,
-            supported by structured screening and verified documentation. We connect families with trustworthy domestic
-            workers through safe, transparent, and compliant processes.
-          </p>
+        <div class="cta-actions">
+          <a class="cta-btn" href="./applicant.php" aria-label="Hire Now">
+            Hire Now! <i class="fa-solid fa-arrow-right"></i>
+          </a>
         </div>
       </div>
-    </div>
-
-    <!-- Feature Cards -->
-    <div class="row g-4">
-      <!-- (three cards exactly as before) -->
-      <div class="col-lg-4 col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-          <div class="card-body text-center p-4">
-            <div class="mb-3"><i class="fa-solid fa-award fa-3x text-danger"></i></div>
-            <h2 class="fw-bold text-danger mb-1">20,000+</h2>
-            <div class="text-uppercase text-muted fw-semibold small mb-3">Applications Processed</div>
-            <h5 class="fw-semibold mb-2">Efficient &amp; Quality Service</h5>
-            <p class="text-muted small mb-0">Clear guidance, organized processing, and consistent communication.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-          <div class="card-body text-center p-4">
-            <div class="mb-3"><i class="fa-solid fa-chart-line fa-3x text-danger"></i></div>
-            <h2 class="fw-bold text-danger mb-1">Since 2020</h2>
-            <div class="text-uppercase text-muted fw-semibold small mb-3">Proven Track Record</div>
-            <h5 class="fw-semibold mb-2">Successful Deployments</h5>
-            <p class="text-muted small mb-0">Thousands placed with compliant, step‑by‑step support.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-12">
-        <div class="card h-100 border-0 shadow-sm">
-          <div class="card-body text-center p-4">
-            <div class="mb-3"><i class="fa-solid fa-shield-halved fa-3x text-danger"></i></div>
-            <h2 class="fw-bold text-danger mb-1">100%</h2>
-            <div class="text-uppercase text-muted fw-semibold small mb-3">Verification Process</div>
-            <h5 class="fw-semibold mb-2">Safe &amp; Compliant Recruitment</h5>
-            <p class="text-muted small mb-0">Document validation and screening to protect families and applicants.</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</section>
-
-<!-- Contact / Map -->
-<section id="contact" class="py-5 bg-light">
-  <!-- (unchanged content) -->
-  <div class="container">
-    <div class="text-center mb-4">
-      <h2 class="fw-bold mb-1">Contact and Location</h2>
-      <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
-    </div>
-
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-      <div class="row g-0">
-
-        <div class="col-lg-7">
-          <iframe
-            style="width:100%; height:100%; min-height:420px; border:0;"
-            src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            allowfullscreen>
-          </iframe>
-        </div>
-
-        <div class="col-lg-5 bg-white">
-          <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
-
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <span class="badge bg-danger rounded-pill px-3 py-2">CSNK Manpower Agency</span>
-            </div>
-
-            <h5 class="fw-bold mb-3">Office Information</h5>
-
-            <div class="d-flex gap-3 mb-3">
-              <div class="text-danger fs-5"><i class="fa-solid fa-location-dot"></i></div>
-              <div>
-                <div class="fw-semibold">Address</div>
-                <div class="text-muted small">
-                  Ground Floor Unit 1 Eden Townhouse<br>
-                  2001 Eden St. Cor Pedro Gil, Sta Ana<br>
-                  Barangay 866, City of Manila, NCR, Sixth District
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex gap-3 mb-3">
-              <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
-              <div>
-                <div class="fw-semibold">Phone</div>
-                <div class="text-muted small">0945 657 0878</div>
-              </div>
-            </div>
-
-            <div class="d-flex gap-3 mb-3">
-              <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
-              <div>
-                <div class="fw-semibold">Email</div>
-                <div class="text-muted small">csnkmanila06@gmail.com</div>
-              </div>
-            </div>
-
-            <div class="d-flex gap-3 mb-4">
-              <div class="text-danger fs-5"><i class="fa-solid fa-clock"></i></div>
-              <div>
-                <div class="fw-semibold">Office Hours</div>
-                <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
-              </div>
-            </div>
-
-            <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-danger rounded-pill px-4"
-                 target="_blank" rel="noopener"
-                 href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
-                <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
-              </a>
-
-              <a class="btn btn-outline-secondary rounded-pill px-4" href="#home">
-                <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
-              </a>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-    </div>
+    </div><!-- /.cta-hire -->
   </div>
 </section>
 
 <!-- ===================== -->
-<!-- Page Content Ends -->
+<!-- Page Content Ends     -->
 <!-- ===================== -->
 
 <!-- ✅ Reusable Footer -->
 <?php include __DIR__ . '/footer.php'; ?>
 
-<!-- Bootstrap JS (bundle includes Popper) -->
+<!-- Bootstrap JS (bundle includes Popper + Carousel) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Policy Modals Handler -->
+<script src="../resources/js/policy-modals.js"></script>
 
-<!-- Page‑local: Hero pill swapper (single copy) -->
+<!-- Page‑local: Hero pill swapper -->
 <script>
 (function(){
   const container = document.getElementById('heroPills');
@@ -672,5 +593,40 @@
   if (init) applyFrom(init);
 })();
 </script>
+
+<!-- Page‑local: Training Gallery lightbox & keys -->
+<script>
+(function(){
+  const modalEl = document.getElementById('galleryModal');
+  const modalImg = document.getElementById('galleryModalImg');
+  const gallerySection = document.getElementById('training-gallery');
+
+  if (!modalEl || !modalImg || !gallerySection) return;
+
+  // Open modal with clicked image
+  gallerySection.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', function(e){
+      e.preventDefault();
+      const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
+      if (!full) return;
+      modalImg.src = full;
+      const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+      m.show();
+    });
+  });
+
+  // Optional: arrow keys go to next/prev slide when modal is open
+  document.addEventListener('keydown', function(e){
+    const isOpen = modalEl.classList.contains('show');
+    if (!isOpen) return;
+    if (e.key === 'ArrowRight') {
+      document.querySelector('#galleryCarousel .carousel-control-next')?.click();
+    } else if (e.key === 'ArrowLeft') {
+      document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
+    }
+  }, false);
+})();
+</script>
+
 </body>
 </html>

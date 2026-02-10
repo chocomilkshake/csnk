@@ -1,0 +1,25 @@
+Options -Indexes
+
+# Add MIME types for media files
+
+AddType video/mp4 .mp4
+AddType video/webm .webm
+AddType video/ogg .ogg
+AddType video/ogg .ogv
+AddType video/quicktime .mov
+AddType video/x-msvideo .avi
+AddType video/x-matroska .mkv
+
+# Prevent PHP execution in uploads directory
+
+<FilesMatch "\.(php|php3|php4|php5|phtml)$">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
+
+# Allow image, document, and video viewing
+
+<FilesMatch "\.(jpg|jpeg|png|gif|pdf|doc|docx|mp4|webm|ogg|ogv|mov|avi|mkv)$">
+Order Allow,Deny
+Allow from all
+</FilesMatch>

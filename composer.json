@@ -1,0 +1,12 @@
+{
+    "require": {
+        "phpmailer/phpmailer": "^7.0",
+        "phpoffice/phpspreadsheet": "^5.4",
+        "psr/simple-cache": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "": "includes/"
+        }
+    }
+}

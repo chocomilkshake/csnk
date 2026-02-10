@@ -3,17 +3,46 @@
 declare(strict_types=1);
 session_start();
 
+// Load PHPMailer (if available)
+$composer_autoload = __DIR__ . '/../vendor/autoload.php';
+$composer_autoload_missing = false;
+if (is_readable($composer_autoload)) {
+    require_once $composer_autoload;
+} else {
+    error_log('Composer autoload missing or unreadable: ' . $composer_autoload);
+    $composer_autoload_missing = true;
+}
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 // --------------------------------------------------
 // Configuration
 // --------------------------------------------------
 $CONFIG = [
-    'to_email'      => 'CSNKSupport@gmail.com',      // <-- CHANGE: destination email
-    'from_email'    => 'no-reply@example.com',   // <-- CHANGE: from header (domain you own)
-    'from_name'     => 'CSNK Manpower Agency',         // <-- CHANGE: from name
-    'subject'       => 'CSNK Contact Form Submission', // <-- CHANGE: email subject
+    // ---- CHANGE THESE ----
+    'to_email'      => 'csnkmanila@gmail.com',     // Destination email
+    'to_name'       => 'CSNK Support',
+    'from_email'    => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
+    'from_name'     => 'CSNK Manpower Agency',
+    'subject'       => 'CSNK Contact Form Submission',
+    // ----------------------
     'max_message'   => 500,
-    'enable_mail'   => true,                     // set false to skip mail() while testing
+
+    // PHPMailer Configuration
+    'smtp_host'     => 'smtp.gmail.com',
+    'smtp_port'     => 587,                        // 587 for TLS
+    'smtp_user'     => 'csnkmanila@gmail.com',
+    'smtp_pass'     => 'hqyp ljaf kwyd fkzo',      // Gmail App Password (NOT normal password)
+    'smtp_encrypt'  => 'tls',                      // Overwritten below if PHPMailer is available
+    'smtp_debug'    => 0,                          // 0=off; 2=verbose (logs to error_log)
+    'enable_mail'   => true,                       // set false to skip email while testing
 ];
+
+// Prefer PHPMailer constant if available
+if (!$composer_autoload_missing && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+    $CONFIG['smtp_encrypt'] = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+}
 
 // Generate CSRF token
 if (empty($_SESSION['csrf_token'])) {
@@ -44,12 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($honeypot)) {
         // Silently treat as success to avoid tipping off bots
         $success = true;
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $_POST = [];
     } else {
         // Gather & sanitize
         $firstName = clean($_POST['firstName'] ?? '');
         $lastName  = clean($_POST['lastName'] ?? '');
         $email     = clean($_POST['email'] ?? '');
-        $phone     = clean($_POST['phone'] ?? '');
+        // UI forces 11 digits; keep server-side consistent
+        $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
         $topic     = clean($_POST['topic'] ?? '');
         $message   = clean($_POST['message'] ?? '');
 
@@ -63,8 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Please enter a valid email address.';
         }
-        if ($phone !== '' && !preg_match('/^[0-9+\-\s()]{7,20}$/', $phone)) {
-            $errors['phone'] = 'Please enter a valid phone number.';
+        // If phone provided, require exactly 11 digits (PH mobile format like 09XXXXXXXXX)
+        if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) {
+            $errors['phone'] = 'Please enter an 11-digit phone number.';
         }
         if ($topic === '') {
             $errors['topic'] = 'Please select a topic.';
@@ -76,40 +109,237 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['consent'] = 'Consent is required.';
         }
 
-        // If valid, send email
+        // If valid, send email with PHPMailer
         if (!$errors) {
-            $ip      = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-            $agent   = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-            $time    = date('Y-m-d H:i:s O');
-
-            $body = "You have a new contact form submission:\n\n"
-                . "Time: $time\n"
-                . "IP: $ip\n"
-                . "User-Agent: $agent\n\n"
-                . "Name: $firstName $lastName\n"
-                . "Email: $email\n"
-                . "Phone: $phone\n"
-                . "Topic: $topic\n\n"
-                . "Message:\n$message\n";
-
-            // Prevent header injection
-            $safeFromName = str_replace(["\r", "\n"], '', $CONFIG['from_name']);
-            $safeFrom     = str_replace(["\r", "\n"], '', $CONFIG['from_email']);
-            $safeSubject  = str_replace(["\r", "\n"], '', $CONFIG['subject']);
-
-            $headers = [];
-            $headers[] = "From: {$safeFromName} <{$safeFrom}>";
-            $headers[] = "Reply-To: {$email}";
-            $headers[] = "Content-Type: text/plain; charset=UTF-8";
-            $headers[] = "X-Mailer: PHP/" . phpversion();
+            // Plain-text fallback (no submitted/IP/agent)
+            $textBody =
+                "You have a new CSNK contact form submission:\n\n" .
+                "Name: {$firstName} {$lastName}\n" .
+                "Email: {$email}\n" .
+                "Phone: {$phone}\n" .
+                "Topic: {$topic}\n\n" .
+                "Message:\n{$message}\n";
 
             if ($CONFIG['enable_mail']) {
-                $sent = @mail($CONFIG['to_email'], $safeSubject, $body, implode("\r\n", $headers));
-                if ($sent) {
+                // If PHPMailer isn't available (missing composer autoload), avoid fatal error and fail gracefully.
+                if ($composer_autoload_missing || !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                    error_log('PHPMailer not available; skipping email send.');
+                    $errors['general'] = 'Mail service is temporarily unavailable. Your message was saved but could not be sent. Please try again later.';
+                    $CONFIG['enable_mail'] = false;
+                }
+            }
+
+            if ($CONFIG['enable_mail']) {
+                try {
+                    // Instantiate PHPMailer via FQCN
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    $mail->CharSet = 'UTF-8';
+
+                    // Server settings
+                    $mail->isSMTP();
+
+                    // Debug output level (0 = off). Set to 2 to log verbose debug to error_log.
+                    $mail->SMTPDebug   = $CONFIG['smtp_debug'] ?? 0;
+                    $mail->Debugoutput = function ($str, $level) {
+                        error_log("PHPMailer debug level {$level}: {$str}");
+                    };
+
+                    $mail->Host        = $CONFIG['smtp_host'];
+                    $mail->SMTPAuth    = true;
+                    $mail->Username    = $CONFIG['smtp_user'];
+                    $mail->Password    = $CONFIG['smtp_pass'];
+                    $mail->SMTPSecure  = $CONFIG['smtp_encrypt']; // e.g., PHPMailer::ENCRYPTION_STARTTLS
+                    $mail->SMTPAutoTLS = true;
+                    $mail->Port        = (int)$CONFIG['smtp_port'];
+
+                    // For local development (XAMPP/localhost), allow self-signed certs to avoid TLS handshake failures
+                    $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                    if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
+                        $mail->SMTPOptions = [
+                            'ssl' => [
+                                'verify_peer'       => false,
+                                'verify_peer_name'  => false,
+                                'allow_self_signed' => true,
+                            ],
+                        ];
+                    }
+
+                    // Recipients: send to company support and CC the client
+                    $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
+                    $mail->addAddress($CONFIG['to_email'], $CONFIG['to_name'] ?? '');
+                    if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $mail->addCC($email);
+                        $mail->addReplyTo($email, trim($firstName . ' ' . $lastName));
+                    }
+
+                    // Subject (append topic if present)
+                    $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
+                    $mail->Subject = $subjectBase . (trim($topic) !== '' ? ' - ' . $topic : '');
+
+                    // Helper escaper for HTML
+                    $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    $senderName  = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+                    $senderEmail = $email ?? '';
+                    $senderPhone = $phone ?? '';
+                    $topicSafe   = $topic ?? '';
+                    $messageSafe = $message ?? '';
+
+                    // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
+                    $htmlBody =
+'<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSNK Contact Message</title>
+</head>
+<body style="margin:0;padding:0;background:#ffebee;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffebee;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:94%;">
+
+          <!-- Logo row (two images side-by-side) -->
+          <tr>
+            <td align="center" style="padding:8px 0 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                <tr>
+                  <td style="padding:0 8px;">
+                    <img src="cid:whychoose_cid" alt="Why Choose" style="max-width:140px;height:auto;display:block;border:0;">
+                  </td>
+                  <td style="padding:0 8px;">
+                    <img src="cid:secondary_logo_cid" alt="CSNK" style="max-width:140px;height:auto;display:block;border:0;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #f2b9bc;border-radius:10px;overflow:hidden;">
+              <!-- Header band -->
+              <div style="background:linear-gradient(90deg,#c62828,#e53935);padding:14px 18px;">
+                <h1 style="margin:0;font-size:18px;color:#fff;font-weight:600;">New Contact Message</h1>
+                <div style="margin-top:4px;font-size:12px;color:#ffe9e9;">Received via the CSNK website</div>
+              </div>
+
+              <!-- Summary -->
+              <div style="padding:14px 18px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Name</td>
+                    <td style="padding:6px 0;color:#222;font-size:14px;font-weight:600;">' . $h($senderName) . '</td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Email</td>
+                    <td style="padding:6px 0;font-size:14px;">
+                      <a href="mailto:' . $h($senderEmail) . '" style="color:#1a73e8;text-decoration:none;">' . $h($senderEmail) . '</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Phone</td>
+                    <td style="padding:6px 0;color:#222;font-size:14px;">' . $h($senderPhone) . '</td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Topic</td>
+                    <td style="padding:6px 0;color:#222;font-size:14px;">
+                      <span style="display:inline-block;padding:4px 10px;border-radius:999px;color:#b00020;background:#fde7ea;border:1px solid #f8c9cf;font-size:12px;">' . $h($topicSafe) . '</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Divider -->
+              <div style="border-top:1px solid #f2b9bc;margin:0 18px 0;"></div>
+
+              <!-- Message -->
+              <div style="padding:12px 18px 16px;">
+                <div style="color:#444;font-size:14px;line-height:1.6;">
+                  <div style="color:#c62828;font-weight:600;margin-bottom:6px;">Message</div>
+                  <div style="white-space:pre-wrap;background:#fff6f6;border:1px solid #f2b9bc;border-radius:8px;padding:10px;color:#333;">' . nl2br($h($messageSafe)) . '</div>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div style="background:#fff5f5;padding:10px 18px;border-top:1px solid #f2b9bc;">
+                <div style="font-size:12px;color:#777;">This email was sent automatically from the CSNK website contact form.</div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Legal -->
+          <tr>
+            <td style="text-align:center;padding:10px 6px;color:#999;font-size:11px;">
+              © ' . date('Y') . ' CSNK. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>';
+
+                    // -------- Embed two logos (CID) --------
+                    // #1 whychoose.png
+                    $whychooseCandidates = [
+                        __DIR__ . '/../resources/img/whychoose.png',
+                        __DIR__ . '/resources/img/whychoose.png',
+                        __DIR__ . '/public/resources/img/whychoose.png',
+                    ];
+                    // #2 secondary logo: try emailogo.png then crempco-logo.png
+                    $secondaryCandidates = [
+                        __DIR__ . '/../resources/img/emailogo.png',
+                        __DIR__ . '/resources/img/emailogo.png',
+                        __DIR__ . '/public/resources/img/emailogo.png',
+                        __DIR__ . '/../resources/img/crempco-logo.png',
+                        __DIR__ . '/resources/img/crempco-logo.png',
+                        __DIR__ . '/public/resources/img/crempco-logo.png',
+                    ];
+
+                    $pickFirstReadable = function (array $paths): ?string {
+                        foreach ($paths as $p) {
+                            if (is_readable($p)) return $p;
+                        }
+                        return null;
+                    };
+
+                    $whychoosePath = $pickFirstReadable($whychooseCandidates);
+                    $secondaryPath = $pickFirstReadable($secondaryCandidates);
+
+                    if ($whychoosePath) {
+                        $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+                    } else {
+                        error_log('Email embed: whychoose.png not found. Tried: ' . implode(', ', $whychooseCandidates));
+                    }
+
+                    if ($secondaryPath) {
+                        $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+                        $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+                        $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+                    } else {
+                        error_log('Email embed: secondary logo not found. Tried: ' . implode(', ', $secondaryCandidates));
+                    }
+                    // -------- End embed --------
+
+                    // Body
+                    $mail->isHTML(true);
+                    $mail->Body    = $htmlBody;
+                    $mail->AltBody = $textBody;
+
+                    // Send
+                    $mail->send();
+
                     $success = true;
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
                     $_POST = []; // clear form
-                } else {
+                } catch (\Throwable $e) {
+                    error_log('Mail Exception: ' . $e->getMessage());
+                    if (isset($mail) && !empty($mail->ErrorInfo)) {
+                        error_log('PHPMailer ErrorInfo: ' . $mail->ErrorInfo);
+                    }
                     $errors['general'] = 'We could not send your message right now. Please try again later.';
                 }
             } else {
@@ -134,7 +364,7 @@ function invalidClass(array $errors, string $key): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title >Contact Us</title>
+  <title>Contact Us</title>
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -153,24 +383,12 @@ function invalidClass(array $errors, string $key): string {
       color: var(--ink);
       font-feature-settings: "kern" 1, "liga" 1;
     }
-    .site-header {
-      border-bottom: 1px solid var(--border);
-      background: #fff;
-    }
-    .brand-dot {
-      width: .65rem; height: .65rem; border-radius: 50%;
-      background: var(--accent-red); display: inline-block; margin-left: .35rem;
-    }
-    .nav-link { color: var(--ink); }
-    .nav-link.active, .nav-link:hover, .nav-link:focus { color: var(--accent-red); }
-
     .contact-card {
       border: 1px solid var(--border);
       border-radius: 14px;
       box-shadow: 0 6px 28px rgba(17,17,17, .04);
       background: #fff;
     }
-
     .form-control, .form-select {
       border-radius: 10px;
       border-color: var(--border);
@@ -183,7 +401,6 @@ function invalidClass(array $errors, string $key): string {
       background-color: var(--accent-red);
       border-color: var(--accent-red);
     }
-
     .btn-accent {
       --bs-btn-color: #fff;
       --bs-btn-bg: var(--accent-red);
@@ -194,15 +411,8 @@ function invalidClass(array $errors, string $key): string {
     }
     .text-accent { color: var(--accent-red) !important; }
     .divider { height: 1px; background: var(--border); }
-
     .char-counter { font-size: .85rem; color: var(--muted-ink); }
     .char-counter.warning { color: var(--accent-red); font-weight: 600; }
-
-    .site-footer {
-      border-top: 1px solid var(--border);
-      color: var(--muted-ink);
-    }
-
     .is-invalid ~ .invalid-feedback { display: block; }
   </style>
 </head>
@@ -216,7 +426,7 @@ function invalidClass(array $errors, string $key): string {
   <section class="container py-5 py-md-6">
     <div class="row align-items-center g-4">
       <div class="col-lg-6">
-        <h1 class="display-6 fw-bold mb-3 ">Contact <span class="text-accent">CSNK </span>Support</h1>
+        <h1 class="display-6 fw-bold mb-3">Contact <span class="text-accent">CSNK </span>Support</h1>
         <p class="lead text-secondary mb-4">
           We’re here to help. Send us a message and we’ll get back to you shortly.
         </p>
@@ -245,8 +455,7 @@ function invalidClass(array $errors, string $key): string {
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-floating">
-                  
-                <!-- First name -->
+                  <!-- First name -->
                   <input
                     type="text"
                     id="firstName"
@@ -264,8 +473,7 @@ function invalidClass(array $errors, string $key): string {
               </div>
               <div class="col-md-6">
                 <div class="form-floating">
-                  
-                <!-- Last name -->
+                  <!-- Last name -->
                   <input
                     type="text"
                     id="lastName"
@@ -284,8 +492,7 @@ function invalidClass(array $errors, string $key): string {
 
               <div class="col-12">
                 <div class="form-floating">
-                  
-                <!-- Email -->
+                  <!-- Email -->
                   <input
                     type="email"
                     id="email"
@@ -304,15 +511,14 @@ function invalidClass(array $errors, string $key): string {
 
               <div class="col-md-6">
                 <div class="form-floating">
-                  
-                <!-- Phone (PH 11 digits, digits-only UI help) -->
+                  <!-- Phone (PH 11 digits) -->
                   <input
                     type="tel"
                     id="phone"
                     name="phone"
                     class="form-control <?= invalidClass($errors, 'phone') ?>"
                     placeholder="09XXXXXXXXX"
-                    autocomplete="tel-national"   
+                    autocomplete="tel-national"
                     inputmode="tel"
                     pattern="^\d{11}$"
                     minlength="11"
@@ -321,51 +527,51 @@ function invalidClass(array $errors, string $key): string {
                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)"
                   />
                   <label for="phone">Phone (optional)</label>
-                  <div class="invalid-feedback"><?= htmlspecialchars($errors['phone'] ?? 'Please enter a valid phone number.', ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="invalid-feedback"><?= htmlspecialchars($errors['phone'] ?? 'Please enter an 11-digit phone number.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-floating">
                   <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
-                <?php
-                  $topics = ['General Inquiry', 'Support', 'Sales', 'Partnerships'];
+                  <?php
+                    $topics = ['General Inquiry', 'Support', 'Sales', 'Partnerships'];
                     foreach ($topics as $t) {
-                  $sel = (old('topic') === $t) ? 'selected' : '';
-                  echo '<option '.$sel.'>'.htmlspecialchars($t, ENT_QUOTES, 'UTF-8').'</option>';
-                  }
+                      $sel = (old('topic') === $t) ? 'selected' : '';
+                      echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
                   ?>
                   </select>
                   <label for="topic">Topic</label>
                   <div class="invalid-feedback">
-                <?= htmlspecialchars($errors['topic'] ?? 'Please select a topic.', ENT_QUOTES, 'UTF-8') ?>
-                    </div>
+                    <?= htmlspecialchars($errors['topic'] ?? 'Please select a topic.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="form-floating">
+                  <textarea
+                    id="message"
+                    name="message"
+                    class="form-control <?= invalidClass($errors, 'message') ?>"
+                    placeholder="Your message"
+                    style="height: 140px"
+                    required
+                    maxlength="<?= (int)$CONFIG['max_message'] ?>"
+                  ><?= old('message') ?></textarea>
+                  <label for="message">Message</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?>
                   </div>
                 </div>
 
-              <div class="col-12">
-  <div class="form-floating">
-    <textarea
-      id="message"
-      name="message"
-      class="form-control <?= invalidClass($errors, 'message') ?>"
-      placeholder="Your message"
-      style="height: 140px"
-      required
-      maxlength="<?= (int)$CONFIG['max_message'] ?>"
-    ><?= old('message') ?></textarea>
-    <label for="message">Message</label>
-    <div class="invalid-feedback">
-      <?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?>
-    </div>
-  </div>
-
-  <div class="d-flex justify-content-end mt-1">
-    <span id="charCount" class="char-counter" aria-live="polite">
-      0 / <?= (int)$CONFIG['max_message'] ?>
-    </span>
-  </div>
-</div>
+                <div class="d-flex justify-content-end mt-1">
+                  <span id="charCount" class="char-counter" aria-live="polite">
+                    0 / <?= (int)$CONFIG['max_message'] ?>
+                  </span>
+                </div>
+              </div>
 
               <!-- Honeypot (hidden) -->
               <div class="visually-hidden" aria-hidden="true">
@@ -402,7 +608,7 @@ function invalidClass(array $errors, string $key): string {
               <?= htmlspecialchars($CONFIG['to_email'], ENT_QUOTES, 'UTF-8') ?>
             </a>
             &nbsp;•&nbsp; Call us:
-              <a href="tel:+639000000000" class="link-secondary">+63 900 000 0000</a>
+            <a href="tel:+639000000000" class="link-secondary">+63 900 000 0000</a>
           </div>
         </div>
       </div>
@@ -484,7 +690,7 @@ function invalidClass(array $errors, string $key): string {
                   <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
                 </a>
 
-                <a class="btn btn-outline-secondary rounded-pill px-4" href="#home">
+                <a class="btn btn-outline-secondary rounded-pill px-4" href="#top">
                   <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
                 </a>
               </div>
@@ -499,7 +705,6 @@ function invalidClass(array $errors, string $key): string {
 
   <!-- Footer -->
   <footer>
-    
     <?php include __DIR__ . '/footer.php'; ?>
   </footer>
 
@@ -515,18 +720,20 @@ function invalidClass(array $errors, string $key): string {
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"> </script>
+  <!-- Font Awesome & Bootstrap JS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
 
   <script>
-
-    // Character counter
+    // Character counter (handles emoji properly)
     const messageEl = document.getElementById('message');
     const counterEl = document.getElementById('charCount');
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
 
     function updateCounter(){
-      const len = messageEl.value.length;
+      const len = [...(messageEl.value || '')].length;
       counterEl.textContent = `${len} / ${limit}`;
       const threshold = Math.floor(limit * 0.9);
       counterEl.classList.toggle('warning', len >= threshold);
@@ -536,7 +743,7 @@ function invalidClass(array $errors, string $key): string {
       updateCounter();
     }
 
-    // Submit button loading UI (client-side)
+    // Submit button loading UI
     const form = document.getElementById('contactForm');
     const submitBtn = document.getElementById('submitBtn');
     const submitText = submitBtn?.querySelector('.submit-text');
@@ -548,80 +755,6 @@ function invalidClass(array $errors, string $key): string {
       submitBtn.disabled = true;
     });
   </script>
-
-  <script>
-  //message counter
-  (function () {
-  const textarea = document.getElementById('message');
-  const counter  = document.getElementById('charCount');
-
-  if (!textarea || !counter) return;
-
-  // Use the element's own maxlength so it's always in sync with PHP config.
-  const LIMIT = textarea.maxLength > 0 ? textarea.maxLength : Infinity;
-
-  // Track composition so we don't disrupt IME input
-  let isComposing = false;
-  textarea.addEventListener('compositionstart', () => { isComposing = true; });
-  textarea.addEventListener('compositionend',   () => { 
-    isComposing = false; 
-    enforceLimitAndUpdate();
-  });
-
-  // Count characters as Unicode code points (handles emoji properly)
-  function lengthOf(str) {
-    return Array.from(str).length;
-  }
-
-  function sliceToLimit(str, limit) {
-    return Array.from(str).slice(0, limit).join('');
-  }
-
-  function updateCounterDisplay(len, limit) {
-    // “used / limit”, same as your UI: 123 / 500
-    counter.textContent = `${len} / ${limit}`;
-  }
-
-  function enforceLimitAndUpdate() {
-    if (isComposing) return; // wait until IME finishes
-
-    const value = textarea.value || '';
-    const len = lengthOf(value);
-
-    if (len > LIMIT) {
-      const start = textarea.selectionStart;
-      const end   = textarea.selectionEnd;
-      const beforeLength = value.length;
-
-      textarea.value = sliceToLimit(value, LIMIT);
-
-      // Try to keep selection/caret in a sensible spot
-      const afterLength = textarea.value.length;
-      const delta = beforeLength - afterLength;
-      if (typeof start === 'number' && typeof end === 'number') {
-        const newStart = Math.max(0, start - delta);
-        const newEnd   = Math.max(0, end - delta);
-        textarea.setSelectionRange(newStart, newEnd);
-      }
-    }
-
-    updateCounterDisplay(lengthOf(textarea.value), LIMIT);
-  }
-
-  // Update on any input changes
-  textarea.addEventListener('input', enforceLimitAndUpdate);
-
-  // In some browsers, setting value programmatically or autofill may not fire input
-  // Use MutationObserver as a fallback to stay in sync
-  const mo = new MutationObserver(enforceLimitAndUpdate);
-  mo.observe(textarea, { attributes: true, attributeFilter: ['value'] });
-
-  // Initialize on page load (includes prefilled old('message'))
-  enforceLimitAndUpdate();
-})();
-</script>
-
-
 
   <?php if ($success): ?>
   <script>

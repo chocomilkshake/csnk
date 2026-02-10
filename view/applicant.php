@@ -8,9 +8,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CSNK Manpower Agency – Kasambahay Applicants</title>
+
+  <!-- CSS: Bootstrap, Icons, App styles -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="../resources/css/app.css" rel="stylesheet">
+
+  <!-- (Optional duplicate, safe to keep if you prefer pinned versions) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -22,12 +28,8 @@
 
     <!-- Search Bar -->
     <section class="search-wrap mb-4">
-      <!-- Keep the form inside your existing .container (from <main class="container py-4">) -->
       <form id="searchForm" role="search">
-        <!-- The pill itself stretches only within the current container width -->
         <div class="search-pill d-flex align-items-stretch bg-white border border-2 rounded-pill shadow-sm p-2 p-sm-3 w-100">
-
-          <!-- Keyword -->
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
             <i class="bi bi-hospital-fill text-danger me-2 fs-5"></i>
             <input
@@ -40,10 +42,8 @@
             >
           </div>
 
-          <!-- Divider (desktop only) -->
           <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
 
-          <!-- Location -->
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
             <i class="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
             <input
@@ -56,29 +56,12 @@
             >
           </div>
 
-          <!-- Divider (desktop only) -->
-          <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
-
-          <!-- Date -->
-          <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
-            <i class="bi bi-calendar2-event-fill text-danger me-2 fs-5"></i>
-            <input
-              type="date"
-              class="form-control border-0 bg-transparent ps-3 min-w-0"
-              id="available_by"
-              name="available_by"
-              aria-label="Date"
-            >
-          </div>
-
-          <!-- Search button -->
           <div class="d-flex align-items-center ps-2 ps-sm-3">
-            <button class="btn btn-danger rounded-pill px-3 px-sm-4 view-profile-btn" type="submit">
+            <button class="btn btn-danger rounded-pill px-3 px-sm-4" type="submit">
               <i class="bi bi-search me-1"></i>
               <span class="fw-medium">Search</span>
             </button>
           </div>
-
         </div>
       </form>
     </section>
@@ -96,65 +79,127 @@
           </div>
           <div class="offcanvas-body">
             <form id="filtersForm" class="d-grid gap-3">
+
+              <!-- Specialization -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Specialization</span>
                   <a href="#" class="small" id="clearSpecs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Kasambahay" id="spec-kas"><label class="form-check-label" for="spec-kas">Kasambahay</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Nanny" id="spec-nan"><label class="form-check-label" for="spec-nan">Nanny</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Cook" id="spec-cook"><label class="form-check-label" for="spec-cook">Cook</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly Care" id="spec-elder"><label class="form-check-label" for="spec-elder">Elderly Care</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="All-around Helper" id="spec-all"><label class="form-check-label" for="spec-all">All-around Helper</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="specializations[]" value="Driver" id="spec-driver"><label class="form-check-label" for="spec-driver">Driver</label></div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-kas">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning &amp; Housekeeping (General)" id="spec-kas">
+                      Cleaning &amp; Housekeeping (General)
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-nan">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry &amp; Clothing Care" id="spec-nan">
+                      Laundry &amp; Clothing Care
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-cook">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking &amp; Food Service" id="spec-cook">
+                      Cooking &amp; Food Service
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-elder">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare &amp; Maternity (Yaya)" id="spec-elder">
+                      Childcare &amp; Maternity (Yaya)
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-all">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly &amp; Special Care (Caregiver)" id="spec-all">
+                      Elderly &amp; Special Care (Caregiver)
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-driver">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Pet &amp; Outdoor Maintenance" id="spec-driver">
+                      Pet &amp; Outdoor Maintenance
+                    </label>
+                  </div>
+
                 </div>
               </div>
 
+              <!-- Availability -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Availability</span>
                   <a href="#" class="small" id="clearAvail">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft"><label class="form-check-label" for="avail-ft">Full-time</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt"><label class="form-check-label" for="avail-pt">Part-time</label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="avail-ft">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft">
+                      Full-time
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="avail-pt">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt">
+                      Part-time
+                    </label>
+                  </div>
                 </div>
               </div>
 
+              <!-- Experience -->
               <div>
                 <label class="fw-semibold mb-1" for="exp-range">Experience (min years)</label>
                 <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1" value="0" oninput="this.nextElementSibling.value=this.value">
                 <output class="small">0</output>
               </div>
 
+              <!-- Languages -->
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <span class="fw-semibold">Languages</span>
                   <a href="#" class="small" id="clearLangs">Clear</a>
                 </div>
                 <div class="vstack gap-1">
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil"><label class="form-check-label" for="lang-fil">Filipino</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng"><label class="form-check-label" for="lang-eng">English</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Ilocano" id="lang-ilo"><label class="form-check-label" for="lang-ilo">Ilocano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Cebuano" id="lang-ceb"><label class="form-check-label" for="lang-ceb">Cebuano</label></div>
-                  <div class="form-check"><input class="form-check-input" type="checkbox" name="languages[]" value="Kapampangan" id="lang-kap"><label class="form-check-label" for="lang-kap">Kapampangan</label></div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="lang-fil">
+                      <input class="form-check-input" type="checkbox" name="languages[]" value="Filipino" id="lang-fil">
+                      Filipino
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <label class="form-check-label" for="lang-eng">
+                      <input class="form-check-input" type="checkbox" name="languages[]" value="English" id="lang-eng">
+                      English
+                    </label>
+                  </div>
                 </div>
               </div>
 
+              <!-- Sort -->
               <div>
                 <label class="fw-semibold mb-1" for="sort">Sort by</label>
                 <select class="form-select" id="sort" name="sort">
                   <option value="availability_asc">Availability: Earliest</option>
                   <option value="experience_desc">Experience: Highest</option>
-                  <option value="newest">Newest</option>
+                  <option value="newest" selected>Newest</option>
                 </select>
               </div>
 
               <div class="d-grid gap-1">
-                <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                <button class="btn btn-primary" id="applyFilters" type="button">Apply Filters</button>
                 <a class="btn btn-outline-secondary" href="#" id="resetFilters">Reset</a>
               </div>
+
             </form>
           </div>
         </div>
@@ -177,140 +222,94 @@
     </div>
   </main>
 
-  <!-- Include Bootstrap Icons (if not already on the page) -->
-  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> -->
-
-  <footer class="bg-white border-top">
-    <div class="container py-4">
-      <div class="row g-4 align-items-start">
-        <div class="col-md-6">
-          <img src="../resources/img/csnklogo.png" alt="CSNK Logo" style="height:75px;">
-        </div>
-
-        <div class="col-md-6">
-          <ul class="list-unstyled text-muted mb-0">
-            <li class="mb-2">
-              <i class="bi bi-geo-alt-fill text-danger me-2"></i>
-              2F Unit 1 Eden Townhouse 2001 Eden St. Cor Pedro Gil, <br> &emsp;&ensp; Sta Ana Barangay 784, City of Manila, NCR, First District
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-telephone-fill text-danger me-2"></i>
-              +63 (02) 1234-5678
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-envelope-fill text-danger me-2"></i>
-              info@csnkmanpower.com
-            </li>
-            <li class="mb-0">
-              <i class="bi bi-clock-fill text-danger me-2"></i>
-              Mon - Sat: 8:00 AM - 5:00 PM
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <hr class="my-4">
-
-      <div class="text-center small text-muted">
-        <div>Copyright © <span id="year"></span> CSNK Manpower Agency. All Rights Reserved.</div>
-        <div class="mt-2">
-          <a class="text-muted text-decoration-none me-3" href="#">Legal Notice</a>
-          <a class="text-muted text-decoration-none me-3" href="#">Privacy Policy</a>
-          <a class="text-muted text-decoration-none" href="#">Refund Policy</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
-
-  <!-- ✅ Applicant Profile Modal -->
+  <!-- ✅ Applicant Profile Modal (modernized) -->
   <div class="modal fade" id="applicantModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <!-- header -->
-        <div class="modal-header">
-          <h1 class="modal-title fs-5">Applicant Profile</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-content shadow border-0 rounded-4">
+        <div class="modal-header border-0">
+          <h1 class="modal-title fs-5 fw-bold">Applicant Profile</h1>
         </div>
 
-        <!-- body IDs must match app.js -->
-        <div class="modal-body">
-          <div class="p-3 mb-3 d-flex gap-3 align-items-center" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+        <!-- Body IDs must match app.js -->
+        <div class="modal-body pt-0">
+          <!-- Header strip -->
+          <div class="p-3 mb-3 d-flex gap-3 align-items-center rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
             <div id="avatar" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f4f6;border:1px solid #ffffff;color:#991b1b;font-weight:900;"></div>
-            <div>
+            <div class="flex-grow-1">
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="fw-bold" id="name">Applicant Name</span>
+                <span class="fw-bold fs-6" id="name">Applicant Name</span>
                 <span class="badge rounded-pill" id="primaryRole" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">Role</span>
                 <span class="badge rounded-pill" id="yoeBadge" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">0 yrs</span>
               </div>
-              <div class="mt-1" id="availabilityLine" style="color:#000000;">City, Region • Available from: <strong class="text-danger-emphasis">TBD</strong></div>
+              <!-- City & Region only -->
+              <div class="mt-1 text-muted" id="availabilityLine">City, Region</div>
             </div>
           </div>
 
-          <div class="p-3 mb-3" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
-            <h6 class="mb-2" style="color:#991b1b;text-transform:uppercase;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
+          <!-- Specialization -->
+          <div class="p-3 mb-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
+            <h6 class="mb-2 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
             <div class="d-flex flex-wrap gap-2" id="chipsContainer"></div>
           </div>
 
-          <div class="p-3" style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
-            <h6 class="mb-3" style="color:#991b1b;text-transform:uppercase;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
+          <!-- Basic Information -->
+          <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
+            <h6 class="mb-3 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
             <div class="row g-3">
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — City</div>
                   <div class="fw-semibold" id="cityValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — Region</div>
-                  <div class="fw-semibold" id="regionValue">—</div>
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Preferred Locations (All)</div>
+                  <div class="fw-semibold" id="prefLocValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of Experience</div>
                   <div class="fw-semibold" id="yoeValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type</div>
                   <div class="fw-semibold" id="employmentValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Available Dates</div>
-                  <div class="fw-semibold" id="availValue">—</div>
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Languages</div>
+                  <div class="fw-semibold" id="langValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-2" style="border:1px solid #e5e7eb;border-radius:10px;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Languages</div>
-                  <div class="fw-semibold" id="langValue">—</div>
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Educational Attainment</div>
+                  <div class="fw-semibold" id="eduValue">—</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Footer gets added by app.js (Proceed to Booking) -->
       </div>
     </div>
   </div>
 
   <style>
-    /* chips */
+    /* chips used inside Profile modal */
     #chipsContainer .chip{
       user-select:none; pointer-events:none;
       display:inline-block; padding:.4rem .7rem; border-radius:999px;
       font-weight:700; font-size:.82rem; color:#000000;
       background:#fafafa; border:1px solid #f0f0f0; position:relative;
     }
-    #chipsContainer .chip::after{content:""; position:absolute; inset:-2px; border-radius:999px; box-shadow:0 0 0 2px #000000;}
+    #chipsContainer .chip::after{content:""; position:absolute; inset:-2px; border-radius:999px; box-shadow:0 0 0 2px #000000; opacity:.06;}
   </style>
 
   <!-- Booking Modal (5-step wizard) -->
@@ -318,7 +317,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content shadow">
 
-        <div class="modal-header px-4 pt-4">
+        <div class="modal-header px-4 pt-4 border-0">
           <h5 class="modal-title fw-bold">Booking Appointment</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -326,11 +325,11 @@
         <!-- Stepper -->
         <div class="px-4">
           <div class="d-flex gap-2 pb-3 stepper">
-            <div class="step active" data-step="1"><span class="dot">1</span><div>Select Service</div></div>
-            <div class="step" data-step="2"><span class="dot">2</span><div>Appointment Type</div></div>
+            <div class="step active" data-step="1"><span class="dot">1</span><div>Choose Services</div></div>
+            <div class="step" data-step="2"><span class="dot">2</span><div>Interview Method</div></div>
             <div class="step" data-step="3"><span class="dot">3</span><div>Date &amp; Time</div></div>
-            <div class="step" data-step="4"><span class="dot">4</span><div>Basic Information</div></div>
-            <div class="step" data-step="5"><span class="dot">5</span><div>Confirmation</div></div>
+            <div class="step" data-step="4"><span class="dot">4</span><div>Client Information</div></div>
+            <div class="step" data-step="5"><span class="dot">5</span><div>Review &amp; Submit</div></div>
           </div>
         </div>
 
@@ -351,14 +350,15 @@
           <!-- STEP 1: Services -->
           <div class="step-pane" data-step-pane="1">
             <div class="panel mb-3">
-              <h6 class="mb-3">Services (check all that apply)</h6>
+              <h6 class="mb-2">Tell us what work you need from this applicant</h6>
+              <p class="text-muted small mb-3">Select all applicable services. This helps us prepare the interview and match expectations.</p>
               <div class="row g-2">
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="Child Care">Child Care</button></div>
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="Senior Care">Senior Care</button></div>
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="Pet Care">Pet Care</button></div>
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="House Cleaning">House Cleaning</button></div>
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="Cooking">Cooking</button></div>
-                <div class="col-6 col-md-4"><button type="button" class="btn w-100 oval-tag" data-service="Laundry">Laundry</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cleaning &amp; Housekeeping (General)">Cleaning &amp; Housekeeping (General)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Laundry &amp; Clothing Care">Laundry &amp; Clothing Care</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cooking &amp; Food Service">Cooking &amp; Food Service</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Childcare &amp; Maternity (Yaya)">Childcare &amp; Maternity (Yaya)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Elderly &amp; Special Care (Caregiver)">Elderly &amp; Special Care (Caregiver)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Pet &amp; Outdoor Maintenance">Pet &amp; Outdoor Maintenance</button></div>
               </div>
             </div>
           </div>
@@ -366,7 +366,7 @@
           <!-- STEP 2: Appointment Type -->
           <div class="step-pane d-none" data-step-pane="2">
             <div class="panel mb-3">
-              <h6 class="mb-3">Select Appointment Type</h6>
+              <h6 class="mb-3">How would you like to interview the applicant?</h6>
               <div class="row g-2">
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeVideo" value="Video Call" autocomplete="off">
@@ -381,9 +381,12 @@
                   <label class="btn btn-outline-dark w-100 py-3" for="typeChat"><i class="bi bi-chat-dots me-1"></i> Chat</label>
                 </div>
                 <div class="col-6 col-md-3">
-                  <input type="radio" class="btn-check" name="apptType" id="typeVisit" value="House Visit" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeVisit"><i class="bi bi-house-door me-1"></i> House Visit</label>
+                  <input type="radio" class="btn-check" name="apptType" id="typeVisit" value="Office Visit" autocomplete="off">
+                  <label class="btn btn-outline-dark w-100 py-3" for="typeVisit"><i class="bi bi-building me-1"></i> Office Visit</label>
                 </div>
+              </div>
+              <div class="small text-muted mt-2">
+                Office Visit means an in-person interview at <strong>CREMPCO Main Office</strong>.
               </div>
             </div>
           </div>
@@ -391,68 +394,85 @@
           <!-- STEP 3: Date & Time -->
           <div class="step-pane d-none" data-step-pane="3">
             <div class="panel mb-3">
-              <h6 class="mb-3">Choose Date &amp; Time</h6>
+              <h6 class="mb-2">Choose Date &amp; Time</h6>
+              <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Date</label>
-                  <input type="date" class="form-control" id="bkDate">
+                  <label class="form-label">Date
+                    <input type="date" class="form-control" id="bkDate">
+                  </label>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Time</label>
-                  <input type="time" class="form-control" id="bkTime">
+                  <label class="form-label">Time
+                    <input type="time" class="form-control" id="bkTime">
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- STEP 4: Basic Info -->
+          <!-- STEP 4: Client Information -->
           <div class="step-pane d-none" data-step-pane="4">
             <div class="panel mb-3">
-              <h6 class="mb-3">Basic Information</h6>
+              <h6 class="mb-3">Your Details</h6>
               <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">First Name</label>
-                  <input type="text" class="form-control" id="bkFirstName">
+                <div class="col-md-4">
+                  <label class="form-label">First Name
+                    <input type="text" class="form-control" id="bkFirstName">
+                  </label>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Last Name</label>
-                  <input type="text" class="form-control" id="bkLastName">
+                <div class="col-md-4">
+                  <label class="form-label">Middle Name
+                    <input type="text" class="form-control" id="bkMiddleName">
+                  </label>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Phone Number</label>
-                  <input type="tel" class="form-control" id="bkPhone">
+                <div class="col-md-4">
+                  <label class="form-label">Last Name
+                    <input type="text" class="form-control" id="bkLastName">
+                  </label>
                 </div>
+
+                <!-- Phone: enforce 11 digits and must start with 09 -->
                 <div class="col-md-6">
-                  <label class="form-label">Email Address</label>
-                  <input type="email" class="form-control" id="bkEmail">
+                  <label class="form-label">Active Phone Number
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="bkPhone"
+                      placeholder="09XXXXXXXXX"
+                      inputmode="numeric"
+                      pattern="^09\d{9}$"
+                      maxlength="11"
+                      minlength="11"
+                      aria-describedby="bkPhoneHelp"
+                    >
+                  </label>
+                  <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Active Email
+                    <input type="email" class="form-control" id="bkEmail" placeholder="name@email.com">
+                  </label>
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Address</label>
-                  <input type="text" class="form-control" id="bkAddress">
+                  <label class="form-label">Address
+                    <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- STEP 5: Confirmation -->
+          <!-- STEP 5: Review & Submit -->
           <div class="step-pane d-none" data-step-pane="5">
             <div class="panel mb-3">
-              <h6 class="mb-3">Booking Confirmed</h6>
-              <div class="row g-3">
-                <div class="col-lg-8">
-                  <div class="border rounded p-3">
-                    <h6 class="text-success mb-2"><i class="bi bi-check-circle me-1"></i> Success!</h6>
-                    <div id="bkSummary" class="small"></div>
-                  </div>
-                </div>
-                <div class="col-lg-4">
-                  <div class="border rounded p-3 text-center">
-                    <div class="fw-semibold mb-2">Booking QR</div>
-                    <!-- Placeholder QR block (replace with real QR later) -->
-                    <div id="bkQR" class="d-inline-block border rounded" style="width:140px;height:140px;background:#f8f9fa"></div>
-                    <button class="btn btn-darkbrand w-100 mt-3 text-white" id="bkDownload">Download Receipt</button>
-                  </div>
-                </div>
+              <h6 class="mb-3">Review Your Request</h6>
+              <div class="border rounded p-3 mb-3">
+                <div id="bkSummary" class="small"></div>
+              </div>
+              <div class="d-grid">
+                <button class="btn btn-brand text-white" id="bkSubmit">Submit Request</button>
               </div>
             </div>
           </div>
@@ -490,136 +510,18 @@
     .oval-tag.active,.oval-tag:hover{ background:var(--brand-red); color:#fff; }
   </style>
 
-  <!-- scripts in this order -->
+  <!-- JS: Bootstrap bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- App scripts -->
   <script src="../resources/js/app.js"></script>
+  <script src="../resources/js/applicant.js"></script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
 
-  <!-- Minimal safety: expose openBookingModal if app.js hasn't been patched yet -->
-  <script>
-    (function(){
-      // If app.js already defines openBookingModal, do nothing.
-      if (window.openBookingModal) return;
+  <?php include __DIR__ . '/footer.php'; ?>
 
-      const bookingEl = document.getElementById('bookingModal');
-      if (!bookingEl) return;
-
-      let currentStep = 1;
-      const maxStep = 5;
-
-      const stepPanes = [...bookingEl.querySelectorAll('[data-step-pane]')];
-      const stepDots  = [...bookingEl.querySelectorAll('.stepper .step')];
-      const btnNext   = bookingEl.querySelector('#bkNext');
-      const btnBack   = bookingEl.querySelector('#bkBack');
-      const btnDownload = bookingEl.querySelector('#bkDownload');
-      const bkAvatar = bookingEl.querySelector('#bkAvatar');
-      const bkName   = bookingEl.querySelector('#bkName');
-      const bkMeta   = bookingEl.querySelector('#bkMeta');
-
-      const selectedServices = new Set();
-      bookingEl.querySelectorAll('.oval-tag').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          btn.classList.toggle('active');
-          const name = btn.getAttribute('data-service');
-          if (btn.classList.contains('active')) selectedServices.add(name);
-          else selectedServices.delete(name);
-        });
-      });
-
-      function gotoStep(step){
-        if (step < 1 || step > maxStep) return;
-        currentStep = step;
-        stepPanes.forEach(p => p.classList.toggle('d-none', parseInt(p.dataset.stepPane) !== step));
-        stepDots.forEach(s=>{
-          const n = parseInt(s.dataset.step, 10);
-          s.classList.toggle('active', n === step);
-          s.classList.toggle('completed', n < step);
-        });
-        btnBack.disabled = step === 1;
-        btnNext.textContent = (step === maxStep) ? 'Finish' : 'Next';
-        if (step === 5) buildConfirmation();
-      }
-
-      function buildConfirmation(){
-        const apptType = bookingEl.querySelector('input[name="apptType"]:checked')?.value || '—';
-        const date = bookingEl.querySelector('#bkDate').value || '—';
-        const time = bookingEl.querySelector('#bkTime').value || '—';
-        const fn = bookingEl.querySelector('#bkFirstName').value || '—';
-        const ln = bookingEl.querySelector('#bkLastName').value || '—';
-        const phone = bookingEl.querySelector('#bkPhone').value || '—';
-        const email = bookingEl.querySelector('#bkEmail').value || '—';
-        const addr = bookingEl.querySelector('#bkAddress').value || '—';
-
-        bookingEl.querySelector('#bkSummary').innerHTML = `
-          <div><strong>Services:</strong> ${[...selectedServices].join(', ') || '—'}</div>
-          <div><strong>Type:</strong> ${apptType}</div>
-          <div><strong>Date:</strong> ${date}</div>
-          <div><strong>Time:</strong> ${time}</div>
-          <hr class="my-2">
-          <div><strong>Name:</strong> ${fn} ${ln}</div>
-          <div><strong>Phone:</strong> ${phone}</div>
-          <div><strong>Email:</strong> ${email}</div>
-          <div><strong>Address:</strong> ${addr}</div>
-        `;
-
-        // simple placeholder pattern as QR
-        const qr = bookingEl.querySelector('#bkQR');
-        qr.innerHTML = '';
-        const size = 7, cell = 20;
-        qr.style.position = 'relative';
-        for (let y=0; y<size; y++){
-          for (let x=0; x<size; x++){
-            const dot = document.createElement('div');
-            dot.style.position='absolute';
-            dot.style.width = dot.style.height = (cell-2)+'px';
-            dot.style.left = (x*cell+1)+'px';
-            dot.style.top  = (y*cell+1)+'px';
-            dot.style.background = ((x+y)%2===0) ? '#000' : '#fff';
-            qr.appendChild(dot);
-          }
-        }
-      }
-
-      function validateStep(step){
-        if (step === 1 && selectedServices.size === 0) { toast('Please select at least one service.'); return false; }
-        if (step === 2 && !bookingEl.querySelector('input[name="apptType"]:checked')) { toast('Please choose an appointment type.'); return false; }
-        if (step === 3) {
-          const d = bookingEl.querySelector('#bkDate').value;
-          const t = bookingEl.querySelector('#bkTime').value;
-          if (!d || !t) { toast('Please select date and time.'); return false; }
-        }
-        if (step === 4) {
-          const ids = ['bkFirstName','bkLastName','bkPhone','bkEmail','bkAddress'];
-          for (const id of ids) if (!bookingEl.querySelector('#'+id).value.trim()) { toast('Please complete all fields.'); return false; }
-        }
-        return true;
-      }
-
-      function toast(msg){
-        const el = document.createElement('div');
-        el.className = 'toast align-items-center text-bg-dark border-0 position-fixed bottom-0 end-0 m-3';
-        el.setAttribute('role','alert');
-        el.innerHTML = `
-          <div class="d-flex">
-            <div class="toast-body">${msg}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-          </div>`;
-        document.body.appendChild(el);
-        const t = new bootstrap.Toast(el, { delay: 2200 });
-        t.show();
-        el.addEventListener('hidden.bs.toast', ()=> el.remove());
-      }
-
-      btnBack.addEventListener('click', () => gotoStep(currentStep - 1));
-      btnNext.addEventListener('click', ()=>{
-        if (!validateStep(currentStep)) return;
-        if (currentStep < maxStep) gotoStep(currentStep + 1);
-        else { toast('Booking finished. We will contact you shortly.'); modal.hide(); }
-      });
-      btnDownload.addEventListener('click', () => toast('Receipt download will be implemented.'));
-
-      const modal = new bootstrap.Modal(bookingEl);
-    })();
-  </script>
+  <!-- (Optional duplicate Bootstrap bundle) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-``
