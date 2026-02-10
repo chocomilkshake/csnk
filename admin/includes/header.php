@@ -38,7 +38,7 @@ $deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE dele
     </title>
     
 <!-- Favicon(s): put these OUTSIDE <title> -->
-     <link rel="icon" type="image/png" sizes="32x32" href="../resources/img/CSNK-LOGO.png">
+     <link rel="icon" type="image/png" sizes="16x16" href="../resources/img/csnk-icon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
