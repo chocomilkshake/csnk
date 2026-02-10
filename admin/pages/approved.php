@@ -37,17 +37,34 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['approved_q'];
 }
 
-/** Handle delete (soft delete) with search preserved */
+/** Handle delete (soft delete) with search preserved — only if you want delete in Approved */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
-    if ($applicant->softDelete($id)) {
-        if (isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
-            $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from Approved)");
-        }
-        if (function_exists('setFlashMessage')) setFlashMessage('success', 'Applicant deleted successfully.');
+    $deleted = false;
+
+    if (method_exists($applicant, 'softDelete')) {
+        $deleted = (bool)$applicant->softDelete($id);
+    } elseif (method_exists($applicant, 'update')) {
+        $deleted = (bool)$applicant->update($id, ['status' => 'deleted']);
     } else {
-        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Failed to delete applicant.');
+        try {
+            if (isset($database) && $database instanceof PDO) {
+                $stmt = $database->prepare("UPDATE applicants SET status = 'deleted' WHERE id = :id");
+                $deleted = $stmt->execute([':id' => $id]);
+            }
+        } catch (Throwable $e) {
+            $deleted = false;
+        }
     }
+
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
+    }
+
+    if ($deleted && isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
+        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from Approved)");
+    }
+
     $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
     redirect('approved.php' . $qs);
     exit;
@@ -109,22 +126,19 @@ $applicants = $applicant->getAll('approved');
  * Helpers
  */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
-    if (empty($json)) {
-        return 'N/A';
-    }
+    if (empty($json)) return 'N/A';
+
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
+
     $cities = array_values(array_filter(array_map('trim', $arr), function($v){
         return is_string($v) && $v !== '';
     }));
-
-    if (empty($cities)) {
-        return 'N/A';
-    }
+    if (empty($cities)) return 'N/A';
 
     $full = implode(', ', $cities);
     if (mb_strlen($full) > $maxLen) {
@@ -138,13 +152,11 @@ function filterRowsByQuery(array $rows, string $query): array {
     $needle = mb_strtolower($query);
 
     return array_values(array_filter($rows, function(array $row) use ($needle) {
-        // Applicant name fields
         $first  = (string)($row['first_name']   ?? '');
         $middle = (string)($row['middle_name']  ?? '');
         $last   = (string)($row['last_name']    ?? '');
         $suffix = (string)($row['suffix']       ?? '');
 
-        // Applicant contacts
         $email  = (string)($row['email']        ?? '');
         $phone  = (string)($row['phone_number'] ?? '');
         $loc    = renderPreferredLocation($row['preferred_location'] ?? null, 999);
@@ -168,36 +180,32 @@ if ($q !== '') {
     $applicants = filterRowsByQuery($applicants, $q);
 }
 
+// Preserve the search in action links and export URL
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+$exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
-<!-- ===== Make dropdowns easy to click (no clipping, opens upward) ===== -->
+<!-- ===== Fix dropdown clipping & remove table scroll wrapper (same as pending.php) ===== -->
 <style>
-    /* Keep horizontal scroll if needed, but allow dropdowns to exceed vertically */
-    .table-card .table-responsive {
-        overflow-x: auto;
-        overflow-y: visible !important; /* important: let dropdowns render outside */
-    }
-    /* Ensure the Actions cell can show overflowed dropdowns */
+    /* Allow dropdowns to overflow cleanly */
+    .table-card, .table-card .card-body { overflow: visible !important; }
+    /* In case a .table-responsive is injected by other includes, disable its clipping */
+    .table-card .table-responsive { overflow: visible !important; }
+
+    /* Actions cell can render dropdown outside its bounds */
     td.actions-cell {
         position: relative;
-        overflow: visible !important;
-        z-index: 9999; /* keep above table borders and other elements */
+        overflow: visible;
+        z-index: 10;
+        white-space: nowrap;
     }
 
-    /* Modern dropdown style (same look as other pages) */
+    /* Modern dropdown styling (consistent) */
     .dd-modern .dropdown-menu {
-        position: absolute; /* make sure it can float outside the cell */
-        z-index: 1200; /* higher than table elements */
         border-radius: .75rem; /* rounded-xl */
         border: 1px solid #e5e7eb; /* slate-200 */
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         overflow: hidden;
-        white-space: nowrap;
-    }
-    /* For dropup variant ensure it opens upward and is not clipped */
-    .dropup .dropdown-menu {
-        bottom: 100%;
-        top: auto;
+        z-index: 2000; /* above table & card */
     }
     .dd-modern .dropdown-item {
         display: flex;
@@ -222,14 +230,13 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     .btn-status {
         border-radius: .75rem; /* rounded-xl */
     }
+
+    /* Optional: table spacing without forcing scroll */
+    table.table-styled { margin-bottom: 0; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Approved Applicants</h4>
-    <?php
-        // Export URL. Preserve ?q when present.
-        $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
-    ?>
     <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
     </a>
@@ -261,122 +268,140 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 
 <div class="card table-card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover table-styled">
-                <thead>
+        <!-- Removed .table-responsive to avoid scroll/clipping (matches pending.php) -->
+        <table class="table table-bordered table-striped table-hover table-styled align-middle">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Applicant</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Preferred Location</th>
+                    <th>Date Approved</th>
+                    <th style="width: 320px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($applicants)): ?>
                     <tr>
-                        <th>Photo</th>
-                        <th>Applicant</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Preferred Location</th>
-                        <th>Date Approved</th>
-                        <th style="width: 260px;">Actions</th>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <?php if ($q === ''): ?>
+                                No approved applicants yet.
+                            <?php else: ?>
+                                No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                <a href="approved.php?clear=1" class="ms-1">Clear search</a>
+                            <?php endif; ?>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($applicants)): ?>
+                <?php else: ?>
+                    <?php foreach ($applicants as $row): ?>
+                        <?php
+                            $id = (int)$row['id'];
+                            $currentStatus = (string)($row['status'] ?? 'approved');
+
+                            $viewUrl = 'view_approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                            $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                            $deleteUrl = 'approved.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                            // Change Status target links (preserve q)
+                            $toPendingUrl    = 'approved.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQ;
+                            $toOnProcessUrl  = 'approved.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
+                            $toApprovedUrl   = 'approved.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQ;
+                        ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                                <?php if ($q === ''): ?>
-                                    No approved applicants yet.
+                            <td>
+                                <?php if (!empty($row['picture'])): ?>
+                                    <img
+                                        src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        alt="Photo"
+                                        class="rounded"
+                                        width="50"
+                                        height="50"
+                                        style="object-fit: cover;"
+                                    >
                                 <?php else: ?>
-                                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
-                                    <a href="approved.php?clear=1" class="ms-1">Clear search</a>
+                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                         style="width: 50px; height: 50px;">
+                                        <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
+                                    </div>
                                 <?php endif; ?>
                             </td>
+                            <td>
+                                <div class="fw-semibold">
+                                    <?php echo htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="actions-cell">
+                                <div class="btn-group dd-modern dropup">
+                                    <!-- View -->
+                                    <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="btn btn-sm btn-info" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    <!-- Edit -->
+                                    <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <!-- Optional: Delete (uncomment if you want delete in Approved)
+                                    <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="btn btn-sm btn-danger"
+                                       title="Delete"
+                                       onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                    -->
+
+                                    <!-- Change Status Dropdown (opens upward; not clipped) -->
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                            data-bs-toggle="dropdown"
+                                            data-bs-display="static"
+                                            data-bs-boundary="viewport"
+                                            data-bs-offset="0,8"
+                                            aria-expanded="false"
+                                            title="Change Status">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-hourglass-split text-warning"></i>
+                                                <span>Pending</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-arrow-repeat text-info"></i>
+                                                <span>On-Process</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-check2-circle text-success"></i>
+                                                <span>Approved</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($applicants as $row): ?>
-                            <?php
-                                $id = (int)$row['id'];
-                                $currentStatus = (string)($row['status'] ?? 'approved');
-
-                                $viewUrl = 'view_approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-
-                                // Change Status target links (preserve q)
-                                $toPendingUrl    = 'approved.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQ;
-                                $toOnProcessUrl  = 'approved.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
-                                $toApprovedUrl   = 'approved.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQ;
-                            ?>
-                            <tr>
-                                <td>
-                                    <?php if (!empty($row['picture'])): ?>
-                                        <img
-                                            src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                            alt="Photo"
-                                            class="rounded"
-                                            width="50" height="50"
-                                            style="object-fit: cover;">
-                                    <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold"><?php echo htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8'); ?></div>
-                                </td>
-                                <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td class="actions-cell">
-                                    <div class="btn-group dd-modern dropup">
-                                        <!-- View -->
-                                        <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                           class="btn btn-sm btn-info" title="View">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <!-- Edit -->
-                                        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                           class="btn btn-sm btn-warning" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-
-                                        <!-- Change Status Dropdown (opens upward, not clipped) -->
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
-                                                data-bs-toggle="dropdown"
-                                                data-bs-display="static"
-                                                aria-expanded="false"
-                                                title="Change Status">
-                                            <i class="bi bi-arrow-left-right me-1"></i> Status
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
-                                                   href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <i class="bi bi-hourglass-split text-warning"></i>
-                                                    <span>Pending</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
-                                                   href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <i class="bi bi-arrow-repeat text-info"></i>
-                                                    <span>On-Process</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
-                                                   href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <i class="bi bi-check2-circle text-success"></i>
-                                                    <span>Approved</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
+
 
 <?php require_once '../includes/footer.php'; ?>
