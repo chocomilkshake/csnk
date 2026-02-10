@@ -348,6 +348,13 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                            class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                                                                <!-- Delete -->
+                                        <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                           class="btn btn-sm btn-danger"
+                                           title="Delete"
+                                           onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
 
                                         <!-- Change Status Dropdown -->
                                         <button type="button"
@@ -380,14 +387,6 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                                 </a>
                                             </li>
                                         </ul>
-
-                                        <!-- Delete -->
-                                        <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                           class="btn btn-sm btn-danger"
-                                           title="Delete"
-                                           onclick="return confirm('Are you sure you want to delete this applicant?');">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
                                     </div>
                                 </td>
                             </tr>
