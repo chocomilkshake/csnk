@@ -4,7 +4,7 @@ $pageTitle = 'List of Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// Ensure session is active (for storing last search)
+// Ensure session is active (for storing last search & status)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
@@ -12,17 +12,30 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $applicant = new Applicant($database);
 
 /**
- * --- Search Memory Behavior ---
- * - If ?clear=1 → clear stored search and redirect to clean list
- * - If ?q=...  → store in session and use
+ * --- Search & Status Memory Behavior ---
+ * - If ?clear=1 → clear stored search (q) only and redirect to same status
+ * - If ?q=...   → store in session and use
  * - Else if session has last query → use it
+ * - If ?status=... → store in session and use
+ * - Else if session has last status → use it
+ * - Default status = 'all'
  */
+$allowedStatuses = ['all', 'pending', 'on_process', 'approved'];
+
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
     unset($_SESSION['applicants_q']);
-    redirect('applicants.php');
+    // Preserve current status on clear
+    $preserveParams = [];
+    $statusFromSession = $_SESSION['applicants_status'] ?? 'all';
+    if (in_array($statusFromSession, $allowedStatuses, true) && $statusFromSession !== 'all') {
+        $preserveParams['status'] = $statusFromSession;
+    }
+    $qs = !empty($preserveParams) ? ('?' . http_build_query($preserveParams)) : '';
+    redirect('applicants.php' . $qs);
     exit;
 }
 
+// Handle search query memory
 $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
@@ -35,8 +48,19 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['applicants_q'];
 }
 
+// Handle status memory
+$status = 'all';
+if (isset($_GET['status'])) {
+    $statusCandidate = strtolower(trim((string)$_GET['status']));
+    $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
+    $_SESSION['applicants_status'] = $status;
+} elseif (!empty($_SESSION['applicants_status'])) {
+    $statusCandidate = strtolower((string)$_SESSION['applicants_status']);
+    $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
+}
+
 /**
- * Delete action: keep the search in the redirect to preserve context.
+ * Delete action: keep the search & status in the redirect to preserve context.
  */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
@@ -46,13 +70,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     } else {
         setFlashMessage('error', 'Failed to delete applicant.');
     }
-    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+
+    $params = [];
+    if ($q !== '') $params['q'] = $q;
+    if ($status !== 'all') $params['status'] = $status;
+
+    $qs = !empty($params) ? ('?' . http_build_query($params)) : '';
     redirect('applicants.php' . $qs);
     exit;
 }
 
 /**
- * Load applicants and apply search (server-side filter then local refine).
+ * Load applicants and apply filters.
  * getAll() → show active/non-deleted applicants across statuses.
  */
 $applicants = $applicant->getAll();
@@ -119,20 +148,65 @@ function filterApplicantsByQuery(array $rows, string $query): array {
     }));
 }
 
+/**
+ * Helper: Filter by status (pending, on_process, approved). 'all' returns as-is.
+ */
+function filterApplicantsByStatus(array $rows, string $status): array {
+    if ($status === 'all') return $rows;
+    return array_values(array_filter($rows, function(array $app) use ($status) {
+        return isset($app['status']) && $app['status'] === $status;
+    }));
+}
+
+// Apply status filter first, then search
+if ($status !== 'all') {
+    $applicants = filterApplicantsByStatus($applicants, $status);
+}
 if ($q !== '') {
     $applicants = filterApplicantsByQuery($applicants, $q);
 }
 
-$preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-$exportUrl = '../includes/excel_applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+// Preserve params for links
+$paramsForLinks = [];
+if ($q !== '') $paramsForLinks['q'] = $q;
+if ($status !== 'all') $paramsForLinks['status'] = $status;
+$preserveQS = !empty($paramsForLinks) ? ('&' . http_build_query($paramsForLinks)) : '';
+$preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($paramsForLinks)) : '';
+
+// Export URL includes filters
+$exportParams = [];
+if ($q !== '') $exportParams['q'] = $q;
+if ($status !== 'all') $exportParams['status'] = $status;
+$exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' . http_build_query($exportParams)) : '');
+
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">List of Applicants</h4>
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h4 class="mb-1 fw-semibold">List of Applicants</h4>
+        <!-- Status filter buttons (top-left) -->
+        <div class="btn-group mt-2" role="group" aria-label="Status filters">
+            <?php
+                // Helper to render a status button
+                function statusBtn(string $label, string $value, string $currentStatus): string {
+                    $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
+                    $btnClass = $isActive ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-primary';
+                    $qParam   = isset($_SESSION['applicants_q']) && $_SESSION['applicants_q'] !== '' ? ('&q=' . urlencode((string)$_SESSION['applicants_q'])) : '';
+                    $href     = 'applicants.php?status=' . urlencode($value) . $qParam;
+                    return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="' . $btnClass . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+                }
+
+                echo statusBtn('All', 'all', $status);
+                echo statusBtn('Pending', 'pending', $status);
+                echo statusBtn('On-Process', 'on_process', $status);
+                echo statusBtn('Hired', 'approved', $status);
+            ?>
+        </div>
+    </div>
     <div>
         <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success me-2">
             <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
         </a>
-        <a href="add-applicant.php<?php echo $q !== '' ? ('?q=' . urlencode($q)) : ''; ?>" class="btn btn-primary">
+        <a href="add-applicant.php<?php echo $preserveQSWithQuestion; ?>" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Add New Applicant
         </a>
     </div>
@@ -149,11 +223,13 @@ $exportUrl = '../includes/excel_applicants.php' . ($q !== '' ? ('?q=' . urlencod
                 value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
                 autocomplete="off"
             >
+            <!-- Preserve selected status when searching -->
+            <input type="hidden" name="status" value="<?php echo htmlspecialchars($status, ENT_QUOTES, 'UTF-8'); ?>">
             <button class="btn btn-outline-secondary" type="submit" title="Search">
                 <i class="bi bi-search"></i>
             </button>
             <?php if ($q !== ''): ?>
-                <a class="btn btn-outline-secondary" href="applicants.php?clear=1" title="Clear search">
+                <a class="btn btn-outline-secondary" href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>" title="Clear search">
                     <i class="bi bi-x-lg"></i>
                 </a>
             <?php endif; ?>
@@ -186,7 +262,7 @@ $exportUrl = '../includes/excel_applicants.php' . ($q !== '' ? ('?q=' . urlencod
                                     No applicants found. Click "Add New Applicant" to get started.
                                 <?php else: ?>
                                     No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
-                                    <a href="applicants.php?clear=1" class="ms-2">Clear search</a>
+                                    <a href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>" class="ms-2">Clear search</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -225,9 +301,14 @@ $exportUrl = '../includes/excel_applicants.php' . ($q !== '' ? ('?q=' . urlencod
                                 <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>
                                     <?php
-                                        $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                        $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                        $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                        $params = [];
+                                        if ($q !== '') $params['q'] = $q;
+                                        if ($status !== 'all') $params['status'] = $status;
+                                        $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
+
+                                        $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . $tail;
+                                        $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . $tail;
+                                        $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . $tail;
                                     ?>
                                     <div class="btn-group">
                                         <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-info" title="View">
