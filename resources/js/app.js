@@ -260,6 +260,13 @@ function initApp(){
   fetchApplicants({ page: 1 }).then(() => {
     setupEventListeners();
 
+    // Start background polling so status changes (e.g., approved) propagate to clients without manual reload
+    if (typeof POLL_INTERVAL_MS === 'number' && POLL_INTERVAL_MS > 0) {
+      setInterval(() => {
+        try { fetchApplicants({ page: currentPage }); } catch(_){}
+      }, POLL_INTERVAL_MS);
+    }
+
     // Deep-link: auto-open modal if URL has ?applicant=ID
     const url = new URL(window.location.href);
     const idParam = url.searchParams.get('applicant');
