@@ -76,14 +76,77 @@ function decode_list($raw) {
     if ($raw === null || $raw === '') return [];
     $arr = json_decode($raw, true);
     if (is_array($arr)) {
-        // flatten primitives only
         $out = [];
         foreach ($arr as $v) if (is_string($v) && trim($v) !== '') $out[] = $v;
         return $out;
     }
-    // fallback comma-separated
     $parts = array_map('trim', explode(',', (string)$raw));
     return array_values(array_filter($parts, fn($v) => $v !== ''));
+}
+
+/**
+ * ---- Video helpers ----
+ * We will physically store uploaded videos under:
+ *   admin/uploads/video/<filename>
+ * but store relative path 'video/<filename>' in DB (applicants.video_url).
+ */
+function normalize_upload_relative_path(string $p): string {
+    $p = trim($p);
+    if ($p === '') return $p;
+    // Extract portion after '/uploads/' if a longer path was stored before
+    if (preg_match('~(?:^|/)uploads/([^?]+)$~', $p, $m)) return $m[1];
+    return ltrim($p, '/');
+}
+function saveUploadedVideoReturnRelPath(array $file): ?string {
+    // Target physical dir: admin/uploads/video
+    $baseDir = __DIR__ . '/../uploads/video';
+    if (!is_dir($baseDir)) {
+        @mkdir($baseDir, 0775, true);
+    }
+
+    // Validate size & MIME
+    $maxBytes = 200 * 1024 * 1024; // 200MB to match your Add page hint
+    if (($file['size'] ?? 0) > $maxBytes) return null;
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime  = $finfo->file($file['tmp_name']) ?: '';
+    // Allow common containers (note: browser playback best for MP4/WebM/Ogg)
+    $allowed = [
+        'video/mp4', 'video/webm', 'video/ogg', 'application/ogg',
+        'video/quicktime',          // .mov
+        'video/x-matroska',        // .mkv
+        'video/x-msvideo',         // .avi
+    ];
+    if (!in_array($mime, $allowed, true)) return null;
+
+    // Choose extension
+    $extMap = [
+        'video/mp4'        => '.mp4',
+        'video/webm'       => '.webm',
+        'video/ogg'        => '.ogv',
+        'application/ogg'  => '.ogv',
+        'video/quicktime'  => '.mov',
+        'video/x-matroska' => '.mkv',
+        'video/x-msvideo'  => '.avi',
+    ];
+    $ext = $extMap[$mime] ?? '';
+    if ($ext === '') {
+        // Fallback to original extension if any
+        $ext = '.' . strtolower(pathinfo($file['name'] ?? 'video', PATHINFO_EXTENSION) ?: 'mp4');
+    }
+
+    // Random safe name
+    try {
+        $name = bin2hex(random_bytes(16)) . $ext;
+    } catch (Throwable $e) {
+        $name = uniqid('vid_', true) . $ext;
+    }
+
+    $dest = $baseDir . '/' . $name;
+    if (!move_uploaded_file($file['tmp_name'], $dest)) return null;
+
+    // Return relative path for DB
+    return 'video/' . $name;
 }
 
 /* ------------------------- Decode existing JSONs ---------------------------- */
@@ -96,6 +159,12 @@ $skillsArr = decode_list($applicantData['specialization_skills']  ?? ''); // may
 /* Build normalized set for checked detection */
 $skillsSet = [];
 foreach ($skillsArr as $s) $skillsSet[norm_label($s)] = true;
+
+/* ---- Current video fields from DB (used for preview and operations) ---- */
+$currentVideoUrl      = $applicantData['video_url'] ?? null;
+$currentVideoProvider = $applicantData['video_provider'] ?? null;
+$currentVideoType     = $applicantData['video_type'] ?? 'iframe';
+$currentVideoTitle    = $applicantData['video_title'] ?? null;
 
 /* --------------------------------- POST ------------------------------------ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -164,10 +233,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $languages = array_values(array_filter(array_map('sanitizeInput', $languages)));
     $languagesJson = json_encode($languages);
 
-    // Specialization skills (checkbox list) – normalize against known options
+    // Specialization skills (checkbox list)
     $specializationsRaw = $_POST['specialization_skills'] ?? [];
     if (!is_array($specializationsRaw)) $specializationsRaw = [];
-    $known = getSpecializationOptions();              // canonical labels
+    $known = getSpecializationOptions();
     $knownMap = [];
     foreach ($known as $k) $knownMap[norm_label($k)] = $k;
     $specializations = [];
@@ -200,6 +269,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // ---- Video handling (delete/replace) ----
+    $videoOp         = 'none';          // 'none' | 'delete' | 'replace'
+    $newVideoRelPath = null;            // 'video/<filename>'
+    $newVideoTitle   = sanitizeInput($_POST['video_title'] ?? '');
+    $deleteVideoReq  = isset($_POST['delete_video']) && $_POST['delete_video'] === '1';
+
+    // If a new file is provided, it takes precedence over delete flag
+    $hasNewVideo = (isset($_FILES['videos']) && is_array($_FILES['videos']['name']) && count($_FILES['videos']['name']) > 0 && ($_FILES['videos']['error'][0] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
+
+    if ($hasNewVideo) {
+        $first = [
+            'name'     => $_FILES['videos']['name'][0]     ?? null,
+            'type'     => $_FILES['videos']['type'][0]     ?? null,
+            'tmp_name' => $_FILES['videos']['tmp_name'][0] ?? null,
+            'error'    => $_FILES['videos']['error'][0]    ?? UPLOAD_ERR_NO_FILE,
+            'size'     => $_FILES['videos']['size'][0]     ?? 0,
+        ];
+        if ($first['error'] === UPLOAD_ERR_OK) {
+            $saved = saveUploadedVideoReturnRelPath($first);
+            if ($saved) {
+                $newVideoRelPath = $saved;   // e.g., 'video/abc123.mp4'
+                $videoOp = 'replace';
+            } else {
+                $errors[] = 'Failed to upload video (format/size or move error).';
+            }
+        } else {
+            $errors[] = 'Error uploading video (code ' . (int)$first['error'] . ').';
+        }
+    } elseif ($deleteVideoReq && !empty($currentVideoUrl)) {
+        $videoOp = 'delete';
+    }
+
     // Compute years of experience
     $yearsExperience = computeTotalYears($workHistoryArr);
 
@@ -229,6 +330,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ok = $applicant->update($id, $data);
 
         if ($ok) {
+            // ---- Apply video delete/replace AFTER a successful main update ----
+            if ($videoOp === 'delete') {
+                // Delete physical file if we own it
+                if ($currentVideoProvider === 'file' && !empty($currentVideoUrl)) {
+                    $rel = normalize_upload_relative_path($currentVideoUrl);
+                    @deleteFile($rel); // ignore errors if missing
+                }
+                $applicant->updateVideoFields($id, [
+                    'video_url'              => null,
+                    'video_provider'         => null,
+                    'video_type'             => 'iframe',
+                    'video_title'            => null,
+                    'video_thumbnail_url'    => null,
+                    'video_duration_seconds' => null,
+                ]);
+            } elseif ($videoOp === 'replace' && $newVideoRelPath) {
+                // Remove old physical file if file-based
+                if ($currentVideoProvider === 'file' && !empty($currentVideoUrl)) {
+                    $rel = normalize_upload_relative_path($currentVideoUrl);
+                    @deleteFile($rel);
+                }
+                // Decide title: use POST value or fallback to original filename (if provided)
+                $fallbackTitle = isset($_FILES['videos']['name'][0]) ? pathinfo($_FILES['videos']['name'][0], PATHINFO_FILENAME) : 'Video';
+                $titleToUse = ($newVideoTitle !== '') ? $newVideoTitle : $fallbackTitle;
+
+                $applicant->updateVideoFields($id, [
+                    'video_url'              => $newVideoRelPath, // store relative 'video/...'
+                    'video_provider'         => 'file',
+                    'video_type'             => 'file',
+                    'video_title'            => $titleToUse,
+                    'video_thumbnail_url'    => null,
+                    'video_duration_seconds' => null,
+                ]);
+            }
+
             // Optional: accept new documents as appended rows
             $documentTypes = [
                 'brgy_clearance', 'birth_certificate', 'sss',
@@ -320,7 +456,59 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                     <small class="text-muted">Leave empty to keep current picture</small>
                 </div>
 
-                <div class="col-md-9">
+                <!-- ===== Video Introduction (Preview + Replace/Delete) ===== -->
+                <div class="col-md-3">
+                    <label class="form-label">Video Introduction</label>
+                    <div class="border rounded p-2 text-center">
+                        <?php
+                        $hasVideo = !empty($applicantData['video_url']);
+                        $vt = $applicantData['video_type'] ?? 'iframe';
+                        $vp = $applicantData['video_provider'] ?? null;
+                        $rawUrl = $applicantData['video_url'] ?? '';
+                        ?>
+                        <?php if ($hasVideo): ?>
+                            <?php if ($vt === 'file' || $vp === 'file'): ?>
+                                <?php
+                                $relPath = normalize_upload_relative_path($rawUrl); // e.g., 'video/xxx.mp4'
+                                $publicUrl = htmlspecialchars(getFileUrl($relPath), ENT_QUOTES, 'UTF-8');
+                                ?>
+                                <video id="introVideoEl" controls style="max-height:220px; width:100%; object-fit:cover;">
+                                    <source src="<?= $publicUrl ?>">
+                                    Your browser does not support the video tag.
+                                </video>
+                            <?php else: ?>
+                                <?php $embed = htmlspecialchars($rawUrl, ENT_QUOTES, 'UTF-8'); ?>
+                                <div class="ratio ratio-16x9">
+                                    <iframe src="<?= $embed ?>" title="Intro Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                </div>
+                            <?php endif; ?>
+                            <div class="d-grid mt-2">
+                                <button type="button" id="deleteVideoBtn" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash me-1"></i> Delete video
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-muted small" style="min-height: 220px; display:flex; align-items:center; justify-content:center;">
+                                No video uploaded
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Replace/Upload: use same naming pattern as Add page -->
+                    <input type="file" class="form-control mt-2" name="videos[]" accept="video/*">
+                    <input type="hidden" name="delete_video" id="deleteVideo" value="0">
+                    <small class="text-muted d-block mt-1">Upload a new file to replace the current video. Leave empty to keep it.</small>
+
+                    <div class="mt-2">
+                        <label class="form-label">Video Title (optional)
+                            <input type="text" class="form-control" name="video_title"
+                                   value="<?= htmlspecialchars($_POST['video_title'] ?? ($currentVideoTitle ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </label>
+                    </div>
+                </div>
+                <!-- ===== End Video Introduction ===== -->
+
+                <div class="col-md-6">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">First Name <span class="text-danger">*</span>
@@ -634,7 +822,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 <script>
 (function(){
   function escapeHtml(str){
-    return String(str || '').replace(/[&<>\"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+    return String(str || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
   }
 
   const form = document.getElementById('editApplicantForm');
@@ -748,6 +936,26 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
   langTags?.addEventListener('click', (e) => { if (e.target.classList.contains('btn-close')) e.target.closest('.badge')?.remove(); });
   const initialLangs = <?= json_encode($langsArr, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?> || [];
   if (Array.isArray(initialLangs)) initialLangs.forEach(l => addLangTag(l));
+
+  // -------- Video delete marker --------
+  const delBtn  = document.getElementById('deleteVideoBtn');
+  const delFlag = document.getElementById('deleteVideo');
+  const vidEl   = document.getElementById('introVideoEl');
+
+  if (delBtn && delFlag) {
+    delBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      if (confirm('Delete the current video? It will be removed after you click "Update Applicant".')) {
+        delFlag.value = '1';
+        if (vidEl) {
+          const note = document.createElement('div');
+          note.className = 'text-danger small mt-2';
+          note.textContent = 'Video marked for deletion on save.';
+          vidEl.replaceWith(note);
+        }
+      }
+    });
+  }
 })();
 </script>
 
