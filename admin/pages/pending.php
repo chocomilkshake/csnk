@@ -362,7 +362,7 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                                 data-bs-toggle="dropdown"
                                                 aria-expanded="false"
                                                 title="Change Status">
-                                            <i class="bi bi-arrow-left-right me-1"></i> Status
+                                            <i class="bi bi-arrow-left-right me-1"></i> Change Status
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             <li>
