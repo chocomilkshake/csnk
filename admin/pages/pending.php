@@ -200,8 +200,21 @@ if ($q !== '') {
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
-<!-- ===== Modern dropdown styling for "Change Status" (self-contained) ===== -->
+<!-- ===== Fix dropdown clipping & make it easy to click ===== -->
 <style>
+    /* Allow dropdowns to overflow vertically (no clipping) */
+    .table-card .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible; /* important */
+    }
+    /* Make sure the actions cell can show dropdown outside its bounds */
+    td.actions-cell {
+        position: relative;
+        overflow: visible;
+        z-index: 10;
+    }
+
+    /* Modern dropdown styling (unchanged look) */
     .dd-modern .dropdown-menu {
         border-radius: .75rem; /* rounded-xl */
         border: 1px solid #e5e7eb; /* slate-200 */
@@ -335,8 +348,8 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                 <td><?php echo htmlspecialchars($app['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td>
-                                    <div class="btn-group dd-modern">
+                                <td class="actions-cell">
+                                    <div class="btn-group dd-modern dropup">
                                         <!-- View -->
                                         <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                            class="btn btn-sm btn-info" title="View">
@@ -348,7 +361,8 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                            class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                                                                <!-- Delete -->
+
+                                        <!-- Delete -->
                                         <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                            class="btn btn-sm btn-danger"
                                            title="Delete"
@@ -356,10 +370,11 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                             <i class="bi bi-trash"></i>
                                         </a>
 
-                                        <!-- Change Status Dropdown -->
+                                        <!-- Change Status Dropdown (opens upward; not clipped) -->
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                                 data-bs-toggle="dropdown"
+                                                data-bs-display="static"
                                                 aria-expanded="false"
                                                 title="Change Status">
                                             <i class="bi bi-arrow-left-right me-1"></i> Change Status
@@ -398,4 +413,4 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>f
+<?php require_once '../includes/footer.php'; ?>
