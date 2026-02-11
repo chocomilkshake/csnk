@@ -4,9 +4,18 @@ $pageTitle = 'On Process Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// Ensure session is active (for search persistence)
+// Ensure session is active (for search persistence + CSRF)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
+}
+
+// --- Minimal CSRF token ---
+if (empty($_SESSION['csrf_token'])) {
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+    } catch (Throwable $e) {
+        $_SESSION['csrf_token'] = bin2hex((string)mt_rand());
+    }
 }
 
 $applicant = new Applicant($database);
@@ -88,10 +97,135 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     exit;
 }
 
-/**
- * Handle status update (Change Status dropdown).
- * Uses GET for simplicity and preserves the search query on redirect.
- */
+/* =========================================================
+ * Handle status update WITH REPORT (modal POST) — MySQLi version
+ * =========================================================*/
+if (
+    isset($_POST['action']) && $_POST['action'] === 'update_status_report' &&
+    isset($_POST['id'], $_POST['to'], $_POST['report_text'])
+) {
+    $id = (int)$_POST['id'];
+    $to = strtolower(trim((string)$_POST['to']));
+    $reportText = trim((string)$_POST['report_text']);
+
+    // Preserve q on redirect (from session pattern)
+    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+
+    // CSRF check
+    if (!isset($_POST['csrf_token'], $_SESSION['csrf_token']) ||
+        !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid or missing security token. Please refresh and try again.');
+        }
+        redirect('on-process.php' . $qs);
+        exit;
+    }
+
+    // Validate
+    $allowedStatuses = ['pending', 'on_process', 'approved'];
+    if (!in_array($to, $allowedStatuses, true)) {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Invalid status selected.');
+        redirect('on-process.php' . $qs);
+        exit;
+    }
+    if ($reportText === '' || mb_strlen($reportText) < 5) {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Please provide a brief reason (at least 5 characters).');
+        redirect('on-process.php' . $qs);
+        exit;
+    }
+
+    // Get MySQLi connection from your Database wrapper
+    if (!isset($database) || !method_exists($database, 'getConnection')) {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Database connection unavailable.');
+        redirect('on-process.php' . $qs);
+        exit;
+    }
+    $conn = $database->getConnection(); // <-- MySQLi
+
+    // 1) Fetch applicant ONCE (MySQLi)
+    $fromStatus = null;
+    $fullName = null;
+
+    try {
+        $stmt = $conn->prepare("SELECT status, first_name, middle_name, last_name, suffix FROM applicants WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            $fromStatus = (string)($row['status'] ?? '');
+            // getFullName() is your helper
+            $fullName = getFullName(
+                $row['first_name'] ?? '',
+                $row['middle_name'] ?? '',
+                $row['last_name'] ?? '',
+                $row['suffix'] ?? ''
+            );
+        }
+        $stmt->close();
+    } catch (Throwable $e) {
+        error_log('Fetch applicant (MySQLi) failed: ' . $e->getMessage());
+    }
+
+    if ($fromStatus === null || $fromStatus === '') {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Applicant not found.');
+        redirect('on-process.php' . $qs);
+        exit;
+    }
+
+    // 2) Transaction: insert report + update status (MySQLi)
+    $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+    $ok = false;
+
+    try {
+        $conn->begin_transaction();
+
+        // Insert into applicant_status_reports
+        $stmt1 = $conn->prepare("
+            INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        // types: i s s s i
+        $stmt1->bind_param("isssi", $id, $fromStatus, $to, $reportText, $adminId);
+        $stmt1->execute();
+        $stmt1->close();
+
+        // Update applicants.status
+        $stmt2 = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?");
+        $stmt2->bind_param("si", $to, $id);
+        $stmt2->execute();
+        $stmt2->close();
+
+        $conn->commit();
+        $ok = true;
+    } catch (Throwable $e) {
+        if ($conn->errno) { /* no-op, just ensures we can rollback safely */ }
+        $conn->rollback();
+        error_log('Status change (MySQLi) failed: ' . $e->getMessage());
+        $ok = false;
+    }
+
+    if (function_exists('setFlashMessage')) {
+        if ($ok) setFlashMessage('success', 'Status updated and report saved.');
+        else setFlashMessage('error', 'Failed to update status or save report. Please try again.');
+    }
+
+    if ($ok && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+        $label = $fullName ?: "ID {$id}";
+        $auth->logActivity(
+            (int)$_SESSION['admin_id'],
+            'Update Applicant Status (with report)',
+            "Updated status for {$label} → {$to}; Reason: " . mb_substr($reportText, 0, 200)
+        );
+    }
+
+    redirect('on-process.php' . $qs);
+    exit;
+}
+
+
+/* =========================================================
+ * Existing: GET handler (fallback) – change status without report
+ * =========================================================*/
 if (
     isset($_GET['action'], $_GET['id'], $_GET['to']) &&
     $_GET['action'] === 'update_status'
@@ -157,31 +291,19 @@ if (
 /** Load on_process applicants + latest booking data */
 $applicants = $applicant->getOnProcessWithLatestBooking();
 
-/**
- * Helpers
- */
+/** Helpers */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
-    if (empty($json)) {
-        return 'N/A';
-    }
+    if (empty($json)) return 'N/A';
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-    $cities = array_values(array_filter(array_map('trim', $arr), function($v){
-        return is_string($v) && $v !== '';
-    }));
-
-    if (empty($cities)) {
-        return 'N/A';
-    }
-
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+    if (empty($cities)) return 'N/A';
     $full = implode(', ', $cities);
-    if (mb_strlen($full) > $maxLen) {
-        return $cities[0];
-    }
+    if (mb_strlen($full) > $maxLen) return $cities[0];
     return $full;
 }
 
@@ -190,18 +312,14 @@ function filterRowsByQuery(array $rows, string $query): array {
     $needle = mb_strtolower($query);
 
     return array_values(array_filter($rows, function(array $row) use ($needle) {
-        // Applicant name fields
         $first  = (string)($row['first_name']   ?? '');
         $middle = (string)($row['middle_name']  ?? '');
         $last   = (string)($row['last_name']    ?? '');
         $suffix = (string)($row['suffix']       ?? '');
-
-        // Applicant contacts
         $email  = (string)($row['email']        ?? '');
         $phone  = (string)($row['phone_number'] ?? '');
         $loc    = renderPreferredLocation($row['preferred_location'] ?? null, 999);
 
-        // Client fields (latest booking)
         $cfn = (string)($row['client_first_name']  ?? '');
         $cmn = (string)($row['client_middle_name'] ?? '');
         $cln = (string)($row['client_last_name']   ?? '');
@@ -231,65 +349,50 @@ if ($q !== '') {
 }
 
 // Preserve the search in action links and export URL
-$preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-$exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+$preserveQAmp = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+$preserveQQ   = ($q !== '') ? ('?q=' . urlencode($q)) : '';
+$exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('&q=' . urlencode($q)) : '');
 ?>
 <!-- ===== Fix dropdown clipping & remove table scroll wrapper ===== -->
 <style>
-    /* Allow dropdowns to overflow: no clipping at any layer */
     .table-card, .table-card .card-body { overflow: visible !important; }
-    /* If any .table-responsive exists (from includes), neutralize its clipping */
     .table-card .table-responsive { overflow: visible !important; }
+    td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
 
-    /* Ensure the actions cell can render dropdown outside its bounds */
-    td.actions-cell {
-        position: relative;
-        overflow: visible;
-        z-index: 10;
-        white-space: nowrap;
-    }
-
-    /* Modern dropdown styling (same as pending.php) */
     .dd-modern .dropdown-menu {
-        border-radius: .75rem; /* rounded-xl */
-        border: 1px solid #e5e7eb; /* slate-200 */
+        border-radius: .75rem;
+        border: 1px solid #e5e7eb;
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         overflow: hidden;
-        z-index: 2000; /* above table & card */
+        z-index: 2000;
     }
-    .dd-modern .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-        padding: .55rem .9rem;
-        font-weight: 500;
+    .dd-modern .dropdown-item { display: flex; align-items: center; gap: .5rem; padding: .55rem .9rem; font-weight: 500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+    .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled {
+        color: #9aa0a6; background-color: transparent; pointer-events: none;
     }
-    .dd-modern .dropdown-item .bi {
-        font-size: 1rem;
-        opacity: .9;
-    }
-    .dd-modern .dropdown-item:hover {
-        background-color: #f8fafc; /* slate-50 */
-    }
-    .dd-modern .dropdown-item.disabled,
-    .dd-modern .dropdown-item:disabled {
-        color: #9aa0a6;
-        background-color: transparent;
-        pointer-events: none;
-    }
-    .btn-status {
-        border-radius: .75rem; /* rounded-xl */
-    }
-
-    /* Optional: keep table tidy without forcing scroll */
+    .btn-status { border-radius: .75rem; }
     table.table-styled { margin-bottom: 0; }
 </style>
 
+<?php
+$exportReportsUrl = '../includes/excel_status_reports.php' . $preserveQQ;
+$printReportsUrl  = 'reports-print.php' . $preserveQQ;
+?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">On Process Applicants</h4>
-    <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
-        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
-    </a>
+    <div class="d-flex gap-2">
+        <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+        </a>
+        <a href="<?php echo htmlspecialchars($exportReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-success">
+            <i class="bi bi-journal-text me-2"></i>Export Reports
+        </a>
+        <a href="<?php echo htmlspecialchars($printReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary" target="_blank">
+            <i class="bi bi-printer me-2"></i>Reports
+        </a>
+    </div>
 </div>
 
 <!-- 🔎 Search bar on the right -->
@@ -318,7 +421,6 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
 
 <div class="card table-card">
     <div class="card-body">
-        <!-- Removed .table-responsive to avoid scroll/clipping -->
         <table class="table table-bordered table-striped table-hover table-styled align-middle">
             <thead>
                 <tr>
@@ -358,10 +460,10 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
                             $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                             $deleteUrl = 'on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
-                            // Change Status target links (preserve q)
-                            $toPendingUrl    = 'on-process.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQ;
-                            $toOnProcessUrl  = 'on-process.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
-                            $toApprovedUrl   = 'on-process.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQ;
+                            // Change Status target links (preserve q in GET)
+                            $toPendingUrl    = 'on-process.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQAmp;
+                            $toOnProcessUrl  = 'on-process.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQAmp;
+                            $toApprovedUrl   = 'on-process.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQAmp;
 
                             $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
                             $clientName = $clientName !== '' ? $clientName : '—';
@@ -377,6 +479,8 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
 
                             $cliContact = trim(($row['client_phone'] ?? '') . ((($row['client_email'] ?? '') !== '') ? ' / ' . $row['client_email'] : ''));
                             $cliContact = $cliContact !== '' ? $cliContact : '—';
+
+                            $applicantName = htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8');
                         ?>
                         <tr>
                             <td class="tbl-photo">
@@ -396,7 +500,7 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
 
                             <td>
                                 <div class="fw-semibold">
-                                    <?php echo htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo $applicantName; ?>
                                 </div>
                                 <div class="text-muted-small">
                                     <?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?>
@@ -440,7 +544,7 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
                                         <i class="bi bi-trash"></i>
                                     </a>
 
-                                    <!-- Change Status Dropdown (opens upward; not clipped) -->
+                                    <!-- Change Status Dropdown -->
                                     <button type="button"
                                             class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                             data-bs-toggle="dropdown"
@@ -453,22 +557,37 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status"
+                                               href="#"
+                                               data-href="<?php echo htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-id="<?php echo $id; ?>"
+                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-to="pending"
+                                               data-applicant="<?php echo $applicantName; ?>">
                                                 <i class="bi bi-hourglass-split text-warning"></i>
                                                 <span>Pending</span>
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?> change-status"
+                                               href="#"
+                                               data-href="<?php echo htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-id="<?php echo $id; ?>"
+                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-to="on_process"
+                                               data-applicant="<?php echo $applicantName; ?>">
                                                 <i class="bi bi-arrow-repeat text-info"></i>
                                                 <span>On-Process</span>
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?> change-status"
+                                               href="#"
+                                               data-href="<?php echo htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-id="<?php echo $id; ?>"
+                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-to="approved"
+                                               data-applicant="<?php echo $applicantName; ?>">
                                                 <i class="bi bi-check2-circle text-success"></i>
                                                 <span>Approved</span>
                                             </a>
@@ -485,5 +604,92 @@ $exportUrl = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('
         </table>
     </div>
 </div>
+
+<!-- === Status Change Report Modal === -->
+<div class="modal fade" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" action="on-process.php" id="statusReportForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold" id="statusReportModalLabel">Change Status &amp; Add Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2 text-muted small">
+          <div>Applicant: <span id="sr-applicant" class="fw-semibold"></span></div>
+          <div>
+            From: <span id="sr-from" class="badge bg-secondary"></span>
+            &nbsp;→&nbsp;
+            To: <span id="sr-to" class="badge bg-primary"></span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="sr-text" class="form-label">Reason / Report <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="sr-text" name="report_text" rows="4"
+                    required minlength="5" maxlength="2000"
+                    placeholder="Write a brief reason for this status change..."></textarea>
+          <div class="form-text">Minimum 5 characters. This will be stored in the reports log.</div>
+        </div>
+
+        <!-- Hidden fields -->
+        <input type="hidden" name="action" value="update_status_report">
+        <input type="hidden" name="id" id="sr-id" value="">
+        <input type="hidden" name="to" id="sr-to-val" value="">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+        <!-- Optional: preserve q on redirect if you want tighter control:
+        <input type="hidden" name="q" value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>">
+        -->
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save2 me-1"></i> Save &amp; Update Status
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modalEl = document.getElementById('statusReportModal');
+  var modal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(modalEl) : null;
+
+  document.querySelectorAll('.change-status').forEach(function (el) {
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (el.classList.contains('disabled')) return;
+
+      var fromSt = (el.dataset.from || '').toLowerCase();
+      var toSt   = (el.dataset.to || '').toLowerCase();
+      var href   = el.dataset.href || '#';
+      var id     = el.dataset.id || '';
+      var name   = el.dataset.applicant || '';
+
+      // Require a report when changing FROM on_process
+      if (fromSt === 'on_process' && toSt !== fromSt) {
+        document.getElementById('sr-applicant').textContent = name;
+        document.getElementById('sr-from').textContent = fromSt.replace('_', ' ');
+        document.getElementById('sr-to').textContent = toSt.replace('_', ' ');
+        document.getElementById('sr-id').value = id;
+        document.getElementById('sr-to-val').value = toSt;
+        document.getElementById('sr-text').value = '';
+
+        if (!id) {
+          console.warn('Missing applicant id on change-status item.');
+          return;
+        }
+        if (modal) modal.show();
+        return;
+      }
+
+      // Otherwise (no report required), follow the GET link
+      window.location.href = href;
+    });
+  });
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

@@ -1,8 +1,7 @@
 <?php
 /**
- * FILE: includes/excel_approved.php
- * PURPOSE: Export "Approved Applicants" (default) OR "On Process Applicants" (when ?type=on_process) to Excel (.xlsx)
- * DESIGN: Matches the layout/colors/formatting used in your deleted export (logo, palette, title/subtitle, zebra rows, borders, freeze panes, auto-filter)
+ * FILE: includes/excel_onprocess.php
+ * PURPOSE: Export "Approved Applicants" (default) OR "On Process Applicants" (?type=on_process) to Excel (.xlsx)
  */
 
 declare(strict_types=1);
@@ -83,6 +82,22 @@ if (!isset($database) || !is_object($database)) {
     header('Content-Type: text/plain; charset=UTF-8');
     echo "Database connection not found.\n"
        . "Ensure one of these files sets \$database (e.g., bootstrap.php / init.php / config.php / db.php).\n";
+    exit;
+}
+
+// --- Normalize $database to the wrapper Applicant expects (must have getConnection() returning mysqli) ---
+if ($database instanceof mysqli) {
+    $mysqliConn = $database;
+    $database = new class($mysqliConn) {
+        private $conn;
+        public function __construct($conn) { $this->conn = $conn; }
+        public function getConnection() { return $this->conn; }
+    };
+}
+if (!is_object($database) || !method_exists($database, 'getConnection')) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "Database wrapper with getConnection() is required for export.\n";
     exit;
 }
 
@@ -213,6 +228,9 @@ if ($isOnProcess) {
     if ($q !== '') $rows = filterApprovedByQuery($rows, $q);
 }
 
+// TEMP: log how many rows are being exported (remove after testing)
+error_log('excel_onprocess: type=' . ($isOnProcess ? 'on_process' : 'approved') . ' rows=' . (isset($rows) ? count($rows) : -1));
+
 /* -------------------------------------------------
  *  Build spreadsheet (same theme/colors as other exports)
  * -------------------------------------------------*/
@@ -238,20 +256,14 @@ $headerFill   = 'FFE5E7EB'; // #E5E7EB
 $zebraFill    = 'FFF9FAFB'; // #F9FAFB
 $borderLight  = 'FFE5E7EB'; // #E5E7EB
 
-// Layout rows:
-// Row 1: Logo (at rightmost column top)
-// Row 2: Subtitle (centered)
-// Row 3: Spacer
-// Row 4: Table headers
-// Row 5+: Data
+// Layout rows and headers
 $headerRow  = 4;
 $dataStart  = $headerRow + 1;
 
-// Columns + headers per type
 if ($isOnProcess) {
     $cols    = ['A','B','C','D','E','F','G','H'];
     $headers = ['#', 'Applicant', 'Client', 'Interview', 'Date & Time', 'Applicant Contact', 'Client Contact', 'Date Applied'];
-    $logoCell = 'H1'; // rightmost top position for logo
+    $logoCell = 'H1';
     $mergeFrom = 'B1'; $mergeTo = 'H1';
     $mergeFrom2 = 'B2'; $mergeTo2 = 'H2';
 } else {
@@ -263,7 +275,7 @@ if ($isOnProcess) {
 }
 
 // Insert logo (top-right)
-$logoPath = realpath(__DIR__ . '/../resources/img/whychoose.png'); // includes/ -> ../resources/img
+$logoPath = realpath(__DIR__ . '/../resources/img/whychoose.png');
 if ($logoPath && is_readable($logoPath)) {
     $logo = new Drawing();
     $logo->setName('CSNK Logo');
@@ -281,19 +293,16 @@ $title = $isOnProcess ? 'On Process Applicants' : 'Approved Applicants';
 $subtitle = 'Exported on ' . date('M j, Y') . ' | ' . date('h:i A');
 if ($q !== '') { $subtitle .= ' — Filter: ' . $q; }
 
-// Title row
 $sheet->setCellValue($mergeFrom, $title);
 $sheet->mergeCells("{$mergeFrom}:{$mergeTo}");
 $sheet->getStyle($mergeFrom)->getFont()->setBold(true)->setSize(20)->getColor()->setARGB($ink);
 $sheet->getStyle($mergeFrom)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-// Subtitle row
 $sheet->setCellValue($mergeFrom2, $subtitle);
 $sheet->mergeCells("{$mergeFrom2}:{$mergeTo2}");
 $sheet->getStyle($mergeFrom2)->getFont()->setSize(10)->getColor()->setARGB($muted);
 $sheet->getStyle($mergeFrom2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-// Adjust top rows to accommodate logo/title
 $sheet->getRowDimension(1)->setRowHeight(48);
 $sheet->getRowDimension(2)->setRowHeight(18);
 $sheet->getRowDimension(3)->setRowHeight(6);
@@ -302,11 +311,9 @@ $sheet->getRowDimension(3)->setRowHeight(6);
 foreach ($headers as $i => $label) {
     $sheet->setCellValue($cols[$i] . $headerRow, $label);
 }
-
-// Header styles
 $lastHeaderCol = end($cols);
 $sheet->getStyle("A{$headerRow}:{$lastHeaderCol}{$headerRow}")->applyFromArray([
-    'font' => ['bold' => true, 'color' => ['argb' => 'FF374151']], // #374151
+    'font' => ['bold' => true, 'color' => ['argb' => 'FF374151']],
     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $headerFill]],
     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
     'borders' => ['bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => $borderLight]]],
@@ -343,7 +350,7 @@ if ($isOnProcess) {
         $sheet->setCellValue("F{$row}", $appContact);
         $sheet->setCellValue("G{$row}", $cliContact);
 
-        // Date Applied -> Excel date/time if parsable
+        // Date Applied
         $excelDate = null;
         if ($createdAt !== '') {
             $ts = strtotime($createdAt);
@@ -358,7 +365,6 @@ if ($isOnProcess) {
             $sheet->setCellValue("H{$row}", $createdAt);
         }
 
-        // Zebra stripe every other row
         if ($row % 2 === 0) {
             $sheet->getStyle("A{$row}:H{$row}")
                   ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($zebraFill);
@@ -417,9 +423,7 @@ $sheet->freezePane("A{$dataStart}");
 $sheet->setAutoFilter("A{$headerRow}:{$lastHeaderCol}{$headerRow}");
 
 // Autosize columns
-foreach ($cols as $col) {
-    $sheet->getColumnDimension($col)->setAutoSize(true);
-}
+foreach ($cols as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
 
 // Footer spacer
 $footerRow = $lastDataRow + 2;
