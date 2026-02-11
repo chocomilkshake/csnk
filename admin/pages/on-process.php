@@ -389,7 +389,7 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
         <a href="<?php echo htmlspecialchars($exportReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-success">
             <i class="bi bi-journal-text me-2"></i>Export Reports
         </a>
-        <a href="<?php echo htmlspecialchars($printReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary" target="_blank">
+        <a href="<?php echo htmlspecialchars($printReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
             <i class="bi bi-printer me-2"></i>Reports
         </a>
     </div>

@@ -3,6 +3,7 @@
  * FILE: includes/excel_status_reports.php
  * PURPOSE: Export "Applicant Status Change Reports" to Excel (.xlsx)
  * DRIVER: MySQLi (consistent with the rest of the app)
+ * NOTE: Admin column shows human name (from admin_users) instead of numeric ID.
  */
 
 declare(strict_types=1);
@@ -57,17 +58,11 @@ $bootstrapCandidates = [
     dirname(__DIR__) . '/db.php',
 ];
 foreach ($bootstrapCandidates as $file) {
-    if (is_readable($file)) {
-        require_once $file;
-    }
+    if (is_readable($file)) { require_once $file; }
 }
 if (!isset($database) || !is_object($database)) {
-    if (!class_exists('Database')) {
-        @include_once __DIR__ . '/Database.php';
-    }
-    if (class_exists('Database')) {
-        $database = new Database();
-    }
+    if (!class_exists('Database')) { @include_once __DIR__ . '/Database.php'; }
+    if (class_exists('Database')) { $database = new Database(); }
 }
 
 /** Normalize: we need an object exposing getConnection() that returns mysqli */
@@ -110,6 +105,7 @@ $toDate   = $to   !== '' ? date_create($to)   : null;
 
 /* -------------------------------------------------
  *  Build SQL (MySQLi, ? placeholders) + bind params
+ *  NOTE: Join admin_users as au to fetch a readable admin_name
  * -------------------------------------------------*/
 $sql = "
 SELECT
@@ -120,9 +116,18 @@ SELECT
     r.report_text,
     r.admin_id,
     r.created_at,
-    a.first_name, a.middle_name, a.last_name, a.suffix
+    a.first_name, a.middle_name, a.last_name, a.suffix,
+
+    /* Admin name preference: full_name -> username -> email
+       If your admin table/columns differ, change the JOIN and COALESCE below. */
+    COALESCE(
+        NULLIF(au.full_name, ''),
+        NULLIF(au.username, ''),
+        NULLIF(au.email, '')
+    ) AS admin_name
 FROM applicant_status_reports r
-LEFT JOIN applicants a ON a.id = r.applicant_id
+LEFT JOIN applicants  a  ON a.id  = r.applicant_id
+LEFT JOIN admin_users au ON au.id = r.admin_id
 WHERE 1 = 1
 ";
 
@@ -138,20 +143,24 @@ if ($q !== '') {
       AND (
         CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name, a.suffix) LIKE ?
         OR r.from_status LIKE ?
-        OR r.to_status LIKE ?
+        OR r.to_status   LIKE ?
         OR r.report_text LIKE ?
+        OR au.full_name  LIKE ?
+        OR au.username   LIKE ?
+        OR au.email      LIKE ?
       )
     ";
     $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
-    $types   .= 'ssss';
+    $params[] = $like; $params[] = $like; $params[] = $like;
+    $types   .= 'sssssss';
 }
 if ($fromDate instanceof DateTimeInterface) {
-    $where .= " AND r.created_at >= ? ";
+    $where   .= " AND r.created_at >= ? ";
     $params[] = $fromDate->format('Y-m-d 00:00:00');
     $types   .= 's';
 }
 if ($toDate instanceof DateTimeInterface) {
-    $where .= " AND r.created_at <= ? ";
+    $where   .= " AND r.created_at <= ? ";
     $params[] = $toDate->format('Y-m-d 23:59:59');
     $types   .= 's';
 }
@@ -175,9 +184,7 @@ try {
     $stmt->execute();
     $res = $stmt->get_result();
     if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $rows[] = $row;
-        }
+        while ($row = $res->fetch_assoc()) { $rows[] = $row; }
         $res->free();
     }
     $stmt->close();
@@ -185,9 +192,6 @@ try {
     error_log('excel_status_reports query failed: ' . $e->getMessage());
     $rows = [];
 }
-
-// Optional: debug rows count (comment out in production)
-// error_log('excel_status_reports: rows=' . count($rows));
 
 /* -------------------------------------------------
  *  Build spreadsheet (theme aligned with your exporters)
@@ -213,16 +217,16 @@ $headerFill   = 'FFE5E7EB'; // #E5E7EB
 $zebraFill    = 'FFF9FAFB'; // #F9FAFB
 $borderLight  = 'FFE5E7EB'; // #E5E7EB
 
-// Columns
+// Columns (change "Admin ID" -> "Admin")
 $cols    = ['A','B','C','D','E','F','G','H'];
-$headers = ['#', 'Applicant ID', 'Applicant', 'From Status', 'To Status', 'Report', 'Admin ID', 'Changed At'];
+$headers = ['#', 'Applicant ID', 'Applicant', 'From Status', 'To Status', 'Report', 'Admin', 'Changed At'];
 $lastHeaderCol = end($cols);
 
 // Title & subtitle rows
 $headerRow  = 4;
 $dataStart  = $headerRow + 1;
 
-// Optional logo (same path pattern as your other exporter)
+// Optional logo
 $logoPath = realpath(__DIR__ . '/../resources/img/whychoose.png');
 if ($logoPath && is_readable($logoPath)) {
     $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
@@ -269,23 +273,27 @@ $sheet->getRowDimension($headerRow)->setRowHeight(22);
 // Data
 $row = $dataStart;
 foreach ($rows as $r) {
-    $fullName = trim(
+    $applicantName = trim(
         ((string)($r['first_name'] ?? '')) . ' ' .
         ((string)($r['middle_name'] ?? '')) . ' ' .
         ((string)($r['last_name'] ?? '')) . ' ' .
         ((string)($r['suffix'] ?? ''))
     );
-    $fullName = $fullName !== '' ? $fullName : '—';
+    $applicantName = $applicantName !== '' ? $applicantName : '—';
 
     $sheet->setCellValueExplicit("A{$row}", (int)$r['report_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
     $sheet->setCellValueExplicit("B{$row}", (int)$r['applicant_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
-    $sheet->setCellValue("C{$row}", $fullName);
+    $sheet->setCellValue("C{$row}", $applicantName);
     $sheet->setCellValue("D{$row}", (string)$r['from_status']);
     $sheet->setCellValue("E{$row}", (string)$r['to_status']);
     $sheet->setCellValue("F{$row}", (string)$r['report_text']);
-    $sheet->setCellValueExplicit("G{$row}", (string)$r['admin_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
-    // Created at → Excel date if parsable
+    // G: Admin name (string)
+    $adminName = trim((string)($r['admin_name'] ?? ''));
+    if ($adminName === '') { $adminName = '—'; }
+    $sheet->setCellValue("G{$row}", $adminName);
+
+    // H: Created at → Excel date if parsable
     $createdAt = (string)($r['created_at'] ?? '');
     $excelDate = null;
     if ($createdAt !== '') {
