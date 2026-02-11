@@ -34,6 +34,45 @@ if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin
         }
     }
 }
+
+// Blacklisted applicants for admins / super admins
+$blacklistedApplicants = [];
+$blacklistedCount = 0;
+if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin', 'super_admin'], true)) {
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        // Get count
+        $countSql = "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1";
+        if ($countResult = $conn->query($countSql)) {
+            $blacklistedCount = (int)$countResult->fetch_row()[0];
+        }
+        
+        // Get recent blacklisted applicants
+        $sql = "
+            SELECT
+                b.id,
+                b.applicant_id,
+                b.reason,
+                b.issue,
+                b.created_at,
+                a.first_name,
+                a.middle_name,
+                a.last_name,
+                a.suffix,
+                au.full_name AS created_by_name,
+                au.username AS created_by_username
+            FROM blacklisted_applicants b
+            LEFT JOIN applicants a ON a.id = b.applicant_id
+            LEFT JOIN admin_users au ON au.id = b.created_by
+            WHERE b.is_active = 1
+            ORDER BY b.created_at DESC
+            LIMIT 5
+        ";
+        if ($result = $conn->query($sql)) {
+            $blacklistedApplicants = $result->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+}
 ?>
 
 <div class="row g-4 mb-4">
@@ -266,6 +305,102 @@ if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (in_array($currentUser['role'] ?? 'employee', ['admin', 'super_admin'], true)): ?>
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4" style="border-left: 4px solid #dc3545 !important;">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-slash-circle text-danger me-2"></i>Blacklisted Applicants
+                        </h5>
+                        <small class="text-muted">Applicants who have violated company or client policies.</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-danger-subtle text-danger px-3 py-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <?php echo $blacklistedCount; ?> Total
+                        </span>
+                        <a href="blacklisted.php" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-arrow-right me-1"></i>View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($blacklistedApplicants)): ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3 mb-0">No blacklisted applicants at this time.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%;">Applicant</th>
+                                        <th style="width: 20%;">Reason</th>
+                                        <th style="width: 20%;">Logged By</th>
+                                        <th style="width: 20%;">Issue</th>
+                                        <th style="width: 15%;">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($blacklistedApplicants as $blacklisted): ?>
+                                        <?php
+                                        $appName = getFullName(
+                                            $blacklisted['first_name'] ?? '',
+                                            $blacklisted['middle_name'] ?? '',
+                                            $blacklisted['last_name'] ?? '',
+                                            $blacklisted['suffix'] ?? ''
+                                        );
+                                        $createdBy = $blacklisted['created_by_name'] ?: $blacklisted['created_by_username'] ?: 'System';
+                                        $when = formatDateTime($blacklisted['created_at']);
+                                        $viewUrl = 'view-applicant.php?id=' . (int)$blacklisted['applicant_id'];
+                                        ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px;">
+                                                        <i class="bi bi-person-x text-danger"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">
+                                                            <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="text-decoration-none text-dark">
+                                                                <?php echo htmlspecialchars($appName, ENT_QUOTES, 'UTF-8'); ?>
+                                                            </a>
+                                                        </div>
+                                                        <div class="text-muted small">ID: <?php echo (int)$blacklisted['applicant_id']; ?></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                    <?php echo htmlspecialchars($blacklisted['reason'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold small"><?php echo htmlspecialchars($createdBy, ENT_QUOTES, 'UTF-8'); ?></div>
+                                            </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 200px;" title="<?php echo htmlspecialchars($blacklisted['issue'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <?php echo !empty($blacklisted['issue']) ? htmlspecialchars($blacklisted['issue'], ENT_QUOTES, 'UTF-8') : '<span class="text-muted">—</span>'; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="small text-muted"><?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

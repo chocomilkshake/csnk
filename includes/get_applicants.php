@@ -138,6 +138,9 @@ try {
     // Public API: exclude applicants that are already approved — they should not be shown to clients
     $where[] = "LOWER(TRIM(status)) != 'approved'";
 
+    // Exclude active-blacklisted applicants (server-side blacklist)
+    $where[] = "id NOT IN (SELECT applicant_id FROM blacklisted_applicants WHERE is_active = 1)";
+
     $types = '';
     $values = [];
 

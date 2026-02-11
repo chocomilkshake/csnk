@@ -14,7 +14,12 @@ class Applicant {
     public function getAll($status = null) {
         if ($status !== null) {
             $sql = "SELECT * FROM applicants
-                    WHERE deleted_at IS NULL AND status = ?
+                    WHERE deleted_at IS NULL
+                      AND status = ?
+                      AND NOT EXISTS (
+                        SELECT 1 FROM blacklisted_applicants b
+                        WHERE b.applicant_id = applicants.id AND b.is_active = 1
+                      )
                     ORDER BY created_at DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->bind_param("s", $status);
@@ -23,7 +28,16 @@ class Applicant {
             return $result->fetch_all(MYSQLI_ASSOC);
         }
 
-        $sql = "SELECT * FROM applicants WHERE deleted_at IS NULL ORDER BY created_at DESC";
+        $sql = "
+            SELECT *
+            FROM applicants
+            WHERE deleted_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = applicants.id AND b.is_active = 1
+              )
+            ORDER BY created_at DESC
+        ";
         $result = $this->db->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
     }
@@ -39,6 +53,10 @@ class Applicant {
                 FROM applicants
                 WHERE deleted_at IS NULL
                   AND status IN ('pending','on_process')
+                  AND NOT EXISTS (
+                    SELECT 1 FROM blacklisted_applicants b
+                    WHERE b.applicant_id = applicants.id AND b.is_active = 1
+                  )
                 ORDER BY created_at DESC";
         $res = $this->db->query($sql);
         if (!$res) return [];
@@ -46,7 +64,16 @@ class Applicant {
     }
 
     public function getDeleted() {
-        $sql = "SELECT * FROM applicants WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC";
+        $sql = "
+            SELECT *
+            FROM applicants
+            WHERE deleted_at IS NOT NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = applicants.id AND b.is_active = 1
+              )
+            ORDER BY deleted_at DESC
+        ";
         $result = $this->db->query($sql);
         return $result->fetch_all(MYSQLI_ASSOC);
     }
@@ -240,16 +267,50 @@ class Applicant {
     public function getStatistics() {
         $stats = [];
 
-        $result = $this->db->query("SELECT COUNT(*) as total FROM applicants WHERE deleted_at IS NULL");
+        $result = $this->db->query("
+            SELECT COUNT(*) as total
+            FROM applicants a
+            WHERE a.deleted_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ");
         $stats['total'] = $result->fetch_assoc()['total'] ?? 0;
 
-        $result = $this->db->query("SELECT COUNT(*) as pending FROM applicants WHERE status = 'pending' AND deleted_at IS NULL");
+        $result = $this->db->query("
+            SELECT COUNT(*) as pending
+            FROM applicants a
+            WHERE a.status = 'pending'
+              AND a.deleted_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ");
         $stats['pending'] = $result->fetch_assoc()['pending'] ?? 0;
 
-        $result = $this->db->query("SELECT COUNT(*) as on_process FROM applicants WHERE status = 'on_process' AND deleted_at IS NULL");
+        $result = $this->db->query("
+            SELECT COUNT(*) as on_process
+            FROM applicants a
+            WHERE a.status = 'on_process'
+              AND a.deleted_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ");
         $stats['on_process'] = $result->fetch_assoc()['on_process'] ?? 0;
 
-        $result = $this->db->query("SELECT COUNT(*) as deleted FROM applicants WHERE deleted_at IS NOT NULL");
+        $result = $this->db->query("
+            SELECT COUNT(*) as deleted
+            FROM applicants a
+            WHERE a.deleted_at IS NOT NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ");
         $stats['deleted'] = $result->fetch_assoc()['deleted'] ?? 0;
 
         return $stats;
@@ -290,6 +351,10 @@ class Applicant {
             ) cb ON cb.applicant_id = a.id
             WHERE a.deleted_at IS NULL
               AND a.status = 'on_process'
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
             ORDER BY a.created_at DESC
         ";
 
