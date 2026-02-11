@@ -11,6 +11,13 @@ $auth->requireLogin();
 $currentUser = $auth->getCurrentUser();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 
+// Basic role flags for navigation / visibility
+$currentRole     = $currentUser['role'] ?? 'employee';
+$isSuperAdmin    = ($currentRole === 'super_admin');
+$isAdmin         = ($currentRole === 'admin');
+$isEmployee      = ($currentRole === 'employee');
+$canViewActivity = ($isAdmin || $isSuperAdmin);
+
 /* ---------- Real-time counts for sidebar badges ---------- */
 $conn = $database->getConnection();
 function csnk_count($conn, string $sql): int {
@@ -26,6 +33,32 @@ $pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE stat
 $onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL");
 $approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL");
 $deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL");
+
+// Latest client bookings for notification bell (top navbar)
+$recentBookings = [];
+if ($conn instanceof mysqli) {
+    $sqlBookings = "
+        SELECT cb.id,
+               cb.applicant_id,
+               cb.created_at,
+               cb.client_first_name,
+               cb.client_last_name,
+               cb.appointment_type,
+               a.first_name,
+               a.middle_name,
+               a.last_name,
+               a.suffix,
+               a.status
+        FROM client_bookings AS cb
+        LEFT JOIN applicants AS a ON cb.applicant_id = a.id
+        WHERE a.status = 'on_process'
+        ORDER BY cb.created_at DESC
+        LIMIT 5
+    ";
+    if ($res = $conn->query($sqlBookings)) {
+        $recentBookings = $res->fetch_all(MYSQLI_ASSOC);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -206,6 +239,25 @@ $deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE dele
                 </span>
             </a>
 
+            <?php if ($isAdmin || $isSuperAdmin): ?>
+            <a href="blacklisted.php" class="sidebar-item <?php echo $currentPage === 'blacklisted' ? 'active' : ''; ?>">
+                <span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($canViewActivity): ?>
+                <div class="mt-3 px-3">
+                    <small class="text-muted text-uppercase fw-semibold">Monitoring</small>
+                </div>
+
+                <a href="activity-logs.php" class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>">
+                    <span class="label">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span class="text">Activity Logs</span>
+                    </span>
+                </a>
+            <?php endif; ?>
+
             <div class="mt-3 px-3">
                 <small class="text-muted text-uppercase fw-semibold">Settings</small>
             </div>
@@ -227,8 +279,56 @@ $deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE dele
     <div class="main-content">
         <nav class="navbar-top d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold"><?php echo $pageTitle ?? 'Dashboard'; ?></h5>
-            <div class="d-flex align-items-center gap-2">
-                <span class="ms-2 me-3">Welcome, <strong><?php echo htmlspecialchars($currentUser['full_name']); ?></strong></span>
+            <div class="d-flex align-items-center gap-3">
+                <?php if (!empty($recentBookings) && ($isAdmin || $isSuperAdmin)): ?>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none position-relative" type="button" id="bookingBell"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?php echo count($recentBookings); ?>
+                            </span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bookingBell" style="min-width: 320px;">
+                            <h6 class="dropdown-header">Latest Client Bookings</h6>
+                            <?php foreach ($recentBookings as $booking): ?>
+                                <?php
+                                $appId = (int)($booking['applicant_id'] ?? 0);
+                                $appName = getFullName(
+                                    $booking['first_name'] ?? '',
+                                    $booking['middle_name'] ?? '',
+                                    $booking['last_name'] ?? '',
+                                    $booking['suffix'] ?? ''
+                                );
+                                $clientName = trim(($booking['client_first_name'] ?? '') . ' ' . ($booking['client_last_name'] ?? ''));
+                                $createdAt  = formatDateTime($booking['created_at'] ?? '');
+                                $apptType   = $booking['appointment_type'] ?? '';
+                                $link = 'on-process.php';
+                                $viewLink = 'view_onprocess.php?id=' . $appId;
+                                ?>
+                                <a href="<?php echo htmlspecialchars($viewLink, ENT_QUOTES, 'UTF-8'); ?>"
+                                   class="dropdown-item small">
+                                    <div class="fw-semibold text-truncate">
+                                        <?php echo htmlspecialchars($appName, ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                    <div class="text-muted small text-truncate">
+                                        Booked by <?php echo htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8'); ?>
+                                        (<?php echo htmlspecialchars($apptType, ENT_QUOTES, 'UTF-8'); ?>)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <?php echo htmlspecialchars($createdAt, ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="on-process.php" class="dropdown-item text-center small text-primary">
+                                View all on-process applicants
+                            </a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <span class="ms-2 me-1">Welcome, <strong><?php echo htmlspecialchars($currentUser['full_name']); ?></strong></span>
                 <?php if (!empty($currentUser['avatar'])): ?>
                     <img src="<?php echo getFileUrl($currentUser['avatar']); ?>" alt="Avatar" class="rounded-circle" width="40" height="40">
                 <?php else: ?>
