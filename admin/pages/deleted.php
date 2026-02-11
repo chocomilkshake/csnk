@@ -44,14 +44,48 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 
     if ($_GET['action'] === 'restore') {
         if ($applicant->restore($id)) {
-            $auth->logActivity($_SESSION['admin_id'], 'Restore Applicant', "Restored applicant ID: $id");
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? '',
+                        $row['suffix'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Restore Applicant',
+                "Restored applicant {$label}"
+            );
             setFlashMessage('success', 'Applicant restored successfully.');
         } else {
             setFlashMessage('error', 'Failed to restore applicant.');
         }
     } elseif ($_GET['action'] === 'permanent_delete') {
         if ($applicant->permanentDelete($id)) {
-            $auth->logActivity($_SESSION['admin_id'], 'Permanent Delete', "Permanently deleted applicant ID: $id");
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? '',
+                        $row['suffix'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Permanent Delete',
+                "Permanently deleted applicant {$label}"
+            );
             setFlashMessage('success', 'Applicant permanently deleted.');
         } else {
             setFlashMessage('error', 'Failed to permanently delete applicant.');
