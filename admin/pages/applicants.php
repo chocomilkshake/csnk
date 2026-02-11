@@ -66,7 +66,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     $id = (int)$_GET['id'];
     if ($applicant->softDelete($id)) {
         if (isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
-            $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id");
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? '',
+                        $row['suffix'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Delete Applicant',
+                "Deleted applicant {$label}"
+            );
         }
         if (function_exists('setFlashMessage')) setFlashMessage('success', 'Applicant deleted successfully.');
     } else {
