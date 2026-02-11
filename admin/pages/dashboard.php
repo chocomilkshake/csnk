@@ -10,6 +10,30 @@ $admin = new Admin($database);
 $stats = $applicant->getStatistics();
 $recentApplicants = array_slice($applicant->getAll(), 0, 5);
 $adminCount = count($admin->getAll());
+
+// Recent activity logs for admins / super admins
+$recentActivities = [];
+if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin', 'super_admin'], true)) {
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        $sql = "
+            SELECT al.id,
+                   al.action,
+                   al.description,
+                   al.created_at,
+                   au.full_name,
+                   au.username,
+                   au.role
+            FROM activity_logs AS al
+            LEFT JOIN admin_users AS au ON al.admin_id = au.id
+            ORDER BY al.created_at DESC
+            LIMIT 8
+        ";
+        if ($result = $conn->query($sql)) {
+            $recentActivities = $result->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+}
 ?>
 
 <div class="row g-4 mb-4">
@@ -80,13 +104,16 @@ $adminCount = count($admin->getAll());
 
 <div class="row g-4">
     <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">Recent Applicants</h5>
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-semibold">Recent Applicants</h5>
+                    <small class="text-muted">Latest profiles created in the system.</small>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -141,8 +168,8 @@ $adminCount = count($admin->getAll());
     </div>
 
     <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
+        <div class="card mb-4 border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 py-3">
                 <h5 class="mb-0 fw-semibold">Quick Stats</h5>
             </div>
             <div class="card-body">
@@ -161,8 +188,8 @@ $adminCount = count($admin->getAll());
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header bg-white py-3">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 py-3">
                 <h5 class="mb-0 fw-semibold">Quick Actions</h5>
             </div>
             <div class="card-body">
@@ -179,6 +206,71 @@ $adminCount = count($admin->getAll());
         </div>
     </div>
 </div>
+
+<?php if (!empty($recentActivities) && in_array($currentUser['role'] ?? 'employee', ['admin', 'super_admin'], true)): ?>
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h5 class="mb-0 fw-semibold">Recent Activity</h5>
+                        <small class="text-muted">Latest actions by admins and employees across the system.</small>
+                    </div>
+                    <a href="activity-logs.php" class="btn btn-sm btn-outline-secondary">
+                        View all logs
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 28%;">User</th>
+                                    <th style="width: 18%;">Role</th>
+                                    <th style="width: 18%;">Action</th>
+                                    <th>Description</th>
+                                    <th style="width: 18%;">When</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recentActivities as $log): ?>
+                                    <tr>
+                                        <td>
+                                            <?php
+                                            $displayName = $log['full_name'] ?: $log['username'] ?: 'Unknown user';
+                                            ?>
+                                            <strong><?php echo htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8'); ?></strong>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($log['role'])): ?>
+                                                <span class="badge bg-light text-dark text-capitalize">
+                                                    <?php echo str_replace('_', ' ', htmlspecialchars($log['role'], ENT_QUOTES, 'UTF-8')); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                <?php echo htmlspecialchars($log['action'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-truncate" style="max-width: 340px;">
+                                            <?php echo htmlspecialchars($log['description'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
+                                        </td>
+                                        <td>
+                                            <?php echo formatDateTime($log['created_at']); ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <script>
     setInterval(function() {
