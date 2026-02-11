@@ -33,6 +33,24 @@ if (!$applicantData) {
 
 $documents = $applicant->getDocuments($id);
 
+// Check if applicant is already blacklisted
+$isBlacklisted = false;
+$conn = $database->getConnection();
+if ($conn instanceof mysqli) {
+    $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM blacklisted_applicants WHERE applicant_id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            if ($res) {
+                $rowBl = $res->fetch_assoc();
+                $isBlacklisted = ((int)($rowBl['cnt'] ?? 0) > 0);
+            }
+        }
+        $stmt->close();
+    }
+}
+
 /* ============================================================
    Helpers (renderers + utilities)
    ============================================================ */
@@ -343,7 +361,16 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0 fw-semibold">Applicant Details</h4>
-    <div>
+    <div class="d-flex align-items-center gap-2">
+        <?php if ($isBlacklisted): ?>
+            <span class="badge bg-danger">
+                <i class="bi bi-slash-circle me-1"></i>Blacklisted
+            </span>
+        <?php elseif (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
+            <a href="<?php echo 'blacklist-applicant.php?id=' . (int)$id; ?>" class="btn btn-outline-danger me-2">
+                <i class="bi bi-slash-circle me-1"></i>Blacklist Applicant
+            </a>
+        <?php endif; ?>
         <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning me-2">
             <i class="bi bi-pencil me-2"></i>Edit
         </a>
