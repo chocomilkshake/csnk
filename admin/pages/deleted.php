@@ -156,8 +156,8 @@ $exportUrl = '../includes/excel_deleted-applicants.php' . ($q !== '' ? '?q=' . u
 </div>
 
 <!-- 🔎 Search bar placed BETWEEN the header/buttons and the list -->
-<div class="mb-3">
-    <form action="deleted.php" method="get" class="d-flex" role="search">
+<div class="mb-3 d-flex justify-content-end">
+    <form action="deleted.php" method="get" class="w-100" style="max-width: 420px;" role="search">
         <div class="input-group" style="max-width: 420px;">
             <input
                 type="text"

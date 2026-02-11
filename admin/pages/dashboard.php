@@ -42,7 +42,7 @@ if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin
     $conn = $database->getConnection();
     if ($conn instanceof mysqli) {
         // Get count
-        $countSql = "SELECT COUNT(*) FROM blacklisted_applicants";
+        $countSql = "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1";
         if ($countResult = $conn->query($countSql)) {
             $blacklistedCount = (int)$countResult->fetch_row()[0];
         }
@@ -64,6 +64,7 @@ if (!empty($currentUser) && in_array($currentUser['role'] ?? 'employee', ['admin
             FROM blacklisted_applicants b
             LEFT JOIN applicants a ON a.id = b.applicant_id
             LEFT JOIN admin_users au ON au.id = b.created_by
+            WHERE b.is_active = 1
             ORDER BY b.created_at DESC
             LIMIT 5
         ";

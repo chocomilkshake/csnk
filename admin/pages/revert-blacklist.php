@@ -24,9 +24,6 @@ $auth->requireLogin();
 $resolvedUser = [];
 if (isset($currentUser) && is_array($currentUser)) {
     $resolvedUser = $currentUser;
-} elseif (method_exists($auth, 'currentUser')) {
-    $u = $auth->currentUser();
-    if (is_array($u)) $resolvedUser = $u;
 } elseif (method_exists($auth, 'getCurrentUser')) {
     $u = $auth->getCurrentUser();
     if (is_array($u)) $resolvedUser = $u;
@@ -149,29 +146,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     if (empty($errors)) {
-                        // Optional: Transaction wrap in case you later add multiple DB operations
                         $conn->begin_transaction();
 
-                        // Delete blacklist record
-                        $sqlDelete = "DELETE FROM blacklisted_applicants WHERE id = ?";
-                        if ($stmtDelete = $conn->prepare($sqlDelete)) {
-                            $stmtDelete->bind_param("i", $blacklistId);
-                            $okDelete = $stmtDelete->execute();
-                            $stmtDelete->close();
+                        // Mark blacklist record as reverted (keep history)
+                        $sqlUpdate = "
+                            UPDATE blacklisted_applicants
+                            SET
+                                is_active = 0,
+                                reverted_at = NOW(),
+                                reverted_by = ?,
+                                compliance_note = ?,
+                                compliance_proof_paths = ?
+                            WHERE id = ?
+                            LIMIT 1
+                        ";
 
-                            if (!$okDelete) {
+                        $adminId = (int)($_SESSION['admin_id'] ?? ($resolvedUser['id'] ?? 0));
+                        $proofJson = !empty($complianceProofs) ? json_encode($complianceProofs) : null;
+
+                        if ($stmtUpd = $conn->prepare($sqlUpdate)) {
+                            $stmtUpd->bind_param("issi", $adminId, $complianceNote, $proofJson, $blacklistId);
+                            $okUpd = $stmtUpd->execute();
+                            $stmtUpd->close();
+
+                            if (!$okUpd || $conn->affected_rows < 1) {
                                 $conn->rollback();
-                                $errors[] = 'Failed to remove blacklist record.';
+                                $errors[] = 'Failed to revert blacklist record.';
                             } else {
-                                // OPTIONAL: If you track applicant status, you can reset it here.
-                                // Be careful with schema differences. Example (commented):
-                                // $conn->query("UPDATE applicants SET status = 'active' WHERE id = " . (int)$blacklistData['applicant_id']);
-
-                                // OPTIONAL: Persist a revert log with proofs/notes (if you have such a table)
-                                // Example idea:
-                                // $sqlLog = "INSERT INTO blacklist_reverts (blacklist_id, applicant_id, note, proof_paths, reverted_by) VALUES (?, ?, ?, ?, ?)";
-                                // ... bind and execute with json_encode($complianceProofs)
-
                                 $conn->commit();
 
                                 // Log activity
@@ -182,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $blacklistData['suffix'] ?? ''
                                 );
 
-                                $logDesc = "Removed blacklist for applicant {$appName} (ID: {$blacklistData['applicant_id']})";
+                                $logDesc = "Reverted blacklist for applicant {$appName} (ID: {$blacklistData['applicant_id']})";
                                 if (!empty($complianceNote)) {
                                     $logDesc .= " - Compliance note: {$complianceNote}";
                                 }
@@ -190,14 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $logDesc .= " - Compliance proofs uploaded: " . count($complianceProofs);
                                 }
 
-                                // Determine admin id for logging
-                                $adminIdForLog = (int)($_SESSION['admin_id'] ?? ($resolvedUser['id'] ?? 0));
                                 if (method_exists($auth, 'logActivity')) {
-                                    $auth->logActivity(
-                                        $adminIdForLog,
-                                        'Revert Blacklist',
-                                        $logDesc
-                                    );
+                                    $auth->logActivity($adminId, 'Revert Blacklist', $logDesc);
                                 }
 
                                 $success = true;
@@ -207,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         } else {
                             $conn->rollback();
-                            $errors[] = 'Failed to prepare removal statement.';
+                            $errors[] = 'Failed to prepare revert statement.';
                         }
                     }
                 }

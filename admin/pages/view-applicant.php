@@ -33,22 +33,32 @@ if (!$applicantData) {
 
 $documents = $applicant->getDocuments($id);
 
-// Check if applicant is already blacklisted
+// Check if applicant is actively blacklisted
 $isBlacklisted = false;
+$activeBlacklistId = null;
 $conn = $database->getConnection();
 if ($conn instanceof mysqli) {
-    $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM blacklisted_applicants WHERE applicant_id = ?");
+    $stmt = $conn->prepare("SELECT id FROM blacklisted_applicants WHERE applicant_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1");
     if ($stmt) {
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
             $res = $stmt->get_result();
             if ($res) {
                 $rowBl = $res->fetch_assoc();
-                $isBlacklisted = ((int)($rowBl['cnt'] ?? 0) > 0);
+                if (!empty($rowBl['id'])) {
+                    $isBlacklisted = true;
+                    $activeBlacklistId = (int)$rowBl['id'];
+                }
             }
         }
         $stmt->close();
     }
+}
+
+// If actively blacklisted, route to blacklist details (single source of truth)
+if ($isBlacklisted && $activeBlacklistId) {
+    redirect('blacklisted-view.php?id=' . $activeBlacklistId);
+    exit;
 }
 
 /* ============================================================

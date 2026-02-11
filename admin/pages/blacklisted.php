@@ -52,16 +52,19 @@ if ($conn instanceof mysqli) {
             b.issue,
             b.proof_paths,
             b.created_at,
+            b.is_active,
             a.first_name,
             a.middle_name,
             a.last_name,
             a.suffix,
             a.status,
+            a.picture,
             au.full_name AS created_by_name,
             au.username  AS created_by_username
         FROM blacklisted_applicants b
         LEFT JOIN applicants a ON a.id = b.applicant_id
         LEFT JOIN admin_users au ON au.id = b.created_by
+        WHERE b.is_active = 1
         ORDER BY b.created_at DESC
     ";
     if ($res = $conn->query($sql)) {
@@ -141,7 +144,7 @@ function formatBlacklistProofs(?string $json): array {
                             $createdBy  = $row['created_by_name'] ?: ($row['created_by_username'] ?: 'System');
                             $when       = formatDateTime($row['created_at']);
                             $proofs     = formatBlacklistProofs($row['proof_paths'] ?? null);
-                            $viewUrl    = 'view-applicant.php?id=' . (int)$row['applicant_id'];
+                            $viewUrl    = 'blacklisted-view.php?id=' . (int)$row['id'];
                             $blacklistId = (int)$row['id'];
 
                             // Search blob
@@ -152,11 +155,31 @@ function formatBlacklistProofs(?string $json): array {
                             ?>
                             <tr data-search-text="<?php echo $searchAttr; ?>">
                                 <td>
-                                    <div class="fw-semibold">
-                                        <?php echo htmlspecialchars($appName, ENT_QUOTES, 'UTF-8'); ?>
-                                    </div>
-                                    <div class="text-muted small">
-                                        ID: <?php echo (int)$row['applicant_id']; ?>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <?php if (!empty($row['picture'])): ?>
+                                            <img
+                                                src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                                alt="Photo"
+                                                class="rounded-circle"
+                                                width="40"
+                                                height="40"
+                                                style="object-fit: cover;"
+                                            >
+                                        <?php else: ?>
+                                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px;">
+                                                <?php echo strtoupper(substr((string)($row['first_name'] ?? ''), 0, 1)); ?>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                <?php echo htmlspecialchars($appName, ENT_QUOTES, 'UTF-8'); ?>
+                                            </div>
+                                            <div class="text-muted small">
+                                                ID: <?php echo (int)$row['applicant_id']; ?>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>

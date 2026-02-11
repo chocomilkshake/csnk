@@ -28,11 +28,12 @@ function csnk_count($conn, string $sql): int {
     }
     return 0;
 }
-$totalApplicants = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL");
-$pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL");
-$onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL");
-$approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL");
-$deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL");
+$notBlacklisted = " AND NOT EXISTS (SELECT 1 FROM blacklisted_applicants b WHERE b.applicant_id = applicants.id AND b.is_active = 1)";
+$totalApplicants = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL{$notBlacklisted}");
+$pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL{$notBlacklisted}");
+$onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
+$approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
+$deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
 
 // Latest client bookings for notification bell (top navbar)
 $recentBookings = [];
@@ -130,6 +131,15 @@ if ($conn instanceof mysqli) {
         .sidebar-item i { width: 20px; margin-right: 0.75rem; }
         .sidebar-item .label { display: inline-flex; align-items: center; gap: .5rem; }
         .sidebar-item .label .text { white-space: nowrap; }
+        .sidebar-toggle {
+            width: 100%;
+            background: transparent;
+            border: 0;
+            text-align: left;
+        }
+        .sidebar-submenu .sidebar-item {
+            padding-left: 2.25rem;
+        }
 
         /* Perfect right alignment for numbers: absolute to the right padding */
         .sidebar-item .side-badge {
@@ -199,51 +209,117 @@ if ($conn instanceof mysqli) {
                 <small class="text-muted text-uppercase fw-semibold">Applicants</small>
             </div>
 
-            <a href="applicants.php" class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-people"></i><span class="text">List of Applicants</span></span>
-                <span class="side-badge">
-                    <span class="pill-count <?php echo $totalApplicants === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="Total applicants count"><?php echo (int)$totalApplicants; ?></span>
-                </span>
-            </a>
+            <?php
+                $isApplicantsActive = in_array($currentPage, ['applicants','pending','on-process','approved','deleted','blacklisted','blacklisted-view'], true);
+                $collapseApplicantsId = 'csnkApplicantsMenu';
+            ?>
 
-            <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-clock-history"></i><span class="text">Pending Applicants</span></span>
-                <span class="side-badge">
-                    <span class="pill-count <?php echo $pendingCount === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="Pending applicants count"><?php echo (int)$pendingCount; ?></span>
+            <!-- CSNK-Philippines dropdown -->
+            <button
+                class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#<?php echo $collapseApplicantsId; ?>"
+                aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
+                aria-controls="<?php echo $collapseApplicantsId; ?>"
+            >
+                <span class="label">
+                    <i class="bi bi-geo-alt"></i>
+                    <span class="text">CSNK-Philippines</span>
                 </span>
-            </a>
-
-            <a href="on-process.php" class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-hourglass-split"></i><span class="text">On Process</span></span>
                 <span class="side-badge">
-                    <span class="pill-count <?php echo $onProcessCount === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="On process applicants count"><?php echo (int)$onProcessCount; ?></span>
+                    <i class="bi bi-chevron-down"></i>
                 </span>
-            </a>
+            </button>
+            <div class="collapse <?php echo $isApplicantsActive ? 'show' : ''; ?> sidebar-submenu" id="<?php echo $collapseApplicantsId; ?>">
+                <a href="applicants.php" class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>">
+                    <span class="label"><i class="bi bi-people"></i><span class="text">List of Applicants</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $totalApplicants === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$totalApplicants; ?></span>
+                    </span>
+                </a>
+                <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
+                    <span class="label"><i class="bi bi-clock-history"></i><span class="text">Pending Applicants</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $pendingCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$pendingCount; ?></span>
+                    </span>
+                </a>
+                <a href="on-process.php" class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>">
+                    <span class="label"><i class="bi bi-hourglass-split"></i><span class="text">On Process</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $onProcessCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$onProcessCount; ?></span>
+                    </span>
+                </a>
+                <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>">
+                    <span class="label"><i class="bi bi-check-circle"></i><span class="text">Approved</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $approvedCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$approvedCount; ?></span>
+                    </span>
+                </a>
+                <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>">
+                    <span class="label"><i class="bi bi-trash"></i><span class="text">Deleted Applicants</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $deletedCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$deletedCount; ?></span>
+                    </span>
+                </a>
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="blacklisted.php" class="sidebar-item <?php echo $currentPage === 'blacklisted' ? 'active' : ''; ?>">
+                        <span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span>
+                    </a>
+                <?php endif; ?>
+            </div>
 
-            <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-check-circle"></i><span class="text">Approved</span></span>
+            <!-- SMC-Turkey (placeholder, non-clickable items) -->
+            <button
+                class="sidebar-item sidebar-toggle"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#smcTurkeyMenu"
+                aria-expanded="false"
+                aria-controls="smcTurkeyMenu"
+            >
+                <span class="label">
+                    <i class="bi bi-globe2"></i>
+                    <span class="text">SMC-Turkey</span>
+                </span>
                 <span class="side-badge">
-                    <span class="pill-count <?php echo $approvedCount === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="Approved applicants count"><?php echo (int)$approvedCount; ?></span>
+                    <i class="bi bi-chevron-down"></i>
                 </span>
-            </a>
+            </button>
+            <div class="collapse sidebar-submenu" id="smcTurkeyMenu">
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-people"></i><span class="text">List of Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-clock-history"></i><span class="text">Pending Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-hourglass-split"></i><span class="text">On Process</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-check-circle"></i><span class="text">Approved</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-trash"></i><span class="text">Deleted Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span></a>
+            </div>
 
-            <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-trash"></i><span class="text">Deleted Applicants</span></span>
+            <!-- SMC-Bahrain (placeholder, non-clickable items) -->
+            <button
+                class="sidebar-item sidebar-toggle"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#smcBahrainMenu"
+                aria-expanded="false"
+                aria-controls="smcBahrainMenu"
+            >
+                <span class="label">
+                    <i class="bi bi-globe2"></i>
+                    <span class="text">SMC-Bahrain</span>
+                </span>
                 <span class="side-badge">
-                    <span class="pill-count <?php echo $deletedCount === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="Deleted applicants count"><?php echo (int)$deletedCount; ?></span>
+                    <i class="bi bi-chevron-down"></i>
                 </span>
-            </a>
-
-            <?php if ($isAdmin || $isSuperAdmin): ?>
-            <a href="blacklisted.php" class="sidebar-item <?php echo $currentPage === 'blacklisted' ? 'active' : ''; ?>">
-                <span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span>
-            </a>
-            <?php endif; ?>
+            </button>
+            <div class="collapse sidebar-submenu" id="smcBahrainMenu">
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-people"></i><span class="text">List of Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-clock-history"></i><span class="text">Pending Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-hourglass-split"></i><span class="text">On Process</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-check-circle"></i><span class="text">Approved</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-trash"></i><span class="text">Deleted Applicants</span></span></a>
+                <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span></a>
+            </div>
 
             <?php if ($canViewActivity): ?>
                 <div class="mt-3 px-3">
