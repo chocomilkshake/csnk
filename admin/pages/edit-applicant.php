@@ -377,7 +377,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $auth->logActivity($_SESSION['admin_id'], 'Update Applicant', "Updated applicant ID: $id");
+            // Enrich log with applicant full name for readability
+            $fullName = getFullName(
+                $firstName,
+                $middleName,
+                $lastName,
+                $suffix
+            );
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Update Applicant',
+                "Updated applicant {$fullName} (ID: {$id})"
+            );
             setFlashMessage('success', 'Applicant updated successfully!');
             redirect('applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : ''));
             exit;
