@@ -48,7 +48,7 @@ if (isset($_GET['action'])) {
     // Build redirect URL back to this page preserving search
     $qs = ($q !== '') ? ('?q=' . urlencode($q)) : '';
 
-    if ($action === 'update_status' && $id > 0 && isset($_GET['to'])) {
+        if ($action === 'update_status' && $id > 0 && isset($_GET['to'])) {
         $to = strtolower(trim((string)$_GET['to']));
         if (in_array($to, $allowedStatuses, true)) {
             $updated = false;
@@ -78,7 +78,24 @@ if (isset($_GET['action'])) {
             }
 
             if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
-                $auth->logActivity($_SESSION['admin_id'], 'Update Applicant Status', "Applicant ID {$id} → {$to}");
+                $fullName = null;
+                if (method_exists($applicant, 'getById')) {
+                    $row = $applicant->getById($id);
+                    if (is_array($row)) {
+                        $fullName = getFullName(
+                            $row['first_name'] ?? '',
+                            $row['middle_name'] ?? '',
+                            $row['last_name'] ?? '',
+                            $row['suffix'] ?? ''
+                        );
+                    }
+                }
+                $label = $fullName ?: "ID {$id}";
+                $auth->logActivity(
+                    (int)$_SESSION['admin_id'],
+                    'Update Applicant Status',
+                    "Updated status for {$label} → {$to}"
+                );
             }
         } else {
             if (function_exists('setFlashMessage')) {
@@ -120,7 +137,24 @@ if (isset($_GET['action'])) {
         }
 
         if ($deleted && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
-            $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: {$id}");
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? '',
+                        $row['suffix'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Delete Applicant',
+                "Deleted applicant {$label}"
+            );
         }
 
         redirect('pending.php' . $qs);
