@@ -33,6 +33,7 @@ $pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE stat
 $onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL");
 $approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL");
 $deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL");
+$reportNotesCount = csnk_count($conn, "SELECT COUNT(*) FROM applicant_reports");
 
 // Latest client bookings for notification bell (top navbar)
 $recentBookings = [];
@@ -256,6 +257,22 @@ if ($conn instanceof mysqli) {
                         <span class="text">Activity Logs</span>
                     </span>
                 </a>
+
+                <div class="mt-3 px-3">
+                    <small class="text-muted text-uppercase fw-semibold">Reports</small>
+                </div>
+
+                <a href="reports.php" class="sidebar-item <?php echo $currentPage === 'reports' ? 'active' : ''; ?>">
+                    <span class="label">
+                        <i class="bi bi-journal-text"></i>
+                        <span class="text">Reports</span>
+                    </span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $reportNotesCount === 0 ? 'is-zero' : ''; ?>"
+                            aria-label="Total reports count"><?php echo (int)$reportNotesCount; ?></span>
+                    </span>
+                </a>
+
             <?php endif; ?>
 
             <div class="mt-3 px-3">
