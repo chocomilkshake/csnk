@@ -63,7 +63,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 
     if ($deleted && isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
-        $auth->logActivity($_SESSION['admin_id'], 'Delete Applicant', "Deleted applicant ID: $id (from On Process)");
+        $fullName = null;
+        if (method_exists($applicant, 'getById')) {
+            $row = $applicant->getById($id);
+            if (is_array($row)) {
+                $fullName = getFullName(
+                    $row['first_name'] ?? '',
+                    $row['middle_name'] ?? '',
+                    $row['last_name'] ?? '',
+                    $row['suffix'] ?? ''
+                );
+            }
+        }
+        $label = $fullName ?: "ID {$id}";
+        $auth->logActivity(
+            (int)$_SESSION['admin_id'],
+            'Delete Applicant',
+            "Deleted applicant {$label} (On Process list)"
+        );
     }
 
     $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
@@ -107,7 +124,24 @@ if (
         }
 
         if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
-            $auth->logActivity($_SESSION['admin_id'], 'Update Applicant Status', "Applicant ID {$id} → {$to}");
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? '',
+                        $row['suffix'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Update Applicant Status',
+                "Updated status for {$label} → {$to}"
+            );
         }
     } else {
         if (function_exists('setFlashMessage')) {
