@@ -25,7 +25,7 @@
   <style>
     :root{
       /* Brand palette (Navbar/Footer remain as-is; these are for sections only) */
-      --smc-red: #D72638;       /* Primary highlight */
+      --smc-red: #D72638;       /*Primary highlight */
       --smc-navy: #0B1628;      /* Deep navy */
       --smc-navy-2: #251a1a;     /* Slightly lighter navy */
       --smc-gold: #FFD84D;      /* Gold accent */
@@ -38,29 +38,43 @@
       --radius-inner: 1rem;
     }
 
-    /* ========== HERO ========== */
-    .hero-wrap{
-      border-radius: var(--radius-outer);
-      color:#fff;
-      padding: clamp(1.25rem, 2.8vw, 2rem);
-      background:
-        radial-gradient(900px 320px at -10% 20%, rgba(255,216,77,.22), rgba(255,216,77,0) 60%),
-        linear-gradient(100deg, #dc3545 0%, #111 70%);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      position: relative;
-      isolation: isolate;
-    }
-    .hero-wrap::after{
-      /* soft texture overlay */
-      content:"";
-      position:absolute; inset:0;
-      background:
-        radial-gradient(800px 260px at 110% -10%, rgba(11,22,40,.45), rgba(11,22,40,0) 60%);
-      z-index:0;
-    }
-    .hero-content{ position:relative; z-index:1; }
-    .hero-bullet i{ color: var(--smc-gold); }
+  /* ========== HERO (Improved Luxury Green/Gold Theme) ========== */
+  .hero-wrap{
+    border-radius: var(--radius-outer);
+    color:#fff;
+    padding: clamp(1.25rem, 2.8vw, 2rem);
+
+    /* Premium hero background */
+    background:
+      radial-gradient(900px 320px at 0% 0%, rgba(255, 215, 80, 0.20), rgba(0,0,0,0) 70%),
+      radial-gradient(900px 420px at 100% 50%, rgba(255, 215, 80, 0.15), rgba(0,0,0,0) 60%),
+      linear-gradient(120deg, #0f1602 30%, #3F4A02 50%, #7A8C0F 100%);
+
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .hero-wrap::after{
+    /* cinematic soft overlay */
+    content:"";
+    position:absolute; inset:0;
+    background:
+      radial-gradient(800px 260px at 120% -10%, rgba(0,0,0,0.40), rgba(0,0,0,0) 60%);
+    z-index:0;
+  }
+
+  .hero-content{
+    position:relative;
+    z-index:1;
+  }
+
+  /* Bullet icons gold accent */
+  .hero-bullet i{
+    color: #FFD84D !important;
+  }
+
 
     /* ========== TURKEY PROGRAM (navy + gold buttons) ========== */
     .turkey-card{
