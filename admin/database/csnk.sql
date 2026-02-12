@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 11, 2026 at 06:54 AM
+-- Generation Time: Feb 12, 2026 at 01:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -102,7 +102,26 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (209, 5, 'Login', 'User logged in successfully', '::1', '2026-02-11 05:11:28'),
 (210, 5, 'Update Applicant Status', 'Updated status for Annie Are You Okay → on_process', '::1', '2026-02-11 05:28:49'),
 (211, 5, 'Update Applicant Status (with report)', 'Updated status for Annie Are You Okay → approved; Reason: whattt', '::1', '2026-02-11 05:28:59'),
-(212, 5, 'Login', 'User logged in successfully', '::1', '2026-02-11 05:52:23');
+(212, 5, 'Login', 'User logged in successfully', '::1', '2026-02-11 05:52:23'),
+(213, 4, 'Update Applicant Status', 'Updated status for Annie Are You Okay → on_process', '::1', '2026-02-11 06:03:45'),
+(214, 4, 'Update Applicant Status', 'Updated status for Jennifer Would You Refer → pending', '::1', '2026-02-11 06:03:50'),
+(215, 4, 'Update Applicant Status (with report)', 'Updated status for Annie Are You Okay → pending; Reason: no clients', '::1', '2026-02-11 06:04:56'),
+(216, 4, 'Update Applicant Status', 'Updated status for Jennifer Would You Refer → on_process', '::1', '2026-02-11 06:07:40'),
+(217, 4, 'Update Applicant Status (with report)', 'Updated status for Jennifer Would You Refer → approved; Reason: apporved relocate to client', '::1', '2026-02-11 06:20:52'),
+(218, 4, 'Blacklist Applicant', 'Blacklisted applicant Mhi Mha Central Mha (ID: 18) - Reason: awd', '::1', '2026-02-11 06:37:33'),
+(219, 4, 'Logout', 'User logged out', '::1', '2026-02-11 06:42:53'),
+(220, 11, 'Login', 'User logged in successfully', '::1', '2026-02-11 06:43:01'),
+(221, 11, 'Logout', 'User logged out', '::1', '2026-02-11 06:43:20'),
+(222, 9, 'Login', 'User logged in successfully', '::1', '2026-02-11 06:43:30'),
+(223, 9, 'Logout', 'User logged out', '::1', '2026-02-11 06:48:47'),
+(224, 4, 'Login', 'User logged in successfully', '::1', '2026-02-11 06:52:50'),
+(225, 4, 'Revert Blacklist', 'Removed blacklist for applicant Mhi Mha Central Mha (ID: 18)', '::1', '2026-02-11 07:24:58'),
+(226, 4, 'Logout', 'User logged out', '::1', '2026-02-11 07:28:02'),
+(227, 9, 'Login', 'User logged in successfully', '::1', '2026-02-11 07:28:20'),
+(228, 9, 'Blacklist Applicant', 'Blacklisted applicant Annie Are You Okay (ID: 22) - Reason: asd', '::1', '2026-02-11 07:33:22'),
+(229, 4, 'Login', 'User logged in successfully', '::1', '2026-02-12 00:34:04'),
+(230, 4, 'Add Applicant Report', 'Applicant ID 20: awd', '::1', '2026-02-12 00:38:25'),
+(231, 4, 'Add Applicant Report', 'Applicant ID 20: awdawd', '::1', '2026-02-12 00:38:29');
 
 -- --------------------------------------------------------
 
@@ -133,7 +152,7 @@ INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `
 (6, 'andreiadmin', 'andrei@gmail.com', '$2y$10$ROQGHUJso58ON6NCsv2PRO14x3Nviq3fZrkEU8KLne6BTEbVuhSq2', 'Andrei Javillo', NULL, 'super_admin', 'active', '2026-02-07 10:22:05', '2026-02-07 10:22:05'),
 (7, 'ralphadmin', 'ralph@gmail.com', '$2y$10$MUi6.7QJykPG48jx9e8lLu2V72JRHYu91.aRd5LFviHcJokQfvaf2', 'Ralph Justine Gallentes', NULL, 'super_admin', 'active', '2026-02-10 00:32:00', '2026-02-10 00:32:00'),
 (8, 'cabritoadmin', 'cabs@gmail.com', '$2y$10$AbWEDXv5fqBAkhk1quS.7.eJKD2uyUyenhinmN906bbJlePsxOlSq', 'John Adrian Cabrito', NULL, 'super_admin', 'active', '2026-02-10 00:32:53', '2026-02-10 00:32:53'),
-(9, 'csnk001', 'csnk@gmail.com', '$2y$10$Rr4IZFl8/JJ2Uw3/E0CUuupw/Dnuv03xsLP4kkzMBgojCG6z9taTO', 'admin001', NULL, 'admin', 'active', '2026-02-10 00:34:01', '2026-02-10 00:34:01'),
+(9, 'csnk001', 'csnk@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$aVBWMGZwbTV2SUllSnhlVA$MftWb38bySoYhAFpnkQxDSfdwUp80yUKvIB4mY8zVWI', 'admin001', NULL, 'admin', 'active', '2026-02-10 00:34:01', '2026-02-11 06:43:30'),
 (10, 'csnk002', 'admin@gmail.com', '$2y$10$TcPdwmJVbpCvl1ekZ8n73eCzlxZvM1ROPaXPurFhJq3F/WV0yDgTW', 'admin002', NULL, 'admin', 'active', '2026-02-10 00:34:48', '2026-02-10 00:34:48'),
 (11, 'employee001', 'emp@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$a1g3M0M5d3hXbDAxQnVKRg$Pn8dOinMMFzjLbiJacQU2rx5+hyZ7Vq/FzU4hyeBGJI', 'emp1', NULL, 'employee', 'active', '2026-02-10 11:17:21', '2026-02-10 11:17:47');
 
@@ -184,8 +203,8 @@ INSERT INTO `applicants` (`id`, `first_name`, `middle_name`, `last_name`, `suffi
 (17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\",\"Tondo Manila\",\"Pandacan Manila\",\"Paco Manila\",\"Pasay Manila\"]', '[\"Filipino\"]', '[\"Childcare &amp; Maternity (Yaya)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'admin/uploads/video/trial1.mp4', 'file', 'file', 'Video', NULL, NULL, 'approved', NULL, '2026-02-02 12:00:00', '2026-02-10 11:48:46', NULL),
 (18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', NULL, '2026-02-02 12:22:47', '2026-02-11 03:59:41', NULL),
 (19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp; Housekeeping (General)\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', NULL, NULL, 'iframe', NULL, NULL, NULL, 'approved', NULL, '2026-02-02 12:58:24', '2026-02-10 11:48:49', NULL),
-(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking &amp; Food Service\",\"Elderly &amp; Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'video/a15648b66a48c21bcda8a11e33101712.mp4', 'file', 'file', 'Zyan Cabrera', NULL, NULL, 'approved', NULL, '2026-02-03 05:16:52', '2026-02-10 11:48:43', NULL),
-(22, 'Annie', 'Are', 'You Okay', '', '09123861273', '09971286128', 'zinnerbro@gmail.com', '1995-04-17', '1223 kjlabmkdawkdkbawhdawdw', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2010 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp; Housekeeping (General)\"]', 'Part Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6985660b79316_1770350091.jpg', 'video/698565f248a69_1770350066.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'approved', NULL, '2026-02-06 03:54:26', '2026-02-11 05:28:59', NULL);
+(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking &amp; Food Service\",\"Elderly &amp; Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'video/a15648b66a48c21bcda8a11e33101712.mp4', 'file', 'file', 'Zyan Cabrera', NULL, NULL, 'approved', NULL, '2026-02-03 05:16:52', '2026-02-11 06:20:52', NULL),
+(22, 'Annie', 'Are', 'You Okay', '', '09123861273', '09971286128', 'zinnerbro@gmail.com', '1995-04-17', '1223 kjlabmkdawkdkbawhdawdw', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2010 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp; Housekeeping (General)\"]', 'Part Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6985660b79316_1770350091.jpg', 'video/698565f248a69_1770350066.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-06 03:54:26', '2026-02-11 06:04:56', NULL);
 
 -- --------------------------------------------------------
 
@@ -250,6 +269,28 @@ INSERT INTO `applicant_documents` (`id`, `applicant_id`, `document_type`, `file_
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `applicant_reports`
+--
+
+CREATE TABLE `applicant_reports` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `applicant_id` int(10) UNSIGNED NOT NULL,
+  `admin_id` int(10) UNSIGNED DEFAULT NULL,
+  `note_text` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `applicant_reports`
+--
+
+INSERT INTO `applicant_reports` (`id`, `applicant_id`, `admin_id`, `note_text`, `created_at`) VALUES
+(1, 20, 4, 'awd', '2026-02-12 08:38:25'),
+(2, 20, 4, 'awdawd', '2026-02-12 08:38:29');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `applicant_status_reports`
 --
 
@@ -261,7 +302,7 @@ CREATE TABLE `applicant_status_reports` (
   `report_text` text NOT NULL,
   `admin_id` int(10) UNSIGNED DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `applicant_status_reports`
@@ -272,7 +313,9 @@ INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `from_status`, `to
 (2, 22, 'on_process', 'pending', 'trial', 5, '2026-02-11 11:13:15'),
 (3, 22, 'on_process', 'approved', 'moved', 5, '2026-02-11 11:21:14'),
 (4, 18, 'on_process', 'pending', 'trial', 5, '2026-02-11 11:59:41'),
-(5, 22, 'on_process', 'approved', 'whattt', 5, '2026-02-11 13:28:59');
+(5, 22, 'on_process', 'approved', 'whattt', 5, '2026-02-11 13:28:59'),
+(6, 22, 'on_process', 'pending', 'no clients', 4, '2026-02-11 14:04:56'),
+(7, 20, 'on_process', 'approved', 'apporved relocate to client', 4, '2026-02-11 14:20:52');
 
 -- --------------------------------------------------------
 
@@ -287,9 +330,21 @@ CREATE TABLE `blacklisted_applicants` (
   `issue` text DEFAULT NULL,
   `proof_paths` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`proof_paths`)),
   `created_by` int(10) UNSIGNED DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `reverted_at` datetime DEFAULT NULL,
+  `reverted_by` int(10) UNSIGNED DEFAULT NULL,
+  `compliance_note` text DEFAULT NULL,
+  `compliance_proof_paths` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`compliance_proof_paths`)),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `blacklisted_applicants`
+--
+
+INSERT INTO `blacklisted_applicants` (`id`, `applicant_id`, `reason`, `issue`, `proof_paths`, `created_by`, `is_active`, `created_at`, `reverted_at`, `reverted_by`, `compliance_note`, `compliance_proof_paths`, `updated_at`) VALUES
+(2, 22, 'asd', 'asdasd', '[\"blacklist\\/698c30c2dbdbd_1770795202.jpg\"]', 9, 1, '2026-02-11 07:33:22', NULL, NULL, NULL, NULL, '2026-02-11 07:33:22');
 
 -- --------------------------------------------------------
 
@@ -350,7 +405,12 @@ INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login
 (24, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 10:48:46', NULL),
 (25, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 11:12:38', NULL),
 (26, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 13:11:28', NULL),
-(27, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 13:52:23', NULL);
+(27, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 13:52:23', NULL),
+(28, 11, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 14:43:01', '2026-02-11 14:43:20'),
+(29, 9, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 14:43:30', '2026-02-11 14:48:47'),
+(30, 4, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 14:52:50', '2026-02-11 15:28:02'),
+(31, 9, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-11 15:28:20', NULL),
+(32, 4, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-12 08:34:04', NULL);
 
 --
 -- Indexes for dumped tables
@@ -388,6 +448,13 @@ ALTER TABLE `applicant_documents`
   ADD KEY `idx_applicant_documents_applicant_id` (`applicant_id`);
 
 --
+-- Indexes for table `applicant_reports`
+--
+ALTER TABLE `applicant_reports`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_app_reports_applicant` (`applicant_id`);
+
+--
 -- Indexes for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
@@ -403,7 +470,10 @@ ALTER TABLE `blacklisted_applicants`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_blacklisted_applicants_applicant_id` (`applicant_id`),
   ADD KEY `idx_blacklisted_applicants_created_by` (`created_by`),
-  ADD KEY `idx_blacklisted_applicants_created_at` (`created_at`);
+  ADD KEY `idx_blacklisted_applicants_created_at` (`created_at`),
+  ADD KEY `idx_blacklist_is_active` (`is_active`),
+  ADD KEY `idx_blacklist_reverted_at` (`reverted_at`),
+  ADD KEY `fk_blacklist_reverted_by` (`reverted_by`);
 
 --
 -- Indexes for table `client_bookings`
@@ -431,7 +501,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=213;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=232;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -452,16 +522,22 @@ ALTER TABLE `applicant_documents`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=161;
 
 --
+-- AUTO_INCREMENT for table `applicant_reports`
+--
+ALTER TABLE `applicant_reports`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `blacklisted_applicants`
 --
 ALTER TABLE `blacklisted_applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `client_bookings`
@@ -473,7 +549,7 @@ ALTER TABLE `client_bookings`
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- Constraints for dumped tables
@@ -498,6 +574,12 @@ ALTER TABLE `applicant_documents`
   ADD CONSTRAINT `fk_applicant_documents_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `applicant_reports`
+--
+ALTER TABLE `applicant_reports`
+  ADD CONSTRAINT `fk_app_reports_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
@@ -508,7 +590,8 @@ ALTER TABLE `applicant_status_reports`
 --
 ALTER TABLE `blacklisted_applicants`
   ADD CONSTRAINT `fk_blacklist_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_blacklist_created_by` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_blacklist_created_by` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_blacklist_reverted_by` FOREIGN KEY (`reverted_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `client_bookings`
