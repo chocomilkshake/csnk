@@ -28,14 +28,23 @@ function csnk_count($conn, string $sql): int {
     }
     return 0;
 }
-$notBlacklisted = " AND NOT EXISTS (SELECT 1 FROM blacklisted_applicants b WHERE b.applicant_id = applicants.id AND b.is_active = 1)";
-$totalApplicants = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL{$notBlacklisted}");
-$pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL{$notBlacklisted}");
-$onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
-$approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
-$deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
 
-// Latest client bookings for notification bell (top navbar)
+/* Exclude actively blacklisted applicants (restored from old header) */
+$notBlacklisted = " AND NOT EXISTS (
+    SELECT 1
+    FROM blacklisted_applicants b
+    WHERE b.applicant_id = applicants.id
+      AND b.is_active = 1
+)";
+
+$totalApplicants   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL{$notBlacklisted}");
+$pendingCount      = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL{$notBlacklisted}");
+$onProcessCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
+$approvedCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
+$deletedCount      = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
+$reportNotesCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicant_reports");
+
+/* ---------- Latest client bookings for notification bell (top navbar) ---------- */
 $recentBookings = [];
 if ($conn instanceof mysqli) {
     $sqlBookings = "
@@ -60,52 +69,55 @@ if ($conn instanceof mysqli) {
         $recentBookings = $res->fetch_all(MYSQLI_ASSOC);
     }
 }
+
+/* ---------- State for collapsible applicants menu (restored) ---------- */
+$isApplicantsActive = in_array($currentPage, ['applicants','pending','on-process','approved','deleted','blacklisted','blacklisted-view'], true);
+$collapseApplicantsId = 'csnkApplicantsMenu';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>
     <?php echo $pageTitle ?? 'Dashboard'; ?> - <?php echo APP_NAME; ?>
     </title>
-    
-<!-- Favicon(s): put these OUTSIDE <title> -->
-   <link rel="icon" type="image/png" sizes="32x32" href="/csnk/resources/img/csnk-icon.png">
+
+    <!-- Favicon(s): put these OUTSIDE <title> -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/csnk/resources/img/csnk-icon.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
-        --sidebar-width: 260px;
+            --sidebar-width: 260px;
 
-        /* CSNK brand core */
-        --csnk-red: #c40000;
-        --csnk-red-700: #991b1b;
+            /* CSNK brand core */
+            --csnk-red: #c40000;
+            --csnk-red-700: #991b1b;
 
-        /* Neutral foundation */
-        --csnk-gray-50: #f8fafc;
-        --csnk-gray-100: #f1f5f9;
-        --csnk-gray-400: #94a3b8;
-        --csnk-gray-600: #475569;
+            /* Neutral foundation */
+            --csnk-gray-50: #f8fafc;
+            --csnk-gray-100: #f1f5f9;
+            --csnk-gray-400: #94a3b8;
+            --csnk-gray-600: #475569;
 
-        /* Soft ring / elevation */
-        --csnk-ring: rgba(196, 0, 0, 0.14);   /* subtle brand‑tinted ring */
-        --csnk-shadow-sm: 0 1px 2px rgba(0,0,0,.06);
-        --csnk-shadow-md: 0 6px 16px rgba(0,0,0,.12);
+            /* Soft ring / elevation */
+            --csnk-ring: rgba(196, 0, 0, 0.14);   /* subtle brand‑tinted ring */
+            --csnk-shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+            --csnk-shadow-md: 0 6px 16px rgba(0,0,0,.12);
 
-        /* Modern accent gradient (used for badges / hovers) */
-        --csnk-accent-bg: linear-gradient(
-            180deg,
-            rgba(196, 0, 0, 0.9) 0%,
-            rgba(153, 27, 27, 0.92) 100%
-        );
-        --csnk-accent-bg-hover: linear-gradient(
-            180deg,
-            rgba(153, 27, 27, 1) 0%,
-            rgba(127, 29, 29, 1) 100%
-        );
+            /* Modern accent gradient (used for badges / hovers) */
+            --csnk-accent-bg: linear-gradient(
+                180deg,
+                rgba(196, 0, 0, 0.9) 0%,
+                rgba(153, 27, 27, 0.92) 100%
+            );
+            --csnk-accent-bg-hover: linear-gradient(
+                180deg,
+                rgba(153, 27, 27, 1) 0%,
+                rgba(127, 29, 29, 1) 100%
+            );
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -131,6 +143,8 @@ if ($conn instanceof mysqli) {
         .sidebar-item i { width: 20px; margin-right: 0.75rem; }
         .sidebar-item .label { display: inline-flex; align-items: center; gap: .5rem; }
         .sidebar-item .label .text { white-space: nowrap; }
+
+        /* Collapsible controls (restored) */
         .sidebar-toggle {
             width: 100%;
             background: transparent;
@@ -209,12 +223,7 @@ if ($conn instanceof mysqli) {
                 <small class="text-muted text-uppercase fw-semibold">Applicants</small>
             </div>
 
-            <?php
-                $isApplicantsActive = in_array($currentPage, ['applicants','pending','on-process','approved','deleted','blacklisted','blacklisted-view'], true);
-                $collapseApplicantsId = 'csnkApplicantsMenu';
-            ?>
-
-            <!-- CSNK-Philippines dropdown -->
+            <!-- CSNK-Philippines dropdown (restored) -->
             <button
                 class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>"
                 type="button"
@@ -235,31 +244,36 @@ if ($conn instanceof mysqli) {
                 <a href="applicants.php" class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>">
                     <span class="label"><i class="bi bi-people"></i><span class="text">List of Applicants</span></span>
                     <span class="side-badge">
-                        <span class="pill-count <?php echo $totalApplicants === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$totalApplicants; ?></span>
+                        <span class="pill-count <?php echo $totalApplicants === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Total applicants count"><?php echo (int)$totalApplicants; ?></span>
                     </span>
                 </a>
                 <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>">
                     <span class="label"><i class="bi bi-clock-history"></i><span class="text">Pending Applicants</span></span>
                     <span class="side-badge">
-                        <span class="pill-count <?php echo $pendingCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$pendingCount; ?></span>
+                        <span class="pill-count <?php echo $pendingCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Pending applicants count"><?php echo (int)$pendingCount; ?></span>
                     </span>
                 </a>
                 <a href="on-process.php" class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>">
                     <span class="label"><i class="bi bi-hourglass-split"></i><span class="text">On Process</span></span>
                     <span class="side-badge">
-                        <span class="pill-count <?php echo $onProcessCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$onProcessCount; ?></span>
+                        <span class="pill-count <?php echo $onProcessCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="On process applicants count"><?php echo (int)$onProcessCount; ?></span>
                     </span>
                 </a>
                 <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>">
                     <span class="label"><i class="bi bi-check-circle"></i><span class="text">Approved</span></span>
                     <span class="side-badge">
-                        <span class="pill-count <?php echo $approvedCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$approvedCount; ?></span>
+                        <span class="pill-count <?php echo $approvedCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Approved applicants count"><?php echo (int)$approvedCount; ?></span>
                     </span>
                 </a>
                 <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>">
                     <span class="label"><i class="bi bi-trash"></i><span class="text">Deleted Applicants</span></span>
                     <span class="side-badge">
-                        <span class="pill-count <?php echo $deletedCount === 0 ? 'is-zero' : ''; ?>"><?php echo (int)$deletedCount; ?></span>
+                        <span class="pill-count <?php echo $deletedCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Deleted applicants count"><?php echo (int)$deletedCount; ?></span>
                     </span>
                 </a>
                 <?php if ($isAdmin || $isSuperAdmin): ?>
@@ -269,7 +283,7 @@ if ($conn instanceof mysqli) {
                 <?php endif; ?>
             </div>
 
-            <!-- SMC-Turkey (placeholder, non-clickable items) -->
+            <!-- SMC-Turkey (placeholder, non-clickable items) – restored -->
             <button
                 class="sidebar-item sidebar-toggle"
                 type="button"
@@ -295,7 +309,7 @@ if ($conn instanceof mysqli) {
                 <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true"><span class="label"><i class="bi bi-slash-circle"></i><span class="text">Blacklisted Applicants</span></span></a>
             </div>
 
-            <!-- SMC-Bahrain (placeholder, non-clickable items) -->
+            <!-- SMC-Bahrain (placeholder, non-clickable items) – restored -->
             <button
                 class="sidebar-item sidebar-toggle"
                 type="button"
@@ -330,6 +344,21 @@ if ($conn instanceof mysqli) {
                     <span class="label">
                         <i class="bi bi-clipboard-data"></i>
                         <span class="text">Activity Logs</span>
+                    </span>
+                </a>
+
+                <div class="mt-3 px-3">
+                    <small class="text-muted text-uppercase fw-semibold">Reports</small>
+                </div>
+
+                <a href="reports.php" class="sidebar-item <?php echo $currentPage === 'reports' ? 'active' : ''; ?>">
+                    <span class="label">
+                        <i class="bi bi-journal-text"></i>
+                        <span class="text">Reports</span>
+                    </span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $reportNotesCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Total reports count"><?php echo (int)$reportNotesCount; ?></span>
                     </span>
                 </a>
             <?php endif; ?>
