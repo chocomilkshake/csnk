@@ -29,13 +29,6 @@ function csnk_count($conn, string $sql): int {
     return 0;
 }
 
-$totalApplicants = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL");
-$pendingCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL");
-$onProcessCount  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL");
-$approvedCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL");
-$deletedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL");
-$reportNotesCount = csnk_count($conn, "SELECT COUNT(*) FROM applicant_reports");
-
 /* Exclude actively blacklisted applicants (restored from old header) */
 $notBlacklisted = " AND NOT EXISTS (
     SELECT 1
