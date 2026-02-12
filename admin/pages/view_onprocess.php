@@ -4,7 +4,7 @@ $pageTitle = 'On Process';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// We assume $database (mysqli), and helpers: redirect, formatDate, getFileUrl, getFullName, setFlashMessage
+// We assume $database (mysqli), and helpers: redirect, formatDate, formatDateTime, getFileUrl, getFullName, setFlashMessage
 $applicant = new Applicant($database);
 
 /**
@@ -28,11 +28,15 @@ if (!isset($_GET['id'])) {
 $id = (int)$_GET['id'];
 
 /**
- * Load Applicant (ensure not deleted)
+ * Safe escape helper
  */
 function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
+/**
+ * Load Applicant (ensure not deleted)
+ */
 try {
+    // NOTE: $database->prepare is used below assuming your Database class exposes mysqli via ->prepare
     $stmt = $database->prepare("SELECT * FROM applicants WHERE id = ? AND (status <> 'deleted' OR status IS NULL) LIMIT 1");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -244,28 +248,56 @@ $alternatePhoneDisplay = ($alternatePhone !== '') ? $alternatePhone : 'N/A';
 $languagesDisplay = renderLanguages($applicantData['languages'] ?? '');
 $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ?? '');
 
-$backUrl  = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
-$editUrl  = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
-$printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencode($q) : '');
-?>
+$backUrl    = 'on-process.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+$editUrl    = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+$printUrl   = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencode($q) : '');
+$historyUrl = 'view-applicant-history.php?id=' . (int)$id; // History button target
 
-<!-- HEADER ACTIONS -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0 fw-semibold">Applicant & Clients</h4>
-  <div class="d-flex gap-2">
-    <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-dark">
-      <i class="bi bi-printer me-1"></i> Print / Save as PDF
+// Role flags available from header.php: $isAdmin, $isSuperAdmin
+?>
+<style>
+/* ===== Modern page header actions ===== */
+.page-actions .btn { white-space: nowrap; }
+
+/* Small labels for info blocks */
+.small-label { font-size:.8rem; color:#6c757d; text-transform:uppercase; letter-spacing:.04em; }
+
+/* Subtle card polish */
+.card { border: 1px solid #eef2f7; border-radius: .75rem; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+
+/* Accordion emphasis */
+.accordion-button { font-weight:600; }
+.table td, .table th { vertical-align: middle; }
+</style>
+
+<!-- HEADER ACTIONS: Back → Edit → History (admin/super_admin) → Print -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <h4 class="mb-0 fw-semibold">Applicant & Clients</h4>
+    <?php $badgeColor = statusBadgeColor((string)$applicantData['status']); ?>
+    <span class="badge bg-<?php echo $badgeColor; ?>">
+      <?php echo ucfirst(str_replace('_', ' ', (string)$applicantData['status'])); ?>
+    </span>
+  </div>
+  <div class="page-actions d-flex flex-wrap gap-2">
+    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to On Process
     </a>
     <a href="<?php echo safe($editUrl); ?>" class="btn btn-warning">
       <i class="bi bi-pencil me-1"></i> Edit Applicant
     </a>
-    <a href="<?php echo safe($backUrl); ?>" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Back to On Process
+    <?php if (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
+      <a href="<?php echo safe($historyUrl); ?>" class="btn btn-outline-info">
+        <i class="bi bi-clock-history me-1"></i> History
+      </a>
+    <?php endif; ?>
+    <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-dark">
+      <i class="bi bi-printer me-1"></i> Print / Save as PDF
     </a>
   </div>
 </div>
 
-<!-- MAIN ROW: Applicant (left) + Client (right) -->
+<!-- MAIN ROW: Applicant (left) + Latest Booking (right) -->
 <div class="row g-3">
   <!-- Applicant Panel -->
   <div class="col-xl-6">
@@ -274,7 +306,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
         <h6 class="mb-0 fw-semibold"><i class="bi bi-person-badge me-2"></i>Applicant</h6>
       </div>
       <div class="card-body">
-        <div class="d-flex align-items-center gap-3 mb-2">
+        <div class="d-flex align-items-center gap-3 mb-3">
           <?php if (!empty($pictureUrl)): ?>
             <img src="<?php echo safe($pictureUrl); ?>" alt="Profile" class="rounded-circle border" style="width:110px;height:110px;object-fit:cover;">
           <?php else: ?>
@@ -284,62 +316,62 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
           <?php endif; ?>
 
           <div class="flex-grow-1">
-            <div class="fw-bold"><?php echo getFullName($applicantData['first_name'], $applicantData['middle_name'], $applicantData['last_name'], $applicantData['suffix']); ?></div>
-            <?php $badgeColor = statusBadgeColor((string)$applicantData['status']); ?>
-            <span class="badge bg-<?php echo $badgeColor; ?> me-2"><?php echo ucfirst(str_replace('_',' ', (string)$applicantData['status'])); ?></span>
-            <small class="text-muted">Applied: <?php echo formatDate($applicantData['created_at']); ?></small>
+            <div class="fw-bold fs-5">
+              <?php echo getFullName($applicantData['first_name'], $applicantData['middle_name'], $applicantData['last_name'], $applicantData['suffix']); ?>
+            </div>
+            <small class="text-muted d-block mt-1">Applied: <?php echo formatDate($applicantData['created_at']); ?></small>
           </div>
         </div>
 
-        <div class="row g-2">
+        <div class="row g-3">
           <div class="col-6">
-            <div class="text-muted small">Phone (Primary)</div>
+            <div class="small-label mb-1">Phone (Primary)</div>
             <div class="fw-semibold"><?php echo $primaryPhone !== '' ? safe($primaryPhone) : 'N/A'; ?></div>
           </div>
           <div class="col-6">
-            <div class="text-muted small">Phone (Alternate)</div>
+            <div class="small-label mb-1">Phone (Alternate)</div>
             <div class="fw-semibold"><?php echo safe($alternatePhoneDisplay); ?></div>
           </div>
           <div class="col-6">
-            <div class="text-muted small">Email</div>
+            <div class="small-label mb-1">Email</div>
             <div class="fw-semibold text-truncate"><?php echo safe($applicantData['email'] ?? 'N/A'); ?></div>
           </div>
           <div class="col-6">
-            <div class="text-muted small">Date of Birth</div>
+            <div class="small-label mb-1">Date of Birth</div>
             <div class="fw-semibold"><?php echo formatDate($applicantData['date_of_birth']); ?></div>
           </div>
           <div class="col-6">
-            <div class="text-muted small">Experience</div>
+            <div class="small-label mb-1">Experience</div>
             <div class="fw-semibold">
               <?php $yrs = (int)($applicantData['years_experience'] ?? 0); echo $yrs . ($yrs === 1 ? ' year' : ' years'); ?>
             </div>
           </div>
           <div class="col-6">
-            <div class="text-muted small">Employment Type</div>
+            <div class="small-label mb-1">Employment Type</div>
             <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? safe($applicantData['employment_type']) : 'N/A'; ?></div>
           </div>
           <div class="col-12">
-            <div class="text-muted small">Address</div>
+            <div class="small-label mb-1">Address</div>
             <div class="fw-semibold"><?php echo safe($applicantData['address']); ?></div>
           </div>
           <div class="col-12">
-            <div class="text-muted small">Preferred Location(s)</div>
+            <div class="small-label mb-1">Preferred Location(s)</div>
             <div class="d-flex flex-wrap gap-1"><?php echo $locBadgesHtml; ?></div>
           </div>
           <div class="col-12">
-            <div class="text-muted small">Specialization Skills</div>
+            <div class="small-label mb-1">Specialization Skills</div>
             <div class="d-flex flex-wrap gap-1"><?php echo $skillsPillsHtml; ?></div>
           </div>
           <div class="col-12">
-            <div class="text-muted small">Languages</div>
+            <div class="small-label mb-1">Languages</div>
             <div class="fw-semibold"><?php echo $languagesDisplay; ?></div>
           </div>
         </div>
 
         <?php if (!empty($applicantData['video_url'])): ?>
-          <div class="mt-2">
+          <div class="mt-3">
             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applicantVideoModal">
-              <i class="bi bi-play-circle me-1"></i>Preview Video
+              <i class="bi bi-play-circle me-1"></i> Preview Video
             </button>
           </div>
         <?php endif; ?>
@@ -347,7 +379,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
     </div>
   </div>
 
-  <!-- Client Panel -->
+  <!-- Latest Client Booking Panel -->
   <div class="col-xl-6">
     <div class="card">
       <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
@@ -366,25 +398,25 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
             $clientName = $clientName !== '' ? $clientName : '—';
           ?>
           <div class="mb-2">
-            <div class="text-muted small">Client</div>
+            <div class="small-label mb-1">Client</div>
             <div class="fw-semibold"><?php echo safe($clientName); ?></div>
           </div>
 
-          <div class="row g-2">
+          <div class="row g-3">
             <div class="col-6">
-              <div class="text-muted small">Client Email</div>
+              <div class="small-label mb-1">Client Email</div>
               <div class="fw-semibold text-truncate"><?php echo safe($latestBooking['client_email'] ?? '—'); ?></div>
             </div>
             <div class="col-6">
-              <div class="text-muted small">Client Phone</div>
+              <div class="small-label mb-1">Client Phone</div>
               <div class="fw-semibold"><?php echo safe($latestBooking['client_phone'] ?? '—'); ?></div>
             </div>
             <div class="col-6">
-              <div class="text-muted small">Appointment</div>
+              <div class="small-label mb-1">Appointment</div>
               <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
             </div>
             <div class="col-6">
-              <div class="text-muted small">Date &amp; Time</div>
+              <div class="small-label mb-1">Date & Time</div>
               <div class="fw-semibold">
                 <?php
                   $d = !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—';
@@ -396,23 +428,23 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
           </div>
 
           <div class="mt-2">
-            <div class="text-muted small">Client Address</div>
+            <div class="small-label mb-1">Client Address</div>
             <div class="fw-semibold"><?php echo safe($latestBooking['client_address'] ?? '—'); ?></div>
           </div>
 
           <div class="mt-2">
-            <div class="text-muted small">Services</div>
+            <div class="small-label mb-1">Services</div>
             <div class="mt-1"><?php echo renderServicesHtml($latestBooking['services_json'] ?? null); ?></div>
           </div>
 
-          <div class="row g-2 mt-2">
+          <div class="row g-3 mt-2">
             <div class="col-6">
-              <div class="text-muted small">Created</div>
-              <div class="fw-semibold"><?php echo !empty($latestBooking['created_at']) ? formatDate($latestBooking['created_at']) : '—'; ?></div>
+              <div class="small-label mb-1">Created</div>
+              <div class="fw-semibold"><?php echo !empty($latestBooking['created_at']) ? formatDateTime($latestBooking['created_at']) : '—'; ?></div>
             </div>
             <div class="col-6">
-              <div class="text-muted small">Updated</div>
-              <div class="fw-semibold"><?php echo !empty($latestBooking['updated_at']) ? formatDate($latestBooking['updated_at']) : '—'; ?></div>
+              <div class="small-label mb-1">Updated</div>
+              <div class="fw-semibold"><?php echo !empty($latestBooking['updated_at']) ? formatDateTime($latestBooking['updated_at']) : '—'; ?></div>
             </div>
           </div>
         <?php endif; ?>
@@ -428,7 +460,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
   <div class="accordion-item">
     <h2 class="accordion-header" id="headingOne">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
-        More Applicant Details (Education &amp; Work)
+        More Applicant Details (Education & Work)
       </button>
     </h2>
     <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
@@ -469,7 +501,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                 <tr>
                   <th>#</th>
                   <th>Appointment</th>
-                  <th>Date &amp; Time</th>
+                  <th>Date & Time</th>
                   <th>Client</th>
                   <th>Contacts</th>
                   <th>Services</th>
@@ -498,7 +530,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                       'Thank you,'
                     ];
                     $body = rawurlencode(implode("\n", array_filter($bodyLines)));
-                    $mailto = 'mailto:'.rawurlencode($email).'?subject='.$subject.'&body='.$body;
+                    $mailto = $email !== '' ? ('mailto:'.rawurlencode($email).'?subject='.$subject.'&amp;body='.$body) : '';
                     $modalId = 'contactModal'.$cid;
                   ?>
                   <tr>
@@ -514,15 +546,17 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                     <td><span class="badge bg-<?php echo $badge; ?>"><?php echo safe($b['status']); ?></span></td>
                     <td class="text-center">
                       <div class="btn-group">
-                        <a href="<?php echo safe($mailto); ?>" class="btn btn-sm btn-outline-primary" title="Email Client">
-                          <i class="bi bi-envelope"></i>
-                        </a>
+                        <?php if ($mailto !== ''): ?>
+                          <a href="<?php echo safe($mailto); ?>" class="btn btn-sm btn-outline-primary" title="Email Client">
+                            <i class="bi bi-envelope"></i>
+                          </a>
+                        <?php endif; ?>
                         <button type="button" class="btn btn-sm btn-outline-success" title="Show Contact" data-bs-toggle="modal" data-bs-target="#<?php echo safe($modalId); ?>">
                           <i class="bi bi-telephone"></i>
                         </button>
                       </div>
                     </td>
-                    <td><?php echo !empty($b['created_at']) ? formatDate($b['created_at']) : '—'; ?></td>
+                    <td><?php echo !empty($b['created_at']) ? formatDateTime($b['created_at']) : '—'; ?></td>
                   </tr>
 
                   <!-- Contact Modal -->
@@ -537,12 +571,12 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                         </div>
                         <div class="modal-body">
                           <div class="mb-3">
-                            <div class="text-muted small">Client</div>
+                            <div class="small-label mb-1">Client</div>
                             <div class="fw-semibold"><?php echo safe($cName); ?></div>
                           </div>
                           <div class="row g-3">
                             <div class="col-md-6">
-                              <div class="text-muted small">Email</div>
+                              <div class="small-label mb-1">Email</div>
                               <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-envelope text-muted"></i>
                                 <?php if ($email !== ''): ?>
@@ -553,7 +587,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                               </div>
                             </div>
                             <div class="col-md-6">
-                              <div class="text-muted small">Phone</div>
+                              <div class="small-label mb-1">Phone</div>
                               <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-telephone text-muted"></i>
                                 <?php if ($phone !== ''): ?>
@@ -566,7 +600,7 @@ $printUrl = 'print-applicant.php?id=' . (int)$id . ($q !== '' ? '&q=' . urlencod
                           </div>
                         </div>
                         <div class="modal-footer">
-                          <?php if ($email !== ''): ?>
+                          <?php if ($mailto !== ''): ?>
                             <a href="<?php echo safe($mailto); ?>" class="btn btn-primary">
                               <i class="bi bi-envelope me-1"></i>Email
                             </a>
