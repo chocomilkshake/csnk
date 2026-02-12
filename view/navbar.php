@@ -75,16 +75,24 @@ if (!isset($page)) { $page = ''; }
     .navbar .nav-link:hover,
     .navbar .nav-link:focus {
       border-bottom-color: #D72638;
-    } 
-.new-badge {
-  position: absolute;
-  top: -2px;
-  right: -6px;
-  font-size: .55rem;
-  padding: .2rem .35rem;
-  border-radius: 999px;
-  pointer-events: none;
-}
+    }
+  }
 
+  .new-badge {
+    position: absolute;
+    top: -2px;
+    right: -6px;
+    font-size: .55rem;
+    padding: .2rem .35rem;
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  /* Header icon tab (small image beside brand) */
+  .header-icon-tab { display:inline-flex; align-items:center; text-decoration:none; }
+  .header-icon-tab .header-preview { height:36px; width:auto; display:block; }
+  .header-icon-tab:hover .header-preview { opacity: .9; transform: translateY(-1px); transition: transform .15s ease, opacity .15s ease; }
+  @media (max-width: 576px) {
+    .header-icon-tab .header-preview { height:30px; }
   }
 </style>

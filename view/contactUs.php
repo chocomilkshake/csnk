@@ -192,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <meta name="x-apple-disable-message-reformatting">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CSNK Contact Message</title>
+  <title>CSNK Manpower Agency</title>
 </head>
 <body style="margin:0;padding:0;background:#ffebee;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffebee;padding:24px 0;">
@@ -364,10 +364,11 @@ function invalidClass(array $errors, string $key): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contact Us</title>
+  <title>CSNK Manpower Agency</title>
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/csnk/resources/img/SVG-preview.png">
 
   <style>
     :root{

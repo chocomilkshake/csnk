@@ -10,7 +10,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /**
  * Resolve current user & role robustly.
- * Use $currentUser from header.php if present; else fallback to session.
  */
 $currentUser = $currentUser ?? ($_SESSION['currentUser'] ?? []);
 $role = isset($currentUser['role']) ? (string)$currentUser['role'] : 'employee';
@@ -32,7 +31,7 @@ if (!$canManage) {
     }
 }
 
-// Optional: CSRF token (recommended). Keep if your app validates it server-side.
+// CSRF token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -63,7 +62,7 @@ if (!$applicantData) {
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Optional CSRF validation (enable in your handler if you keep the token)
+    // CSRF validation
     if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
         $errors[] = 'Invalid request. Please reload the page and try again.';
     }
@@ -77,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Reason must be 255 characters or less.';
     }
 
-    // Handle proof uploads (optional, multiple) - expects uploadFile($fileArray, $category)
+    // Proof uploads (images only, per UI)
     $proofPaths = [];
     if (isset($_FILES['proofs']) && is_array($_FILES['proofs']['name'])) {
         $names = $_FILES['proofs']['name'];
@@ -88,24 +87,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $count = count($names);
         for ($i = 0; $i < $count; $i++) {
-            $err = $errs[$i] ?? UPLOAD_ERR_NO_FILE;
+            $err = (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE);
             if ($err !== UPLOAD_ERR_OK) {
-                // Skip if no file or upload error
                 continue;
             }
 
             $file = [
-                'name'     => $names[$i],
-                'type'     => $types[$i],
-                'tmp_name' => $tmps[$i],
-                'error'    => $errs[$i],
-                'size'     => $sizes[$i],
+                'name'     => (string)($names[$i] ?? ''),
+                'type'     => (string)($types[$i] ?? ''),
+                'tmp_name' => (string)($tmps[$i] ?? ''),
+                'error'    => (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE),
+                'size'     => (int)($sizes[$i] ?? 0),
             ];
 
-            // Optional: basic image type validation to avoid non-image uploads.
-            // You can relax this if you allow PDFs/docs: accept image/* only per your original accept attribute.
             if (strpos((string)$file['type'], 'image/') !== 0) {
-                // If you want to allow more types, change your input accept and add checks
                 $errors[] = 'Only image files are allowed for proof uploads.';
                 break;
             }
@@ -128,17 +123,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         $conn = $database->getConnection();
         if ($conn instanceof mysqli) {
-            // Prepare insert
             $sql = "
-                INSERT INTO blacklisted_applicants (applicant_id, reason, issue, proof_paths, created_by)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO blacklisted_applicants
+                    (applicant_id, reason, issue, proof_paths, created_by, is_active)
+                VALUES
+                    (?, ?, ?, ?, ?, 1)
             ";
 
             if ($stmt = $conn->prepare($sql)) {
                 $proofJson = !empty($proofPaths) ? json_encode($proofPaths) : null;
 
-                // Prefer current admin id from session; ensure integer
-                $createdBy = (int)($_SESSION['admin_id'] ?? 0);
+                // Resolve created_by robustly
+                $createdBy = (int)(
+                    $_SESSION['admin_id']
+                    ?? $_SESSION['user_id']
+                    ?? ($currentUser['id'] ?? 0)
+                    ?? ($currentUser['user_id'] ?? 0)
+                );
 
                 $stmt->bind_param(
                     "isssi",
@@ -150,11 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
                 if ($stmt->execute()) {
-                    // Optional: set applicant status to 'blacklisted' if your schema uses a status
-                    // $conn->query("UPDATE applicants SET status = 'blacklisted' WHERE id = " . (int)$id);
+                    // Optional: update applicant status
+                    // $conn->query("UPDATE applicants SET status = 'blacklisted' WHERE id = " . (int)$id . " LIMIT 1");
 
-                    // Log activity (if $auth service available)
-                    if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+                    if (isset($auth) && method_exists($auth, 'logActivity') && $createdBy > 0) {
                         $fullName = getFullName(
                             $applicantData['first_name'] ?? '',
                             $applicantData['middle_name'] ?? '',
@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $applicantData['suffix'] ?? ''
                         );
                         $auth->logActivity(
-                            (int)$_SESSION['admin_id'],
+                            $createdBy,
                             'Blacklist Applicant',
                             "Blacklisted applicant {$fullName} (ID: {$id}) - Reason: {$reason}"
                         );
