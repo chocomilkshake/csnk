@@ -1,14 +1,131 @@
 <?php
 // FILE: pages/view_approved.php
 $pageTitle = 'View Approved (Applicant + Client)';
+
+if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+
+/* ------------------------------------------------------------------
+   Absolutely NO output before this point.
+   Make sure your editor hasn't added a UTF-8 BOM or spaces before <?php
+-------------------------------------------------------------------*/
+
+// (A) Bootstrap DB and common includes FIRST (so $conn exists for endpoints)
+require_once '../includes/config.php';
+require_once '../includes/Database.php';
+$database = new Database();
+$conn = $database->getConnection(); // mysqli
+
+// (B) CSRF token (needed by POST endpoint later)
+if (empty($_SESSION['csrf_token'])) {
+    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
+    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
+}
+
+// (C) Preserve search (q) for back links / redirects
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim((string)$_GET['q']);
+    if (mb_strlen($q) > 200) $q = mb_substr($q, 0, 200);
+}
+
+
+/* ------------------------------------------------------------------
+   Inline endpoint: History (JSON)
+   GET view_approved.php?action=history&id=123
+-------------------------------------------------------------------*/
+if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
+    header('Content-Type: application/json; charset=UTF-8');
+    $id = (int)$_GET['id'];
+    $data = [];
+    try {
+        $sqlH = "
+            SELECT
+                ar.note_text,
+                ar.created_at,
+                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+            FROM applicant_reports ar
+            LEFT JOIN admin_users au ON au.id = ar.admin_id
+            WHERE ar.applicant_id = ?
+            ORDER BY ar.created_at DESC, ar.id DESC
+        ";
+        $stmt = $conn->prepare($sqlH);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        if ($res = $stmt->get_result()) {
+            while ($row = $res->fetch_assoc()) {
+                $data[] = [
+                    'note_text'  => (string)($row['note_text'] ?? ''),
+                    'created_at' => (string)($row['created_at'] ?? ''),
+                    'admin_name' => (string)($row['admin_name'] ?? '—'),
+                ];
+            }
+        }
+        $stmt->close();
+    } catch (Throwable $e) {
+        error_log('History fetch (view_approved) failed: ' . $e->getMessage());
+    }
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/* ------------------------------------------------------------------
+   Inline endpoint: Add report (POST)
+   POST view_approved.php  action=add_applicant_report
+-------------------------------------------------------------------*/
+if (
+    isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
+    isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
+) {
+    $id       = (int)$_POST['id'];
+    $noteText = trim((string)$_POST['note_text']);
+
+    // keep q + id on redirect
+    $qsBase = '?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+
+    // CSRF
+    $validCsrf = isset($_SESSION['csrf_token']) &&
+                 hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token']);
+    if (!$validCsrf) {
+        // invalid CSRF: show inline error flag
+        header('Location: view_approved.php' . $qsBase . '&err=csrf'); exit;
+    }
+    if ($noteText === '' || mb_strlen($noteText) < 3) {
+        // too short: show inline error flag
+        header('Location: view_approved.php' . $qsBase . '&err=short'); exit;
+    }
+
+    $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+
+    try {
+        $stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
+        $stmt->bind_param("iis", $id, $adminId, $noteText);
+        $ok = $stmt->execute();
+        $stmt->close();
+
+        if ($ok) {
+            // optional activity log
+            if (isset($auth) && method_exists($auth,'logActivity') && isset($_SESSION['admin_id'])) {
+                $auth->logActivity((int)$_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
+            }
+            header('Location: view_approved.php' . $qsBase . '&saved=1'); // ✅ success flag
+            exit;
+        } else {
+            header('Location: view_approved.php' . $qsBase . '&err=save'); exit;
+        }
+    } catch (Throwable $e) {
+        error_log('Add report (view_approved) failed: ' . $e->getMessage());
+        header('Location: view_approved.php' . $qsBase . '&err=exception'); exit;
+    }
+}
+
+
+// After all endpoints, start your normal page output:
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
-
-// We assume $database (mysqli), and helpers: redirect, formatDate, formatDateTime, getFileUrl, getFullName, setFlashMessage
 $applicant = new Applicant($database);
 
-/** Preserve search (if user came from approved.php with ?q=) */
-$q = '';
+
+
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
     if (mb_strlen($q) > 200) $q = mb_substr($q, 0, 200);
@@ -21,7 +138,54 @@ if (!isset($_GET['id'])) {
 }
 $id = (int)$_GET['id'];
 
-/** Safe escape helper */
+/* ------------------------------------------------------------------
+   Inline endpoint: Add report (POST)
+   POST view_approved.php  action=add_applicant_report
+-------------------------------------------------------------------*/
+if (
+    isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
+    isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
+) {
+    $id       = (int)$_POST['id'];
+    $noteText = trim((string)$_POST['note_text']);
+
+    // keep q + id on redirect
+    $qsBase = '?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+
+    // CSRF
+    $validCsrf = isset($_SESSION['csrf_token']) &&
+                 hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token']);
+    if (!$validCsrf) {
+        header('Location: view_approved.php' . $qsBase . '&err=csrf'); exit;
+    }
+    if ($noteText === '' || mb_strlen($noteText) < 3) {
+        header('Location: view_approved.php' . $qsBase . '&err=short'); exit;
+    }
+
+    $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+
+    try {
+        $stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
+        $stmt->bind_param("iis", $id, $adminId, $noteText);
+        $ok = $stmt->execute();
+        $stmt->close();
+
+        if ($ok) {
+            if (isset($auth) && method_exists($auth,'logActivity') && isset($_SESSION['admin_id'])) {
+                $auth->logActivity((int)$_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
+            }
+            header('Location: view_approved.php' . $qsBase . '&saved=1'); // ✅ success flag
+            exit;
+        } else {
+            header('Location: view_approved.php' . $qsBase . '&err=save'); exit;
+        }
+    } catch (Throwable $e) {
+        error_log('Add report (view_approved) failed: ' . $e->getMessage());
+        header('Location: view_approved.php' . $qsBase . '&err=exception'); exit;
+    }
+}
+
+/** Load Applicant (ensure not deleted) */
 function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 /** Load Applicant (ensure not deleted) */
@@ -36,10 +200,39 @@ try {
 }
 
 if (!$applicantData) {
-    setFlashMessage('error', 'Applicant not found.');
     $dest = 'approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
-    redirect($dest);
+    header('Location: ' . $dest . '&err=notfound'); // or just redirect silently
     exit;
+}
+
+/* Load recent reports (latest 3) for quick view */
+$recentReports = [];
+$reportCount = 0;
+try {
+    $stmt = $conn->prepare("
+        SELECT ar.note_text, ar.created_at,
+              COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+        FROM applicant_reports ar
+        LEFT JOIN admin_users au ON au.id = ar.admin_id
+        WHERE ar.applicant_id = ?
+        ORDER BY ar.created_at DESC, ar.id DESC
+        LIMIT 3
+    ");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $recentReports = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
+
+    $res2 = $conn->prepare("SELECT COUNT(*) AS c FROM applicant_reports WHERE applicant_id = ?");
+    $res2->bind_param("i", $id);
+    $res2->execute();
+    $rc = $res2->get_result()->fetch_assoc();
+    $reportCount = (int)($rc['c'] ?? 0);
+    $res2->close();
+} catch (Throwable $e) {
+    $recentReports = [];
+    $reportCount = 0;
 }
 
 /** Load Documents (if Applicant class supports it) */
@@ -313,6 +506,8 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // NEW: History page
     </div>
   </div>
 
+ 
+
   <!-- Latest Client Booking -->
   <div class="col-xl-6">
     <div class="card">
@@ -389,7 +584,66 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // NEW: History page
   </div>
 
 </div><!-- /row -->
+ <!-- Applicant Reports (Quick View + Add) -->
+<div class="card mt-3">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="fw-semibold"><i class="bi bi-journal-text me-2"></i>Applicant Reports</div>
+      <div>
+        <button class="btn btn-sm btn-outline-secondary" id="btnViewHistory">
+          <i class="bi bi-clock-history me-1"></i> View Full History
+        </button>
+        <?php if ($reportCount > 0): ?>
+          <a class="btn btn-sm btn-success ms-2"
+            href="../includes/excel_reports.php?id=<?php echo (int)$id; ?>&q=<?php echo urlencode($q); ?>">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export (Excel)
+          </a>
+        <?php endif; ?>
+        <?php if ($reportCount > 0): ?>
+          <span class="badge bg-primary-subtle text-primary border ms-2" title="Total reports">
+            <?php echo (int)$reportCount; ?> report<?php echo $reportCount>1?'s':''; ?>
+          </span>
+        <?php endif; ?>
+      </div>
+</div>
 
+  <div class="card-body">
+    <!-- Quick List -->
+    <?php if (empty($recentReports)): ?>
+      <p class="text-muted mb-3">No reports yet.</p>
+    <?php else: ?>
+      <div class="list-group mb-3">
+        <?php foreach ($recentReports as $rpt): ?>
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="fw-semibold"><?php echo htmlspecialchars($rpt['admin_name'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></div>
+              <div class="text-muted small"><?php echo htmlspecialchars(formatDateTime((string)$rpt['created_at']), ENT_QUOTES, 'UTF-8'); ?></div>
+            </div>
+            <div class="history-note"><?php echo nl2br(htmlspecialchars((string)($rpt['note_text'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <!-- Add Report -->
+    <form method="post" action="view_approved.php?id=<?php echo (int)$id . ($q!=='' ? ('&q=' . urlencode($q)) : ''); ?>">
+      <div class="mb-2 text-muted small">Add a new report for <span class="fw-semibold"><?php echo $fullName; ?></span></div>
+      <div class="mb-3">
+        <label for="note_text" class="form-label">Report / Notes <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="note_text" name="note_text" rows="4"
+                  required minlength="3" maxlength="4000"
+                  placeholder="Write your report or notes..."></textarea>
+      </div>
+      <input type="hidden" name="action" value="add_applicant_report">
+      <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+      <div class="text-end">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save2 me-1"></i> Save Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 <!-- ACCORDIONS -->
 <div class="accordion mt-3" id="extraInfoAccordion">
 
@@ -565,5 +819,72 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // NEW: History page
   </div>
 
 </div><!-- /accordion -->
+
+<!-- Modal: Report History -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold" id="historyModalLabel">
+          Report History — <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="hist-container">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var historyModalEl = document.getElementById('historyModal');
+  var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
+
+  var btn = document.getElementById('btnViewHistory');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      var container = document.getElementById('hist-container');
+      container.innerHTML = '<div class="text-muted">Loading history...</div>';
+      fetch('view_approved.php?action=history&id=<?php echo (int)$id; ?>', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (items) {
+          if (!Array.isArray(items) || items.length === 0) {
+            container.innerHTML = '<div class="text-muted">No reports found for this applicant.</div>';
+            return;
+          }
+          var html = '<div class="list-group">';
+          items.forEach(function (it) {
+            html += '<div class="list-group-item">';
+            html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
+            html +=     '<div class="fw-semibold">' + escapeHtml(it.admin_name || '—') + '</div>';
+            html +=     '<div class="text-muted small">' + escapeHtml(it.created_at || '') + '</div>';
+            html +=   '</div>';
+            html +=   '<div class="history-note">' + escapeHtml(it.note_text || '') + '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+          container.innerHTML = html;
+        })
+        .catch(function () {
+          container.innerHTML = '<div class="text-danger">Failed to load history. Please try again.</div>';
+        });
+      if (historyModal) historyModal.show();
+    });
+  }
+
+  function escapeHtml(s) {
+    return (s||'').replace(/[&<>\"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
+    });
+  }
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

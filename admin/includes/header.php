@@ -91,8 +91,7 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
 
     <style>
         :root {
-            --sidebar-width: 260px;
-            --sidebar-collapsed-width: 78px;
+            --sidebar-width: 300px;
 
             /* CSNK brand core */
             --csnk-red: #c40000;
