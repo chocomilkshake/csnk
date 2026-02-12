@@ -11,7 +11,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /**
  * Resolve current user & role robustly.
- * Use $currentUser if header.php already defined it, else fallback to session.
  */
 $currentUser = $currentUser ?? ($_SESSION['currentUser'] ?? []);
 $role = isset($currentUser['role']) ? (string)$currentUser['role'] : 'employee';
@@ -34,7 +33,7 @@ if (!$canManage) {
     }
 }
 
-// Optional: CSRF token (recommended)
+// CSRF token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -72,9 +71,7 @@ if ($conn instanceof mysqli) {
     }
 }
 
-/**
- * Normalize proofs JSON to array of strings.
- */
+/** Normalize proofs JSON to array of strings. */
 function formatBlacklistProofs(?string $json): array {
     if ($json === null || trim($json) === '') return [];
     $arr = json_decode($json, true);
@@ -141,10 +138,10 @@ function formatBlacklistProofs(?string $json): array {
                                 $row['last_name'] ?? '',
                                 $row['suffix'] ?? ''
                             );
-                            $createdBy  = $row['created_by_name'] ?: ($row['created_by_username'] ?: 'System');
-                            $when       = formatDateTime($row['created_at']);
-                            $proofs     = formatBlacklistProofs($row['proof_paths'] ?? null);
-                            $viewUrl    = 'blacklisted-view.php?id=' . (int)$row['id'];
+                            $createdBy   = $row['created_by_name'] ?: ($row['created_by_username'] ?: 'System');
+                            $when        = formatDateTime($row['created_at']);
+                            $proofs      = formatBlacklistProofs($row['proof_paths'] ?? null);
+                            $viewUrl     = 'blacklisted-view.php?id=' . (int)$row['id'];
                             $blacklistId = (int)$row['id'];
 
                             // Search blob
@@ -248,7 +245,6 @@ function formatBlacklistProofs(?string $json): array {
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
 
-                                            <!-- IMPORTANT: Proper form tag that was broken before -->
                                             <form method="POST" action="revert-blacklist.php" enctype="multipart/form-data">
                                                 <div class="modal-body">
                                                     <input type="hidden" name="blacklist_id" value="<?php echo $blacklistId; ?>">
@@ -265,8 +261,7 @@ function formatBlacklistProofs(?string $json): array {
                                                             name="compliance_note"
                                                             class="form-control"
                                                             rows="4"
-                                                            placeholder="Describe how the applicant has complied with the issue or resolved the misunderstanding..."
-                                                        ></textarea>
+                                                            placeholder="Describe how the applicant has complied with the issue or resolved the misunderstanding..."></textarea>
                                                         <small class="text-muted">Explain how the applicant has addressed the issue or if it was a misunderstanding.</small>
                                                     </div>
 
