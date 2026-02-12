@@ -133,8 +133,11 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
         .sidebar-brand img { max-width: 160px; height: auto; }
 
         .sidebar-section-label {
-            display:block; padding:.75rem 1rem .35rem 1rem; color: var(--csnk-gray-600);
+            display:flex; align-items:center; gap:.5rem; padding:.75rem 1rem .35rem 1rem; color: var(--csnk-gray-600);
             text-transform: uppercase; font-size: .72rem; letter-spacing:.08em; font-weight:700;
+        }
+        .sidebar-section-label .region-icon {
+            width: 40px; height: 40px; object-fit: contain; opacity: .95;
         }
 
         .sidebar-menu { padding: .25rem 0 1.25rem 0; }
@@ -296,7 +299,7 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
 
             <?php if ($showRegionPlaceholders): ?>
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label">Other Regions (Coming Soon)</div>
+            <div class="sidebar-section-label"><img src="../../resources/img/smc.png" alt="SMC" class="region-icon">Other Regions</div>
 
             <!-- SMC-Turkey -->
             <button class="sidebar-item sidebar-toggle" type="button"
