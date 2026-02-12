@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
+
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
 require_once '../includes/functions.php';
 
-// Ensure session (if not already started by your bootstrap)
+// Ensure session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -12,13 +14,13 @@ if (session_status() === PHP_SESSION_NONE) {
 $database = new Database();
 $auth     = new Auth($database);
 
-// Require login (your method)
+// Require login
 $auth->requireLogin();
 
 /**
  * Resolve current user robustly:
  * 1) $currentUser if already set by includes
- * 2) $auth->currentUser() or $auth->getCurrentUser()
+ * 2) $auth->getCurrentUser()
  * 3) $_SESSION['currentUser']
  */
 $resolvedUser = [];
@@ -31,31 +33,47 @@ if (isset($currentUser) && is_array($currentUser)) {
     $resolvedUser = (array)($_SESSION['currentUser'] ?? []);
 }
 
-$role         = $resolvedUser['role'] ?? 'employee';
+$role         = (string)($resolvedUser['role'] ?? 'employee');
 $isSuperAdmin = ($role === 'super_admin');
 $isAdmin      = ($role === 'admin');
 
+// Only Admin/Super Admin
 if (!($isAdmin || $isSuperAdmin)) {
     setFlashMessage('error', 'You do not have permission to revert blacklisted applicants.');
     redirect('dashboard.php');
     exit;
 }
 
+/** Resolve acting admin ID robustly */
+$adminId = (int)(
+    $_SESSION['admin_id']
+    ?? $_SESSION['user_id']
+    ?? $resolvedUser['id']
+    ?? $resolvedUser['user_id']
+    ?? $resolvedUser['admin_id']
+    ?? 0
+);
+
 $errors  = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // 🔐 CSRF check (keep this if your form includes a csrf_token hidden input)
-    if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    // CSRF check
+    $postedToken  = (string)($_POST['csrf_token'] ?? '');
+    $sessionToken = (string)($_SESSION['csrf_token'] ?? '');
+    if ($postedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $postedToken)) {
         $errors[] = 'Invalid request. Please reload the page and try again.';
     }
 
-    $blacklistId     = (int)($_POST['blacklist_id'] ?? 0);
-    $complianceNote  = trim((string)($_POST['compliance_note'] ?? ''));
+    $blacklistId    = (int)($_POST['blacklist_id'] ?? 0);
+    $complianceNote = trim((string)($_POST['compliance_note'] ?? ''));
 
     if ($blacklistId <= 0) {
         $errors[] = 'Invalid blacklist record ID.';
+    }
+
+    if ($adminId <= 0) {
+        $errors[] = 'Unable to resolve acting admin ID.';
     }
 
     if (empty($errors)) {
@@ -64,22 +82,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!($conn instanceof mysqli)) {
             $errors[] = 'Database connection error.';
         } else {
-            // Fetch blacklist record for logging & validation
-            $sqlGet = "SELECT b.*, a.first_name, a.middle_name, a.last_name, a.suffix
-                       FROM blacklisted_applicants b
-                       LEFT JOIN applicants a ON a.id = b.applicant_id
-                       WHERE b.id = ? LIMIT 1";
+            // Fetch ACTIVE record for validation + logging
+            $sqlGet = "
+                SELECT b.*, a.first_name, a.middle_name, a.last_name, a.suffix
+                FROM blacklisted_applicants b
+                LEFT JOIN applicants a ON a.id = b.applicant_id
+                WHERE b.id = ? AND b.is_active = 1
+                LIMIT 1
+            ";
             if ($stmtGet = $conn->prepare($sqlGet)) {
                 $stmtGet->bind_param("i", $blacklistId);
                 $stmtGet->execute();
-                $result        = $stmtGet->get_result();
-                $blacklistData = $result->fetch_assoc();
+                $res  = $stmtGet->get_result();
+                $data = $res ? $res->fetch_assoc() : null;
                 $stmtGet->close();
 
-                if (!$blacklistData) {
-                    $errors[] = 'Blacklist record not found.';
+                if (!$data) {
+                    $errors[] = 'Active blacklist record not found or already reverted.';
                 } else {
-                    // 📎 Handle compliance proof uploads (optional)
+                    // Handle optional compliance proofs
                     $complianceProofs = [];
                     if (isset($_FILES['compliance_proofs']) && is_array($_FILES['compliance_proofs']['name'])) {
                         $names = $_FILES['compliance_proofs']['name'];
@@ -88,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errs  = $_FILES['compliance_proofs']['error'];
                         $sizes = $_FILES['compliance_proofs']['size'];
 
-                        // Allow images + pdf/doc/docx (to match your modal's accept)
                         $allowedMimePrefixes = ['image/'];
                         $allowedExactMimes   = [
                             'application/pdf',
@@ -98,21 +118,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $count = count($names);
                         for ($i = 0; $i < $count; $i++) {
-                            $err = $errs[$i] ?? UPLOAD_ERR_NO_FILE;
+                            $err = (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE);
                             if ($err !== UPLOAD_ERR_OK) {
-                                // Skip if no file or upload error
                                 continue;
                             }
 
                             $file = [
-                                'name'     => (string)$names[$i],
-                                'type'     => (string)$types[$i],
-                                'tmp_name' => (string)$tmps[$i],
-                                'error'    => (int)$errs[$i],
-                                'size'     => (int)$sizes[$i],
+                                'name'     => (string)($names[$i] ?? ''),
+                                'type'     => (string)($types[$i] ?? ''),
+                                'tmp_name' => (string)($tmps[$i] ?? ''),
+                                'error'    => (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE),
+                                'size'     => (int)($sizes[$i] ?? 0),
                             ];
 
-                            // Basic MIME allowlist check
                             $mime = $file['type'] ?? '';
                             $isAllowed = false;
                             foreach ($allowedMimePrefixes as $prefix) {
@@ -124,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (!$isAllowed && in_array($mime, $allowedExactMimes, true)) {
                                 $isAllowed = true;
                             }
-
                             if (!$isAllowed) {
                                 $errors[] = 'One of the uploaded files has an unsupported type.';
                                 break;
@@ -148,7 +165,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (empty($errors)) {
                         $conn->begin_transaction();
 
-                        // Mark blacklist record as reverted (keep history)
                         $sqlUpdate = "
                             UPDATE blacklisted_applicants
                             SET
@@ -157,34 +173,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 reverted_by = ?,
                                 compliance_note = ?,
                                 compliance_proof_paths = ?
-                            WHERE id = ?
+                            WHERE id = ? AND is_active = 1
                             LIMIT 1
                         ";
 
-                        $adminId = (int)($_SESSION['admin_id'] ?? ($resolvedUser['id'] ?? 0));
                         $proofJson = !empty($complianceProofs) ? json_encode($complianceProofs) : null;
 
+                        $okUpd = false;
                         if ($stmtUpd = $conn->prepare($sqlUpdate)) {
                             $stmtUpd->bind_param("issi", $adminId, $complianceNote, $proofJson, $blacklistId);
                             $okUpd = $stmtUpd->execute();
+                            $affected = $stmtUpd->affected_rows;
                             $stmtUpd->close();
 
-                            if (!$okUpd || $conn->affected_rows < 1) {
+                            if (!$okUpd || $affected < 1) {
                                 $conn->rollback();
+                                // Either no matching active row or constraint issue
                                 $errors[] = 'Failed to revert blacklist record.';
                             } else {
+                                // (Optional) If you want to update applicant status post-revert, do it here:
+                                // $applicantId = (int)$data['applicant_id'];
+                                // $conn->query("UPDATE applicants SET status = 'pending' WHERE id = {$applicantId} LIMIT 1");
+
                                 $conn->commit();
 
-                                // Log activity
                                 $appName = getFullName(
-                                    $blacklistData['first_name'] ?? '',
-                                    $blacklistData['middle_name'] ?? '',
-                                    $blacklistData['last_name'] ?? '',
-                                    $blacklistData['suffix'] ?? ''
+                                    $data['first_name'] ?? '',
+                                    $data['middle_name'] ?? '',
+                                    $data['last_name'] ?? '',
+                                    $data['suffix'] ?? ''
                                 );
 
-                                $logDesc = "Reverted blacklist for applicant {$appName} (ID: {$blacklistData['applicant_id']})";
-                                if (!empty($complianceNote)) {
+                                $logDesc = "Reverted blacklist for applicant {$appName} (ID: {$data['applicant_id']})";
+                                if ($complianceNote !== '') {
                                     $logDesc .= " - Compliance note: {$complianceNote}";
                                 }
                                 if (!empty($complianceProofs)) {
@@ -195,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $auth->logActivity($adminId, 'Revert Blacklist', $logDesc);
                                 }
 
-                                $success = true;
                                 setFlashMessage('success', 'Applicant has been removed from blacklist successfully.');
                                 redirect('blacklisted.php');
                                 exit;
@@ -213,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// If we get here, there was an error or non-POST access
+// If we get here: error or non-POST access
 if (!empty($errors)) {
     setFlashMessage('error', implode(' ', $errors));
 }
