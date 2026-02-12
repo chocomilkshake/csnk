@@ -439,20 +439,20 @@
         <!-- Slide 2 -->
         <div class="carousel-item">
           <div class="gallery-grid">
-            <img src="../resources/img/about5.jpg" alt="Training photo 1" class="gallery-item" data-area="a">
-            <img src="../resources/img/about6.jpg" alt="Training photo 2" class="gallery-item" data-area="b">
-            <img src="../resources/img/about7.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
-            <img src="../resources/img/about8.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
+            <img src="../resources/img/about5.jpg" alt="Training photo 5" class="gallery-item" data-area="a">
+            <img src="../resources/img/about6.jpg" alt="Training photo 6" class="gallery-item" data-area="b">
+            <img src="../resources/img/about7.jpg" alt="Training photo 7" class="gallery-item" data-area="c">
+            <img src="../resources/img/about8.jpg" alt="Training photo 8" class="gallery-item" data-area="d">
           </div>
         </div>
 
         <!-- Slide 3 -->
         <div class="carousel-item">
           <div class="gallery-grid">
-            <img src="../resources/img/about3.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
-            <img src="../resources/img/about4.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
-            <img src="../resources/img/about7.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
-            <img src="../resources/img/about8.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
+            <img src="../resources/img/about3.jpg" alt="Training photo 9" class="gallery-item" data-area="a">
+            <img src="../resources/img/about4.jpg" alt="Training photo 10" class="gallery-item" data-area="b">
+            <img src="../resources/img/about7.jpg" alt="Training photo 11" class="gallery-item" data-area="c">
+            <img src="../resources/img/about8.jpg" alt="Training photo 12" class="gallery-item" data-area="d">
           </div>
         </div>
 
