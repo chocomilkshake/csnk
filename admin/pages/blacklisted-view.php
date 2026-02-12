@@ -4,9 +4,10 @@ require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
 // Only admin / super admin can view
-$role        = $currentUser['role'] ?? 'employee';
+$role         = $currentUser['role'] ?? 'employee';
 $isSuperAdmin = ($role === 'super_admin');
 $isAdmin      = ($role === 'admin');
+
 if (!($isAdmin || $isSuperAdmin)) {
     setFlashMessage('error', 'You do not have permission to view blacklist details.');
     redirect('dashboard.php');
@@ -90,10 +91,10 @@ $appName = getFullName(
     $record['last_name'] ?? '',
     $record['suffix'] ?? ''
 );
-$createdBy = $record['created_by_name'] ?: ($record['created_by_username'] ?: 'System');
+$createdBy  = $record['created_by_name'] ?: ($record['created_by_username'] ?: 'System');
 $revertedBy = $record['reverted_by_name'] ?: ($record['reverted_by_username'] ?: '');
 
-$proofs = jsonToList($record['proof_paths'] ?? null);
+$proofs           = jsonToList($record['proof_paths'] ?? null);
 $complianceProofs = jsonToList($record['compliance_proof_paths'] ?? null);
 
 $isActive = (int)($record['is_active'] ?? 0) === 1;
@@ -311,4 +312,3 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
 <?php endif; ?>
 
 <?php require_once '../includes/footer.php'; ?>
-
