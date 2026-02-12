@@ -197,7 +197,7 @@
   .training-gallery .gallery-item {
     position: relative; border-radius: 1rem; overflow: hidden; background: #f8f9fa;
     transition: transform .25s ease, box-shadow .25s ease;
-    cursor: zoom-in;
+    
   }
   .training-gallery .gallery-item:hover {
     transform: translateY(-2px);
@@ -340,7 +340,7 @@
         </div>
 
         <div class="hero-lead-wrap mb-4">
-          <p id="heroLead" class="lead text-black-50 mb-0 fade-swap">
+          <p id="heroLead" class="lead text-black-100 mb-0 fade-swap">
             Clear, honest and customer‑first guidance. We connect families with properly
             screened domestic workers through safe and compliant processes.
           </p>
@@ -429,54 +429,30 @@
         <!-- Slide 1 -->
         <div class="carousel-item active">
           <div class="gallery-grid">
-            <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-              <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 1">
-            </a>
-            <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-              <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 2">
-            </a>
-            <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-              <img src="https://tinyurl.com/55nwhff7" alt="Training photo 3">
-            </a>
-            <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-              <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 4">
-            </a>
+              <img src="../resources/img/about1.jpg" alt="Training photo 1" class="gallery-item" data-area="a">
+              <img src="../resources/img/about2.jpg" alt="Training photo 2" class="gallery-item" data-area="b">
+              <img src="../resources/img/about3.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
+              <img src="../resources/img/about4.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
           </div>
         </div>
 
         <!-- Slide 2 -->
         <div class="carousel-item">
           <div class="gallery-grid">
-            <a href="https://tinyurl.com/4bkcuuwn" class="gallery-item" data-area="a" data-full="https://tinyurl.com/4bkcuuwn">
-              <img src="https://tinyurl.com/4bkcuuwn" alt="Training photo 5">
-            </a>
-            <a href="https://tinyurl.com/ye7xubh2" class="gallery-item" data-area="b" data-full="https://tinyurl.com/ye7xubh2">
-              <img src="https://tinyurl.com/ye7xubh2" alt="Training photo 6">
-            </a>
-            <a href="https://tinyurl.com/4fty8ztf" class="gallery-item" data-area="c" data-full="https://tinyurl.com/4fty8ztf">
-              <img src="https://tinyurl.com/4fty8ztf" alt="Training photo 7">
-            </a>
-            <a href="https://tinyurl.com/2mky2xyz" class="gallery-item" data-area="d" data-full="https://tinyurl.com/2mky2xyz">
-              <img src="https://tinyurl.com/2mky2xyz" alt="Training photo 8">
-            </a>
+            <img src="../resources/img/about5.jpg" alt="Training photo 1" class="gallery-item" data-area="a">
+            <img src="../resources/img/about6.jpg" alt="Training photo 2" class="gallery-item" data-area="b">
+            <img src="../resources/img/about7.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
+            <img src="../resources/img/about8.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
           </div>
         </div>
 
         <!-- Slide 3 -->
         <div class="carousel-item">
           <div class="gallery-grid">
-            <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-              <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 9">
-            </a>
-            <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-              <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 10">
-            </a>
-            <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-              <img src="https://tinyurl.com/55nwhff7" alt="Training photo 11">
-            </a>
-            <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-              <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 12">
-            </a>
+            <img src="../resources/img/about3.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
+            <img src="../resources/img/about4.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
+            <img src="../resources/img/about7.jpg" alt="Training photo 3" class="gallery-item" data-area="c">
+            <img src="../resources/img/about8.jpg" alt="Training photo 4" class="gallery-item" data-area="d">
           </div>
         </div>
 
