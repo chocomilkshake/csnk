@@ -300,9 +300,13 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
 // Back & Edit URLs preserving search (if any)
 $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+
+// Has video?
+$hasVideo = !empty($applicantData['video_url']);
 ?>
 <style>
-/* Red-ish pill style for specialization badges */
+/* Action bar & chips */
+.page-actions .btn { white-space: nowrap; }
 .skill-pill{
   background-color:#ffe5e5;
   color:#9b1c1c;
@@ -310,8 +314,6 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   padding:.45rem .65rem;
   font-weight:600;
 }
-
-/* Soft blue pill style for preferred locations */
 .loc-pill{
   background-color:#e7f1ff;
   color:#0b5ed7;
@@ -319,80 +321,54 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
   padding:.35rem .6rem;
   font-weight:600;
 }
-
-/* Educational Attainment Timeline */
-.edu-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.edu-item {
-  padding-left: 0.75rem;
-  border-left: 3px solid #e9ecef;
-}
-
-.edu-header {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  font-weight: 600;
-}
-
-.edu-icon {
-  font-size: 1.1rem;
-}
-
-.edu-level {
-  color: #212529;
-}
-
-.edu-year {
-  margin-left: auto;
-  font-size: .8rem;
-  background: #f1f3f5;
-  padding: .15rem .5rem;
-  border-radius: .5rem;
-  color: #495057;
-}
-
-.edu-school {
-  margin-left: 1.6rem;
-  font-weight: 600;
-  color: #0d6efd;
-}
-
-.edu-detail {
-  margin-left: 1.6rem;
-  font-size: .9rem;
-  color: #6c757d;
-}
+/* Educational timeline */
+.edu-timeline { display:flex; flex-direction:column; gap:1rem; }
+.edu-item { padding-left:.75rem; border-left:3px solid #e9ecef; }
+.edu-header { display:flex; align-items:center; gap:.5rem; font-weight:600; }
+.edu-icon { font-size:1.1rem; }
+.edu-level { color:#212529; }
+.edu-year { margin-left:auto; font-size:.8rem; background:#f1f3f5; padding:.15rem .5rem; border-radius:.5rem; color:#495057; }
+.edu-school { margin-left:1.6rem; font-weight:600; color:#0d6efd; }
+.edu-detail { margin-left:1.6rem; font-size:.9rem; color:#6c757d; }
+.small-label { font-size:.8rem; color:#6c757d; text-transform:uppercase; letter-spacing:.04em; }
+.quick-meta .item { display:flex; justify-content:space-between; gap:.5rem; }
+.quick-meta .value { font-weight:600; }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0 fw-semibold">Applicant Details</h4>
-    <div class="d-flex align-items-center gap-2">
-        <?php if ($isBlacklisted): ?>
-            <span class="badge bg-danger">
-                <i class="bi bi-slash-circle me-1"></i>Blacklisted
-            </span>
-        <?php elseif (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
-            <a href="<?php echo 'blacklist-applicant.php?id=' . (int)$id; ?>" class="btn btn-outline-danger me-2">
-                <i class="bi bi-slash-circle me-1"></i>Blacklist Applicant
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <h4 class="mb-0 fw-semibold">Applicant Details</h4>
+        <?php $badgeColor = statusBadgeColor($applicantData['status']); ?>
+        <span class="badge bg-<?php echo $badgeColor; ?>">
+            <?php echo ucfirst(str_replace('_', ' ', $applicantData['status'])); ?>
+        </span>
+    </div>
+
+    <!-- Top Action Bar: Back → Edit → History (admin) → Blacklist -->
+    <div class="page-actions d-flex flex-wrap gap-2">
+        <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to List
+        </a>
+        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <?php if (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
+            <a href="<?php echo 'view-applicant-history.php?id='.(int)$id; ?>" class="btn btn-outline-info">
+                <i class="bi bi-clock-history me-1"></i> History
             </a>
         <?php endif; ?>
-        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning me-2">
-            <i class="bi bi-pencil me-2"></i>Edit
-        </a>
-        <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-2"></i>Back to List
-        </a>
+        <?php if (!$isBlacklisted && (($isAdmin ?? false) || ($isSuperAdmin ?? false))): ?>
+            <a href="<?php echo 'blacklist-applicant.php?id='.(int)$id; ?>" class="btn btn-outline-danger">
+                <i class="bi bi-slash-circle me-1"></i> Blacklist
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="card mb-4">
+<div class="row g-3">
+    <!-- LEFT: Profile / Quick Info -->
+    <div class="col-12 col-lg-4">
+        <div class="card">
             <div class="card-body text-center">
                 <?php if ($pictureUrl): ?>
                     <img src="<?php echo htmlspecialchars($pictureUrl, ENT_QUOTES, 'UTF-8'); ?>"
@@ -408,135 +384,147 @@ $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q))
                     <?php echo getFullName($applicantData['first_name'], $applicantData['middle_name'], $applicantData['last_name'], $applicantData['suffix']); ?>
                 </h5>
 
-                <?php $badgeColor = statusBadgeColor($applicantData['status']); ?>
-                <span class="badge bg-<?php echo $badgeColor; ?> mb-3">
-                    <?php echo ucfirst(str_replace('_', ' ', $applicantData['status'])); ?>
-                </span>
-
-                <div class="text-start mt-4">
-                    <div class="mb-2">
-                        <small class="text-muted">Phone (Primary)</small>
-                        <div class="fw-semibold"><?php echo $primaryPhone !== '' ? htmlspecialchars($primaryPhone, ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
+                <div class="text-start mt-3 quick-meta">
+                    <div class="item mb-2">
+                        <span class="small-label">Phone (Primary)</span>
+                        <span class="value"><?php echo $primaryPhone !== '' ? htmlspecialchars($primaryPhone, ENT_QUOTES, 'UTF-8') : 'N/A'; ?></span>
                     </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Phone (Alternate)</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($alternatePhoneDisplay, ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="item mb-2">
+                        <span class="small-label">Phone (Alternate)</span>
+                        <span class="value"><?php echo htmlspecialchars($alternatePhoneDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Email</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="item mb-2">
+                        <span class="small-label">Email</span>
+                        <span class="value"><?php echo htmlspecialchars($applicantData['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Date Applied</small>
-                        <div class="fw-semibold"><?php echo formatDate($applicantData['created_at']); ?></div>
+                    <div class="item mb-2">
+                        <span class="small-label">Date Applied</span>
+                        <span class="value"><?php echo formatDate($applicantData['created_at']); ?></span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">Personal Information</h5>
+    <!-- RIGHT: Tabbed content -->
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white pb-0">
+                <ul class="nav nav-tabs card-header-tabs" id="applicantTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#panel-overview" type="button" role="tab" aria-controls="panel-overview" aria-selected="true">
+                            <i class="bi bi-person-lines-fill me-1"></i> Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-education" data-bs-toggle="tab" data-bs-target="#panel-education" type="button" role="tab" aria-controls="panel-education" aria-selected="false">
+                            <i class="bi bi-mortarboard me-1"></i> Education
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-work" data-bs-toggle="tab" data-bs-target="#panel-work" type="button" role="tab" aria-controls="panel-work" aria-selected="false">
+                            <i class="bi bi-briefcase me-1"></i> Work
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-docs" data-bs-toggle="tab" data-bs-target="#panel-docs" type="button" role="tab" aria-controls="panel-docs" aria-selected="false">
+                            <i class="bi bi-folder2-open me-1"></i> Documents
+                        </button>
+                    </li>
+                    <?php if ($hasVideo): ?>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-video" data-bs-toggle="tab" data-bs-target="#panel-video" type="button" role="tab" aria-controls="panel-video" aria-selected="false">
+                            <i class="bi bi-film me-1"></i> Video
+                        </button>
+                    </li>
+                    <?php endif; ?>
+                </ul>
             </div>
+
             <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <small class="text-muted">Date of Birth</small>
-                        <div class="fw-semibold"><?php echo formatDate($applicantData['date_of_birth']); ?></div>
-                    </div>
-                    <div class="col-md-6">
-                        <small class="text-muted">Preferred Location(s)</small>
-                        <!-- HTML pills; do not escape again -->
-                        <div class="fw-semibold d-flex flex-wrap gap-2"><?php echo $locBadgesHtml; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Address</small>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['address'], ENT_QUOTES, 'UTF-8'); ?></div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <small class="text-muted">Years of Experience</small>
-                        <div class="fw-semibold">
-                            <?php
-                                $yrs = isset($applicantData['years_experience']) ? (int)$applicantData['years_experience'] : 0;
-                                echo $yrs . ($yrs === 1 ? ' year' : ' years');
-                            ?>
+                <div class="tab-content" id="applicantTabsContent">
+                    <!-- Overview -->
+                    <div class="tab-pane fade show active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="small-label mb-1">Address</div>
+                                <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['address'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small-label mb-1">Years of Experience</div>
+                                <div class="fw-semibold">
+                                    <?php
+                                        $yrs = isset($applicantData['years_experience']) ? (int)$applicantData['years_experience'] : 0;
+                                        echo $yrs . ($yrs === 1 ? ' year' : ' years');
+                                    ?>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small-label mb-1">Employment Type</div>
+                                <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? htmlspecialchars($applicantData['employment_type'], ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
+                            </div>
+                            <div class="col-12">
+                                <div class="small-label mb-1">Preferred Location(s)</div>
+                                <div class="d-flex flex-wrap gap-2"><?php echo $locBadgesHtml; ?></div>
+                            </div>
+                            <div class="col-12">
+                                <div class="small-label mb-1">Specialization Skills</div>
+                                <div class="d-flex flex-wrap gap-2"><?php echo $skillsPillsHtml; ?></div>
+                            </div>
+                            <div class="col-12">
+                                <div class="small-label mb-1">Languages</div>
+                                <div class="fw-semibold"><?php echo $languagesDisplay; ?></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <small class="text-muted">Employment Type</small>
-                        <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? htmlspecialchars($applicantData['employment_type'], ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
+
+                    <!-- Education -->
+                    <div class="tab-pane fade" id="panel-education" role="tabpanel" aria-labelledby="tab-education" tabindex="0">
+                        <?php echo $educationHtml; ?>
                     </div>
 
-                    <div class="col-md-12">
-                        <small class="text-muted">Specialization Skills</small>
-                        <!-- HTML pills; do not escape again -->
-                        <div class="d-flex flex-wrap gap-2"><?php echo $skillsPillsHtml; ?></div>
+                    <!-- Work -->
+                    <div class="tab-pane fade" id="panel-work" role="tabpanel" aria-labelledby="tab-work" tabindex="0">
+                        <?php echo $workHtml; ?>
                     </div>
 
-                    <div class="col-md-12">
-                        <small class="text-muted">Languages</small>
-                        <div class="fw-semibold"><?php echo $languagesDisplay; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Educational Attainment</small>
-                        <!-- Structured timeline HTML; do not escape again -->
-                        <div class="mt-1"><?php echo $educationHtml; ?></div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <small class="text-muted">Work History</small>
-                        <!-- Structured list HTML; do not escape again -->
-                        <div class="mt-1"><?php echo $workHtml; ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <?php if (!empty($applicantData['video_url'])): ?>
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">
-                    <i class="bi bi-film me-2"></i>
-                    <?php echo !empty($applicantData['video_title']) ? htmlspecialchars($applicantData['video_title'], ENT_QUOTES, 'UTF-8') : 'Video'; ?>
-                </h5>
-            </div>
-            <div class="card-body">
-                <video controls preload="metadata" style="width:100%; max-height:500px; background:#000;">
-                    <source src="<?php echo htmlspecialchars(getFileUrl($applicantData['video_url']), ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="card">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">Documents</h5>
-            </div>
-            <div class="card-body">
-                <?php if (empty($documents)): ?>
-                    <p class="text-muted mb-0">No documents uploaded yet.</p>
-                <?php else: ?>
-                    <div class="list-group">
-                        <?php foreach ($documents as $doc): ?>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
-                                </span>
-                                <a href="<?php echo htmlspecialchars(getFileUrl($doc['file_path']), ENT_QUOTES, 'UTF-8'); ?>"
-                                   target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </a>
+                    <!-- Documents -->
+                    <div class="tab-pane fade" id="panel-docs" role="tabpanel" aria-labelledby="tab-docs" tabindex="0">
+                        <?php if (empty($documents)): ?>
+                            <p class="text-muted mb-0">No documents uploaded yet.</p>
+                        <?php else: ?>
+                            <div class="list-group">
+                                <?php foreach ($documents as $doc): ?>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="bi bi-file-earmark-text me-2"></i>
+                                            <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
+                                        </span>
+                                        <a href="<?php echo htmlspecialchars(getFileUrl($doc['file_path']), ENT_QUOTES, 'UTF-8'); ?>"
+                                           target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
+
+                    <!-- Video -->
+                    <?php if ($hasVideo): ?>
+                    <div class="tab-pane fade" id="panel-video" role="tabpanel" aria-labelledby="tab-video" tabindex="0">
+                        <div class="mb-2 fw-semibold">
+                            <i class="bi bi-film me-2"></i>
+                            <?php echo !empty($applicantData['video_title']) ? htmlspecialchars($applicantData['video_title'], ENT_QUOTES, 'UTF-8') : 'Applicant Video'; ?>
+                        </div>
+                        <video controls preload="metadata" style="width:100%; max-height:500px; background:#000;">
+                            <source src="<?php echo htmlspecialchars(getFileUrl($applicantData['video_url']), ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <?php endif; ?>
+
+                </div>
             </div>
         </div>
     </div>
