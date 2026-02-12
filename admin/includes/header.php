@@ -299,7 +299,7 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
 
             <?php if ($showRegionPlaceholders): ?>
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label"><img src="../../resources/img/smc.png" alt="SMC" class="region-icon">Other Regions</div>
+            <div class="sidebar-section-label"><img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International</div>
 
             <!-- SMC-Turkey -->
             <button class="sidebar-item sidebar-toggle" type="button"
