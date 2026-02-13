@@ -44,7 +44,9 @@ $pendingCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE sta
 $onProcessCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
 $approvedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
 $deletedCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
-$reportNotesCount = csnk_count($conn, "SELECT COUNT(*) FROM applicant_reports");
+
+/* Active blacklisted applicants (visible to admin/super_admin) */
+$blacklistedCount = csnk_count($conn, "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1");
 
 /* ---------- Recent bookings for bell dropdown ---------- */
 $recentBookings = [];
@@ -293,6 +295,10 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Blacklisted Applicants">
                     <i class="bi bi-slash-circle"></i>
                     <span class="label"><span class="text">Blacklisted</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $blacklistedCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="Blacklisted applicants count"><?php echo (int)$blacklistedCount; ?></span>
+                    </span>
                 </a>
                 <?php endif; ?>
             </div>
