@@ -10,7 +10,8 @@ $admin     = new Admin($database);
 // High-level stats
 $stats             = $applicant->getStatistics();
 $recentApplicants  = array_slice($applicant->getAll(), 0, 5);
-$adminCount        = count($admin->getAll());
+// Only count admin and employee accounts (exclude super_admin)
+$adminCount        = count($admin->getAll(true));
 
 // Role flags from header.php
 $currentRole    = $currentUser['role'] ?? 'employee';
@@ -278,7 +279,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
       <div class="soft-divider"></div>
       <div class="p-5 pt-4">
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-          <span class="text-muted">Admin Accounts</span>
+          <span class="text-muted">Staff (Admin &amp; Employee)</span>
           <strong><?php echo (int)$adminCount; ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
