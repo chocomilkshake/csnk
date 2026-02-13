@@ -358,13 +358,14 @@ $exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ?
     .table-card, .table-card .card-body { overflow: visible !important; }
     .table-card .table-responsive { overflow: visible !important; }
     td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
+    .table-card table, .table-card tbody, .table-card tr { overflow: visible !important; }
 
     .dd-modern .dropdown-menu {
         border-radius: .75rem;
         border: 1px solid #e5e7eb;
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
-        overflow: hidden;
-        z-index: 2000;
+        z-index: 9999 !important;
+        min-width: 160px;
     }
     .dd-modern .dropdown-item { display: flex; align-items: center; gap: .5rem; padding: .55rem .9rem; font-weight: 500; }
     .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
@@ -545,17 +546,18 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
                                     </a>
 
                                     <!-- Change Status Dropdown -->
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
-                                            data-bs-toggle="dropdown"
-                                            data-bs-display="static"
-                                            data-bs-boundary="viewport"
-                                            data-bs-offset="0,8"
-                                            aria-expanded="false"
-                                            title="Change Status">
-                                        <i class="bi bi-arrow-left-right me-1"></i> Change Status
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <div class="dropdown dropup">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-auto-close="true"
+                                                aria-expanded="false"
+                                                aria-haspopup="true"
+                                                title="Change Status"
+                                                id="changeStatusBtn-<?php echo $id; ?>">
+                                            <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
                                         <li>
                                             <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status"
                                                href="#"
@@ -592,7 +594,8 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
                                                 <span>Approved</span>
                                             </a>
                                         </li>
-                                    </ul>
+                                        </ul>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -654,6 +657,14 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Manually initialize Change Status dropdowns
+    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+    btns.forEach(function(btn) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+        }
+    });
+
   var modalEl = document.getElementById('statusReportModal');
   var modal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(modalEl) : null;
 
