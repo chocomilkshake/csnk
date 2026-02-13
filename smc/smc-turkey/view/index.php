@@ -48,7 +48,7 @@
     background:
       radial-gradient(900px 320px at 0% 0%, rgba(255, 215, 80, 0.20), rgba(0,0,0,0) 70%),
       radial-gradient(900px 420px at 100% 50%, rgba(255, 215, 80, 0.15), rgba(0,0,0,0) 60%),
-      linear-gradient(120deg, #0f1602 30%, #3F4A02 50%, #7A8C0F 100%);
+      linear-gradient(120deg, #0f1602 30%, #3F4A02 70%, #d5f712 100%);
 
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -658,9 +658,10 @@
                 <div>
                   <div class="fw-semibold">Address</div>
                   <div class="text-muted small">
-                    Ground Floor Unit 1 Eden Townhouse<br>
-                    2001 Eden St. Cor Pedro Gil, Sta Ana<br>
-                    Barangay 866, City of Manila, NCR, Sixth District
+                    Unit 1 Eden Townhomes 
+                    2001 Eden Street corner Pedro Gil Street Sta. Ana 
+                    Manila., 1009 Barangay 866, City of Manila, 
+                    NCR, Sixth District
                   </div>
                 </div>
               </div>
@@ -669,7 +670,7 @@
                 <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
                 <div>
                   <div class="fw-semibold">Phone</div>
-                  <div class="text-muted small">0945 657 0878</div>
+                  <div class="text-muted small">0939 342 7412</div>
                 </div>
               </div>
 
@@ -677,7 +678,7 @@
                 <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
                 <div>
                   <div class="fw-semibold">Email</div>
-                  <div class="text-muted small">csnkmanila06@gmail.com</div>
+                  <div class="text-muted small">smcwelfaremonitoring@gmail.com</div>
                 </div>
               </div>
 
