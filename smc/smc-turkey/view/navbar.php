@@ -1,56 +1,59 @@
 <?php
-// Expect $page from the parent file: 'home', 'applicants', 'about', 'contact'
+// Expect $page from parent file
 if (!isset($page)) { $page = ''; }
 ?>
-<header class="bg-white border-bottom sticky-top">
-  <nav class="navbar navbar-expand-lg navbar-light bg-white">
+<header class="navbar-header shadow-lg">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-navy-premium">
     <div class="container py-2">
 
-      <!-- Brand / Logo -->
-      <a class="navbar-brand d-flex align-items-center gap-2" href="/index.php#home" title="SMC Manpower Agency Philippines Co.">
-        <img src="../resources/img/smc.png" alt="SMC Logo" class="img-fluid" style="height:48px;">
-        <span class="fw-semibold d-none d-sm-inline">SMC Manpower Agency Philippines Co.</span>
+      <!-- Brand Logo -->
+      <a href="./index.php" class="navbar-brand d-flex align-items-center gap-2">
+        <div class="brand-wrap d-flex align-items-center gap-2">
+          <img src="../resources/img/smc.png" alt="SMC Logo" class="img-fluid" style="height:52px;">
+          <span class="brand-title fw-bold text-gold d-none d-sm-inline">
+            SMC Manpower Agency Philippines Co.
+          </span>
+        </div>
       </a>
 
-      <!-- Mobile toggler -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#csnkNav"
+      <!-- Mobile Toggler -->
+      <button class="navbar-toggler border-gold" 
+              type="button" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#csnkNav"
               aria-controls="csnkNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Right: Nav -->
+      <!-- NAVIGATION -->
       <div class="collapse navbar-collapse justify-content-end" id="csnkNav">
-        <ul class="navbar-nav align-items-lg-center gap-2 my-2 my-lg-0 fw-medium">
+        <ul class="navbar-nav align-items-lg-center gap-3 fw-semibold">
 
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='home' ? 'active' : '' ?>"
-               href="./index.php"
-               aria-current="<?= $page==='home' ? 'page' : 'false' ?>">
+            <a href="./index.php"
+              class="nav-link px-3 <?= $page==='home' ? 'active-link' : '' ?>">
               Home
             </a>
           </li>
 
           <li class="nav-item position-relative">
-            <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
-               href="./applicant.php"
-               aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
+            <a href="./applicant.php"
+              class="nav-link px-3 <?= $page==='applicants' ? 'active-link' : '' ?>">
               Applicants
-              <span class="ms-1 badge text-bg-danger align-text-top new-badge">New</span>
+              <span class="badge badge-gold new-badge">New</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='about' ? 'active' : '' ?>"
-               href="./about.php"
-               aria-current="<?= $page==='about' ? 'page' : 'false' ?>">
+            <a href="./about.php"
+              class="nav-link px-3 <?= $page==='about' ? 'active-link' : '' ?>">
               About
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='contact' ? 'active' : '' ?>"
-               href="./contactUs.php"
-               aria-current="<?= $page==='contact' ? 'page' : 'false' ?>">
+            <a href="./contactUs.php"
+              class="nav-link px-3 <?= $page==='contact' ? 'active-link' : '' ?>">
               Contact
             </a>
           </li>
@@ -63,36 +66,121 @@ if (!isset($page)) { $page = ''; }
 </header>
 
 <style>
-  /* Ensure toggler icon shows even with resets */
-  .navbar-light .navbar-toggler-icon {
-    background-image: var(--bs-navbar-toggler-icon-bg) !important;
+/* ============================
+   COLOR SYSTEM
+============================ */
+:root{
+  --smc-navy-dark: #04101F;   /* NEW deeper navy */
+  --smc-navy: #0A1E36;       
+  --smc-navy-light: #15345A;
+  --smc-gold: #FFD84D;
+}
+
+/* ============================
+   NAVBAR BACKGROUND
+============================ */
+.bg-navy-premium {
+  background: linear-gradient(135deg, var(--smc-navy-dark), var(--smc-navy-light));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ============================
+   BRAND
+============================ */
+.brand-title {
+  font-size: 1.05rem;
+  letter-spacing: 0.3px;
+}
+
+/* ============================
+   NAV LINKS
+============================ */
+.navbar .nav-link {
+  position: relative;
+  color: #ffffffd9;
+  padding-bottom: 6px;
+  font-size: 1rem;
+  transition: .25s ease;
+}
+
+/* Gold underline animation */
+.navbar .nav-link::after {
+  content:"";
+  position:absolute;
+  left:0; bottom:0;
+  width:0%;
+  height:2px;
+  background: var(--smc-gold);
+  transition: .25s ease;
+  border-radius: 999px;
+}
+
+.navbar .nav-link:hover {
+  color: var(--smc-gold);
+}
+.navbar .nav-link:hover::after {
+  width:100%;
+}
+
+/* Active state */
+.active-link {
+  color: var(--smc-gold) !important;
+  font-weight: 700;
+}
+.active-link::after {
+  width:100% !important;
+}
+
+/* ============================
+   NEW BADGE
+============================ */
+.badge-gold {
+  background: var(--smc-gold);
+  color: var(--smc-navy-dark);
+  font-weight: 800;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+}
+.new-badge {
+  position: absolute;
+  top: -4px;
+  right: -18px;
+  box-shadow: 0 0 10px rgba(255,215,77,0.5);
+  animation: pulseGold 2s infinite ease-in-out;
+}
+
+@keyframes pulseGold {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+/* ============================
+   TOGGLER (MOBILE)
+============================ */
+.border-gold {
+  border: 1px solid var(--smc-gold) !important;
+  border-radius: 6px;
+}
+
+.navbar-toggler-icon {
+  filter: invert(90%) sepia(80%) saturate(800%) hue-rotate(360deg)
+          brightness(105%) contrast(105%);
+}
+
+/* Mobile dropdown style */
+@media (max-width: 991px) {
+  #csnkNav {
+    background: var(--smc-navy-dark);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 0.5rem;
   }
 
-  /* Underline active & hover state (no layout shift) */
-  .navbar .nav-link {
-    position: relative;
-    border-bottom: 2px solid transparent; /* reserve space to avoid shift */
-    transition: border-color .2s ease;
+  .navbar-nav .nav-link {
+    padding-left: 0.5rem;
   }
-  .navbar .nav-link.active,
-  .navbar .nav-link[aria-current="page"] {
-    border-bottom-color: #D72638; /* accent red */
-  }
-  @media (hover: hover) {
-    .navbar .nav-link:hover,
-    .navbar .nav-link:focus {
-      border-bottom-color: #D72638;
-    }
-  }
-
-  /* "New" badge position for Applicants */
-  .new-badge {
-    position: absolute;
-    top: -2px;
-    right: -6px;
-    font-size: .65rem;
-    padding: .2rem .4rem;
-    border-radius: 999px;
-    pointer-events: none;
-  }
+}
 </style>
