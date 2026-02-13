@@ -184,6 +184,10 @@ foreach ($history as $h) {
         <i class="bi bi-slash-circle me-1"></i>Active Blacklist Details
       </a>
     <?php endif; ?>
+    <!-- ✅ NEW: Print button -->
+    <a class="btn btn-outline-primary btn-sm" target="_blank" href="<?php echo '../includes/print-blacklisted-view.php?id='.(int)$applicantId; ?>">
+      <i class="bi bi-printer me-1"></i>Print History
+    </a>
     <a class="btn btn-outline-secondary btn-sm" href="<?php echo 'view-applicant.php?id='.(int)$applicantId; ?>">
       <i class="bi bi-arrow-left me-1"></i>Back to Applicant
     </a>
