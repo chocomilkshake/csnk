@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 13, 2026 at 02:54 AM
+-- Generation Time: Feb 13, 2026 at 03:01 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -107,17 +107,6 @@ CREATE TABLE `applicants` (
   `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `applicants`
---
-
-INSERT INTO `applicants` (`id`, `first_name`, `middle_name`, `last_name`, `suffix`, `phone_number`, `alt_phone_number`, `email`, `date_of_birth`, `address`, `educational_attainment`, `work_history`, `preferred_location`, `languages`, `specialization_skills`, `employment_type`, `education_level`, `years_experience`, `picture`, `video_url`, `video_provider`, `video_type`, `video_title`, `video_thumbnail_url`, `video_duration_seconds`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(17, 'Dixon', 'hoyayo', 'Myas', '', '09128319264', '09128361628', 'ryzza@gmail.com', '1997-02-02', 'awawdknawldjakwdawdawdawdasdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\",\"Tondo Manila\",\"Pandacan Manila\",\"Paco Manila\",\"Pasay Manila\"]', '[\"Filipino\"]', '[\"Childcare &amp; Maternity (Yaya)\"]', 'Full Time', 'Secondary Level (Attended High School)', 2, 'applicants/698091c082c32_1770033600.jpg', 'admin/uploads/video/trial1.mp4', 'file', 'file', 'Video', NULL, NULL, 'on_process', NULL, '2026-02-02 12:00:00', '2026-02-12 01:14:02', NULL),
-(18, 'Mhi Mha', 'Central', 'Mha', '', '09283718231', '09128361628', 'renzeleven19@gmail.com', '2003-12-07', 'awdawd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Metro Manila\",\"Pasay City\"]', '[\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698097177ea33_1770034967.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', NULL, '2026-02-02 12:22:47', '2026-02-12 01:14:41', NULL),
-(19, 'Imee', 'B', 'Bangag', '', '09283718231', '09128361628', 'ryzza@gmail.com', '1967-06-10', 'awdawdawdwad', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"ACLC Northbay Branch\",\"strand\":\"ICT\",\"year\":\"2020 - 2022\"},\"college\":{\"school\":\"Universdad De Manila\",\"course\":\"BSIT\",\"year\":\"2022 - 2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati City\",\"Pasig City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp; Housekeeping (General)\"]', 'Full Time', 'Tertiary Graduate (Bachelor’s Degree)', 4, 'applicants/69809f700d2cc_1770037104.png', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', NULL, '2026-02-02 12:58:24', '2026-02-12 01:13:59', NULL),
-(20, 'Jennifer', 'Would You', 'Refer', '', '09128319264', '09817238712', 'renzdiaz.contact@gmail.com', '1997-12-07', 'awdwadwadwadawdawd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Tondo Manila\",\"Espana Manila\"]', '[\"Filipino\"]', '[\"Cooking &amp; Food Service\",\"Elderly &amp; Special Care (Caregiver)\"]', 'Full Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698184c4d0544_1770095812.jpg', 'video/a15648b66a48c21bcda8a11e33101712.mp4', 'file', 'file', 'Zyan Cabrera', NULL, NULL, 'approved', NULL, '2026-02-03 05:16:52', '2026-02-12 02:51:19', NULL),
-(22, 'Annie', 'Are', 'You Okay', '', '09123861273', '09971286128', 'zinnerbro@gmail.com', '1995-04-17', '1223 kjlabmkdawkdkbawhdawdw', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2010 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Mandaluyong City\",\"Makati City\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning & Housekeeping (General)\"]', 'Part Time', 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6985660b79316_1770350091.jpg', 'video/698565f248a69_1770350066.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-06 03:54:26', '2026-02-13 01:36:03', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -132,52 +121,6 @@ CREATE TABLE `applicant_documents` (
   `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `applicant_documents`
---
-
-INSERT INTO `applicant_documents` (`id`, `applicant_id`, `document_type`, `file_path`, `uploaded_at`) VALUES
-(121, 17, 'brgy_clearance', 'documents/698091c08446c_1770033600.jpg', '2026-02-02 12:00:00'),
-(122, 17, 'birth_certificate', 'documents/698091c08547d_1770033600.jpg', '2026-02-02 12:00:00'),
-(123, 17, 'sss', 'documents/698091c0865b7_1770033600.jpg', '2026-02-02 12:00:00'),
-(124, 17, 'pagibig', 'documents/698091c087950_1770033600.jpg', '2026-02-02 12:00:00'),
-(125, 17, 'nbi', 'documents/698091c088ded_1770033600.jpg', '2026-02-02 12:00:00'),
-(126, 17, 'police_clearance', 'documents/698091c089e36_1770033600.jpg', '2026-02-02 12:00:00'),
-(127, 17, 'tin_id', 'documents/698091c09004b_1770033600.jpg', '2026-02-02 12:00:00'),
-(128, 17, 'passport', 'documents/698091c0911ed_1770033600.jpg', '2026-02-02 12:00:00'),
-(129, 18, 'brgy_clearance', 'documents/6980971780044_1770034967.jpg', '2026-02-02 12:22:47'),
-(130, 18, 'birth_certificate', 'documents/69809717810e5_1770034967.jpg', '2026-02-02 12:22:47'),
-(131, 18, 'sss', 'documents/6980971782153_1770034967.jpg', '2026-02-02 12:22:47'),
-(132, 18, 'pagibig', 'documents/698097178303d_1770034967.jpg', '2026-02-02 12:22:47'),
-(133, 18, 'nbi', 'documents/6980971783fab_1770034967.jpg', '2026-02-02 12:22:47'),
-(134, 18, 'police_clearance', 'documents/6980971784cca_1770034967.jpg', '2026-02-02 12:22:47'),
-(135, 18, 'tin_id', 'documents/6980971785bb4_1770034967.jpg', '2026-02-02 12:22:47'),
-(136, 18, 'passport', 'documents/6980971786c2b_1770034967.jpg', '2026-02-02 12:22:47'),
-(137, 19, 'brgy_clearance', 'documents/69809f700e97b_1770037104.jpg', '2026-02-02 12:58:24'),
-(138, 19, 'birth_certificate', 'documents/69809f700f87c_1770037104.jpg', '2026-02-02 12:58:24'),
-(139, 19, 'sss', 'documents/69809f70105f2_1770037104.jpg', '2026-02-02 12:58:24'),
-(140, 19, 'pagibig', 'documents/69809f7011362_1770037104.jpg', '2026-02-02 12:58:24'),
-(141, 19, 'nbi', 'documents/69809f7012e60_1770037104.jpg', '2026-02-02 12:58:24'),
-(142, 19, 'police_clearance', 'documents/69809f7013bee_1770037104.jpg', '2026-02-02 12:58:24'),
-(143, 19, 'tin_id', 'documents/69809f7014911_1770037104.jpg', '2026-02-02 12:58:24'),
-(144, 19, 'passport', 'documents/69809f70155da_1770037104.jpg', '2026-02-02 12:58:24'),
-(145, 20, 'brgy_clearance', 'documents/698184c4d1e92_1770095812.jpg', '2026-02-03 05:16:52'),
-(146, 20, 'birth_certificate', 'documents/698184c4d2de7_1770095812.jpg', '2026-02-03 05:16:52'),
-(147, 20, 'sss', 'documents/698184c4d3ca9_1770095812.jpg', '2026-02-03 05:16:52'),
-(148, 20, 'pagibig', 'documents/698184c4d4d19_1770095812.jpg', '2026-02-03 05:16:52'),
-(149, 20, 'nbi', 'documents/698184c4d7908_1770095812.jpg', '2026-02-03 05:16:52'),
-(150, 20, 'police_clearance', 'documents/698184c4d9126_1770095812.jpg', '2026-02-03 05:16:52'),
-(151, 20, 'tin_id', 'documents/698184c4da8fc_1770095812.jpg', '2026-02-03 05:16:52'),
-(152, 20, 'passport', 'documents/698184c4dbe86_1770095812.jpg', '2026-02-03 05:16:52'),
-(153, 22, 'brgy_clearance', 'documents/698565f23f917_1770350066.jpg', '2026-02-06 03:54:26'),
-(154, 22, 'birth_certificate', 'documents/698565f240bfa_1770350066.jpg', '2026-02-06 03:54:26'),
-(155, 22, 'sss', 'documents/698565f241b61_1770350066.jpg', '2026-02-06 03:54:26'),
-(156, 22, 'pagibig', 'documents/698565f242a04_1770350066.jpg', '2026-02-06 03:54:26'),
-(157, 22, 'nbi', 'documents/698565f2438fb_1770350066.jpg', '2026-02-06 03:54:26'),
-(158, 22, 'police_clearance', 'documents/698565f244ccf_1770350066.jpg', '2026-02-06 03:54:26'),
-(159, 22, 'tin_id', 'documents/698565f246001_1770350066.jpg', '2026-02-06 03:54:26'),
-(160, 22, 'passport', 'documents/698565f2476fd_1770350066.jpg', '2026-02-06 03:54:26');
-
 -- --------------------------------------------------------
 
 --
@@ -191,17 +134,6 @@ CREATE TABLE `applicant_reports` (
   `note_text` text NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `applicant_reports`
---
-
-INSERT INTO `applicant_reports` (`id`, `applicant_id`, `admin_id`, `note_text`, `created_at`) VALUES
-(1, 20, 4, 'awd', '2026-02-12 08:38:25'),
-(2, 20, 4, 'awdawd', '2026-02-12 08:38:29'),
-(3, 20, 4, 'asd', '2026-02-12 08:47:04'),
-(4, 19, 4, 'asdasd', '2026-02-12 08:47:13'),
-(5, 17, 4, 'asdasd', '2026-02-12 08:47:17');
 
 -- --------------------------------------------------------
 
@@ -218,21 +150,6 @@ CREATE TABLE `applicant_status_reports` (
   `admin_id` int(10) UNSIGNED DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `applicant_status_reports`
---
-
-INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `from_status`, `to_status`, `report_text`, `admin_id`, `created_at`) VALUES
-(1, 17, 'on_process', 'approved', 'Manual test insert', 1, '2026-02-11 09:28:34'),
-(2, 22, 'on_process', 'pending', 'trial', 5, '2026-02-11 11:13:15'),
-(3, 22, 'on_process', 'approved', 'moved', 5, '2026-02-11 11:21:14'),
-(4, 18, 'on_process', 'pending', 'trial', 5, '2026-02-11 11:59:41'),
-(5, 22, 'on_process', 'approved', 'whattt', 5, '2026-02-11 13:28:59'),
-(6, 22, 'on_process', 'pending', 'no clients', 4, '2026-02-11 14:04:56'),
-(7, 20, 'on_process', 'approved', 'apporved relocate to client', 4, '2026-02-11 14:20:52'),
-(8, 18, 'on_process', 'pending', 'accidental changed to onprocess', 4, '2026-02-12 09:14:41'),
-(9, 20, 'on_process', 'approved', 'approved', 12, '2026-02-12 10:51:19');
 
 -- --------------------------------------------------------
 
@@ -255,15 +172,6 @@ CREATE TABLE `blacklisted_applicants` (
   `compliance_proof_paths` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`compliance_proof_paths`)),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `blacklisted_applicants`
---
-
-INSERT INTO `blacklisted_applicants` (`id`, `applicant_id`, `reason`, `issue`, `proof_paths`, `created_by`, `is_active`, `created_at`, `reverted_at`, `reverted_by`, `compliance_note`, `compliance_proof_paths`, `updated_at`) VALUES
-(2, 22, 'asd', 'asdasd', '[\"blacklist\\/698c30c2dbdbd_1770795202.jpg\"]', NULL, 0, '2026-02-11 07:33:22', '2026-02-12 09:17:48', 4, 'asdasd', '[\"compliance\\/698d2a3c99b92_1770859068.jpg\"]', '2026-02-12 01:17:48'),
-(3, 22, 'Load', 'AWOL', '[\"blacklist\\/698d2a8a43dd5_1770859146.jpg\"]', 4, 0, '2026-02-12 01:19:06', '2026-02-12 09:19:51', 4, 'complied', NULL, '2026-02-12 01:19:51'),
-(4, 22, 'AWOL', 'Leaved the office without permission or acknowledgement or resigning', NULL, NULL, 0, '2026-02-12 01:53:09', '2026-02-12 09:58:22', NULL, 'complied with their issues of about family matters', '[\"compliance\\/698d33beb7804_1770861502.jpg\"]', '2026-02-12 01:58:22');
 
 -- --------------------------------------------------------
 
@@ -288,17 +196,6 @@ CREATE TABLE `client_bookings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `client_bookings`
---
-
-INSERT INTO `client_bookings` (`id`, `applicant_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
-(4, 19, '[\"Cooking &amp; Food Service\",\"Pet &amp; Outdoor Maintenance\"]', 'Office Visit', '2026-02-25', '10:00:00', 'Renz Roann', 'B.', 'Diaz', '09270746258', 'renzdiaz.contact@gmai.com', '2461 Princess Floresca St. Pandacan, Manila', 'submitted', '2026-02-04 02:49:38', '2026-02-04 02:49:38'),
-(5, 20, '[\"Cleaning &amp; Housekeeping (General)\",\"Elderly &amp; Special Care (Caregiver)\"]', 'Audio Call', '2026-02-05', '11:20:00', 'wertyuio', 'wertyui', 'rtyui', '234567890', 'ty@gmail.com', '1231 rjgu', 'submitted', '2026-02-05 03:20:33', '2026-02-05 03:20:33'),
-(6, 19, '[\"Cleaning &amp; Housekeeping (General)\",\"Childcare &amp; Maternity (Yaya)\"]', 'Audio Call', '2026-02-21', '09:00:00', 'John Ellijah', 'M.', 'Ocampo', '09128371827', 'elli@gmail.com', '2381 luakwhduiawdluawliudwa', 'submitted', '2026-02-07 11:01:51', '2026-02-07 11:01:51'),
-(7, 20, '[\"Cooking &amp; Food Service\",\"Laundry &amp; Clothing Care\"]', 'Office Visit', '2026-02-26', '09:00:00', 'Andrei', 'B.', 'Javillo', '09123971283', 'renzdiaz.contact@gmai.com', '381lkseajhdawdawdaw', 'submitted', '2026-02-10 06:12:54', '2026-02-10 06:12:54'),
-(8, 17, '[\"Cooking &amp; Food Service\"]', 'Office Visit', '2026-03-05', '08:00:00', 'Berloloy', 'S.', 'Tambaloloy', '09278713871', 'renzdiaz.contact@gmai.com', '8123 iawkhdwiadwaawdaw awd awd', 'submitted', '2026-02-10 11:44:20', '2026-02-10 11:44:20');
 
 -- --------------------------------------------------------
 
@@ -433,7 +330,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=276;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=287;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
