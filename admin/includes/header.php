@@ -76,6 +76,9 @@ $collapseApplicantsId = 'csnkApplicantsMenu';
 
 /* ---------- Escape helper ---------- */
 function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+
+/* ---------- Safe default for reports counter ---------- */
+$reportNotesCount = (int)($reportNotesCount ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -182,6 +185,10 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
         body.sidebar-collapsed .side-badge { display: none !important; }
         body.sidebar-collapsed .sidebar-brand img { max-width: 42px; }
         body.sidebar-collapsed .sidebar-submenu { display: none !important; }
+
+        /* Keep collapse content visible - prevent overflow clipping */
+        .sidebar .collapse { overflow: visible; }
+        .sidebar .collapse.show { display: block; visibility: visible; }
 
         .sidebar-divider { height: 1px; margin: .5rem 1rem; background: var(--csnk-gray-200); }
         .nav-left { display:flex; align-items:center; gap:.5rem; }
@@ -305,7 +312,9 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
 
             <?php if ($showRegionPlaceholders): ?>
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label"><img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International</div>
+            <div class="sidebar-section-label">
+                <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International
+            </div>
 
             <!-- SMC-Turkey -->
             <button class="sidebar-item sidebar-toggle" type="button"
@@ -379,19 +388,25 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
                 <span class="label"><span class="text">Activity Logs</span></span>
             </a>
 
-            <div class="sidebar-section-label">Reports</div>
-            <a href="reports.php"
-               class="sidebar-item <?php echo $currentPage === 'reports' ? 'active' : ''; ?>"
-               aria-current="<?php echo $currentPage === 'reports' ? 'page' : 'false'; ?>"
-               data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
-                <i class="bi bi-journal-text"></i>
-                <span class="label"><span class="text">Reports</span></span>
-                <span class="side-badge">
-                    <span class="pill-count <?php echo $reportNotesCount === 0 ? 'is-zero' : ''; ?>"
-                          aria-label="Total reports count"><?php echo (int)$reportNotesCount; ?></span>
-                </span>
-            </a>
+            <?php if (!empty($canViewReports) && $canViewReports === true) : ?>
+                <div class="sidebar-section-label">Reports</div>
+                <a href="reports.php"
+                   class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                   aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
+                    <span class="label">
+                        <span class="text">Reports</span>
+                    </span>
+                    <span class="side-badge" aria-live="polite">
+                        <span class="pill-count <?php echo ((int)($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
+                              aria-label="Total reports count">
+                            <?php echo (int)($reportNotesCount ?? 0); ?>
+                        </span>
+                    </span>
+                </a>
             <?php endif; ?>
+            <?php endif; /* <-- closes $canViewActivity */ ?>
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
@@ -495,7 +510,6 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
             }
             ?>
             <!-- Page content continues from here ... (footer will close the tags) -->
-
 <!-- Bootstrap Bundle (JS for dropdown/collapse/tooltip) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
@@ -537,6 +551,22 @@ function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES,
             const tipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tipTriggerList.forEach(el => new bootstrap.Tooltip(el));
         }
+
+        // Sidebar collapse: keep submenu open when clicked (do not toggle closed)
+        document.querySelectorAll('.sidebar-toggle[data-bs-toggle="collapse"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = btn.getAttribute('data-bs-target');
+                if (!targetId) return;
+                const target = document.querySelector(targetId);
+                if (!target || !window.bootstrap?.Collapse) return;
+                if (target.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const collapse = bootstrap.Collapse.getInstance(target);
+                    if (collapse) collapse.show();
+                }
+            }, true);
+        });
     });
 })();
 </script>
