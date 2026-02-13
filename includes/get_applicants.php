@@ -24,6 +24,11 @@ require_once __DIR__ . '/../admin/includes/config.php';
 require_once __DIR__ . '/../admin/includes/Database.php';
 require_once __DIR__ . '/../admin/includes/Applicant.php';
 
+// Start session for randomization seed (if not already started)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 function normalizeSkillLabel(string $label): string {
     // Normalize dashes/ampersands/spacing from stored data
     $x = trim(htmlspecialchars_decode($label, ENT_QUOTES));
@@ -152,10 +157,13 @@ try {
     }
 
     if ($location !== '') {
-        $where[] = "(location_city LIKE ? OR location_region LIKE ? OR preferred_location LIKE ? )";
+        // Search in address field and preferred_location JSON array
+        // For JSON search, we use JSON_SEARCH for MySQL 5.7+ compatibility
+        // Also search the raw JSON string as fallback for older versions or edge cases
+        $where[] = "(address LIKE ? OR preferred_location LIKE ? OR JSON_SEARCH(preferred_location, 'one', ?, NULL, '$[*]') IS NOT NULL)";
         $likeLoc = "%{$location}%";
         $types .= 'sss';
-        $values[] = $likeLoc; $values[] = $likeLoc; $values[] = $likeLoc;
+        $values[] = $likeLoc; $values[] = $likeLoc; $values[] = "%{$location}%";
     }
 
     // Specializations: tolerant of "&" vs "and"
@@ -250,28 +258,43 @@ try {
     $totalRow = $countRes->fetch_assoc();
     $total = (int)($totalRow['cnt'] ?? 0);
 
-    // Determine rotation seed (daily by default) and whether rotation is disabled via ?rotate=0
+    // Advanced randomization: ensures fair distribution across all pages
+    // Uses a combination of session-based seed and deterministic hashing for consistent but varied ordering
     $rotateEnabled = !isset($_GET['rotate']) || $_GET['rotate'] !== '0';
-    $seed = date('Ymd'); // daily seed; change to date('YmdH') for hourly, etc.
-
-    // Data query with deterministic pseudo-random ordering using CRC32(id + seed)
+    
     if ($rotateEnabled) {
-        $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY CRC32(CONCAT(id, ?)) ASC, {$orderBy} LIMIT ?, ?";
+        // Create a unique seed per session (persists across page loads in same session)
+        if (!isset($_SESSION['applicant_random_seed'])) {
+            // Generate a random seed for this session
+            $_SESSION['applicant_random_seed'] = bin2hex(random_bytes(8));
+        }
+        
+        // Combine session seed with daily rotation for better distribution
+        $sessionSeed = $_SESSION['applicant_random_seed'];
+        $dailySeed = date('Ymd');
+        $combinedSeed = $sessionSeed . '_' . $dailySeed;
+        
+        // Use a more sophisticated randomization that ensures fair distribution:
+        // 1. Primary: Hash ID with seed for deterministic but varied ordering
+        // 2. Secondary: Use multiplicative hash for better distribution
+        // 3. Tertiary: Fall back to original sort order for consistency
+        // This ensures applicants from all pages get fair representation across different sessions
+        $sql = "SELECT * FROM applicants WHERE {$whereSql} 
+                ORDER BY 
+                    MOD(CRC32(CONCAT(id, ?)), 10000) ASC,
+                    MOD(id * 2654435761, 10000) ASC,
+                    {$orderBy} 
+                LIMIT ?, ?";
+        
+        $bindTypes = $types . 'sii';
+        $bindValues = array_merge($values, [$combinedSeed, $offset, $per_page]);
     } else {
         $sql = "SELECT * FROM applicants WHERE {$whereSql} ORDER BY {$orderBy} LIMIT ?, ?";
-    }
-
-    $stmt = $mysqli->prepare($sql);
-
-    // bind params + offset, per_page (offset/per_page are integers)
-    if ($rotateEnabled) {
-        // add seed (s) before offset/per_page (ii)
-        $bindTypes = $types . 'sii';
-        $bindValues = array_merge($values, [$seed, $offset, $per_page]);
-    } else {
         $bindTypes = $types . 'ii';
         $bindValues = array_merge($values, [$offset, $per_page]);
     }
+
+    $stmt = $mysqli->prepare($sql);
 
     $tmp = array_merge([$bindTypes], $bindValues);
     $refs = [];
