@@ -23,15 +23,15 @@
         <ul class="list-unstyled text-muted mb-0">
           <li class="mb-2">
             <i class="fa-solid fa-location-dot text-danger me-2"></i>
-            Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR, Sixth District
+            Unit 1 Eden Townhomes 2001 Eden Street corner Pedro Gil Street Sta. Ana Manila., 1009
           </li>
           <li class="mb-2">
             <i class="fa-solid fa-phone text-danger me-2"></i>
-            0945 657 0878
+            0939 342 7412
           </li>
           <li class="mb-2">
             <i class="fa-solid fa-envelope text-danger me-2"></i>
-            csnkmanila06@gmail.com
+            smcwelfaremonitoring@gmail.com
           </li>
           <li class="mb-0">
             <i class="fa-solid fa-clock text-danger me-2"></i>
@@ -70,9 +70,9 @@
         <h6 class="mt-3">1. Website Operator</h6>
         <p class="small">
           <strong>Company Name:</strong> SMC Manpower Agency Philippines Co.<br>
-          <strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR, Sixth District<br>
+          <strong>Address:</strong> Unit 1 Eden Townhomes 2001 Eden Street corner Pedro Gil Street Sta. Ana Manila., 1009<br>
           <strong>Email:</strong> smcwelfaremonitoring@gmail.com<br>
-          <strong>Phone:</strong> 0945 657 0878
+          <strong>Phone:</strong> 0939 342 7412
         </p>
 
         <h6>2. Terms of Use</h6>
