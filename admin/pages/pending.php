@@ -48,7 +48,7 @@ if (isset($_GET['action'])) {
     // Build redirect URL back to this page preserving search
     $qs = ($q !== '') ? ('?q=' . urlencode($q)) : '';
 
-        if ($action === 'update_status' && $id > 0 && isset($_GET['to'])) {
+    if ($action === 'update_status' && $id > 0 && isset($_GET['to'])) {
         $to = strtolower(trim((string)$_GET['to']));
         if (in_array($to, $allowedStatuses, true)) {
             $updated = false;
@@ -255,13 +255,18 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
         white-space: nowrap;
     }
 
-    /* Modern dropdown styling */
+    /* Ensure table, tbody, tr don't clip dropdowns */
+    .table-card table, .table-card tbody, .table-card tr {
+        overflow: visible !important;
+    }
+
+    /* Modern dropdown styling - static display keeps menu visible */
     .dd-modern .dropdown-menu {
         border-radius: .75rem; /* rounded-xl */
         border: 1px solid #e5e7eb; /* slate-200 */
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
-        overflow: hidden;
-        z-index: 2000; /* stay above table and cards */
+        z-index: 9999 !important;
+        min-width: 160px;
     }
     .dd-modern .dropdown-item {
         display: flex;
@@ -396,7 +401,8 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                             <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="actions-cell">
-                                <div class="btn-group dd-modern dropup">
+                                <!-- Single button group with a dropup menu -->
+                                <div class="btn-group dropup dd-modern position-static">
                                     <!-- View -->
                                     <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                        class="btn btn-sm btn-info" title="View">
@@ -417,40 +423,44 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                         <i class="bi bi-trash"></i>
                                     </a>
 
-                                    <!-- Change Status Dropdown -->
-                                    <button type="button"
+                                    <!-- Change Status Dropdown - static display so it shows in-place -->
+                                    <div class="dropdown">
+                                        <button
+                                            type="button"
                                             class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                             data-bs-toggle="dropdown"
-                                            data-bs-display="static"
-                                            data-bs-boundary="viewport"
-                                            data-bs-offset="0,8"
+                                            data-bs-auto-close="true"
                                             aria-expanded="false"
-                                            title="Change Status">
-                                        <i class="bi bi-arrow-left-right me-1"></i> Change Status
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                            aria-haspopup="true"
+                                            title="Change Status"
+                                            id="changeStatusBtn-<?php echo (int)$app['id']; ?>">
+                                            <i class="bi bi-arrow-left-right me-1"></i>
+                                            Change Status
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo ($currentStatus === 'pending') ? 'disabled' : ''; ?>"
+                                               href="<?php echo ($currentStatus === 'pending') ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
                                                 <i class="bi bi-hourglass-split text-warning"></i>
                                                 <span>Pending</span>
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo ($currentStatus === 'on_process') ? 'disabled' : ''; ?>"
+                                               href="<?php echo ($currentStatus === 'on_process') ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
                                                 <i class="bi bi-arrow-repeat text-info"></i>
                                                 <span>On-Process</span>
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <a class="dropdown-item <?php echo ($currentStatus === 'approved') ? 'disabled' : ''; ?>"
+                                               href="<?php echo ($currentStatus === 'approved') ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
                                                 <i class="bi bi-check2-circle text-success"></i>
                                                 <span>Approved</span>
                                             </a>
                                         </li>
-                                    </ul>
+                                        </ul>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -460,5 +470,17 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
         </table>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manually initialize Change Status dropdowns (Bootstrap 5)
+    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+    btns.forEach(function(btn) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+        }
+    });
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>
