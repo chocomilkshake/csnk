@@ -414,7 +414,7 @@
                           <a href="#contact" class="btn btn-navy rounded-pill px-4">
                             Contact Us <i class="fa-solid fa-phone ms-2"></i>
                           </a>
-                          <a href="./applicant.php" class="btn btn-outline-navy rounded-pill px-4">Applicasnts</a>
+                          <a href="./applicant.php" class="btn btn-outline-navy rounded-pill px-4">Applicants</a>
                         </div>
                       </div>
                     </div>
