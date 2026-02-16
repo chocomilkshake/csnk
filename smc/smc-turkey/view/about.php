@@ -198,7 +198,7 @@
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
                       role="tab" aria-selected="true"
                       data-title="Get to know SMC"
-                      data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipino women by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
+                      data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
                       data-img="../resources/img/overview.png"
                       data-img-alt="Overview image">
                 Overview
@@ -207,7 +207,7 @@
               <button type="button" class="btn btn-light rounded-pill px-3 py-2"
                       role="tab" aria-selected="false"
                       data-title="Meet Founder of SMC"
-                      data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipino women build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
+                      data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
                       data-img="../resources/img/MrRog.png"
                       data-img-alt="Founder image">
                 Founder
@@ -261,17 +261,17 @@
           <!-- Slide 1 -->
           <div class="carousel-item active">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-                <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 1">
+              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
+                <img src="../resources/img/smc1.jpg" alt="Training photo 1">
               </a>
-              <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-                <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 2">
+              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
+                <img src="../resources/img/smc2.jpg" alt="Training photo 2">
               </a>
-              <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-                <img src="https://tinyurl.com/55nwhff7" alt="Training photo 3">
+              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
+                <img src="../resources/img/smc3.jpg" alt="Training photo 3">
               </a>
-              <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-                <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 4">
+              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
+                <img src="../resources/img/smc4.jpg" alt="Training photo 4">
               </a>
             </div>
           </div>
@@ -279,17 +279,17 @@
           <!-- Slide 2 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/4bkcuuwn" class="gallery-item" data-area="a" data-full="https://tinyurl.com/4bkcuuwn">
-                <img src="https://tinyurl.com/4bkcuuwn" alt="Training photo 5">
+              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
+                <img src="../resources/img/smc5.jpg" alt="Training photo 5">
               </a>
-              <a href="https://tinyurl.com/ye7xubh2" class="gallery-item" data-area="b" data-full="https://tinyurl.com/ye7xubh2">
-                <img src="https://tinyurl.com/ye7xubh2" alt="Training photo 6">
+              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
+                <img src="../resources/img/smc6.jpg" alt="Training photo 6">
               </a>
-              <a href="https://tinyurl.com/4fty8ztf" class="gallery-item" data-area="c" data-full="https://tinyurl.com/4fty8ztf">
-                <img src="https://tinyurl.com/4fty8ztf" alt="Training photo 7">
+              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
+                <img src="../resources/img/smc7.jpg" alt="Training photo 7">
               </a>
-              <a href="https://tinyurl.com/2mky2xyz" class="gallery-item" data-area="d" data-full="https://tinyurl.com/2mky2xyz">
-                <img src="https://tinyurl.com/2mky2xyz" alt="Training photo 8">
+              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
+                <img src="../resources/img/smc8.jpg" alt="Training photo 8">
               </a>
             </div>
           </div>
@@ -297,17 +297,17 @@
           <!-- Slide 3 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-                <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 9">
+              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
+                <img src="../resources/img/smc9.jpg" alt="Training photo 9">
               </a>
-              <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-                <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 10">
+              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
+                <img src="../resources/img/smc10.jpg" alt="Training photo 10">
               </a>
-              <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-                <img src="https://tinyurl.com/55nwhff7" alt="Training photo 11">
+              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
+                <img src="../resources/img/smc11.jpg" alt="Training photo 11">
               </a>
-              <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-                <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 12">
+              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
+                <img src="../resources/img/smc12.jpg" alt="Training photo 12">
               </a>
             </div>
           </div>
@@ -350,7 +350,7 @@
       <div class="p-3 p-md-4 cta-wrap">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
           <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem">
-            Hire reliable, properly screened Household Service Workers (HSWs) for your home.
+            Hire reliable, properly screened Filipino Skilled Workers.
           </p>
           <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
             Hire Now! <i class="fa-solid fa-arrow-right ms-1"></i>
@@ -438,6 +438,7 @@
         document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
       }
     }, false);
+  })();
   </script>
 </body>
 </html>

@@ -207,9 +207,9 @@
       <div class="hero-wrap">
         <div class="row align-items-center gy-4 hero-content">
           <div class="col-lg-6">
-            <h1 class="display-6 fw-bold mb-3">Welcome to SMC Manpower Agency Co.</h1>
+            <h1 class="display-6 fw-bold mb-3">Right Person for the Right Job, Right Employment for the Right Man</h1>
             <p class="lead mb-4">
-              Your trusted partner for qualified housemaids and nannies. We connect families with properly screened domestic workers through safe and compliant processes.
+              SMC Manpower Agency Philippines Company, is duly authorized and licensed by POEA under license no. DMW-062-LB-03232023-R to recruit, hire and process manpower for its accredited foreign principals.
             </p>
 
             <div class="d-flex gap-3 mb-2 hero-bullet">
@@ -252,7 +252,7 @@
               <h2 class="fw-bold mt-3 mb-2">For Turkish Employers</h2>
               <p class="mb-4" style="opacity:.95;">
                 This website is the international version of SMC for <strong>Turkey</strong>. We deploy
-                <strong>Filipina housemaids (Pinays)</strong> to Turkish households through a safe, compliant, and
+                <strong>Filipino Skilled Workers </strong> to Turkish households through a safe, compliant, and
                 well‑guided process with proper screening, documentation, and cultural orientation.
               </p>
 
@@ -339,7 +339,6 @@
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="2" aria-label="Slide 3"></button>
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="3" aria-label="Slide 4"></button>
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="4" aria-label="Slide 5"></button>
-          <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="5" aria-label="Slide 6"></button>
         </div>
 
         <div class="carousel-inner">
@@ -351,7 +350,7 @@
                 <div class="card slide-card">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero1.jpg"
+                      <img src="../resources/img/recruitment.png"
                            class="w-100"
                            alt="SMC Slide 1"
                            style="height:340px; object-fit:cover;">
@@ -359,8 +358,8 @@
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">SMC Manpower Agency Co.</span>
-                        <h3 class="fw-bold mt-3 mb-2 text-navy">Trusted Domestic Recruitment</h3>
-                        <p class="text-muted mb-4">Connecting families with screened housemaids and nannies through verified processes.</p>
+                        <h3 class="fw-bold mt-3 mb-2 text-navy">Trusted Recruitment Agency</h3>
+                        <p class="text-muted mb-4">Excellence in Supplying Trusted and Skilled Household Service Professionals</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-circle-check text-gold fs-4"></i>
@@ -391,22 +390,22 @@
                 <div class="card slide-card">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero2.jpg"
+                      <img src="../resources/img/selection.png"
                            class="w-100"
                            alt="SMC Slide 2"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge-soft align-self-start">Fast and Clear Process</span>
-                        <h3 class="fw-bold mt-3 mb-2 text-navy">Professional Processing</h3>
-                        <p class="text-muted mb-4">We help applicants prepare requirements and complete each step efficiently.</p>
+                        <span class="badge-soft align-self-start">Professional and Thorough</span>
+                        <h3 class="fw-bold mt-3 mb-2 text-navy">Meticulous Selection Process</h3>
+                        <p class="text-muted mb-4">SMC consistently brings in the most qualified individuals to strengthen our team’s performance.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-file-circle-check text-gold fs-4"></i>
                           <div>
                             <div class="fw-semibold text-navy">Requirements Support</div>
-                            <div class="small text-muted">Checklists, updates, and assistance</div>
+                            <div class="small text-muted">Checklists, Updates, and Assistance</div>
                           </div>
                         </div>
 
@@ -431,7 +430,7 @@
                 <div class="card slide-card">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero3.jpg"
+                      <img src="../resources/img/verified.png"
                            class="w-100"
                            alt="SMC Slide 3"
                            style="height:340px; object-fit:cover;">
@@ -471,7 +470,7 @@
                 <div class="card slide-card">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero4.jpg"
+                      <img src="../resources/img/guide.png"
                            class="w-100"
                            alt="SMC Slide 4"
                            style="height:340px; object-fit:cover;">
@@ -509,45 +508,7 @@
                 <div class="card slide-card">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero5.jpg"
-                           class="w-100"
-                           alt="SMC Slide 5"
-                           style="height:340px; object-fit:cover;">
-                    </div>
-                    <div class="col-md-6 bg-white">
-                      <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge-soft align-self-start">Quality Service</span>
-                        <h3 class="fw-bold mt-3 mb-2 text-navy">Reliable Processing</h3>
-                        <p class="text-muted mb-4">We maintain quality standards to deliver a smooth and organized process.</p>
-
-                        <div class="d-flex gap-3 mb-3">
-                          <i class="fa-solid fa-star text-gold fs-4"></i>
-                          <div>
-                            <div class="fw-semibold text-navy">High Standards</div>
-                            <div class="small text-muted">Professional handling and coordination</div>
-                          </div>
-                        </div>
-
-                        <div class="mt-2 d-flex flex-wrap gap-2">
-                          <a href="#about" class="btn btn-navy rounded-pill px-4">About Us</a>
-                          <a href="#contact" class="btn btn-outline-navy rounded-pill px-4">Get in Touch</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div><!-- /card -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Slide 6 -->
-          <div class="carousel-item">
-            <div class="row justify-content-center">
-              <div class="col-12 col-lg-10 col-xl-9">
-                <div class="card slide-card">
-                  <div class="row g-0">
-                    <div class="col-md-6">
-                      <img src="../resources/img/hero6.jpg"
+                      <img src="../resources/img/abroad.png"
                            class="w-100"
                            alt="SMC Slide 6"
                            style="height:340px; object-fit:cover;">
@@ -556,7 +517,7 @@
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">Global Opportunities</span>
                         <h3 class="fw-bold mt-3 mb-2 text-navy">Work Abroad Ready</h3>
-                        <p class="text-muted mb-4">We connect applicants to employers through trusted channels.</p>
+                        <p class="text-muted mb-4">We offer efficient travel document processing, ensuring hassle-free application.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-globe text-gold fs-4"></i>
@@ -598,8 +559,10 @@
         <div class="row">
           <div class="col-lg-8 col-md-10 mx-auto">
             <p class="text-muted mb-0">
-              SMC Manpower Agency Co. specializes in recruiting, screening, and preparing qualified Filipino housemaids and nannies for safe, legal deployment to Turkey, ensuring verified documentation, transparent processing, and trustworthy matching between workers and families abroad.
-            </p>
+              Our commitment to employee well-being includes competitive compensation, comprehensive benefits, 
+              and a supportive work culture that fosters collaboration and innovation SMC recognizes the global 
+              need for employment and believes its first and foremost responsibility is to provide our clients 
+              with word-class, personalized service and to provide, Filipinos the opportunity to work overseas.
           </div>
         </div>
       </div>
@@ -612,10 +575,10 @@
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-award fa-3x text-gold"></i></div>
-              <h2 class="fw-bold text-navy mb-1">20,000+</h2>
-              <div class="text-uppercase text-muted fw-semibold small mb-3">Applications Processed</div>
-              <h5 class="fw-semibold mb-2 text-navy">Efficient &amp; Quality Service</h5>
-              <p class="text-muted small mb-0">Clear guidance, organized processing, and consistent communication.</p>
+              <h2 class="fw-bold text-navy mb-1">15</h2>
+              <div class="text-uppercase text-muted fw-semibold small mb-3">YEARS OF EXPERIENCE</div>
+              <h5 class="fw-semibold mb-2 text-navy">Efficient Longevity Service</h5>
+              <p class="text-muted small mb-0">A commitment to dependable, long‑lasting service built on consistency, streamlined processes, and the ability to deliver quality support at every stage.</p>
             </div>
           </div>
         </div>
@@ -625,10 +588,10 @@
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-chart-line fa-3x text-gold"></i></div>
-              <h2 class="fw-bold text-navy mb-1">Since 2020</h2>
-              <div class="text-uppercase text-muted fw-semibold small mb-3">Proven Track Record</div>
-              <h5 class="fw-semibold mb-2 text-navy">Successful Deployments</h5>
-              <p class="text-muted small mb-0">Thousands placed with compliant, step‑by‑step support.</p>
+              <h2 class="fw-bold text-navy mb-1">Career Development</h2>
+              <div class="text-uppercase text-muted fw-semibold small mb-3">Proven Growth Record</div>
+              <h5 class="fw-semibold mb-2 text-navy">Empowering Your Career Journey</h5>
+              <p class="text-muted small mb-0">We provide various resources like skill enhancement programs. Our goal is not just to find you a job, but to support your long-term career growth.</p>
             </div>
           </div>
         </div>
@@ -639,9 +602,9 @@
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-shield-halved fa-3x text-gold"></i></div>
               <h2 class="fw-bold text-navy mb-1">100%</h2>
-              <div class="text-uppercase text-muted fw-semibold small mb-3">Verification Process</div>
-              <h5 class="fw-semibold mb-2 text-navy">Safe &amp; Compliant Recruitment</h5>
-              <p class="text-muted small mb-0">Document validation and screening to protect families and applicants.</p>
+              <div class="text-uppercase text-muted fw-semibold small mb-3">Top-Tier Services</div>
+              <h5 class="fw-semibold mb-2 text-navy">Industry‑Wide Opportunities</h5>
+              <p class="text-muted small mb-0">High-quality career pathways across various industries. Our services include job placement, career counseling, and skill development programs.</p>
             </div>
           </div>
         </div>
@@ -746,8 +709,7 @@
       <div class="cta-hire">
         <div class="cta-row">
           <p class="cta-title">
-            Hire reliable, properly screened Household Service Workers (HSWs)
-            for your home.
+            Hire reliable, properly screened Filipino Skilled Workers.
           </p>
 
           <div class="cta-actions">
