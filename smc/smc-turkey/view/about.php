@@ -161,6 +161,7 @@
 <body class="bg-light">
 
   <!-- ✅ Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
 
   <!-- ===================== -->
   <!-- Page Content Starts   -->
