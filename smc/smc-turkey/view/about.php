@@ -193,7 +193,7 @@
           <div class="hero-pills-abs-wrapper">
             <div id="heroPills"
                  class="rounded-pill px-3 py-2 d-inline-flex align-items-center"
-                 role="tablist" aria-label="Hero options">
+                 role="tablist" aria-label="Hero options"> 
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
                       role="tab" aria-selected="true"
