@@ -12,7 +12,7 @@ $conn = $database->getConnection();
 /* Users for filter */
 $adminUsers = [];
 if ($conn instanceof mysqli) {
-    $q = "SELECT id, full_name, username, role /*, avatar_path */ FROM admin_users";
+    $q = "SELECT id, full_name, username, role, avatar FROM admin_users";
     if ($isAdminOnly) $q .= " WHERE role <> 'super_admin'";
     $q .= " ORDER BY full_name ASC";
     if ($rs = $conn->query($q)) $adminUsers = $rs->fetch_all(MYSQLI_ASSOC);
@@ -22,7 +22,7 @@ if ($conn instanceof mysqli) {
 $logs = [];
 if ($conn instanceof mysqli) {
     $q = "SELECT al.id, al.admin_id, al.action, al.description, al.created_at,
-                 au.full_name, au.username, au.role /*, au.avatar_path */
+                 au.full_name, au.username, au.role, au.avatar
           FROM activity_logs al
           JOIN admin_users au ON au.id = al.admin_id";
     if ($isAdminOnly) $q .= " WHERE au.role <> 'super_admin'";
@@ -126,7 +126,7 @@ function initials(string $full=null, string $user=null): string {
           $desc = enrichDescription((string)$log['description'], $applicantNameMap, $userNameMap);
           $ini  = initials($name, $log['username']);
           $whenPretty = formatDateTime($log['created_at']);
-          $avatarUrl = ''; // Optional: if you add au.avatar_path in SELECT above.
+          $avatarUrl = (!empty($log['avatar']) ? UPLOAD_URL . 'avatars/' . $log['avatar'] : '');
       ?>
         <tr class="hover:bg-slate-50 cursor-pointer"
             data-user-id="<?=$log['admin_id']?>"
