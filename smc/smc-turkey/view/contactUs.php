@@ -21,7 +21,7 @@ use PHPMailer\PHPMailer\Exception;
 // --------------------------------------------------
 $CONFIG = [
     // ---- CHANGE THESE ----
-    'to_email'      => 'csnkmanila@gmail.com',     // Destination email
+    'to_email'      => 'smcphilippines.marketing@gmail.com',     // Destination email
     'to_name'       => 'CSNK Support',
     'from_email'    => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
     'from_name'     => 'CSNK Manpower Agency',
@@ -364,6 +364,7 @@ function invalidClass(array $errors, string $key): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="../resources/img/smc.png" />
   <title>Contact Us</title>
 
   <!-- Bootstrap 5 CSS -->
