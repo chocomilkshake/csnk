@@ -451,27 +451,8 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 1) Initialize Change Status dropdowns with safe popper config
-    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
-    btns.forEach(function(btn) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            new bootstrap.Dropdown(btn, {
-                boundary: 'viewport',
-                popperConfig: function() {
-                    return {
-                        strategy: 'fixed',
-                        modifiers: [
-                            { name: 'offset', options: { offset: [0, 8] } },
-                            { name: 'preventOverflow', options: { boundary: 'viewport' } },
-                            { name: 'flip', options: { fallbackPlacements: ['top', 'bottom'] } }
-                        ]
-                    };
-                }
-            });
-        }
-    });
-
-    // 2) Raise the active row while a dropdown is open so it sits above neighbors
+    // Raise the active row while a dropdown is open so it sits above neighbors
+    // Bootstrap 5 auto-initializes dropdowns via data-bs-toggle="dropdown"
     document.querySelectorAll('.actions-cell .dropdown').forEach(function(dd) {
         dd.addEventListener('show.bs.dropdown', function() {
             var tr = dd.closest('tr');
