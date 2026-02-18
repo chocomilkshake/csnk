@@ -5,27 +5,24 @@ require_once '../includes/header.php';
 
 $role = $currentUser['role'] ?? 'employee';
 $isAdminOnly = ($role === 'admin');
-if ($role === 'employee') {
-    setFlashMessage('error', 'You do not have permission to view activity logs.');
-    redirect('dashboard.php'); exit;
-}
+if ($role === 'employee') { setFlashMessage('error','You do not have permission to view activity logs.'); redirect('dashboard.php'); exit; }
 
 $conn = $database->getConnection();
 
-/* --- Users (filter) --- */
+/* Users for filter */
 $adminUsers = [];
 if ($conn instanceof mysqli) {
-    $q = "SELECT id, full_name, username, role FROM admin_users";
+    $q = "SELECT id, full_name, username, role /*, avatar_path */ FROM admin_users";
     if ($isAdminOnly) $q .= " WHERE role <> 'super_admin'";
     $q .= " ORDER BY full_name ASC";
     if ($rs = $conn->query($q)) $adminUsers = $rs->fetch_all(MYSQLI_ASSOC);
 }
 
-/* --- Logs --- */
+/* Logs */
 $logs = [];
 if ($conn instanceof mysqli) {
     $q = "SELECT al.id, al.admin_id, al.action, al.description, al.created_at,
-                 au.full_name, au.username, au.role
+                 au.full_name, au.username, au.role /*, au.avatar_path */
           FROM activity_logs al
           JOIN admin_users au ON au.id = al.admin_id";
     if ($isAdminOnly) $q .= " WHERE au.role <> 'super_admin'";
@@ -33,7 +30,7 @@ if ($conn instanceof mysqli) {
     if ($rs = $conn->query($q)) $logs = $rs->fetch_all(MYSQLI_ASSOC);
 }
 
-/* --- Enrichment (compact) --- */
+/* Enrichment (compact) */
 $applicantNameMap = $userNameMap = [];
 if ($conn instanceof mysqli && $logs) {
     $candA = $candU = [];
@@ -70,10 +67,8 @@ function enrichDescription(string $desc, array $appMap, array $userMap): string 
     return $desc;
 }
 function initials(string $full=null, string $user=null): string {
-    $src = trim($full ?: $user ?: 'U');
-    $p = preg_split('/\s+/', $src);
-    $a = strtoupper(substr($p[0]??'U',0,1) . substr($p[1]??'',0,1));
-    return $a ?: 'U';
+    $src = trim($full ?: $user ?: 'U'); $p = preg_split('/\s+/', $src);
+    $a = strtoupper(substr($p[0]??'U',0,1) . substr($p[1]??'',0,1)); return $a ?: 'U';
 }
 ?>
 <!-- Header -->
@@ -121,9 +116,7 @@ function initials(string $full=null, string $user=null): string {
   <div class="table-responsive">
     <table class="table align-middle table-hover mb-0" id="logTable">
       <thead class="table-light">
-        <tr>
-          <th>User</th><th>Role</th><th>Action</th><th>Description</th><th>When</th>
-        </tr>
+        <tr><th>User</th><th>Role</th><th>Action</th><th>Description</th><th>When</th></tr>
       </thead>
       <tbody>
       <?php if (!$logs): ?>
@@ -133,6 +126,7 @@ function initials(string $full=null, string $user=null): string {
           $desc = enrichDescription((string)$log['description'], $applicantNameMap, $userNameMap);
           $ini  = initials($name, $log['username']);
           $whenPretty = formatDateTime($log['created_at']);
+          $avatarUrl = ''; // Optional: if you add au.avatar_path in SELECT above.
       ?>
         <tr class="hover:bg-slate-50 cursor-pointer"
             data-user-id="<?=$log['admin_id']?>"
@@ -144,12 +138,13 @@ function initials(string $full=null, string $user=null): string {
             data-when="<?=htmlspecialchars($whenPretty,ENT_QUOTES,'UTF-8')?>"
             data-when-raw="<?=htmlspecialchars($log['created_at']??'',ENT_QUOTES,'UTF-8')?>"
             data-initials="<?=htmlspecialchars($ini,ENT_QUOTES,'UTF-8')?>"
+            data-avatar="<?=htmlspecialchars($avatarUrl,ENT_QUOTES,'UTF-8')?>"
             data-log-id="<?=$log['id']?>"
-            data-bs-toggle="modal" data-bs-target="#logModal"
-        >
+            data-bs-toggle="modal" data-bs-target="#logModal">
           <td>
             <div class="d-flex align-items-center gap-2">
-              <div class="w-8 h-8 rounded-circle bg-indigo-600 text-white d-flex align-items-center justify-content-center fw-bold">
+              <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold"
+                   style="--tw-gradient-from:#4f46e5;--tw-gradient-to:#06b6d4;background-image:linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-to));width:40px;height:40px;">
                 <?=$ini?>
               </div>
               <div class="leading-tight">
@@ -177,21 +172,40 @@ function initials(string $full=null, string $user=null): string {
         <h5 class="modal-title fw-semibold">Log Details</h5>
         <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
       <div class="modal-body pt-0">
-        <!-- Header -->
+        <!-- Admin -->
         <div class="d-flex gap-3 align-items-start mb-3">
-          <div id="mAvatar" class="w-12 h-12 rounded-circle bg-indigo-600 text-white d-flex align-items-center justify-content-center fw-bold fs-6">U</div>
+          <div class="rounded-circle overflow-hidden" style="width:56px;height:56px;">
+            <img id="mAvatarImg" src="" alt="" class="w-100 h-100 object-fit-cover d-none">
+            <div id="mAvatarIni"
+                 class="w-100 h-100 d-flex align-items-center justify-content-center text-white fw-bold"
+                 style="background-image:linear-gradient(135deg,#4f46e5,#06b6d4);">U</div>
+          </div>
           <div class="flex-grow-1">
             <div id="mFullName" class="fw-bold"></div>
             <div class="text-muted small"><span id="mUsername"></span> · <span id="mRole"></span></div>
-            <div class="mt-2"><span id="mAction" class="badge bg-primary-subtle text-primary"></span></div>
           </div>
         </div>
-        <!-- Description -->
-        <div class="mb-3">
-          <div class="text-muted small mb-1">Description</div>
-          <div id="mDesc" class="p-3 border rounded bg-light" style="white-space:pre-wrap;"></div>
+
+        <!-- Action & Note (clearly separated) -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Action Performed</div>
+            <div id="mAction" class="badge bg-primary-subtle text-primary px-3 py-2"></div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Admin Note</div>
+            <div id="mNote" class="p-3 border rounded bg-light" style="min-height:48px;white-space:pre-wrap;"></div>
+          </div>
         </div>
+
+        <!-- Summary (remaining description text) -->
+        <div class="mb-3">
+          <div class="text-muted small mb-1">Summary</div>
+          <div id="mSummary" class="p-3 border rounded bg-light" style="white-space:pre-wrap;"></div>
+        </div>
+
         <!-- Meta -->
         <div class="row g-3">
           <div class="col-md-4">
@@ -209,8 +223,9 @@ function initials(string $full=null, string $user=null): string {
           </div>
         </div>
       </div>
+
       <div class="modal-footer border-0">
-        <button id="mCopy" type="button" class="btn btn-outline-secondary"><i class="bi bi-clipboard me-1"></i>Copy</button>
+        <button id="mCopy" type="button" class="btn btn-outline-secondary"><i class="bi bi-clipboard me-1"></i>Copy Summary</button>
         <button class="btn btn-primary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
@@ -223,68 +238,77 @@ function initials(string $full=null, string $user=null): string {
   const tbody=document.querySelector('#logTable tbody'); if(!tbody) return;
   const fUser=document.getElementById('fUser'), fSearch=document.getElementById('fSearch');
   const rangeBtns=[...document.querySelectorAll('[data-range]')];
-
   const parseDate=v=>{ if(!v) return null; const d=new Date((v+'').replace(' ','T')+'Z'); return isNaN(d)?null:d; };
-  const inRange=(d,range)=>{
-    if(!d||range==='all') return true;
-    const now=new Date(), day=86400000, diff=now-d;
-    if(range==='24h') return diff<=day;
-    if(range==='3d')  return diff<=3*day;
-    if(range==='7d')  return diff<=7*day;
-    if(range==='30d') return diff<=30*day;
-    return true;
-  };
-
-  function apply(){
-    const uid=fUser?.value||'', q=(fSearch?.value||'').toLowerCase().trim();
-    const r=document.querySelector('[data-range].active')?.dataset.range||'all';
+  const inRange=(d,range)=>{ if(!d||range==='all') return true; const now=new Date(), day=86400000, diff=now-d;
+    if(range==='24h') return diff<=day; if(range==='3d') return diff<=3*day; if(range==='7d') return diff<=7*day; if(range==='30d') return diff<=30*day; return true; };
+  function apply(){ const uid=fUser?.value||'', q=(fSearch?.value||'').toLowerCase().trim(),
+    r=document.querySelector('[data-range].active')?.dataset.range||'all';
     tbody.querySelectorAll('tr').forEach(tr=>{
-      const rowUid=tr.dataset.userId||'';
-      const whenRaw=tr.dataset.whenRaw||'';
-      const okUser=!uid || uid===rowUid;
+      const okUser=!uid || uid===tr.dataset.userId;
       const okText=!q || tr.textContent.toLowerCase().includes(q);
-      const okTime=inRange(parseDate(whenRaw), r);
+      const okTime=inRange(parseDate(tr.dataset.whenRaw||''), r);
       tr.style.display=(okUser&&okText&&okTime)?'':'none';
     });
   }
-
   fUser?.addEventListener('change', apply);
   fSearch?.addEventListener('input', ()=>{ clearTimeout(window._flt); window._flt=setTimeout(apply,150); });
   rangeBtns.forEach(b=>b.addEventListener('click',()=>{ rangeBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active'); apply(); }));
 })();
 
-// Modal population
+// Modal population (with avatar + action/note split)
 (function(){
-  const modalEl=document.getElementById('logModal'); if(!modalEl) return;
-  const mAvatar=document.getElementById('mAvatar'), mFull=document.getElementById('mFullName');
-  const mUser=document.getElementById('mUsername'), mRole=document.getElementById('mRole');
-  const mAction=document.getElementById('mAction'), mDesc=document.getElementById('mDesc');
-  const mWhen=document.getElementById('mWhen'), mWhenRaw=document.getElementById('mWhenRaw');
-  const mLogId=document.getElementById('mLogId'), mAdminId=document.getElementById('mAdminId');
+  const mImg=document.getElementById('mAvatarImg'), mIni=document.getElementById('mAvatarIni');
+  const mFull=document.getElementById('mFullName'), mUser=document.getElementById('mUsername'), mRole=document.getElementById('mRole');
+  const mAction=document.getElementById('mAction'), mNote=document.getElementById('mNote'), mSummary=document.getElementById('mSummary');
+  const mWhen=document.getElementById('mWhen'), mWhenRaw=document.getElementById('mWhenRaw'), mLogId=document.getElementById('mLogId'), mAdminId=document.getElementById('mAdminId');
   const mCopy=document.getElementById('mCopy');
+
+  function splitNote(desc){
+    if(!desc) return {summary:'', note:''};
+    const rx = /(Reason|Note)\s*[:\-]\s*(.+)$/i;      // capture trailing reason/note
+    const m = desc.match(rx);
+    if (m) {
+      const note = m[2].trim();
+      const summary = desc.replace(rx,'').trim().replace(/[;,\.\s]+$/,'');
+      return {summary, note};
+    }
+    return {summary: desc, note: ''};
+  }
 
   document.querySelectorAll('#logTable tbody tr').forEach(tr=>{
     tr.addEventListener('click',()=>{
-      mAvatar.textContent = tr.dataset.initials || 'U';
-      mFull.textContent   = tr.dataset.fullName || '';
-      mUser.textContent   = tr.dataset.username ? '@'+tr.dataset.username : '';
-      mRole.textContent   = (tr.dataset.role || '—').replaceAll('_',' ');
-      mAction.textContent = tr.dataset.action || '';
-      mDesc.textContent   = tr.dataset.desc || '';
-      mWhen.textContent   = tr.dataset.when || '';
-      mWhenRaw.textContent= tr.dataset.whenRaw ? '('+tr.dataset.whenRaw+')' : '';
-      mLogId.textContent  = tr.dataset.logId || '';
-      mAdminId.textContent= tr.dataset.userId || '';
-    });
-  });
+      const full = tr.dataset.fullName||'', uname = tr.dataset.username||'', role = (tr.dataset.role||'—').replaceAll('_',' ');
+      const action = tr.dataset.action||'', desc = tr.dataset.desc||'', when = tr.dataset.when||'', whenRaw = tr.dataset.whenRaw||'';
+      const logId = tr.dataset.logId||'', adminId = tr.dataset.userId||'';
+      const ini = tr.dataset.initials||'U', avatar = tr.dataset.avatar||'';
 
-  mCopy?.addEventListener('click',()=>{
-    const txt=mDesc?.textContent||'';
-    if(!txt) return;
-    navigator.clipboard.writeText(txt).then(()=>{
-      mCopy.classList.replace('btn-outline-secondary','btn-success');
-      mCopy.innerHTML='<i class="bi bi-check-lg me-1"></i>Copied';
-      setTimeout(()=>{ mCopy.classList.replace('btn-success','btn-outline-secondary'); mCopy.innerHTML='<i class="bi bi-clipboard me-1"></i>Copy'; },1000);
+      // Avatar: show image if provided, else initials gradient
+      if (avatar) { mImg.src = avatar; mImg.classList.remove('d-none'); mIni.classList.add('d-none'); }
+      else { mImg.classList.add('d-none'); mIni.classList.remove('d-none'); mIni.textContent = ini; }
+
+      // Top identity
+      mFull.textContent = full;
+      mUser.textContent = uname ? '@'+uname : '';
+      mRole.textContent = role;
+
+      // Action + Note separation
+      const {summary, note} = splitNote(desc);
+      mAction.textContent = action || '—';
+      mNote.textContent = note || '—';
+      mSummary.textContent = summary || '—';
+
+      // Meta
+      mWhen.textContent = when || '—';
+      mWhenRaw.textContent = whenRaw ? '('+whenRaw+')' : '';
+      mLogId.textContent = logId || '—';
+      mAdminId.textContent = adminId || '—';
+
+      // Copy button copies Summary + Note (if exists)
+      const copyText = (summary ? 'Summary: '+summary+'\n' : '') + (note ? 'Note: '+note : '');
+      mCopy.onclick = ()=>{ if(!copyText.trim()) return; navigator.clipboard.writeText(copyText).then(()=>{
+        mCopy.classList.replace('btn-outline-secondary','btn-success'); mCopy.innerHTML='<i class="bi bi-check-lg me-1"></i>Copied';
+        setTimeout(()=>{ mCopy.classList.replace('btn-success','btn-outline-secondary'); mCopy.innerHTML='<i class="bi bi-clipboard me-1"></i>Copy Summary'; }, 1000);
+      }); };
     });
   });
 })();
