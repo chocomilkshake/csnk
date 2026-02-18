@@ -199,7 +199,7 @@
                       role="tab" aria-selected="true"
                       data-title="Get to know SMC"
                       data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
-                      data-img="../resources/img/overview2.png"
+                      data-img="../resources/img/overview3.png"
                       data-img-alt="Overview image">
                 Overview
               </button>
