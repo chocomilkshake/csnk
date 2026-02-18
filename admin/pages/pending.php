@@ -70,11 +70,7 @@ if (isset($_GET['action'])) {
             }
 
             if (function_exists('setFlashMessage')) {
-                if ($updated) {
-                    setFlashMessage('success', 'Status updated successfully.');
-                } else {
-                    setFlashMessage('error', 'Failed to update status. Please try again.');
-                }
+                setFlashMessage($updated ? 'success' : 'error', $updated ? 'Status updated successfully.' : 'Failed to update status. Please try again.');
             }
 
             if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
@@ -114,10 +110,8 @@ if (isset($_GET['action'])) {
         if (method_exists($applicant, 'softDelete')) {
             $deleted = (bool) $applicant->softDelete($id);
         } elseif (method_exists($applicant, 'update')) {
-            // Fallback: mark as deleted via status if your schema uses that
             $deleted = (bool) $applicant->update($id, ['status' => 'deleted']);
         } else {
-            // Final fallback: direct query (requires PDO $database)
             try {
                 if (isset($database) && $database instanceof PDO) {
                     $stmt = $database->prepare("UPDATE applicants SET status = 'deleted' WHERE id = :id");
@@ -129,11 +123,7 @@ if (isset($_GET['action'])) {
         }
 
         if (function_exists('setFlashMessage')) {
-            if ($deleted) {
-                setFlashMessage('success', 'Applicant deleted successfully.');
-            } else {
-                setFlashMessage('error', 'Failed to delete applicant.');
-            }
+            setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
         }
 
         if ($deleted && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
@@ -208,9 +198,8 @@ function filterApplicantsByQuery(array $rows, string $query): array {
         $suffix = (string)($app['suffix']       ?? '');
         $email  = (string)($app['email']        ?? '');
         $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999); // full for search
+        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
 
-        // Name variants
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
         $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
@@ -250,23 +239,13 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
     }
 
     /* 2) Base container context */
-    .table-card {
-        position: relative;
-        z-index: 0;
-    }
+    .table-card { position: relative; z-index: 0; }
 
     /* 3) Actions cell keeps menu visible and aligned */
-    td.actions-cell {
-        position: relative;
-        overflow: visible;
-        white-space: nowrap;
-    }
+    td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
 
     /* 4) Elevate the currently-open row so its dropdown sits on top of neighbors */
-    .table-card tr.row-raised {
-        position: relative;
-        z-index: 1060; /* above default dropdown (1000) and most row backgrounds */
-    }
+    .table-card tr.row-raised { position: relative; z-index: 1060; }
 
     /* 5) Modern dropdown styling + very high z-index to be safe */
     .dd-modern .dropdown-menu {
@@ -274,7 +253,7 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
         border: 1px solid #e5e7eb;
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         min-width: 180px;
-        z-index: 9999 !important; /* sit above anything else in the table */
+        z-index: 9999 !important;
     }
     .dd-modern .dropdown-item {
         display: flex;
@@ -291,7 +270,6 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
     }
     .btn-status { border-radius: .75rem; }
 
-    /* Optional: keep table tidy without forcing scroll */
     table.table-styled { margin-bottom: 0; }
 </style>
 
@@ -427,8 +405,8 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                             class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                             data-bs-toggle="dropdown"
                                             data-bs-auto-close="true"
-                                            data-bs-display="static"          <!-- don't move menu; allow overflow -->
-                                            data-bs-offset="0,8"              <!-- breathing room -->
+                                            data-bs-display="static"
+                                            data-bs-offset="0,8"
                                             aria-expanded="false"
                                             aria-haspopup="true"
                                             title="Change Status"
@@ -477,7 +455,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
     btns.forEach(function(btn) {
         if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            // Use a fixed strategy so it ignores clipping parents
             new bootstrap.Dropdown(btn, {
                 boundary: 'viewport',
                 popperConfig: function() {
