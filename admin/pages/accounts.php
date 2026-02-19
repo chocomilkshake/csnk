@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_account'])) {
     $password  = (string)($_POST['password'] ?? '');
     $password2 = (string)($_POST['password2'] ?? '');
     $roleNew   = sanitizeInput($_POST['role'] ?? 'employee');
+    $agencyNew = sanitizeInput($_POST['agency'] ?? ''); // NEW
 
     // Allowed roles based on current user's role
     $allowedRoles = $isSuperAdmin ? ['employee','admin','super_admin'] : ['employee','admin'];
@@ -121,6 +122,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_account'])) {
     if ($username !== '' && $admin->usernameExists($username)) $errors[] = 'Username already exists.';
     if ($email !== '' && $admin->emailExists($email)) $errors[] = 'Email already exists.';
 
+    // NEW: agency required only for EMPLOYEE
+    if ($roleNew === 'employee') {
+        if (!in_array($agencyNew, ['csnk','smc'], true)) {
+            $errors[] = 'Agency is required for Employee accounts.';
+        }
+    } else {
+        $agencyNew = null; // admin/super_admin must be global
+    }
+
     if (empty($errors)) {
         $data = [
             'username'  => $username,
@@ -129,9 +139,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_account'])) {
             'password'  => $password,
             'role'      => $roleNew,
             'status'    => 'active', // default
+            'agency'    => $agencyNew, // NEW
         ];
         if ($admin->create($data)) {
-            $auth->logActivity($_SESSION['admin_id'], 'Create Account', "Created {$roleNew} {$username}");
+            $auth->logActivity($_SESSION['admin_id'], 'Create Account', "Created {$roleNew} {$username}".($agencyNew ? " ({$agencyNew})" : ''));
             setFlashMessage('success','Account created successfully.');
             redirect('accounts.php'); exit;
         } else {
@@ -179,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_account'])) {
     $fullName = sanitizeInput($_POST['edit_full_name'] ?? '');
     $email    = sanitizeInput($_POST['edit_email'] ?? '');
     $status   = sanitizeInput($_POST['edit_status'] ?? 'active');
+    $postedAgency = sanitizeInput($_POST['edit_agency'] ?? ''); // NEW
 
     if ($userId <= 0)    $errors[] = 'Invalid account.';
     if ($username === '') $errors[] = 'Username is required.';
@@ -207,15 +219,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_account'])) {
     if ($username !== '' && $admin->usernameExists($username, $userId)) $errors[] = 'Username already in use.';
     if ($email !== '' && $admin->emailExists($email, $userId))         $errors[] = 'Email already in use.';
 
+    // NEW: only enforce agency for EMPLOYEE targets
+    $data = [
+        'username'  => $username,
+        'email'     => $email,
+        'full_name' => $fullName,
+        'role'      => $target['role'],
+        'status'    => $status,
+    ];
+    if ($target && $target['role'] === 'employee') {
+        if (!in_array($postedAgency, ['csnk','smc'], true)) {
+            $errors[] = 'Agency is required for Employee accounts.';
+        } else {
+            $data['agency'] = $postedAgency;
+        }
+    }
+
     if (empty($errors)) {
-        // Keep the same role; this editor does not change roles.
-        $data = [
-            'username'  => $username,
-            'email'     => $email,
-            'full_name' => $fullName,
-            'role'      => $target['role'],
-            'status'    => $status,
-        ];
         if ($admin->update($userId, $data)) {
             $auth->logActivity($_SESSION['admin_id'], 'Edit Account', "Edited ID {$userId}");
             setFlashMessage('success', 'Account updated successfully.');
@@ -233,7 +253,6 @@ $employeeAccounts = $admin->getByRole('employee');
 $adminAccounts    = $admin->getByRole('admin');
 $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // only SA can view
 ?>
-
 <div class="d-flex align-items-center justify-content-between mb-3">
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <!-- Top-left segmented view buttons -->
@@ -284,6 +303,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
             <th>Username</th>
             <th>Full Name</th>
             <th>Email</th>
+            <th>Agency</th>
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>
@@ -291,7 +311,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
         </thead>
         <tbody>
         <?php if (empty($employeeAccounts)): ?>
-          <tr><td colspan="6" class="text-center text-muted">No employee accounts.</td></tr>
+          <tr><td colspan="7" class="text-center text-muted">No employee accounts.</td></tr>
         <?php else: foreach ($employeeAccounts as $acc): ?>
           <tr>
             <td>
@@ -302,6 +322,12 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
             </td>
             <td><?php echo htmlspecialchars($acc['full_name']); ?></td>
             <td><?php echo htmlspecialchars($acc['email']); ?></td>
+            <td>
+              <?php
+                $ag = $acc['agency'] ?? null;
+                echo $ag ? strtoupper($ag) : '<span class="text-muted">—</span>';
+              ?>
+            </td>
             <td>
               <span class="badge bg-<?php echo $acc['status']==='active'?'success':'secondary'; ?>">
                 <?php echo ucfirst($acc['status']); ?>
@@ -324,6 +350,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                           data-fullname="<?php echo htmlspecialchars($acc['full_name']); ?>"
                           data-email="<?php echo htmlspecialchars($acc['email']); ?>"
                           data-status="<?php echo htmlspecialchars($acc['status']); ?>"
+                          data-agency="<?php echo htmlspecialchars((string)$acc['agency']); ?>"
                           data-role="employee"
                           title="Edit"><i class="bi bi-pencil-square"></i></button>
 
@@ -343,6 +370,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                           data-fullname="<?php echo htmlspecialchars($acc['full_name']); ?>"
                           data-email="<?php echo htmlspecialchars($acc['email']); ?>"
                           data-status="<?php echo htmlspecialchars($acc['status']); ?>"
+                          data-agency="<?php echo htmlspecialchars((string)$acc['agency']); ?>"
                           data-role="employee"
                           title="Edit"><i class="bi bi-pencil-square"></i></button>
 
@@ -419,7 +447,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                           data-fullname="<?php echo htmlspecialchars($acc['full_name']); ?>"
                           data-email="<?php echo htmlspecialchars($acc['email']); ?>"
                           data-status="<?php echo htmlspecialchars($acc['status']); ?>"
-                          data-role="admin"
+                          data-agency="" data-role="admin"
                           title="Edit"><i class="bi bi-pencil-square"></i></button>
 
                   <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
@@ -438,7 +466,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                           data-fullname="<?php echo htmlspecialchars($acc['full_name']); ?>"
                           data-email="<?php echo htmlspecialchars($acc['email']); ?>"
                           data-status="<?php echo htmlspecialchars($acc['status']); ?>"
-                          data-role="admin"
+                          data-agency="" data-role="admin"
                           title="Edit"><i class="bi bi-pencil-square"></i></button>
 
                   <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
@@ -512,7 +540,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                         data-fullname="<?php echo htmlspecialchars($acc['full_name']); ?>"
                         data-email="<?php echo htmlspecialchars($acc['email']); ?>"
                         data-status="<?php echo htmlspecialchars($acc['status']); ?>"
-                        data-role="super_admin"
+                        data-agency="" data-role="super_admin"
                         title="Edit"><i class="bi bi-pencil-square"></i></button>
 
                 <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
@@ -578,17 +606,25 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
             <label class="form-label">Role</label>
             <select class="form-select" name="role" id="roleSelect">
               <?php if ($isSuperAdmin): ?>
-                <option value="employee">Employee</option>
+                <option value="employee" selected>Employee</option>
                 <option value="admin">Admin</option>
                 <option value="super_admin">Super Admin</option>
               <?php else: // admin ?>
-                <option value="employee">Employee</option>
+                <option value="employee" selected>Employee</option>
                 <option value="admin">Admin</option>
               <?php endif; ?>
             </select>
           </div>
 
-          <!-- No Status here; status is editable in Edit modal -->
+          <!-- NEW: Agency (visible only if role = employee) -->
+          <div class="mb-3" id="agencyWrapper">
+            <label class="form-label">Agency (for Employee) <span class="text-danger">*</span></label>
+            <select class="form-select" name="agency" id="agencySelect">
+              <option value="">-- Select agency --</option>
+              <option value="csnk">CSNK</option>
+              <option value="smc">SMC</option>
+            </select>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -600,7 +636,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
 </div>
 <?php endif; ?>
 
-<!-- Edit Account Modal (for all roles; RBAC enforced server-side) -->
+<!-- Edit Account Modal -->
 <?php if ($isSuperAdmin || $isAdmin): ?>
 <div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
@@ -632,6 +668,17 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <!-- NEW: Agency shown only if editing an EMPLOYEE -->
+          <div class="mb-3 d-none" id="editAgencyWrapper">
+            <label class="form-label">Agency (Employee)</label>
+            <select class="form-select" name="edit_agency" id="editAgency">
+              <option value="">-- Select agency --</option>
+              <option value="csnk">CSNK</option>
+              <option value="smc">SMC</option>
+            </select>
+          </div>
+
           <small class="text-muted">Role is not changed here.</small>
         </div>
         <div class="modal-footer">
@@ -727,10 +774,32 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
     if(!bar||!pwd)return; const sc=score(pwd.value); bar.style.width=sc+'%'; bar.classList.remove('bg-danger','bg-warning','bg-success'); if(sc<50)bar.classList.add('bg-danger'); else if(sc<80)bar.classList.add('bg-warning'); else bar.classList.add('bg-success');
   }
   pwd?.addEventListener('input', updateBar); pwd?.addEventListener('blur', updateBar);
-  pwd2?.addEventListener('input', ()=>{ if(!pwd2.value){matchHint.textContent='';return;} if(pwd.value!==pwd2.value){matchHint.textContent='Passwords do not match.'; matchHint.classList.add('text-danger'); matchHint.classList.remove('text-success');} else {matchHint.textContent='Passwords match.'; matchHint.classList.add('text-success'); matchHint.classList.remove('text-danger');} });
+  pwd2?.addEventListener('input', ()=>{
+    if(!pwd2.value){matchHint.textContent='';return;}
+    if(pwd.value!==pwd2.value){matchHint.textContent='Passwords do not match.'; matchHint.classList.add('text-danger'); matchHint.classList.remove('text-success');}
+    else {matchHint.textContent='Passwords match.'; matchHint.classList.add('text-success'); matchHint.classList.remove('text-danger');}
+  });
 
   function isStrong(p){ return p.length>=10 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /\d/.test(p) && /[\W_]/.test(p) && !/(.)\1{3,}/.test(p); }
-  document.getElementById('addAccountForm')?.addEventListener('submit', (e)=>{ if(!isStrong(pwd.value)){ e.preventDefault(); alert('Use a strong password (min 10 chars; upper, lower, number, special).'); } if(pwd.value!==pwd2.value){ e.preventDefault(); alert('Passwords do not match.'); } });
+  document.getElementById('addAccountForm')?.addEventListener('submit', (e)=>{
+    if(!isStrong(pwd.value)){ e.preventDefault(); alert('Use a strong password (min 10 chars; upper, lower, number, special).'); }
+    if(pwd.value!==pwd2.value){ e.preventDefault(); alert('Passwords do not match.'); }
+    const roleSel = document.getElementById('roleSelect');
+    const agencySel = document.getElementById('agencySelect');
+    if (roleSel?.value === 'employee') {
+      if (!agencySel?.value) { e.preventDefault(); alert('Please choose an agency (CSNK or SMC) for employee.'); }
+    }
+  });
+
+  // Show/hide Agency when role changes (Add modal)
+  const roleSelect = document.getElementById('roleSelect');
+  const agencyWrap = document.getElementById('agencyWrapper');
+  function refreshAgencyVisibility() {
+    if (!roleSelect || !agencyWrap) return;
+    agencyWrap.style.display = (roleSelect.value === 'employee') ? 'block' : 'none';
+  }
+  roleSelect?.addEventListener('change', refreshAgencyVisibility);
+  refreshAgencyVisibility();
 
   // Fill Reset modal
   const resetModal = document.getElementById('resetPasswordModal');
@@ -750,6 +819,19 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
     document.getElementById('editEmail').value    = btn?.getAttribute('data-email') || '';
     document.getElementById('editStatus').value   = (btn?.getAttribute('data-status') || 'active') === 'inactive' ? 'inactive' : 'active';
     document.getElementById('editRoleHidden').value = btn?.getAttribute('data-role') || '';
+
+    // Show/hide Agency field only for employee target
+    const role = btn?.getAttribute('data-role') || '';
+    const wrap = document.getElementById('editAgencyWrapper');
+    const agSel= document.getElementById('editAgency');
+    if (role === 'employee') {
+      wrap?.classList.remove('d-none');
+      const ag = btn?.getAttribute('data-agency') || '';
+      if (agSel) agSel.value = (ag === 'smc' ? 'smc' : (ag === 'csnk' ? 'csnk' : ''));
+    } else {
+      wrap?.classList.add('d-none');
+      if (agSel) agSel.value = '';
+    }
   });
 })();
 </script>
