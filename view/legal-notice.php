@@ -2,167 +2,309 @@
 session_start();
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Legal Notice - CSNK Manpower Agency</title>
+
+  <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    :root {
-      --accent-red: #D72638;
-      --ink: #111111;
-      --muted-ink: #6c757d;
-    }
-    body {
-      background: #f8f9fa;
-      color: var(--ink);
-    }
-    .content-section {
-      background: white;
-      border-radius: 8px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    h1 {
-      color: var(--accent-red);
-      margin-bottom: 1rem;
-    }
-    h2 {
-      color: var(--accent-red);
-      font-size: 1.5rem;
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-    }
-    .last-updated {
-      color: var(--muted-ink);
-      font-style: italic;
-      margin-bottom: 2rem;
-    }
-  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
+  <link rel="apple-touch-icon" href="/csnk/resources/img/favicons/apple-touch-icon-180.png">
+  <link rel="icon" href="/csnk/resources/img/csnk-icon.ico">
 </head>
-<body>
+
+<body class="bg-light text-body">
   <!-- Header -->
   <header>
     <?php $page = 'legal'; include __DIR__ . '/navbar.php'; ?>
   </header>
 
+  <!-- Hero Section -->
+  <section class="bg-white border-bottom">
+    <div class="container">
+      <div class="row align-items-center gy-3 py-4">
+        <div class="col">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+              <li class="breadcrumb-item active">Legal Notice</li>
+            </ol>
+          </nav>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <h1 class="h2 mb-0 text-danger">Legal Notice</h1>
+            <span class="badge text-bg-secondary">Last Updated: February 2026</span>
+          </div>
+
+          <p class="text-secondary mt-2 mb-0">
+            Important legal information regarding the use of CSNK Manpower Agency's website and services.
+          </p>
+        </div>
+
+        <div class="col-auto d-none d-md-block">
+          <i class="fa-solid fa-scale-balanced text-danger fs-1"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Main Content -->
-  <main class="container py-5">
-    <div class="content-section">
-      <h1>Legal Notice</h1>
-      <p class="last-updated">Last Updated: February 2026</p>
+  <main class="container py-4 py-md-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-3 p-md-4 p-lg-5">
 
-      <h2>1. Website Operator</h2>
-      <p>
-        <strong>Company Name:</strong> CSNK Manpower Agency<br>
-        <strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR, Sixth District<br>
-        <strong>Email:</strong> csnkmanila06@gmail.com<br>
-        <strong>Phone:</strong> 0945 657 0878
-      </p>
+        <!-- Summary -->
+        <div class="alert alert-light border mb-4 d-flex gap-3">
+          <i class="fa-solid fa-circle-info text-danger pt-1"></i>
+          <div>
+            <div class="fw-semibold">Important Notice</div>
+            <div class="mt-1">
+              This section outlines the legal terms, disclaimers, responsibilities, and limitations governing
+              your use of our website and services.
+            </div>
+          </div>
+        </div>
 
-      <h2>2. Terms of Use</h2>
-      <p>
-        By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement. 
-        If you do not agree to abide by the above, please do not use this service.
-      </p>
+        <!-- Accordion -->
+        <div class="accordion" id="legalAccordion">
 
-      <h2>3. Use License</h2>
-      <p>
-        Permission is granted to temporarily download one copy of the materials (information or software) on our website 
-        for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, 
-        and under this license you may not:
-      </p>
-      <ul>
-        <li>Modify or copy the materials</li>
-        <li>Use the materials for any commercial purpose or for any public display</li>
-        <li>Attempt to reverse engineer, decompile, or disassemble any software contained on the website</li>
-        <li>Remove any copyright or other proprietary notations from the materials</li>
-        <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
-        <li>Use automated tools or scripts to access our website without authorization</li>
-      </ul>
+          <!-- 1 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading1">
+              <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse1" aria-expanded="true">
+                1. Website Operator
+              </button>
+            </h2>
+            <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#legalAccordion">
+              <div class="accordion-body">
+                <p class="mb-2"><strong>Company Name:</strong> CSNK Manpower Agency</p>
+                <p class="mb-2"><strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR</p>
+                <p class="mb-2"><strong>Email:</strong> csnkmanila06@gmail.com</p>
+                <p class="mb-0"><strong>Phone:</strong> 0945 657 0878</p>
+              </div>
+            </div>
+          </div>
 
-      <h2>4. Disclaimer</h2>
-      <p>
-        The materials on our website are provided on an 'as is' basis. CSNK Manpower Agency makes no warranties, 
-        expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, 
-        implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
-      </p>
+          <!-- 2 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading2">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse2">
+                2. Terms of Use
+              </button>
+            </h2>
+            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#legalAccordion">
+              <div class="accordion-body">
+                By using this website, you agree to comply with the terms and conditions outlined on this page.
+                If you do not accept these terms, you must discontinue use of the website.
+              </div>
+            </div>
+          </div>
 
-      <h2>5. Limitations</h2>
-      <p>
-        In no event shall CSNK Manpower Agency or its suppliers be liable for any damages (including, without limitation, 
-        damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use 
-        the materials on our website, even if we or our authorized representative has been notified orally or in writing 
-        of the possibility of such damage.
-      </p>
+          <!-- 3 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse3">
+                3. Use License
+              </button>
+            </h2>
+            <div id="collapse3" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                <p class="mb-2">You may temporarily download materials for non-commercial, personal viewing only. Under this license you may not:</p>
+                <ul>
+                  <li>Modify or copy materials</li>
+                  <li>Use materials for commercial/public display</li>
+                  <li>Reverse engineer software</li>
+                  <li>Remove copyright notices</li>
+                  <li>Transfer content or mirror it to other servers</li>
+                  <li>Use automated tools to access data without permission</li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
-      <h2>6. Accuracy of Materials</h2>
-      <p>
-        The materials appearing on our website could include technical, typographical, or photographic errors. 
-        CSNK Manpower Agency does not warrant that any of the materials on our website are accurate, complete, or current. 
-        CSNK Manpower Agency may make changes to the materials contained on our website at any time without notice.
-      </p>
+          <!-- 4 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse4">
+                4. Disclaimer
+              </button>
+            </h2>
+            <div id="collapse4" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                All materials on this website are provided “as is” without any expressed or implied warranties,
+                including merchantability, fitness for purpose, or non‑infringement.
+              </div>
+            </div>
+          </div>
 
-      <h2>7. Links</h2>
-      <p>
-        CSNK Manpower Agency has not reviewed all of the sites linked to its website and is not responsible for the contents 
-        of any such linked site. The inclusion of any link does not imply endorsement by CSNK Manpower Agency of the site. 
-        Use of any such linked website is at the user's own risk.
-      </p>
+          <!-- 5 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse5">
+                5. Limitations
+              </button>
+            </h2>
+            <div id="collapse5" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                CSNK Manpower Agency shall not be held liable for damages resulting from the use or inability to use the materials on the website.
+              </div>
+            </div>
+          </div>
 
-      <h2>8. Modifications</h2>
-      <p>
-        CSNK Manpower Agency may revise these terms of service for its website at any time without notice. 
-        By using this website, you are agreeing to be bound by the then current version of these terms of service.
-      </p>
+          <!-- 6 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse6">
+                6. Accuracy of Materials
+              </button>
+            </h2>
+            <div id="collapse6" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                The website may contain technical, typographical, or photographic errors. Information may change at any time without notice.
+              </div>
+            </div>
+          </div>
 
-      <h2>9. Governing Law</h2>
-      <p>
-        These terms and conditions are governed by and construed in accordance with the laws of the Republic of the Philippines, 
-        and you irrevocably submit to the exclusive jurisdiction of the courts in that location.
-      </p>
+          <!-- 7 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse7">
+                7. Links
+              </button>
+            </h2>
+            <div id="collapse7" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                External links are not reviewed by CSNK Manpower Agency. We are not responsible for the content of external websites.
+              </div>
+            </div>
+          </div>
 
-      <h2>10. Employment Services Disclaimer</h2>
-      <p>
-        CSNK Manpower Agency acts as a placement and recruitment service provider. We connect qualified candidates with 
-        potential employers. We do not guarantee employment or any specific outcome. All employment relationships are 
-        between the candidate and the employer. We are not responsible for:
-      </p>
-      <ul>
-        <li>Employment disputes or disagreements between candidates and employers</li>
-        <li>Wage or salary payment issues</li>
-        <li>Workplace safety or compliance matters</li>
-        <li>Non-payment or financial issues arising from employment</li>
-      </ul>
+          <!-- 8 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse8">
+                8. Modifications
+              </button>
+            </h2>
+            <div id="collapse8" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                CSNK Manpower Agency may revise its terms of service at any time. Continued website use constitutes agreement to the updated terms.
+              </div>
+            </div>
+          </div>
 
-      <h2>11. Data Protection</h2>
-      <p>
-        CSNK Manpower Agency is committed to complying with data protection laws. Information provided to us is handled 
-        with appropriate security measures. For more details, please refer to our Privacy Policy.
-      </p>
+          <!-- 9 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse9">
+                9. Governing Law
+              </button>
+            </h2>
+            <div id="collapse9" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                These terms are governed by the laws of the Republic of the Philippines.
+              </div>
+            </div>
+          </div>
 
-      <h2>12. Intellectual Property Rights</h2>
-      <p>
-        All content, including text, graphics, logos, images, and software, on our website is the property of CSNK Manpower Agency 
-        or its content suppliers and is protected by international copyright laws. Unauthorized reproduction or distribution is prohibited.
-      </p>
+          <!-- 10 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse10">
+                10. Employment Services Disclaimer
+              </button>
+            </h2>
+            <div id="collapse10" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                <p class="mb-2">CSNK Manpower Agency acts only as a placement intermediary. We are not liable for:</p>
+                <ul>
+                  <li>Employer‑employee disputes</li>
+                  <li>Salary/wage issues</li>
+                  <li>Workplace safety concerns</li>
+                  <li>Employment-related financial issues</li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
-      <h2>13. Contact Information</h2>
-      <p>
-        If you have any questions regarding this Legal Notice, please contact us at:
-      </p>
-      <ul>
-        <li><strong>Email:</strong> <a href="mailto:csnkmanila06@gmail.com">csnkmanila06@gmail.com</a></li>
-        <li><strong>Phone:</strong> 0945 657 0878</li>
-        <li><strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR, Sixth District</li>
-      </ul>
+          <!-- 11 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse11">
+                11. Data Protection
+              </button>
+            </h2>
+            <div id="collapse11" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                We comply with applicable data protection laws. See our Privacy Policy for details.
+              </div>
+            </div>
+          </div>
+
+          <!-- 12 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse12">
+                12. Intellectual Property Rights
+              </button>
+            </h2>
+            <div id="collapse12" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                All content on this website is owned by CSNK Manpower Agency and protected by copyright laws.
+              </div>
+            </div>
+          </div>
+
+          <!-- 13 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse13">
+                13. Contact Information
+              </button>
+            </h2>
+            <div id="collapse13" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                <ul class="list-unstyled mb-0">
+                  <li class="mb-2"><i class="fa-solid fa-envelope text-danger me-2"></i> csnkmanila06@gmail.com</li>
+                  <li class="mb-2"><i class="fa-solid fa-phone text-danger me-2"></i> 0945 657 0878</li>
+                  <li><i class="fa-solid fa-location-dot text-danger me-2"></i> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St., Sta Ana, Manila</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back to Top -->
+        <div class="d-flex justify-content-end mt-4">
+          <a href="#" class="text-decoration-none">
+            <i class="fa-solid fa-arrow-up me-2"></i>Back to top
+          </a>
+        </div>
+
+      </div>
     </div>
   </main>
 
   <!-- Footer -->
-  <footer>
+  <footer class="mt-auto">
     <?php include __DIR__ . '/footer.php'; ?>
   </footer>
 

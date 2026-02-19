@@ -346,28 +346,31 @@ async function fetchApplicants(options = {}) {
     serverPerPage = Number(json.per_page || per_page);
     currentPage = Number(json.page || page);
 
-    // --- Auto Rumble / Round-robin rotation ---
-    // Rotates the order of applicants on each full page load to avoid always showing the same
-    // applicants at the top. Use URL param `?rotate=0` to disable for testing.
+    // --- Advanced Client-Side Randomization (works with server-side randomization) ---
+    // Additional shuffling to ensure even more variety, especially when paginating
+    // Server-side randomization handles cross-session fairness, client-side adds per-page variety
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const rotateDisabled = urlParams.get('rotate') === '0';
       if (!rotateDisabled && filteredApplicants.length > 1) {
-        const key = 'csnk_applicants_rotate_index';
-        let idx = parseInt(localStorage.getItem(key) || '0', 10);
-        if (!Number.isFinite(idx) || idx < 0) idx = 0;
-        const len = filteredApplicants.length;
-        const shift = idx % len;
-        if (shift !== 0) {
-          filteredApplicants = filteredApplicants.slice(shift).concat(filteredApplicants.slice(0, shift));
+        // Use Fisher-Yates shuffle with a seed based on current page and session
+        // This ensures different pages show different orders while maintaining consistency
+        const pageSeed = currentPage || 1;
+        const sessionKey = 'csnk_shuffle_seed_' + pageSeed;
+        let seed = parseInt(sessionStorage.getItem(sessionKey) || '0', 10);
+        
+        // Generate a new seed if this is the first time viewing this page
+        if (seed === 0) {
+          seed = Math.floor(Math.random() * 1000000);
+          sessionStorage.setItem(sessionKey, String(seed));
         }
-        // Advance pointer for next page load
-        idx = (idx + 1) % len;
-        localStorage.setItem(key, String(idx));
-        console.debug('[AutoRumble] rotated by', shift, 'next idx', idx);
+        
+        // Shuffle using seeded random (deterministic but varied per page)
+        filteredApplicants = seededShuffle(filteredApplicants, seed);
+        console.debug('[Advanced Randomization] Applied seeded shuffle for page', currentPage);
       }
     } catch (err) {
-      console.warn('AutoRumble rotation failed:', err);
+      console.warn('Advanced randomization failed:', err);
     }
 
     renderApplicants();
@@ -393,6 +396,10 @@ function setupEventListeners() {
     // Live search (debounced) for smoother UX
     const qInput = searchForm.querySelector('input[name="q"]');
     if (qInput) qInput.addEventListener('input', debounce(() => applyFilters(), 250));
+    
+    // Live search for location field (debounced)
+    const locationInput = searchForm.querySelector('input[name="location"]');
+    if (locationInput) locationInput.addEventListener('input', debounce(() => applyFilters(), 250));
   }
 
   if (filtersForm) {
@@ -514,6 +521,26 @@ function shuffleArray(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// Seeded shuffle function for deterministic randomization
+function seededShuffle(arr, seed) {
+  const a = arr.slice();
+  let rng = seededRandom(seed);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Simple seeded random number generator
+function seededRandom(seed) {
+  let value = seed;
+  return function() {
+    value = (value * 9301 + 49297) % 233280;
+    return value / 233280;
+  };
 }
 
 function isWithinDays(dateStr, days) {

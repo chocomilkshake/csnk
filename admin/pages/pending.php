@@ -70,11 +70,7 @@ if (isset($_GET['action'])) {
             }
 
             if (function_exists('setFlashMessage')) {
-                if ($updated) {
-                    setFlashMessage('success', 'Status updated successfully.');
-                } else {
-                    setFlashMessage('error', 'Failed to update status. Please try again.');
-                }
+                setFlashMessage($updated ? 'success' : 'error', $updated ? 'Status updated successfully.' : 'Failed to update status. Please try again.');
             }
 
             if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
@@ -114,10 +110,8 @@ if (isset($_GET['action'])) {
         if (method_exists($applicant, 'softDelete')) {
             $deleted = (bool) $applicant->softDelete($id);
         } elseif (method_exists($applicant, 'update')) {
-            // Fallback: mark as deleted via status if your schema uses that
             $deleted = (bool) $applicant->update($id, ['status' => 'deleted']);
         } else {
-            // Final fallback: direct query (requires PDO $database)
             try {
                 if (isset($database) && $database instanceof PDO) {
                     $stmt = $database->prepare("UPDATE applicants SET status = 'deleted' WHERE id = :id");
@@ -129,11 +123,7 @@ if (isset($_GET['action'])) {
         }
 
         if (function_exists('setFlashMessage')) {
-            if ($deleted) {
-                setFlashMessage('success', 'Applicant deleted successfully.');
-            } else {
-                setFlashMessage('error', 'Failed to delete applicant.');
-            }
+            setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
         }
 
         if ($deleted && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
@@ -208,9 +198,8 @@ function filterApplicantsByQuery(array $rows, string $query): array {
         $suffix = (string)($app['suffix']       ?? '');
         $email  = (string)($app['email']        ?? '');
         $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999); // full for search
+        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
 
-        // Name variants
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
         $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
@@ -234,39 +223,37 @@ if ($q !== '') {
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
-<!-- ===== Dropdown Fix + Remove Table Scroll ===== -->
+<!-- ===== Dropdown Fix: prevent clipping + ensure stacking above other rows ===== -->
 <style>
-    /* Remove scroll from table and allow dropdowns to overflow cleanly */
+    /* 1) Never clip dropdowns in the table/card container */
     .table-card,
-    .table-card .card-body {
+    .table-card .card-body,
+    .table-card .table-responsive,
+    .table-card table,
+    .table-card thead,
+    .table-card tbody,
+    .table-card tr,
+    .table-card th,
+    .table-card td {
         overflow: visible !important;
     }
 
-    /* If a .table-responsive was ever added by other includes, disable its scroll & clipping */
-    .table-card .table-responsive {
-        overflow: visible !important; /* no scroll, no clipping */
-    }
+    /* 2) Base container context */
+    .table-card { position: relative; z-index: 0; }
 
-    /* Ensure the cell that holds actions can show dropdown outside */
-    td.actions-cell {
-        position: relative;
-        overflow: visible;
-        z-index: 10;
-        white-space: nowrap;
-    }
+    /* 3) Actions cell keeps menu visible and aligned */
+    td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
 
-    /* Ensure table, tbody, tr don't clip dropdowns */
-    .table-card table, .table-card tbody, .table-card tr {
-        overflow: visible !important;
-    }
+    /* 4) Elevate the currently-open row so its dropdown sits on top of neighbors */
+    .table-card tr.row-raised { position: relative; z-index: 1060; }
 
-    /* Modern dropdown styling - static display keeps menu visible */
+    /* 5) Modern dropdown styling + very high z-index to be safe */
     .dd-modern .dropdown-menu {
-        border-radius: .75rem; /* rounded-xl */
-        border: 1px solid #e5e7eb; /* slate-200 */
+        border-radius: .75rem;
+        border: 1px solid #e5e7eb;
         box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+        min-width: 180px;
         z-index: 9999 !important;
-        min-width: 160px;
     }
     .dd-modern .dropdown-item {
         display: flex;
@@ -275,27 +262,15 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
         padding: .55rem .9rem;
         font-weight: 500;
     }
-    .dd-modern .dropdown-item .bi {
-        font-size: 1rem;
-        opacity: .9;
-    }
-    .dd-modern .dropdown-item:hover {
-        background-color: #f8fafc; /* slate-50 */
-    }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
     .dd-modern .dropdown-item.disabled,
     .dd-modern .dropdown-item:disabled {
-        color: #9aa0a6;
-        background-color: transparent;
-        pointer-events: none;
+        color: #9aa0a6; background-color: transparent; pointer-events: none;
     }
-    .btn-status {
-        border-radius: .75rem; /* rounded-xl */
-    }
+    .btn-status { border-radius: .75rem; }
 
-    /* Optional: keep table tidy without forcing scroll */
-    table.table-styled {
-        margin-bottom: 0;
-    }
+    table.table-styled { margin-bottom: 0; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -331,7 +306,7 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
 
 <div class="card table-card">
     <div class="card-body">
-        <!-- Removed .table-responsive to avoid scroll/clipping -->
+        <!-- No .table-responsive wrapper to avoid scroll/clipping -->
         <table class="table table-bordered table-striped table-hover table-styled align-middle">
             <thead>
                 <tr>
@@ -402,7 +377,7 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                             <td><?php echo htmlspecialchars(formatDate($app['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="actions-cell">
                                 <!-- Single button group with a dropup menu -->
-                                <div class="btn-group dropup dd-modern position-static">
+                                <div class="btn-group dropup dd-modern">
                                     <!-- View -->
                                     <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                        class="btn btn-sm btn-info" title="View">
@@ -423,13 +398,15 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                         <i class="bi bi-trash"></i>
                                     </a>
 
-                                    <!-- Change Status Dropdown - static display so it shows in-place -->
+                                    <!-- Change Status Dropdown -->
                                     <div class="dropdown">
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
                                             data-bs-toggle="dropdown"
                                             data-bs-auto-close="true"
+                                            data-bs-display="static"
+                                            data-bs-offset="0,8"
                                             aria-expanded="false"
                                             aria-haspopup="true"
                                             title="Change Status"
@@ -437,28 +414,29 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
                                             <i class="bi bi-arrow-left-right me-1"></i>
                                             Change Status
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
-                                        <li>
-                                            <a class="dropdown-item <?php echo ($currentStatus === 'pending') ? 'disabled' : ''; ?>"
-                                               href="<?php echo ($currentStatus === 'pending') ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-hourglass-split text-warning"></i>
-                                                <span>Pending</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo ($currentStatus === 'on_process') ? 'disabled' : ''; ?>"
-                                               href="<?php echo ($currentStatus === 'on_process') ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-arrow-repeat text-info"></i>
-                                                <span>On-Process</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo ($currentStatus === 'approved') ? 'disabled' : ''; ?>"
-                                               href="<?php echo ($currentStatus === 'approved') ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-check2-circle text-success"></i>
-                                                <span>Approved</span>
-                                            </a>
-                                        </li>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow"
+                                            aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
+                                            <li>
+                                                <a class="dropdown-item <?php echo ($currentStatus === 'pending') ? 'disabled' : ''; ?>"
+                                                   href="<?php echo ($currentStatus === 'pending') ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-hourglass-split text-warning"></i>
+                                                    <span>Pending</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo ($currentStatus === 'on_process') ? 'disabled' : ''; ?>"
+                                                   href="<?php echo ($currentStatus === 'on_process') ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-arrow-repeat text-info"></i>
+                                                    <span>On-Process</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo ($currentStatus === 'approved') ? 'disabled' : ''; ?>"
+                                                   href="<?php echo ($currentStatus === 'approved') ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-check2-circle text-success"></i>
+                                                    <span>Approved</span>
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -473,12 +451,17 @@ $exportUrl = '../includes/excel_pending.php' . ($q !== '' ? ('?q=' . urlencode($
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Manually initialize Change Status dropdowns (Bootstrap 5)
-    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
-    btns.forEach(function(btn) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
-        }
+    // Raise the active row while a dropdown is open so it sits above neighbors
+    // Bootstrap 5 auto-initializes dropdowns via data-bs-toggle="dropdown"
+    document.querySelectorAll('.actions-cell .dropdown').forEach(function(dd) {
+        dd.addEventListener('show.bs.dropdown', function() {
+            var tr = dd.closest('tr');
+            if (tr) tr.classList.add('row-raised');
+        });
+        dd.addEventListener('hidden.bs.dropdown', function() {
+            var tr = dd.closest('tr');
+            if (tr) tr.classList.remove('row-raised');
+        });
     });
 });
 </script>

@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="/resources/img/smc.png" />
   <link rel="icon" type="image/png" href="../resources/img/smc.png" />
   <link rel="apple-touch-icon" href="../resources/img/smc.png" />
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#0B1F3A">
 
   <!-- CSS: Bootstrap, Icons, App styles -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -32,14 +32,14 @@
   <?php include __DIR__ . '/navbar.php'; ?>
 
   <main class="container py-4">
-    <div class="mb-3"><h1 class="h3 mb-0">Kasambahay Applicants</h1></div>
+    <div class="mb-3"><h1 class="h3 mb-0 text-navy">Kasambahay Applicants</h1></div>
 
     <!-- Search Bar -->
     <section class="search-wrap mb-4">
       <form id="searchForm" role="search">
         <div class="search-pill d-flex align-items-stretch bg-white border border-2 rounded-pill shadow-sm p-2 p-sm-3 w-100">
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
-            <i class="bi bi-hospital-fill text-danger me-2 fs-5"></i>
+            <i class="bi bi-hospital-fill text-navy me-2 fs-5"></i>
             <input
               type="text"
               class="form-control border-0 bg-transparent ps-3 min-w-0"
@@ -53,7 +53,7 @@
           <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
 
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
-            <i class="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
+            <i class="bi bi-geo-alt-fill text-navy me-2 fs-5"></i>
             <input
               type="text"
               class="form-control border-0 bg-transparent ps-3 min-w-3"
@@ -65,7 +65,7 @@
           </div>
 
           <div class="d-flex align-items-center ps-2 ps-sm-3">
-            <button class="btn btn-danger rounded-pill px-3 px-sm-4" type="submit">
+            <button class="btn btn-navy rounded-pill px-3 px-sm-4" type="submit">
               <i class="bi bi-search me-1"></i>
               <span class="fw-medium">Search</span>
             </button>
@@ -77,7 +77,7 @@
     <div class="row">
       <!-- Sidebar Filters -->
       <aside class="col-12 col-lg-3 mb-4">
-        <button class="btn btn-outline-secondary d-lg-none mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtersCanvas">
+        <button class="btn btn-outline-navy d-lg-none mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtersCanvas">
           <i class="bi bi-funnel"></i> Filters
         </button>
         <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="filtersCanvas" aria-labelledby="filtersCanvasLabel">
@@ -204,8 +204,8 @@
               </div>
 
               <div class="d-grid gap-1">
-                <button class="btn btn-primary" id="applyFilters" type="button">Apply Filters</button>
-                <a class="btn btn-outline-secondary" href="#" id="resetFilters">Reset</a>
+                <button class="btn btn-navy" id="applyFilters" type="button">Apply Filters</button>
+                <a class="btn btn-outline-navy" href="#" id="resetFilters">Reset</a>
               </div>
 
             </form>
@@ -217,7 +217,7 @@
       <section class="col-12 col-lg-9">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div class="small text-secondary" id="resultsCount">Showing 0 of 0 applicants</div>
-          <div class="d-none d-lg-block"><i class="bi bi-grid"></i></div>
+          <div class="d-none d-lg-block"><i class="bi bi-grid text-navy"></i></div>
         </div>
 
         <!-- NOTE: data-exclude-status added for clarity and future JS use -->
@@ -236,19 +236,19 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content shadow border-0 rounded-4">
         <div class="modal-header border-0">
-          <h1 class="modal-title fs-5 fw-bold">Applicant Profile</h1>
+          <h1 class="modal-title fs-5 fw-bold text-navy">Applicant Profile</h1>
         </div>
 
         <!-- Body IDs must match app.js -->
         <div class="modal-body pt-0">
           <!-- Header strip -->
-          <div class="p-3 mb-3 d-flex gap-3 align-items-center rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <div id="avatar" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f4f6;border:1px solid #ffffff;color:#991b1b;font-weight:900;"></div>
+          <div class="p-3 mb-3 d-flex gap-3 align-items-center rounded-3 border-soft" style="background:#fff;">
+            <div id="avatar" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f6fb;border:1px solid #ffffff;color:#0B1F3A;font-weight:900;"></div>
             <div class="flex-grow-1">
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="fw-bold fs-6" id="name">Applicant Name</span>
-                <span class="badge rounded-pill" id="primaryRole" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">Role</span>
-                <span class="badge rounded-pill" id="yoeBadge" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">0 yrs</span>
+                <span class="fw-bold fs-6 text-navy" id="name">Applicant Name</span>
+                <span class="badge rounded-pill" id="primaryRole" style="background:#ffffff;color:#0B1F3A;border:1px solid #e6ecf5;">Role</span>
+                <span class="badge rounded-pill" id="yoeBadge" style="background:#ffffff;color:#0B1F3A;border:1px solid #e6ecf5;">0 yrs</span>
               </div>
               <!-- City & Region only -->
               <div class="mt-1 text-muted" id="availabilityLine">City, Region</div>
@@ -256,48 +256,48 @@
           </div>
 
           <!-- Specialization -->
-          <div class="p-3 mb-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <h6 class="mb-2 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
+          <div class="p-3 mb-3 rounded-3 border-soft" style="background:#fff;">
+            <h6 class="mb-2 text-uppercase text-navy" style="letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
             <div class="d-flex flex-wrap gap-2" id="chipsContainer"></div>
           </div>
 
           <!-- Basic Information -->
-          <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <h6 class="mb-3 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
+          <div class="p-3 rounded-3 border-soft" style="background:#fff;">
+            <h6 class="mb-3 text-uppercase text-navy" style="letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
             <div class="row g-3">
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — City</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Location — City</div>
                   <div class="fw-semibold" id="cityValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Preferred Locations (All)</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Preferred Locations (All)</div>
                   <div class="fw-semibold" id="prefLocValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of Experience</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Years of Experience</div>
                   <div class="fw-semibold" id="yoeValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Employment Type</div>
                   <div class="fw-semibold" id="employmentValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Languages</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Languages</div>
                   <div class="fw-semibold" id="langValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Educational Attainment</div>
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Educational Attainment</div>
                   <div class="fw-semibold" id="eduValue">—</div>
                 </div>
               </div>
@@ -311,14 +311,76 @@
   </div>
 
   <style>
+    /* =========================
+       NAVY + GOLD THEME TOKENS
+       ========================= */
+    :root{
+      --smc-navy: #0B1F3A;        /* deep navy */
+      --smc-navy-2: #132A4A;      /* secondary navy */
+      --smc-navy-3: #1B355C;      /* accent navy */
+      --smc-gold: #FFD84D;        /* gold accent */
+      --ink: #16243B;             /* readable text (no pure black) */
+      --muted: #6c757d;           /* neutral gray */
+      --border: #e6ecf5;          /* soft blue border */
+      --bg-soft: #f5f8ff;         /* soft blue background */
+    }
+
+    .text-navy { color: var(--smc-navy) !important; }
+    .text-gold { color: var(--smc-gold) !important; }
+    .border-soft { border: 1px solid var(--border); }
+
+    .btn-navy{
+      background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
+      color:#fff; border:0; border-radius: 999px; padding:.7rem 1.1rem; font-weight:700;
+      box-shadow: 0 10px 22px rgba(11,31,58,.18);
+    }
+    .btn-navy:hover{ filter: brightness(1.03); color:#fff; }
+
+    .btn-outline-navy{
+      border-radius:999px;
+      border:2px solid var(--smc-navy);
+      color: var(--smc-navy);
+      padding:.6rem 1.05rem;
+      background: transparent;
+      font-weight:700;
+    }
+    .btn-outline-navy:hover{ background: var(--smc-navy); color:#fff; }
+
     /* chips used inside Profile modal */
     #chipsContainer .chip{
       user-select:none; pointer-events:none;
       display:inline-block; padding:.4rem .7rem; border-radius:999px;
-      font-weight:700; font-size:.82rem; color:#000000;
-      background:#fafafa; border:1px solid #f0f0f0; position:relative;
+      font-weight:700; font-size:.82rem; color: var(--smc-navy);
+      background:#ffffff; border:1px solid var(--border); position:relative;
     }
-    #chipsContainer .chip::after{content:""; position:absolute; inset:-2px; border-radius:999px; box-shadow:0 0 0 2px #000000; opacity:.06;}
+    #chipsContainer .chip::after{
+      content:""; position:absolute; inset:-2px; border-radius:999px;
+      box-shadow:0 0 0 2px var(--smc-navy); opacity:.06;
+    }
+
+    /* Wizard panels */
+    .panel{ border:1px solid #edf0f3; border-radius:.75rem; padding:1rem; background:#fff; }
+
+    /* Stepper */
+    .stepper .step{ flex:1; text-align:center; font-size:.875rem; color:#6c757d; }
+    .stepper .step .dot{
+      width:28px;height:28px;line-height:28px;border-radius:50%;
+      display:inline-block;background:#dee2e6;color:#495057;font-weight:600;margin-bottom:.35rem;
+    }
+    .stepper .step.active .dot,.stepper .step.completed .dot{ background: var(--smc-navy); color:#fff; }
+    .stepper .step.active,.stepper .step.completed{ color: var(--smc-navy); font-weight:700; }
+
+    /* Oval tags (service selectors) */
+    .oval-tag{
+      border-radius:999px; border:2px solid var(--smc-navy); color:var(--smc-navy);
+      background:#fff; transition:.15s ease-in-out;
+      font-weight:700;
+    }
+    .oval-tag.active,.oval-tag:hover{ background: var(--smc-navy); color:#fff; }
+
+    /* Booking wizard primary action */
+    .btn-brand{ background: var(--smc-navy); border-color: var(--smc-navy); }
+    .btn-brand:hover{ filter:brightness(1.03); }
   </style>
 
   <!-- Booking Modal (5-step wizard) -->
@@ -327,7 +389,7 @@
       <div class="modal-content shadow">
 
         <div class="modal-header px-4 pt-4 border-0">
-          <h5 class="modal-title fw-bold">Booking Appointment</h5>
+          <h5 class="modal-title fw-bold text-navy">Booking Appointment</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
@@ -347,10 +409,10 @@
           <div class="border rounded-3 p-3 mb-3">
             <div class="d-flex align-items-center gap-3">
               <div id="bkAvatar" class="rounded-circle d-grid place-items-center fw-bolder"
-                   style="width:56px;height:56px;background:#f3f4f6;color:#991b1b;border:1px solid #fff;display:grid;place-items:center;">
+                   style="width:56px;height:56px;background:#f3f6fb;color:#0B1F3A;border:1px solid #fff;display:grid;place-items:center;">
               </div>
               <div class="small">
-                <div class="fw-bold" id="bkName">Applicant Name</div>
+                <div class="fw-bold text-navy" id="bkName">Applicant Name</div>
                 <div class="text-muted" id="bkMeta">—</div>
               </div>
             </div>
@@ -359,7 +421,7 @@
           <!-- STEP 1: Services -->
           <div class="step-pane" data-step-pane="1">
             <div class="panel mb-3">
-              <h6 class="mb-2">Tell us what work you need from this applicant</h6>
+              <h6 class="mb-2 text-navy">Tell us what work you need from this applicant</h6>
               <p class="text-muted small mb-3">Select all applicable services. This helps us prepare the interview and match expectations.</p>
               <div class="row g-2">
                 <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cleaning &amp; Housekeeping (General)">Cleaning &amp; Housekeeping (General)</button></div>
@@ -375,23 +437,23 @@
           <!-- STEP 2: Appointment Type -->
           <div class="step-pane d-none" data-step-pane="2">
             <div class="panel mb-3">
-              <h6 class="mb-3">How would you like to interview the applicant?</h6>
+              <h6 class="mb-3 text-navy">How would you like to interview the applicant?</h6>
               <div class="row g-2">
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeVideo" value="Video Call" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeVideo"><i class="bi bi-camera-video me-1"></i> Video Call</label>
+                  <label class="btn btn-outline-navy w-100 py-3" for="typeVideo"><i class="bi bi-camera-video me-1"></i> Video Call</label>
                 </div>
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeAudio" value="Audio Call" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeAudio"><i class="bi bi-telephone me-1"></i> Audio Call</label>
+                  <label class="btn btn-outline-navy w-100 py-3" for="typeAudio"><i class="bi bi-telephone me-1"></i> Audio Call</label>
                 </div>
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeChat" value="Chat" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeChat"><i class="bi bi-chat-dots me-1"></i> Chat</label>
+                  <label class="btn btn-outline-navy w-100 py-3" for="typeChat"><i class="bi bi-chat-dots me-1"></i> Chat</label>
                 </div>
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeVisit" value="Office Visit" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeVisit"><i class="bi bi-building me-1"></i> Office Visit</label>
+                  <label class="btn btn-outline-navy w-100 py-3" for="typeVisit"><i class="bi bi-building me-1"></i> Office Visit</label>
                 </div>
               </div>
               <div class="small text-muted mt-2">
@@ -403,7 +465,7 @@
           <!-- STEP 3: Date & Time -->
           <div class="step-pane d-none" data-step-pane="3">
             <div class="panel mb-3">
-              <h6 class="mb-2">Choose Date &amp; Time</h6>
+              <h6 class="mb-2 text-navy">Choose Date &amp; Time</h6>
               <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
@@ -423,7 +485,7 @@
           <!-- STEP 4: Client Information -->
           <div class="step-pane d-none" data-step-pane="4">
             <div class="panel mb-3">
-              <h6 class="mb-3">Your Details</h6>
+              <h6 class="mb-3 text-navy">Your Details</h6>
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">First Name
@@ -476,7 +538,7 @@
           <!-- STEP 5: Review & Submit -->
           <div class="step-pane d-none" data-step-pane="5">
             <div class="panel mb-3">
-              <h6 class="mb-3">Review Your Request</h6>
+              <h6 class="mb-3 text-navy">Review Your Request</h6>
               <div class="border rounded p-3 mb-3">
                 <div id="bkSummary" class="small"></div>
               </div>
@@ -488,9 +550,9 @@
 
           <!-- Navigation -->
           <div class="d-flex justify-content-between pt-2">
-            <button type="button" class="btn btn-outline-dark" id="bkBack">Back</button>
+            <button type="button" class="btn btn-outline-navy" id="bkBack">Back</button>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-outline-navy" data-bs-dismiss="modal">Cancel</button>
               <button type="button" class="btn btn-brand text-white" id="bkNext">Next</button>
             </div>
           </div>
@@ -498,26 +560,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Theme (red/black) + small helpers -->
-  <style>
-    :root{ --brand-red:#c40000; --brand-black:#111; }
-    .btn-brand{ background:var(--brand-red); border-color:var(--brand-red); }
-    .btn-brand:hover{ filter:brightness(.9); }
-    .btn-darkbrand{ background:var(--brand-black); border-color:var(--brand-black); }
-
-    .panel{ border:1px solid #edf0f3; border-radius:.75rem; padding:1rem; background:#fff; }
-
-    .stepper .step{ flex:1; text-align:center; font-size:.875rem; color:#6c757d; }
-    .stepper .step .dot{ width:28px;height:28px;line-height:28px;border-radius:50%;
-      display:inline-block;background:#dee2e6;color:#495057;font-weight:600;margin-bottom:.35rem;}
-    .stepper .step.active .dot,.stepper .step.completed .dot{ background:var(--brand-red); color:#fff; }
-    .stepper .step.active,.stepper .step.completed{ color:var(--brand-red); font-weight:600; }
-
-    .oval-tag{ border-radius:999px; border:2px solid var(--brand-red); color:var(--brand-red);
-      background:#fff; transition:.15s ease-in-out; }
-    .oval-tag.active,.oval-tag:hover{ background:var(--brand-red); color:#fff; }
-  </style>
 
   <!-- JS: Bootstrap bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

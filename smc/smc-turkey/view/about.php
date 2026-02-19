@@ -16,23 +16,52 @@
   <!-- Fallback for /view/ -->
   <link rel="icon" type="image/png" href="../resources/img/smc.png" />
   <link rel="apple-touch-icon" href="../resources/img/smc.png" />
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#0B1F3A">
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-
-  <!-- ✅ Reusable Navbar -->
-  <?php include __DIR__ . '/navbar.php'; ?>
-
-  <!-- ===================== -->
-  <!-- Page Content Starts   -->
-  <!-- ===================== -->
 
   <style>
+    /* ===========================
+       NAVY + GOLD THEME TOKENS
+       =========================== */
+    :root{
+      --smc-navy: #0B1F3A;      /* deep navy */
+      --smc-navy-2: #132A4A;    /* secondary navy */
+      --smc-navy-3: #1B355C;    /* accent navy */
+      --smc-navy-ink: #16243B;  /* readable navy text (no pure black) */
+      --smc-gold: #FFD84D;      /* gold accent */
+      --soft-bg: #f5f8ff;       /* page background sections */
+      --soft-border: #e6ecf5;   /* soft border */
+      --shadow: 0 12px 28px rgba(11,31,58,.12);
+      --r-out: 1.25rem;
+      --r-in: 1rem;
+    }
+
+    body { color: var(--smc-navy-ink); background: #f8f9fb; }
     img, svg { max-width: 100%; height: auto; }
+
+    .text-navy { color: var(--smc-navy) !important; }
+    .text-muted-navy { color: #6f7e96 !important; }
+    .border-soft { border: 1px solid var(--soft-border); border-radius: var(--r-in); }
+
+    .btn-navy{
+      background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
+      color:#fff; border:0; border-radius: 999px; padding:.8rem 1.3rem; font-weight:800;
+      box-shadow: 0 12px 26px rgba(11,31,58,.22);
+    }
+    .btn-navy:hover{ filter:brightness(1.03); color:#fff; }
+    .btn-gold{
+      background: linear-gradient(180deg, #ffe169, var(--smc-gold));
+      color:#18243b; border:0; border-radius: 999px; padding:.8rem 1.3rem; font-weight:800;
+      box-shadow: 0 12px 26px rgba(255,216,77,.25);
+    }
+    .btn-gold:hover{ filter:brightness(1.03); color:#18243b; }
+
+    /* ===========================
+       HERO
+       =========================== */
     .hero-section {
       background-color: #f8f9fb;
       position: relative; isolation: isolate;
@@ -42,17 +71,17 @@
     .hero-grid {
       opacity: .22;
       background-image:
-        linear-gradient(to right, rgba(0,0,0,.06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
+        linear-gradient(to right, rgba(11,31,58,.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(11,31,58,.08) 1px, transparent 1px);
       background-size: 32px 32px, 32px 32px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,.85) 40%, rgba(0,0,0,.6) 70%, rgba(0,0,0,0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 12%, rgba(0,0,0,.85) 40%, rgba(0,0,0,.55) 70%, rgba(0,0,0,0) 100%);
     }
     .hero-gradient {
       background:
-        radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
-        radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17,17,17,0) 60%),
-        linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.25) 60%, rgba(255, 84, 84, 0) 100%);
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 10%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
+        radial-gradient(900px 400px at 15% 35%, rgba(255, 216, 77, 0.25), rgba(0,0,0,0) 60%),
+        radial-gradient(700px 350px at 80% 45%, rgba(19, 42, 74, .10), rgba(19,42,74,0) 60%),
+        linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(240, 244, 255, .6) 60%, rgba(240,244,255, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 12%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
     }
     .hero-section .container { position: relative; z-index: 1; }
     @media (max-width: 575.98px) {
@@ -63,14 +92,26 @@
     .hero-pills-abs-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     #heroPills {
       display:inline-flex; width:max-content; max-width:100%; gap:.5rem; align-items:center;
-      padding:.5rem .6rem; border-radius:999px; box-shadow:0 4px 15px rgba(0,0,0,.08); background:#fff;
+      padding:.5rem .6rem; border-radius:999px; box-shadow:0 4px 15px rgba(11,31,58,.08); background:#fff;
       scroll-snap-type: x proximity;
     }
     #heroPills .btn { flex:0 0 auto; white-space:nowrap; scroll-snap-align:start; }
-    .hero-section .btn-light.active { background:#111; color:#fff; }
+    .hero-section .btn-light.active {
+      background: var(--smc-navy); color:#fff; border:0;
+    }
 
-    /* Gallery */
-    .training-gallery .btn-icon { width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; }
+    /* ===========================
+       TRAINING GALLERY
+       =========================== */
+    .training-gallery .btn-icon {
+      width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .training-gallery .btn-icon.btn-outline-secondary{
+      border-color: var(--soft-border); color: var(--smc-navy);
+    }
+    .training-gallery .btn-icon.btn-outline-secondary:hover{
+      background: var(--smc-navy); color:#fff;
+    }
     .training-gallery .gallery-grid { display:grid; gap:1rem; grid-template-columns:1fr; }
     @media (min-width:576px){ .training-gallery .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (min-width:992px){
@@ -84,18 +125,47 @@
       .training-gallery .gallery-item[data-area="c"]{ grid-area:c; }
       .training-gallery .gallery-item[data-area="d"]{ grid-area:d; }
     }
-    .training-gallery .gallery-item { position:relative; border-radius:1rem; overflow:hidden; background:#f8f9fa; transition: transform .25s ease, box-shadow .25s ease; cursor:zoom-in; }
-    .training-gallery .gallery-item:hover { transform: translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.12); }
+    .training-gallery .gallery-item {
+      position:relative; border-radius:1rem; overflow:hidden; background:#f8f9fa;
+      transition: transform .25s ease, box-shadow .25s ease; cursor:zoom-in;
+      box-shadow: 0 10px 20px rgba(11,31,58,.06);
+    }
+    .training-gallery .gallery-item:hover { transform: translateY(-2px); box-shadow:0 12px 28px rgba(11,31,58,.12); }
     .training-gallery .gallery-item img { width:100%; height:100%; object-fit:cover; display:block; }
     .training-gallery .gallery-item[data-area="a"],
     .training-gallery .gallery-item[data-area="d"] { aspect-ratio: 3 / 4; }
     .training-gallery .gallery-item[data-area="b"],
     .training-gallery .gallery-item[data-area="c"] { aspect-ratio: 4 / 3; }
     .training-gallery .gallery-dots button { width:28px; height:4px; border-radius:999px; background:#d9dbe1; border:0; margin:0 .18rem; }
-    .training-gallery .gallery-dots button.active { background:#2f315a; }
+    .training-gallery .gallery-dots button.active { background: var(--smc-navy); }
+
     #galleryModal .modal-content { background:#000; }
     #galleryModalImg { max-height:82vh; object-fit:contain; }
+
+    /* ===========================
+       CTA
+       =========================== */
+    .cta-wrap {
+      background:
+        radial-gradient(820px 260px at 8% 5%, rgba(255,216,77,.13), rgba(255,216,77,0) 60%),
+        radial-gradient(900px 320px at 92% 110%, rgba(19,42,74,.08), rgba(19,42,74,0) 60%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
+      border-radius: var(--r-out);
+      box-shadow: 0 16px 36px rgba(11,31,58,.08), 0 1px 0 rgba(255,255,255,.6) inset;
+    }
+
+    /* Minor transitions on hero swap */
+    .is-swapping { opacity:.25; transition: opacity .15s ease; }
   </style>
+</head>
+<body class="bg-light">
+
+  <!-- ✅ Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
+
+  <!-- ===================== -->
+  <!-- Page Content Starts   -->
+  <!-- ===================== -->
 
   <!-- HERO -->
   <section class="hero-section">
@@ -109,11 +179,11 @@
         <!-- LEFT: Text + pills -->
         <div class="col-12 col-lg-6">
           <div class="hero-title-wrap mb-2">
-            <h1 id="heroTitle" class="display-4 fw-bold mb-0">Get to know SMC Manpower Agency Philippines Co.</h1>
+            <h1 id="heroTitle" class="display-4 fw-bold mb-0 text-navy">Get to know SMC Manpower Agency Philippines Co.</h1>
           </div>
 
           <div class="hero-lead-wrap mb-4">
-            <p id="heroLead" class="lead text-black-50 mb-0">
+            <p id="heroLead" class="lead text-muted-navy mb-0">
               Clear, honest and customer‑first guidance. We connect families with properly
               screened domestic workers through safe and compliant processes.
             </p>
@@ -123,17 +193,13 @@
           <div class="hero-pills-abs-wrapper">
             <div id="heroPills"
                  class="rounded-pill px-3 py-2 d-inline-flex align-items-center"
-                 role="tablist" aria-label="Hero options">
+                 role="tablist" aria-label="Hero options"> 
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
                       role="tab" aria-selected="true"
                       data-title="Get to know SMC"
-                      data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable 
-                      and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency 
-                      committed to supporting and empowering Filipino women by connecting them with safe, legitimate, and rewarding employment opportunities. 
-                      Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant 
-                      receives a fair chance to build a better future."
-                      data-img="../resources/img/overview.png"
+                      data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
+                      data-img="../resources/img/overview3.png"
                       data-img-alt="Overview image">
                 Overview
               </button>
@@ -141,10 +207,7 @@
               <button type="button" class="btn btn-light rounded-pill px-3 py-2"
                       role="tab" aria-selected="false"
                       data-title="Meet Founder of SMC"
-                      data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. 
-                      A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help 
-                      Filipino women build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 
-                      and remains committed to ensuring that SMC carries out its mission with integrity."
+                      data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
                       data-img="../resources/img/MrRog.png"
                       data-img-alt="Founder image">
                 Founder
@@ -158,7 +221,7 @@
 
         <!-- RIGHT: Image -->
         <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4" style="filter: drop-shadow(0 12px 22px rgba(0,0,0,.18)); width: clamp(260px, 40vw, 520px);">
+          <div class="hero-image-wrap rounded-4" style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(260px, 40vw, 520px);">
             <img id="heroImg"
                  src="../resources/img/hero1.jpg"
                  alt="Hero visual"
@@ -176,7 +239,7 @@
   <section id="training-gallery" class="training-gallery py-5 bg-white">
     <div class="container">
       <div class="d-flex align-items-center justify-content-between mb-3">
-        <h2 class="h1 fw-bold mb-0">Gallery</h2>
+        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
 
         <!-- Desktop/Tablet arrows -->
         <div class="d-none d-sm-flex align-items-center gap-2">
@@ -198,17 +261,17 @@
           <!-- Slide 1 -->
           <div class="carousel-item active">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-                <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 1">
+              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
+                <img src="../resources/img/smc1.jpg" alt="Training photo 1">
               </a>
-              <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-                <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 2">
+              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
+                <img src="../resources/img/smc2.jpg" alt="Training photo 2">
               </a>
-              <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-                <img src="https://tinyurl.com/55nwhff7" alt="Training photo 3">
+              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
+                <img src="../resources/img/smc3.jpg" alt="Training photo 3">
               </a>
-              <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-                <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 4">
+              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
+                <img src="../resources/img/smc4.jpg" alt="Training photo 4">
               </a>
             </div>
           </div>
@@ -216,17 +279,17 @@
           <!-- Slide 2 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/4bkcuuwn" class="gallery-item" data-area="a" data-full="https://tinyurl.com/4bkcuuwn">
-                <img src="https://tinyurl.com/4bkcuuwn" alt="Training photo 5">
+              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
+                <img src="../resources/img/smc5.jpg" alt="Training photo 5">
               </a>
-              <a href="https://tinyurl.com/ye7xubh2" class="gallery-item" data-area="b" data-full="https://tinyurl.com/ye7xubh2">
-                <img src="https://tinyurl.com/ye7xubh2" alt="Training photo 6">
+              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
+                <img src="../resources/img/smc6.jpg" alt="Training photo 6">
               </a>
-              <a href="https://tinyurl.com/4fty8ztf" class="gallery-item" data-area="c" data-full="https://tinyurl.com/4fty8ztf">
-                <img src="https://tinyurl.com/4fty8ztf" alt="Training photo 7">
+              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
+                <img src="../resources/img/smc7.jpg" alt="Training photo 7">
               </a>
-              <a href="https://tinyurl.com/2mky2xyz" class="gallery-item" data-area="d" data-full="https://tinyurl.com/2mky2xyz">
-                <img src="https://tinyurl.com/2mky2xyz" alt="Training photo 8">
+              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
+                <img src="../resources/img/smc8.jpg" alt="Training photo 8">
               </a>
             </div>
           </div>
@@ -234,17 +297,17 @@
           <!-- Slide 3 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://tinyurl.com/3ekp6msy" class="gallery-item" data-area="a" data-full="https://tinyurl.com/3ekp6msy">
-                <img src="https://tinyurl.com/3ekp6msy" alt="Training photo 9">
+              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
+                <img src="../resources/img/smc9.jpg" alt="Training photo 9">
               </a>
-              <a href="https://tinyurl.com/45bw8zv3" class="gallery-item" data-area="b" data-full="https://tinyurl.com/45bw8zv3">
-                <img src="https://tinyurl.com/45bw8zv3" alt="Training photo 10">
+              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
+                <img src="../resources/img/smc10.jpg" alt="Training photo 10">
               </a>
-              <a href="https://tinyurl.com/55nwhff7" class="gallery-item" data-area="c" data-full="https://tinyurl.com/55nwhff7">
-                <img src="https://tinyurl.com/55nwhff7" alt="Training photo 11">
+              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
+                <img src="../resources/img/smc11.jpg" alt="Training photo 11">
               </a>
-              <a href="https://tinyurl.com/47wt7tb2" class="gallery-item" data-area="d" data-full="https://tinyurl.com/47wt7tb2">
-                <img src="https://tinyurl.com/47wt7tb2" alt="Training photo 12">
+              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
+                <img src="../resources/img/smc12.jpg" alt="Training photo 12">
               </a>
             </div>
           </div>
@@ -284,12 +347,12 @@
   <!-- FINAL CTA: Hire Now! -->
   <section class="py-4 py-md-5">
     <div class="container">
-      <div class="p-3 p-md-4 rounded-4 bg-white shadow-sm">
+      <div class="p-3 p-md-4 cta-wrap">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-          <p class="mb-0 fw-bold" style="font-size:1.15rem">
-            Hire reliable, properly screened Household Service Workers (HSWs) for your home.
+          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem">
+            Hire reliable, properly screened Filipino Skilled Workers.
           </p>
-          <a class="btn btn-danger rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
+          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
             Hire Now! <i class="fa-solid fa-arrow-right ms-1"></i>
           </a>
         </div>

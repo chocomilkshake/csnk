@@ -1,60 +1,44 @@
 <?php
-// Expect $page from the parent file: 'home', 'applicants', 'about', 'contact'
+// Expect $page from parent file
 if (!isset($page)) { $page = ''; }
 ?>
-<header class="bg-white border-bottom sticky-top">
-  <nav class="navbar navbar-expand-lg navbar-light bg-white">
+<header id="site-navbar">
+  <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container py-2">
 
-      <!-- Brand / Logo -->
-      <a class="navbar-brand d-flex align-items-center gap-2" href="/index.php#home" title="SMC Manpower Agency Philippines Co.">
-        <img src="../resources/img/smc.png" alt="SMC Logo" class="img-fluid" style="height:48px;">
-        <span class="fw-semibold d-none d-sm-inline">SMC Manpower Agency Philippines Co.</span>
+      <!-- Brand -->
+      <a href="./index.php" class="navbar-brand d-flex align-items-center gap-2">
+        <img src="../resources/img/smc.png" alt="SMC Logo" style="height:48px; width:auto;">
+        <span class="brand-title fw-bold d-none d-sm-inline">
+          SMC Manpower Agency Philippines Co.
+        </span>
       </a>
 
-      <!-- Mobile toggler -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#csnkNav"
-              aria-controls="csnkNav" aria-expanded="false" aria-label="Toggle navigation">
+      <!-- Toggler -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Right: Nav -->
-      <div class="collapse navbar-collapse justify-content-end" id="csnkNav">
-        <ul class="navbar-nav align-items-lg-center gap-2 my-2 my-lg-0 fw-medium">
-
+      <!-- Nav -->
+      <div class="collapse navbar-collapse justify-content-end" id="mainNav">
+        <ul class="navbar-nav align-items-lg-center fw-semibold gap-2">
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='home' ? 'active' : '' ?>"
-               href="./index.php"
-               aria-current="<?= $page==='home' ? 'page' : 'false' ?>">
-              Home
-            </a>
+            <a class="nav-link px-3 <?= $page==='home' ? 'active' : '' ?>" href="./index.php">Home</a>
           </li>
-
           <li class="nav-item position-relative">
-            <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>"
-               href="./applicant.php"
-               aria-current="<?= $page==='applicants' ? 'page' : 'false' ?>">
+            <a class="nav-link px-3 <?= $page==='applicants' ? 'active' : '' ?>" href="./applicant.php">
               Applicants
-              <span class="ms-1 badge text-bg-danger align-text-top new-badge">New</span>
+              <span class="position-absolute top-0 translate-middle badge rounded-pill text-dark bg-warning"
+                    style="right:-10px">New</span>
             </a>
           </li>
-
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='about' ? 'active' : '' ?>"
-               href="./about.php"
-               aria-current="<?= $page==='about' ? 'page' : 'false' ?>">
-              About
-            </a>
+            <a class="nav-link px-3 <?= $page==='about' ? 'active' : '' ?>" href="./about.php">About</a>
           </li>
-
           <li class="nav-item">
-            <a class="nav-link px-3 <?= $page==='contact' ? 'active' : '' ?>"
-               href="./contactUs.php"
-               aria-current="<?= $page==='contact' ? 'page' : 'false' ?>">
-              Contact
-            </a>
+            <a class="nav-link px-3 <?= $page==='contact' ? 'active' : '' ?>" href="./contactUs.php">Contact</a>
           </li>
-
         </ul>
       </div>
 
@@ -62,37 +46,36 @@ if (!isset($page)) { $page = ''; }
   </nav>
 </header>
 
+<!-- Minimal, scoped styles so other pages cannot override -->
 <style>
-  /* Ensure toggler icon shows even with resets */
-  .navbar-light .navbar-toggler-icon {
-    background-image: var(--bs-navbar-toggler-icon-bg) !important;
-  }
+  :root{ --smc-navy:#0B1F3A; --smc-navy-2:#132A4A; --smc-gold:#FFD84D; }
 
-  /* Underline active & hover state (no layout shift) */
-  .navbar .nav-link {
-    position: relative;
-    border-bottom: 2px solid transparent; /* reserve space to avoid shift */
-    transition: border-color .2s ease;
+  /* Scope everything to this header to avoid page CSS collisions */
+  #site-navbar .navbar {
+    background: linear-gradient(135deg, var(--smc-navy), var(--smc-navy-2));
   }
-  .navbar .nav-link.active,
-  .navbar .nav-link[aria-current="page"] {
-    border-bottom-color: #D72638; /* accent red */
+  #site-navbar .brand-title {
+    color: var(--smc-gold) !important; /* stays gold regardless of page CSS */
+    letter-spacing:.2px;
+    font-size:1.03rem;
   }
-  @media (hover: hover) {
-    .navbar .nav-link:hover,
-    .navbar .nav-link:focus {
-      border-bottom-color: #D72638;
-    }
+  #site-navbar .nav-link {
+    color: rgba(255,255,255,.9);
+    position:relative;
+    transition:color .2s ease;
   }
-
-  /* "New" badge position for Applicants */
-  .new-badge {
-    position: absolute;
-    top: -2px;
-    right: -6px;
-    font-size: .65rem;
-    padding: .2rem .4rem;
-    border-radius: 999px;
-    pointer-events: none;
+  #site-navbar .nav-link:hover,
+  #site-navbar .nav-link.active {
+    color: var(--smc-gold) !important;
+  }
+  #site-navbar .navbar-toggler {
+    border-color: var(--smc-gold);
+  }
+  /* Keep Bootstrap's dark toggler icon; make it brighter for contrast */
+  #site-navbar .navbar-dark .navbar-toggler-icon {
+    filter: brightness(1.4);
+  }
+  @media (max-width: 991.98px){
+    #site-navbar #mainNav { background: var(--smc-navy); border-radius:.5rem; padding: .5rem; margin-top:.5rem; }
   }
 </style>

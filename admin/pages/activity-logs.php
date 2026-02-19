@@ -1,433 +1,316 @@
 <?php
+// FILE: pages/activity-logs.php
 $pageTitle = 'Activity Logs';
 require_once '../includes/header.php';
 
-// Role-based access: only admin and super admin can view activity logs
-$role          = $currentUser['role'] ?? 'employee';
-$isSuperAdmin  = ($role === 'super_admin');
-$isAdmin       = ($role === 'admin');
-$isEmployee    = ($role === 'employee');
-
-if ($isEmployee) {
-    setFlashMessage('error', 'You do not have permission to view activity logs.');
-    redirect('dashboard.php');
-    exit;
-}
+$role = $currentUser['role'] ?? 'employee';
+$isAdminOnly = ($role === 'admin');
+if ($role === 'employee') { setFlashMessage('error','You do not have permission to view activity logs.'); redirect('dashboard.php'); exit; }
 
 $conn = $database->getConnection();
 
-/* -----------------------------------------------------------
-   Fetch admin/users list for filter dropdown
-   - Admin: hide super_admin users
-   - Super Admin: show all
-   ----------------------------------------------------------- */
+/* Users for filter */
 $adminUsers = [];
 if ($conn instanceof mysqli) {
-    $sqlUsers = "
-        SELECT id, username, full_name, role
-        FROM admin_users
-    ";
-    if ($isAdmin) {
-        $sqlUsers .= " WHERE role <> 'super_admin' ";
-    }
-    $sqlUsers .= " ORDER BY role DESC, full_name ASC";
-    if ($resUsers = $conn->query($sqlUsers)) {
-        $adminUsers = $resUsers->fetch_all(MYSQLI_ASSOC);
-    }
+    $q = "SELECT id, full_name, username, role, avatar FROM admin_users";
+    if ($isAdminOnly) $q .= " WHERE role <> 'super_admin'";
+    $q .= " ORDER BY full_name ASC";
+    if ($rs = $conn->query($q)) $adminUsers = $rs->fetch_all(MYSQLI_ASSOC);
 }
 
-/* -----------------------------------------------------------
-   Fetch recent activity logs (server-side limited for performance)
-   - Admin: exclude entries created by super_admins
-   - ALSO: remove "Unknown user" by using INNER JOIN (no null user rows)
-   ----------------------------------------------------------- */
+/* Logs */
 $logs = [];
 if ($conn instanceof mysqli) {
-    $sqlLogs = "
-        SELECT
-            al.id,
-            al.admin_id,
-            al.action,
-            al.description,
-            al.created_at,
-            au.full_name,
-            au.username,
-            au.role
-        FROM activity_logs AS al
-        INNER JOIN admin_users AS au ON al.admin_id = au.id
-    ";
-    if ($isAdmin) {
-        $sqlLogs .= " WHERE COALESCE(au.role, '') <> 'super_admin' ";
-    }
-    $sqlLogs .= " ORDER BY al.created_at DESC LIMIT 250";
-
-    if ($resLogs = $conn->query($sqlLogs)) {
-        $logs = $resLogs->fetch_all(MYSQLI_ASSOC);
-    }
+    $q = "SELECT al.id, al.admin_id, al.action, al.description, al.created_at,
+                 au.full_name, au.username, au.role, au.avatar
+          FROM activity_logs al
+          JOIN admin_users au ON au.id = al.admin_id";
+    if ($isAdminOnly) $q .= " WHERE au.role <> 'super_admin'";
+    $q .= " ORDER BY al.created_at DESC LIMIT 250";
+    if ($rs = $conn->query($q)) $logs = $rs->fetch_all(MYSQLI_ASSOC);
 }
 
-/* -----------------------------------------------------------
-   Enrichment: replace bare IDs inside descriptions with names
-   Goal: turn "Applicant ID 9" into "Applicant ID 9 — Full Name"
-   - We scan all descriptions to collect candidate Applicant/User/Admin IDs
-   - Then fetch names and inject them (non-destructive)
-   ----------------------------------------------------------- */
-
-/** Collect candidate IDs from all descriptions (best-effort regex). */
-$candidateApplicantIds = [];
-$candidateUserIds      = [];  // admin_users IDs (admins/employees)
-foreach ($logs as $lg) {
-    $desc = (string)($lg['description'] ?? '');
-
-    // Applicant ID patterns (look for word 'applicant' near 'ID')
-    if (preg_match_all('/\b(Applicant|applicant)[^0-9]{0,30}\bID\b[:\s#]*([0-9]+)\b/', $desc, $m, PREG_SET_ORDER)) {
-        foreach ($m as $hit) {
-            $aid = (int)$hit[2];
-            if ($aid > 0) $candidateApplicantIds[$aid] = true;
-        }
+/* Enrichment (compact) */
+$applicantNameMap = $userNameMap = [];
+if ($conn instanceof mysqli && $logs) {
+    $candA = $candU = [];
+    foreach ($logs as $lg) {
+        $d = (string)($lg['description'] ?? '');
+        if (preg_match_all('/\b(Applicant|applicant)[^0-9]{0,30}ID[:\s#]*([0-9]+)\b/', $d, $m, PREG_SET_ORDER))
+            foreach ($m as $x) $candA[(int)$x[2]] = true;
+        if (preg_match_all('/\b(Admin|User|admin|user)[^0-9]{0,30}ID[:\s#]*([0-9]+)\b/', $d, $m2, PREG_SET_ORDER))
+            foreach ($m2 as $x) $candU[(int)$x[2]] = true;
     }
-
-    // Admin/User ID patterns
-    if (preg_match_all('/\b(Admin|User|admin|user)[^0-9]{0,30}\bID\b[:\s#]*([0-9]+)\b/', $desc, $m2, PREG_SET_ORDER)) {
-        foreach ($m2 as $hit) {
-            $uid = (int)$hit[2];
-            if ($uid > 0) $candidateUserIds[$uid] = true;
-        }
-    }
-}
-
-/** Fetch maps */
-$applicantNameMap = []; // id => "Full Name"
-$userNameMap      = []; // id => "Full Name or Username"
-if ($conn instanceof mysqli) {
-    if (!empty($candidateApplicantIds)) {
-        $ids = implode(',', array_map('intval', array_keys($candidateApplicantIds)));
-        $sqlA = "SELECT id, first_name, middle_name, last_name, suffix FROM applicants WHERE id IN ($ids)";
-        if ($resA = $conn->query($sqlA)) {
-            while ($row = $resA->fetch_assoc()) {
-                $full = getFullName(
-                    $row['first_name'] ?? '',
-                    $row['middle_name'] ?? '',
-                    $row['last_name'] ?? '',
-                    $row['suffix'] ?? ''
-                );
-                $applicantNameMap[(int)$row['id']] = $full ?: ('Applicant #' . (int)$row['id']);
+    if ($candA) {
+        $ids = implode(',', array_map('intval', array_keys($candA)));
+        if ($rs = $conn->query("SELECT id, first_name, middle_name, last_name, suffix FROM applicants WHERE id IN ($ids)")) {
+            while ($r = $rs->fetch_assoc()) {
+                $applicantNameMap[(int)$r['id']] = getFullName($r['first_name']??'', $r['middle_name']??'', $r['last_name']??'', $r['suffix']??'');
             }
         }
     }
-    if (!empty($candidateUserIds)) {
-        $idsU = implode(',', array_map('intval', array_keys($candidateUserIds)));
-        $sqlU = "SELECT id, full_name, username FROM admin_users WHERE id IN ($idsU)";
-        if ($resU = $conn->query($sqlU)) {
-            while ($row = $resU->fetch_assoc()) {
-                $name = trim($row['full_name'] ?? '');
-                if ($name === '') $name = $row['username'] ?? ('User #' . (int)$row['id']);
-                $userNameMap[(int)$row['id']] = $name;
+    if ($candU) {
+        $ids = implode(',', array_map('intval', array_keys($candU)));
+        if ($rs = $conn->query("SELECT id, full_name, username FROM admin_users WHERE id IN ($ids)")) {
+            while ($r = $rs->fetch_assoc()) {
+                $nm = trim($r['full_name'] ?? '') ?: ($r['username'] ?? ('User #'.(int)$r['id']));
+                $userNameMap[(int)$r['id']] = $nm;
             }
         }
     }
 }
-
-/** Enrich a single description by injecting names after IDs (non-destructive). */
-function enrichDescription(string $desc, array $appMap, array $userMap): string
-{
-    // Enrich Applicant IDs
-    $desc = preg_replace_callback(
-        '/\b(Applicant|applicant)([^0-9]{0,30}\bID\b[:\s#]*)([0-9]+)\b/',
-        function ($m) use ($appMap) {
-            $id = (int)$m[3];
-            $name = $appMap[$id] ?? null;
-            if ($name) return $m[1] . $m[2] . $id . ' — ' . $name;
-            return $m[0];
-        },
-        $desc
-    );
-
-    // Enrich Admin/User IDs
-    $desc = preg_replace_callback(
-        '/\b(Admin|User|admin|user)([^0-9]{0,30}\bID\b[:\s#]*)([0-9]+)\b/',
-        function ($m) use ($userMap) {
-            $id = (int)$m[3];
-            $name = $userMap[$id] ?? null;
-            if ($name) return $m[1] . $m[2] . $id . ' — ' . $name;
-            return $m[0];
-        },
-        $desc
-    );
-
+function enrichDescription(string $desc, array $appMap, array $userMap): string {
+    $desc = preg_replace_callback('/\b(Applicant|applicant)([^0-9]{0,30}ID[:\s#]*)([0-9]+)\b/',
+        fn($m)=> isset($appMap[(int)$m[3]]) ? ($m[1].$m[2].$m[3].' — '.$appMap[(int)$m[3]]) : $m[0], $desc);
+    $desc = preg_replace_callback('/\b(Admin|User|admin|user)([^0-9]{0,30}ID[:\s#]*)([0-9]+)\b/',
+        fn($m)=> isset($userMap[(int)$m[3]]) ? ($m[1].$m[2].$m[3].' — '.$userMap[(int)$m[3]]) : $m[0], $desc);
     return $desc;
 }
+function initials(string $full=null, string $user=null): string {
+    $src = trim($full ?: $user ?: 'U'); $p = preg_split('/\s+/', $src);
+    $a = strtoupper(substr($p[0]??'U',0,1) . substr($p[1]??'',0,1)); return $a ?: 'U';
+}
 ?>
-<style>
-    .card-activity {
-        border-radius: 1rem;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        transition: box-shadow 0.3s ease;
-    }
-    .card-activity:hover {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .table-activity { margin-bottom: 0; }
-    .table-activity thead th {
-        font-size: .75rem;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        color: #6b7280;
-        border-bottom: 2px solid #e5e7eb;
-        background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
-        font-weight: 700;
-        padding: 1rem 1.25rem;
-    }
-    .table-activity tbody tr {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    .table-activity tbody tr:nth-child(even) { background-color: #fafbfc; }
-    .table-activity tbody tr:hover {
-        background-color: #f0f4ff;
-        transform: translateX(2px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-    .table-activity tbody td { padding: 1rem 1.25rem; vertical-align: middle; }
-    .activity-chip {
-        border-radius: 999px;
-        padding: .35rem .85rem;
-        font-size: .75rem;
-        font-weight: 600;
-        background: linear-gradient(135deg, rgba(37,99,235,.1) 0%, rgba(37,99,235,.08) 100%);
-        color: #1d4ed8;
-        border: 1px solid rgba(37,99,235,.2);
-        display: inline-block;
-        transition: all 0.2s ease;
-    }
-    .activity-chip:hover {
-        background: linear-gradient(135deg, rgba(37,99,235,.15) 0%, rgba(37,99,235,.12) 100%);
-        transform: scale(1.05);
-    }
-    .activity-user { display: flex; flex-direction: column; gap: .25rem; }
-    .activity-user-main { font-weight: 600; color: #1f2937; font-size: .9rem; }
-    .activity-user-sub { font-size: .75rem; color: #9ca3af; }
-    .pill-range { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .pill-range .btn {
-        border-radius: 999px !important;
-        padding: .4rem .9rem;
-        font-weight: 500;
-        font-size: .8rem;
-        transition: all 0.2s ease;
-        border: 1.5px solid #d1d5db;
-    }
-    .pill-range .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-    .pill-range .btn.active {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: #ffffff;
-        border-color: #2563eb;
-        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
-    }
-    .badge-role {
-        padding: .35rem .7rem;
-        border-radius: 999px;
-        font-size: .75rem;
-        font-weight: 600;
-        text-transform: capitalize;
-    }
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h5 class="mb-1 fw-semibold">Activity Logs</h5>
-        <small class="text-muted">
-            Audit trail of logins, account changes, applicant updates, exports and other key actions.
-        </small>
-    </div>
-    <span class="badge bg-light text-dark">
-        Showing <?php echo count($logs); ?> recent entries
-    </span>
+<!-- Header -->
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h4 class="mb-0 fw-semibold">Activity Logs</h4>
+    <p class="text-muted mb-0 text-sm">Click a row to view full details.</p>
+  </div>
+  <span class="badge bg-light text-dark">Showing <?=count($logs)?> entries</span>
 </div>
 
-<div class="card mb-3 card-activity">
-    <div class="card-body">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small text-muted mb-1">Filter by user</label>
-                <select id="filterUser" class="form-select form-select-sm">
-                    <option value="">All users</option>
-                    <?php foreach ($adminUsers as $user): ?>
-                        <?php
-                        $name  = $user['full_name'] ?: $user['username'];
-                        $label = trim($name . ' (' . $user['role'] . ')');
-                        ?>
-                        <option
-                            value="<?php echo (int)$user['id']; ?>"
-                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
-                        >
-                            <?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label small text-muted mb-1">Search (action, description, user)</label>
-                <input
-                    type="text"
-                    id="filterSearch"
-                    class="form-control form-control-sm"
-                    placeholder="e.g. Delete applicant, export, login…"
-                >
-            </div>
-
-            <div class="col-md-4 text-md-end">
-                <label class="form-label small text-muted mb-1 d-block">Quick range</label>
-                <div class="btn-group btn-group-sm pill-range" role="group" aria-label="Quick time range">
-                    <button type="button" class="btn btn-outline-secondary active" data-range="all">All</button>
-                    <button type="button" class="btn btn-outline-secondary" data-range="24h">24h</button>
-                    <button type="button" class="btn btn-outline-secondary" data-range="3d">3d</button>
-                    <button type="button" class="btn btn-outline-secondary" data-range="7d">7d</button>
-                    <button type="button" class="btn btn-outline-secondary" data-range="1month">1month</button>
-                </div>
-            </div>
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3 items-end">
+      <div class="col-md-4">
+        <label class="form-label text-muted text-sm mb-1">Filter by user</label>
+        <select id="fUser" class="form-select form-select-sm">
+          <option value="">All users</option>
+          <?php foreach($adminUsers as $u): ?>
+            <option value="<?=$u['id']?>"><?=htmlspecialchars(($u['full_name']?:$u['username']).' ('.$u['role'].')',ENT_QUOTES,'UTF-8')?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label text-muted text-sm mb-1">Search</label>
+        <input id="fSearch" type="text" class="form-control form-control-sm" placeholder="action, description, user...">
+      </div>
+      <div class="col-md-4 text-md-end">
+        <label class="form-label text-muted text-sm mb-1 d-block">Quick range</label>
+        <div class="btn-group btn-group-sm" role="group">
+          <button class="btn btn-outline-secondary active" data-range="all">All</button>
+          <button class="btn btn-outline-secondary" data-range="24h">24h</button>
+          <button class="btn btn-outline-secondary" data-range="3d">3d</button>
+          <button class="btn btn-outline-secondary" data-range="7d">7d</button>
+          <button class="btn btn-outline-secondary" data-range="30d">30d</button>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 
-<div class="card card-activity">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 table-activity" id="activityTable">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 22%;">User</th>
-                        <th style="width: 12%;">Role</th>
-                        <th style="width: 16%;">Action</th>
-                        <th>Description</th>
-                        <th style="width: 20%;">When</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($logs)): ?>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No activity has been recorded yet.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($logs as $log): ?>
-                            <?php
-                            $displayName = $log['full_name'] ?: ($log['username'] ?: 'Unknown user');
-                            $roleLabel   = $log['role'] ?: '—';
-                            $when        = formatDateTime($log['created_at']);
-                            $rawDesc     = (string)($log['description'] ?? '');
-                            $enriched    = enrichDescription($rawDesc, $applicantNameMap, $userNameMap);
+<!-- Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table align-middle table-hover mb-0" id="logTable">
+      <thead class="table-light">
+        <tr><th>User</th><th>Role</th><th>Action</th><th>Description</th><th>When</th></tr>
+      </thead>
+      <tbody>
+      <?php if (!$logs): ?>
+        <tr><td colspan="5" class="text-center text-muted py-4">No activity has been recorded yet.</td></tr>
+      <?php else: foreach($logs as $log):
+          $name = $log['full_name'] ?: ($log['username'] ?: 'Unknown');
+          $desc = enrichDescription((string)$log['description'], $applicantNameMap, $userNameMap);
+          $ini  = initials($name, $log['username']);
+          $whenPretty = formatDateTime($log['created_at']);
+          $avatarUrl = (!empty($log['avatar']) ? UPLOAD_URL . 'avatars/' . $log['avatar'] : '');
+      ?>
+        <tr class="hover:bg-slate-50 cursor-pointer"
+            data-user-id="<?=$log['admin_id']?>"
+            data-full-name="<?=htmlspecialchars($name,ENT_QUOTES,'UTF-8')?>"
+            data-username="<?=htmlspecialchars($log['username']??'',ENT_QUOTES,'UTF-8')?>"
+            data-role="<?=htmlspecialchars($log['role']??'—',ENT_QUOTES,'UTF-8')?>"
+            data-action="<?=htmlspecialchars($log['action']??'',ENT_QUOTES,'UTF-8')?>"
+            data-desc="<?=htmlspecialchars($desc,ENT_QUOTES,'UTF-8')?>"
+            data-when="<?=htmlspecialchars($whenPretty,ENT_QUOTES,'UTF-8')?>"
+            data-when-raw="<?=htmlspecialchars($log['created_at']??'',ENT_QUOTES,'UTF-8')?>"
+            data-initials="<?=htmlspecialchars($ini,ENT_QUOTES,'UTF-8')?>"
+            data-avatar="<?=htmlspecialchars($avatarUrl,ENT_QUOTES,'UTF-8')?>"
+            data-log-id="<?=$log['id']?>"
+            data-bs-toggle="modal" data-bs-target="#logModal">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold"
+                   style="--tw-gradient-from:#4f46e5;--tw-gradient-to:#06b6d4;background-image:linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-to));width:40px;height:40px;">
+                <?=$ini?>
+              </div>
+              <div class="leading-tight">
+                <div class="fw-semibold"><?=htmlspecialchars($name,ENT_QUOTES,'UTF-8')?></div>
+                <div class="text-muted small">@<?=htmlspecialchars($log['username']??'',ENT_QUOTES,'UTF-8')?></div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark text-capitalize"><?=htmlspecialchars(str_replace('_',' ',$log['role']??'—'),ENT_QUOTES,'UTF-8')?></span></td>
+          <td><span class="badge bg-primary-subtle text-primary"><?=htmlspecialchars($log['action'],ENT_QUOTES,'UTF-8')?></span></td>
+          <td class="text-truncate" style="max-width:560px" title="<?=htmlspecialchars($desc,ENT_QUOTES,'UTF-8')?>"><?=htmlspecialchars($desc,ENT_QUOTES,'UTF-8')?></td>
+          <td><?=htmlspecialchars($whenPretty,ENT_QUOTES,'UTF-8')?></td>
+        </tr>
+      <?php endforeach; endif; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-                            // Safety: skip any row that somehow still has unknown (shouldn't happen with INNER JOIN)
-                            if (strcasecmp($displayName, 'Unknown user') === 0) {
-                                continue;
-                            }
-                            ?>
-                            <tr
-                                data-user-id="<?php echo (int)($log['admin_id'] ?? 0); ?>"
-                                data-created-at="<?php echo htmlspecialchars($log['created_at'], ENT_QUOTES, 'UTF-8'); ?>"
-                            >
-                                <td>
-                                    <div class="activity-user">
-                                        <span class="activity-user-main"><?php echo htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8'); ?></span>
-                                        <span class="activity-user-sub">
-                                            <?php echo htmlspecialchars($log['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <?php if ($roleLabel !== '—'): ?>
-                                        <span class="badge-role bg-light text-dark">
-                                            <?php echo htmlspecialchars(str_replace('_', ' ', $roleLabel), ENT_QUOTES, 'UTF-8'); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-muted">—</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <span class="activity-chip">
-                                        <?php echo htmlspecialchars($log['action'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </span>
-                                </td>
-                                <td class="text-truncate" style="max-width: 560px;">
-                                    <?php echo htmlspecialchars($enriched, ENT_QUOTES, 'UTF-8'); ?>
-                                </td>
-                                <td>
-                                    <span class="d-block"><?php echo htmlspecialchars($when, ENT_QUOTES, 'UTF-8'); ?></span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+<!-- Modal -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-semibold">Log Details</h5>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body pt-0">
+        <!-- Admin -->
+        <div class="d-flex gap-3 align-items-start mb-3">
+          <div class="rounded-circle overflow-hidden" style="width:56px;height:56px;">
+            <img id="mAvatarImg" src="" alt="" class="w-100 h-100 object-fit-cover d-none">
+            <div id="mAvatarIni"
+                 class="w-100 h-100 d-flex align-items-center justify-content-center text-white fw-bold"
+                 style="background-image:linear-gradient(135deg,#4f46e5,#06b6d4);">U</div>
+          </div>
+          <div class="flex-grow-1">
+            <div id="mFullName" class="fw-bold"></div>
+            <div class="text-muted small"><span id="mUsername"></span> · <span id="mRole"></span></div>
+          </div>
         </div>
+
+        <!-- Action & Note (clearly separated) -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Action Performed</div>
+            <div id="mAction" class="badge bg-primary-subtle text-primary px-3 py-2"></div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Admin Note</div>
+            <div id="mNote" class="p-3 border rounded bg-light" style="min-height:48px;white-space:pre-wrap;"></div>
+          </div>
+        </div>
+
+        <!-- Summary (remaining description text) -->
+        <div class="mb-3">
+          <div class="text-muted small mb-1">Summary</div>
+          <div id="mSummary" class="p-3 border rounded bg-light" style="white-space:pre-wrap;"></div>
+        </div>
+
+        <!-- Meta -->
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">When</div>
+            <div id="mWhen" class="fw-semibold"></div>
+            <div id="mWhenRaw" class="text-muted small"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">Log ID</div>
+            <div id="mLogId" class="fw-semibold"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small mb-1">Admin ID</div>
+            <div id="mAdminId" class="fw-semibold"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0">
+        <button id="mCopy" type="button" class="btn btn-outline-secondary"><i class="bi bi-clipboard me-1"></i>Copy Summary</button>
+        <button class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-(function () {
-    const tableBody    = document.querySelector('#activityTable tbody');
-    const filterUser   = document.getElementById('filterUser');
-    const filterSearch = document.getElementById('filterSearch');
-    const rangeButtons = document.querySelectorAll('[data-range]');
-
-    if (!tableBody) return;
-
-    function parseDate(value) {
-        // value is MySQL DATETIME (YYYY-MM-DD HH:MM:SS)
-        const d = new Date(value.replace(' ', 'T') + 'Z');
-        return isNaN(d.getTime()) ? null : d;
-    }
-
-    function matchesRange(rowDate, range) {
-        if (!rowDate || range === 'all') return true;
-        const now = new Date();
-        const diffMs = now - rowDate;
-        const oneDay = 24 * 60 * 60 * 1000;
-        if (range === '24h')    return diffMs <= oneDay;
-        if (range === '3d')     return diffMs <= 3 * oneDay;
-        if (range === '7d')     return diffMs <= 7 * oneDay;
-        if (range === '1month') return diffMs <= 30 * oneDay;
-        return true;
-    }
-
-    function applyFilters() {
-        const userId = filterUser?.value || '';
-        const search = (filterSearch?.value || '').toLowerCase().trim();
-        const activeRangeBtn = document.querySelector('[data-range].active');
-        const range = activeRangeBtn ? activeRangeBtn.getAttribute('data-range') : 'all';
-
-        const rows = tableBody.querySelectorAll('tr');
-        rows.forEach(row => {
-            const rowUserId = row.getAttribute('data-user-id') || '';
-            const createdAt = row.getAttribute('data-created-at') || '';
-            const rowDate   = parseDate(createdAt);
-
-            const text = row.textContent.toLowerCase();
-            const matchesUser = !userId || userId === rowUserId;
-            const matchesText = !search || text.includes(search);
-            const matchesTime = matchesRange(rowDate, range);
-
-            const visible = matchesUser && matchesText && matchesTime;
-            row.style.display = visible ? '' : 'none';
-        });
-    }
-
-    filterUser?.addEventListener('change', applyFilters);
-    filterSearch?.addEventListener('input', function () {
-        window.clearTimeout(this._csnkTimer);
-        this._csnkTimer = window.setTimeout(applyFilters, 150);
+// Filters
+(function(){
+  const tbody=document.querySelector('#logTable tbody'); if(!tbody) return;
+  const fUser=document.getElementById('fUser'), fSearch=document.getElementById('fSearch');
+  const rangeBtns=[...document.querySelectorAll('[data-range]')];
+  const parseDate=v=>{ if(!v) return null; const d=new Date((v+'').replace(' ','T')+'Z'); return isNaN(d)?null:d; };
+  const inRange=(d,range)=>{ if(!d||range==='all') return true; const now=new Date(), day=86400000, diff=now-d;
+    if(range==='24h') return diff<=day; if(range==='3d') return diff<=3*day; if(range==='7d') return diff<=7*day; if(range==='30d') return diff<=30*day; return true; };
+  function apply(){ const uid=fUser?.value||'', q=(fSearch?.value||'').toLowerCase().trim(),
+    r=document.querySelector('[data-range].active')?.dataset.range||'all';
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const okUser=!uid || uid===tr.dataset.userId;
+      const okText=!q || tr.textContent.toLowerCase().includes(q);
+      const okTime=inRange(parseDate(tr.dataset.whenRaw||''), r);
+      tr.style.display=(okUser&&okText&&okTime)?'':'none';
     });
+  }
+  fUser?.addEventListener('change', apply);
+  fSearch?.addEventListener('input', ()=>{ clearTimeout(window._flt); window._flt=setTimeout(apply,150); });
+  rangeBtns.forEach(b=>b.addEventListener('click',()=>{ rangeBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active'); apply(); }));
+})();
 
-    rangeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            rangeButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            applyFilters();
-        });
+// Modal population (with avatar + action/note split)
+(function(){
+  const mImg=document.getElementById('mAvatarImg'), mIni=document.getElementById('mAvatarIni');
+  const mFull=document.getElementById('mFullName'), mUser=document.getElementById('mUsername'), mRole=document.getElementById('mRole');
+  const mAction=document.getElementById('mAction'), mNote=document.getElementById('mNote'), mSummary=document.getElementById('mSummary');
+  const mWhen=document.getElementById('mWhen'), mWhenRaw=document.getElementById('mWhenRaw'), mLogId=document.getElementById('mLogId'), mAdminId=document.getElementById('mAdminId');
+  const mCopy=document.getElementById('mCopy');
+
+  function splitNote(desc){
+    if(!desc) return {summary:'', note:''};
+    const rx = /(Reason|Note)\s*[:\-]\s*(.+)$/i;      // capture trailing reason/note
+    const m = desc.match(rx);
+    if (m) {
+      const note = m[2].trim();
+      const summary = desc.replace(rx,'').trim().replace(/[;,\.\s]+$/,'');
+      return {summary, note};
+    }
+    return {summary: desc, note: ''};
+  }
+
+  document.querySelectorAll('#logTable tbody tr').forEach(tr=>{
+    tr.addEventListener('click',()=>{
+      const full = tr.dataset.fullName||'', uname = tr.dataset.username||'', role = (tr.dataset.role||'—').replaceAll('_',' ');
+      const action = tr.dataset.action||'', desc = tr.dataset.desc||'', when = tr.dataset.when||'', whenRaw = tr.dataset.whenRaw||'';
+      const logId = tr.dataset.logId||'', adminId = tr.dataset.userId||'';
+      const ini = tr.dataset.initials||'U', avatar = tr.dataset.avatar||'';
+
+      // Avatar: show image if provided, else initials gradient
+      if (avatar) { mImg.src = avatar; mImg.classList.remove('d-none'); mIni.classList.add('d-none'); }
+      else { mImg.classList.add('d-none'); mIni.classList.remove('d-none'); mIni.textContent = ini; }
+
+      // Top identity
+      mFull.textContent = full;
+      mUser.textContent = uname ? '@'+uname : '';
+      mRole.textContent = role;
+
+      // Action + Note separation
+      const {summary, note} = splitNote(desc);
+      mAction.textContent = action || '—';
+      mNote.textContent = note || '—';
+      mSummary.textContent = summary || '—';
+
+      // Meta
+      mWhen.textContent = when || '—';
+      mWhenRaw.textContent = whenRaw ? '('+whenRaw+')' : '';
+      mLogId.textContent = logId || '—';
+      mAdminId.textContent = adminId || '—';
+
+      // Copy button copies Summary + Note (if exists)
+      const copyText = (summary ? 'Summary: '+summary+'\n' : '') + (note ? 'Note: '+note : '');
+      mCopy.onclick = ()=>{ if(!copyText.trim()) return; navigator.clipboard.writeText(copyText).then(()=>{
+        mCopy.classList.replace('btn-outline-secondary','btn-success'); mCopy.innerHTML='<i class="bi bi-check-lg me-1"></i>Copied';
+        setTimeout(()=>{ mCopy.classList.replace('btn-success','btn-outline-secondary'); mCopy.innerHTML='<i class="bi bi-clipboard me-1"></i>Copy Summary'; }, 1000);
+      }); };
     });
+  });
 })();
 </script>
 
