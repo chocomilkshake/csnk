@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card border-0 shadow-lg rounded-4">
           <div class="card-body p-4 p-md-5">
 
-            <!-- Branding: two logos side-by-side, never wrap, auto-resize -->
+            <!-- Branding -->
             <div class="mb-3">
               <div class="d-flex align-items-center justify-content-between gap-2 flex-nowrap mb-2">
                 <div class="w-50 text-center">
@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       updateThemeIcons(next);
     });
 
-    // Show/Hide password (no panda code)
+    // Show/Hide password
     const pwdInput = document.getElementById('password');
     const togglePwdBtn = document.getElementById('togglePassword');
     const eyeOpen = document.getElementById('eyeOpen');
