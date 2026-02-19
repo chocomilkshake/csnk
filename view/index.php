@@ -12,27 +12,7 @@
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png>
-  <!-- Classic favicon (.ico with multiple sizes) -->
-  <link rel="icon" href="/csnk/resources/img/csnk-icon.ico" sizes="16x16 32x32 48x48 64x64">
-
-  <!-- PNG fallbacks (if you don't use .ico or want crisper PNGs) -->
-  <link rel="icon" type="image/png" sizes="16x16" href="/csnk/resources/img/favicons/csnk-16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/csnk/resources/img/favicons/csnk-32.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="/csnk/resources/img/favicons/csnk-48.png">
-  <link rel="icon" type="image/png" sizes="64x64" href="/csnk/resources/img/favicons/csnk-64.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/csnk/resources/img/favicons/csnk-96.png">
-  <link rel="icon" type="image/png" sizes="128x128" href="/csnk/resources/img/favicons/csnk-128.png">
-  <link rel="icon" type="image/png" sizes="180x180" href="/csnk/resources/img/favicons/apple-touch-icon-180.png"> <!-- iOS -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/csnk/resources/img/favicons/android-chrome-192.png"> <!-- Android -->
-  <link rel="icon" type="image/png" sizes="256x256" href="/csnk/resources/img/favicons/csnk-256.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/csnk/resources/img/favicons/csnk-512.png">
-
-  <!-- Apple touch icon (older iOS still prefers this rel) -->
-  <link rel="apple-touch-icon" href="/csnk/resources/img/favicons/apple-touch-icon-180.png">
-
-  <!-- Optional: Safari pinned tab (uses a monochrome SVG) -->
-  <link rel="mask-icon" href="/csnk/resources/img/favicons/csnk-mask.svg" color="#d71920">
+  <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 </head>
 <body class="bg-light">
 
