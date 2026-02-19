@@ -18,6 +18,11 @@ $isAdmin         = ($currentRole === 'admin');
 $isEmployee      = ($currentRole === 'employee');
 $canViewActivity = ($isAdmin || $isSuperAdmin);
 
+// Agency flags (employees only; admins are global)
+$agency          = $currentUser['agency'] ?? null; // 'csnk' | 'smc' | null
+$canSeeCSNK      = $auth->canSeeCSNK();
+$canSeeSMC       = $auth->canSeeSMC();
+
 // Coming soon regions
 $showRegionPlaceholders = true;
 
@@ -33,24 +38,30 @@ function csnk_count($conn, string $sql): int {
     return 0;
 }
 
-/* Exclude actively blacklisted applicants */
-$notBlacklisted = " AND NOT EXISTS (
-    SELECT 1 FROM blacklisted_applicants b
-    WHERE b.applicant_id = applicants.id AND b.is_active = 1
-)";
+/* Only compute CSNK counts if user is allowed to see CSNK section */
+$totalApplicants = $pendingCount = $onProcessCount = $approvedCount = $deletedCount = 0;
+$blacklistedCount = 0;
 
-$totalApplicants  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL{$notBlacklisted}");
-$pendingCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL{$notBlacklisted}");
-$onProcessCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
-$approvedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
-$deletedCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
+if ($canSeeCSNK) {
+    /* Exclude actively blacklisted applicants */
+    $notBlacklisted = " AND NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = applicants.id AND b.is_active = 1
+    )";
 
-/* Active blacklisted applicants (visible to admin/super_admin) */
-$blacklistedCount = csnk_count($conn, "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1");
+    $totalApplicants  = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NULL{$notBlacklisted}");
+    $pendingCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='pending' AND deleted_at IS NULL{$notBlacklisted}");
+    $onProcessCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
+    $approvedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
+    $deletedCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
 
-/* ---------- Recent bookings for bell dropdown ---------- */
+    /* Active blacklisted applicants (visible to admin/super_admin) */
+    $blacklistedCount = csnk_count($conn, "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1");
+}
+
+/* ---------- Recent bookings for bell dropdown (CSNK on-process only) ---------- */
 $recentBookings = [];
-if ($conn instanceof mysqli) {
+if ($conn instanceof mysqli && $canSeeCSNK) {
     $sqlBookings = "
         SELECT cb.id,
                cb.applicant_id,
@@ -100,12 +111,8 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
     <style>
         :root {
             --sidebar-width: 300px;
-
-            /* CSNK brand core */
             --csnk-red: #c40000;
             --csnk-red-700: #991b1b;
-
-            /* Neutral foundation */
             --csnk-gray-25: #f9fafb;
             --csnk-gray-50: #f8fafc;
             --csnk-gray-100: #f1f5f9;
@@ -113,48 +120,28 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
             --csnk-gray-300: #e2e8f0;
             --csnk-gray-400: #94a3b8;
             --csnk-gray-600: #475569;
-
-            /* Soft ring / elevation */
             --csnk-ring: rgba(196, 0, 0, 0.14);
             --csnk-shadow-sm: 0 1px 2px rgba(0,0,0,.06);
             --csnk-shadow-md: 0 6px 16px rgba(0,0,0,.12);
-
-            /* Accent gradient for badges */
             --csnk-accent-bg: linear-gradient(180deg, #d81515 0%, var(--csnk-red) 100%);
             --csnk-accent-bg-hover: linear-gradient(180deg, #b51212 0%, var(--csnk-red-700) 100%);
         }
 
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        .sidebar {
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width);
-            background: #fff; border-right: 1px solid var(--csnk-gray-200); overflow-y: auto; z-index: 1000;
-        }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--csnk-gray-200); overflow-y: auto; z-index: 1000; }
         .main-content { margin-left: var(--sidebar-width); min-height: 100vh; background: #f8f9fa; transition: margin-left .2s ease; }
         .navbar-top { background: #fff; border-bottom: 1px solid var(--csnk-gray-200); padding: .75rem 1rem; position: sticky; top: 0; z-index: 1020; }
         .content-wrapper { padding: 1.25rem; }
         .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 
-        .sidebar-brand {
-            padding: 1rem .75rem; border-bottom: 1px solid var(--csnk-gray-200);
-            display:flex; align-items:center; justify-content:center; gap:.5rem;
-        }
+        .sidebar-brand { padding: 1rem .75rem; border-bottom: 1px solid var(--csnk-gray-200); display:flex; align-items:center; justify-content:center; gap:.5rem; }
         .sidebar-brand img { max-width: 160px; height: auto; }
 
-        .sidebar-section-label {
-            display:flex; align-items:center; gap:.5rem; padding:.75rem 1rem .35rem 1rem; color: var(--csnk-gray-600);
-            text-transform: uppercase; font-size: .72rem; letter-spacing:.08em; font-weight:700;
-        }
-        .sidebar-section-label .region-icon {
-            width: 40px; height: 40px; object-fit: contain; opacity: .95;
-        }
+        .sidebar-section-label { display:flex; align-items:center; gap:.5rem; padding:.75rem 1rem .35rem 1rem; color: var(--csnk-gray-600); text-transform: uppercase; font-size: .72rem; letter-spacing:.08em; font-weight:700; }
+        .sidebar-section-label .region-icon { width: 40px; height: 40px; object-fit: contain; opacity: .95; }
 
         .sidebar-menu { padding: .25rem 0 1.25rem 0; }
-        .sidebar-item {
-            position: relative; display: flex; align-items: center; gap: .75rem;
-            padding: .65rem 1rem; color: #475569; text-decoration: none;
-            transition: background .15s ease, color .15s ease, border-left-color .15s ease;
-            border-left: 3px solid transparent; border-radius: 0;
-        }
+        .sidebar-item { position: relative; display: flex; align-items: center; gap: .75rem; padding: .65rem 1rem; color: #475569; text-decoration: none; transition: background .15s ease, color .15s ease, border-left-color .15s ease; border-left: 3px solid transparent; border-radius: 0; }
         .sidebar-item:hover { background: var(--csnk-gray-50); color: #1e293b; }
         .sidebar-item.active { background: #eff6ff; color: #1d4ed8; border-left-color: #1d4ed8; }
         .sidebar-item i { width: 22px; text-align:center; font-size:1.05rem; }
@@ -165,21 +152,10 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
         .sidebar-submenu .sidebar-item { padding-left: 2.25rem; }
 
         .side-badge { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); }
-
-        .pill-count {
-            display: inline-flex; align-items: center; justify-content: center;
-            min-width: 28px; height: 22px; padding: 0 .55rem; border-radius: 999px;
-            background: var(--csnk-accent-bg); color: #fff; font-weight: 900; font-size: .78rem; line-height: 1;
-            letter-spacing: .2px; border: 1px solid rgba(0,0,0,.08);
-            box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 1px 0 rgba(0,0,0,.05);
-            font-variant-numeric: tabular-nums;
-        }
+        .pill-count { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 22px; padding: 0 .55rem; border-radius: 999px; background: var(--csnk-accent-bg); color: #fff; font-weight: 900; font-size: .78rem; line-height: 1; letter-spacing: .2px; border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 1px 0 rgba(0,0,0,.05); font-variant-numeric: tabular-nums; }
         .sidebar-item:hover .pill-count { background: var(--csnk-accent-bg-hover); }
         .pill-count.is-zero { background: #e9eef5; color: #6b7280; border-color: rgba(0,0,0,.05); }
-        .sidebar-item.active .pill-count {
-            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--csnk-ring),
-                        0 1px 0 rgba(255,255,255,.35) inset, 0 1px 0 rgba(0,0,0,.05);
-        }
+        .sidebar-item.active .pill-count { box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--csnk-ring), 0 1px 0 rgba(255,255,255,.35) inset, 0 1px 0 rgba(0,0,0,.05); }
 
         body.sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-width); }
         body.sidebar-collapsed .main-content { margin-left: var(--sidebar-collapsed-width); }
@@ -189,7 +165,6 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
         body.sidebar-collapsed .sidebar-brand img { max-width: 42px; }
         body.sidebar-collapsed .sidebar-submenu { display: none !important; }
 
-        /* Keep collapse content visible - prevent overflow clipping */
         .sidebar .collapse { overflow: visible; }
         .sidebar .collapse.show { display: block; visibility: visible; }
 
@@ -220,7 +195,8 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
 
-            <!-- Applicants -->
+            <?php if ($canSeeCSNK): ?>
+            <!-- Applicants (CSNK) -->
             <div class="sidebar-section-label">Applicants</div>
 
             <!-- CSNK-Philippines dropdown -->
@@ -312,8 +288,9 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
                 </a>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
 
-            <?php if ($showRegionPlaceholders): ?>
+            <?php if ($showRegionPlaceholders && $canSeeSMC): ?>
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">
                 <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International
@@ -447,7 +424,7 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
             </div>
 
             <div class="d-flex align-items-center gap-3">
-                <?php if (!empty($recentBookings) && ($isAdmin || $isSuperAdmin)): ?>
+                <?php if (!empty($recentBookings) && ($isAdmin || $isSuperAdmin) && $canSeeCSNK): ?>
                 <div class="dropdown">
                     <button class="btn btn-link text-decoration-none position-relative" type="button" id="bookingBell"
                             data-bs-toggle="dropdown" aria-expanded="false" aria-label="Recent client bookings">
