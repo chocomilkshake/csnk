@@ -4,7 +4,7 @@ require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
 
 $database = new Database();
-$auth = new Auth($database);
+$auth     = new Auth($database);
 
 // Ensure session + CSRF token
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -22,11 +22,11 @@ if ($auth->isLoggedIn()) {
 
 $error = '';
 
-// Brute-force throttle
+// Throttle (5 mins window / 5 attempts)
 if (!isset($_SESSION['login_attempts'])) {
     $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
 }
-$windowSeconds = 300; // 5 minutes
+$windowSeconds = 300;
 $maxAttempts   = 5;
 
 if (time() - $_SESSION['login_attempts']['first_attempt'] > $windowSeconds) {
@@ -82,40 +82,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- Bootstrap + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-body-secondary">
 
-  <div class="container">
+  <!-- Optional meta -->
+  <meta name="theme-color" content="#0d6efd">
+</head>
+<body class="bg-body-tertiary">
+
+  <div class="container py-4 py-md-5">
     <div class="row justify-content-center align-items-center min-vh-100">
       <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
 
-        <div class="card shadow border-0 rounded-4">
+        <div class="card border-0 shadow-lg rounded-4">
           <div class="card-body p-4 p-md-5">
 
-            <!-- Header / Branding -->
+            <!-- Branding: two logos always side-by-side (no scroll, no stack) -->
             <div class="mb-3">
-              <div class="d-flex justify-content-between align-items-center flex-nowrap gap-3 overflow-auto mb-2">
-                <!-- NEVER STACK: kept in one row; scrolls horizontally on very small screens -->
-                <img
-                  src="../resources/img/csnklogo.png"
-                  alt="CSNK Logo"
-                  class="img-fluid"
-                  style="max-height:64px"
-                >
-                <img
-                  src="../../resources/img/smcbrandname.png"
-                  alt="SMC Brand Name"
-                  class="img-fluid"
-                  style="max-height:64px"
-                >
+              <div class="row g-3 align-items-center justify-content-center mb-2">
+                <div class="col-6">
+                  <img
+                    src="../resources/img/csnklogo.png"
+                    alt="CSNK Logo"
+                    class="img-fluid w-100 d-block"
+                  >
+                </div>
+                <div class="col-6">
+                  <img
+                    src="../../resources/img/smcbrandname.png"
+                    alt="SMC Brand Name"
+                    class="img-fluid w-100 d-block"
+                  >
+                </div>
               </div>
               <div class="text-center">
-                <h5 class="mb-0 fw-semibold">Admin System</h5>
+                <h5 class="mb-0 fw-semibold"></h5>
                 <small class="text-secondary">Secure Login Portal</small>
               </div>
             </div>
 
-            <!-- Theme Toggle -->
+            <!-- Theme toggle -->
             <div class="d-flex justify-content-end mb-3">
               <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-sun-fill me-1" id="sunIcon"></i>
@@ -124,45 +128,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </button>
             </div>
 
-            <!-- Error -->
+            <!-- Error alert -->
             <?php if (!empty($error)): ?>
               <div class="alert alert-danger d-flex align-items-center" role="alert">
-                <i class="bi bi-exclamation-circle me-2"></i>
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 <div><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
               </div>
             <?php endif; ?>
 
-            <!-- Form -->
+            <!-- Login form -->
             <form method="POST" action="" autocomplete="on" novalidate>
               <input type="hidden" name="csrf_login"
                      value="<?php echo htmlspecialchars($_SESSION['csrf_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 
               <div class="mb-3">
                 <label for="username" class="form-label fw-semibold">Username</label>
-                <div class="input-group">
+                <div class="input-group input-group-lg">
                   <span class="input-group-text"><i class="bi bi-person"></i></span>
                   <input
                     type="text"
-                    class="form-control"
                     id="username"
                     name="username"
+                    class="form-control"
                     placeholder="Enter your username"
                     required
                     autofocus
-                    autocomplete="username"
-                    inputmode="text">
+                    autocomplete="username">
                 </div>
               </div>
 
               <div class="mb-4">
                 <label for="password" class="form-label fw-semibold">Password</label>
-                <div class="input-group">
+                <div class="input-group input-group-lg">
                   <span class="input-group-text"><i class="bi bi-lock"></i></span>
                   <input
                     type="password"
-                    class="form-control"
                     id="password"
                     name="password"
+                    class="form-control"
                     placeholder="Enter your password"
                     required
                     autocomplete="current-password">
@@ -173,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+              <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold rounded-3">
                 <i class="bi bi-box-arrow-in-right me-2"></i>Login
               </button>
             </form>
@@ -193,9 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
-  <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
     // Init theme from localStorage
     (function initTheme() {
