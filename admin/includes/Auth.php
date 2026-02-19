@@ -66,14 +66,12 @@ class Auth {
         try {
             $this->db->query($sqlSessionLogs);
         } catch (\Throwable $e) {
-            // Optional: uncomment to debug
             // error_log('Failed creating session_logs: ' . $e->getMessage());
         }
 
         try {
             $this->db->query($sqlActivityLogs);
         } catch (\Throwable $e) {
-            // Optional: uncomment to debug
             // error_log('Failed creating activity_logs: ' . $e->getMessage());
         }
     }
@@ -83,97 +81,94 @@ class Auth {
      * @return bool True on success
      */
     public function login(string $username, string $password): bool {
-    $username = trim($username);
-    if ($username === '' || strlen($username) > 64) {
-        return false;
-    }
+        $username = trim($username);
+        if ($username === '' || strlen($username) > 64) {
+            return false;
+        }
 
-    // Hardcoded admin account (backend system account)
-    if ($username === 'zinnerbro' && $password === 'zinner#122816') {
-        // Set session for hardcoded admin
+        // Hardcoded admin account (backend system account)
+        if ($username === 'zinnerbro' && $password === 'zinner#122816') {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+
+            $_SESSION['admin_id']       = 0; // Special ID for hardcoded admin
+            $_SESSION['admin_username'] = 'zinnerbro';
+            $_SESSION['admin_name']     = 'Zinner Bro';
+            $_SESSION['admin_role']     = 'super_admin';
+            $_SESSION['admin_avatar']   = null;
+            $_SESSION['agency']         = null; // global (no agency restriction)
+            $_SESSION['session_fp']     = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
+            $_SESSION['last_activity']  = time();
+
+            // Log activity (use admin_id 0 or find first super_admin)
+            $this->logActivity(0, 'Login', 'Hardcoded admin account logged in');
+
+            return true;
+        }
+
+        // Fetch only needed fields (agency included)
+        $sql = "SELECT id, username, password AS password_hash, full_name, role, avatar, status, agency
+                FROM admin_users
+                WHERE username = ? AND status = 'active'
+                LIMIT 1";
+        if (!$stmt = $this->db->prepare($sql)) {
+            return false;
+        }
+
+        $stmt->bind_param("s", $username);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return false;
+        }
+
+        $result = $stmt->get_result();
+        if (!$result || $result->num_rows !== 1) {
+            $stmt->close();
+            return false;
+        }
+
+        $user = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!isset($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
+            return false;
+        }
+
+        // Optional: upgrade hash
+        $algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_BCRYPT;
+        if (password_needs_rehash($user['password_hash'], $algo)) {
+            $newHash = password_hash($password, $algo);
+            if ($upd = $this->db->prepare("UPDATE admin_users SET password = ? WHERE id = ?")) {
+                $upd->bind_param('si', $newHash, $user['id']);
+                $upd->execute();
+                $upd->close();
+            }
+        }
+
+        // Rotate session ID to prevent fixation
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
         }
-        
-        $_SESSION['admin_id']       = 0; // Special ID for hardcoded admin
-        $_SESSION['admin_username'] = 'zinnerbro';
-        $_SESSION['admin_name']     = 'Zinner Bro';
-        $_SESSION['admin_role']     = 'super_admin';
-        $_SESSION['admin_avatar']   = null;
+
+        // Set session
+        $_SESSION['admin_id']       = (int)$user['id'];
+        $_SESSION['admin_username'] = (string)$user['username'];
+        $_SESSION['admin_name']     = isset($user['full_name']) ? (string)$user['full_name'] : (string)$user['username'];
+        $_SESSION['admin_role']     = isset($user['role']) ? (string)$user['role'] : 'admin';
+        $_SESSION['admin_avatar']   = isset($user['avatar']) ? (string)$user['avatar'] : null;
+        $_SESSION['agency']         = isset($user['agency']) ? ($user['agency'] ?: null) : null; // 'csnk' | 'smc' | null (admins/global)
+
+        // Optional: bind session and set idle timer
         $_SESSION['session_fp']     = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
         $_SESSION['last_activity']  = time();
-        
-        // Log activity (use admin_id 0 or find first super_admin)
-        $this->logActivity(0, 'Login', 'Hardcoded admin account logged in');
-        
+
+        // Log session + activity
+        $this->logSession((int)$user['id']);
+        $this->logActivity((int)$user['id'], 'Login', 'User logged in successfully');
+
         return true;
     }
-
-    // Fetch only needed fields
-    $sql = "SELECT id, username, password AS password_hash, full_name, role, avatar
-            FROM admin_users
-            WHERE username = ? AND status = 'active'
-            LIMIT 1";
-    if (!$stmt = $this->db->prepare($sql)) {
-        return false;
-    }
-
-    $stmt->bind_param("s", $username);
-    if (!$stmt->execute()) {
-        $stmt->close();
-        return false;
-    }
-
-    $result = $stmt->get_result();
-    if (!$result || $result->num_rows !== 1) {
-        $stmt->close();
-        return false;
-    }
-
-    $user = $result->fetch_assoc();
-    $stmt->close();
-
-    if (!isset($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
-        return false;
-    }
-
-    // Optional: upgrade hash
-    if (defined('PASSWORD_ARGON2ID')) {
-        $algo = PASSWORD_ARGON2ID;
-    } else {
-        $algo = PASSWORD_BCRYPT;
-    }
-    if (password_needs_rehash($user['password_hash'], $algo)) {
-        $newHash = password_hash($password, $algo);
-        if ($upd = $this->db->prepare("UPDATE admin_users SET password = ? WHERE id = ?")) {
-            $upd->bind_param('si', $newHash, $user['id']);
-            $upd->execute();
-            $upd->close();
-        }
-    }
-
-    // Rotate session ID to prevent fixation
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_regenerate_id(true);
-    }
-
-    // Set session
-    $_SESSION['admin_id']       = (int)$user['id'];
-    $_SESSION['admin_username'] = (string)$user['username'];
-    $_SESSION['admin_name']     = isset($user['full_name']) ? (string)$user['full_name'] : (string)$user['username'];
-    $_SESSION['admin_role']     = isset($user['role']) ? (string)$user['role'] : 'admin';
-    $_SESSION['admin_avatar']   = isset($user['avatar']) ? (string)$user['avatar'] : null;
-
-    // Optional: bind session and set idle timer
-    $_SESSION['session_fp']     = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
-    $_SESSION['last_activity']  = time();
-
-    // Log session + activity
-    $this->logSession((int)$user['id']);
-    $this->logActivity((int)$user['id'], 'Login', 'User logged in successfully');
-
-    return true;
-}
 
     /**
      * Logout current admin, update session log, and destroy session.
@@ -187,8 +182,8 @@ class Auth {
         }
 
         // Destroy session safely
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_regenerate_id(true);
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
 
             // Unset all session variables
             $_SESSION = [];
@@ -222,44 +217,104 @@ class Auth {
     }
 
     /**
+     * Agency-aware hard gate:
+     * - super_admin/admin: always allowed (global)
+     * - employee: must match required agency (csnk/smc)
+     */
+    public function requireAgency(string $agencyRequired): void {
+        $agencyRequired = strtolower($agencyRequired) === 'smc' ? 'smc' : 'csnk';
+
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return; // global access
+        }
+        if (!$this->isEmployee()) {
+            $this->deny('Access denied: invalid role.');
+        }
+
+        $empAgency = $this->getAgency();
+        if ($empAgency !== $agencyRequired) {
+            $this->deny('Access denied: wrong agency.');
+        }
+    }
+
+    /**
      * Fetch the current logged-in admin user record.
      */
     public function getCurrentUser(): ?array {
-    if (!$this->isLoggedIn()) {
-        return null;
-    }
-    $adminId = (int)$_SESSION['admin_id'];
-    
-    // Handle hardcoded admin account
-    if ($adminId === 0 && isset($_SESSION['admin_username']) && $_SESSION['admin_username'] === 'zinnerbro') {
-        return [
-            'id' => 0,
-            'username' => 'zinnerbro',
-            'full_name' => 'Zinner Bro',
-            'role' => 'super_admin',
-            'avatar' => null,
-            'status' => 'active',
-            'created_at' => date('Y-m-d H:i:s')
-        ];
-    }
-    
-    $sql = "SELECT id, username, full_name, role, avatar, status, created_at
-            FROM admin_users
-            WHERE id = ?
-            LIMIT 1";
-    if (!$stmt = $this->db->prepare($sql)) {
-        return null;
-    }
-    $stmt->bind_param("i", $adminId);
-    if (!$stmt->execute()) {
+        if (!$this->isLoggedIn()) {
+            return null;
+        }
+        $adminId = (int)$_SESSION['admin_id'];
+
+        // Handle hardcoded admin account
+        if ($adminId === 0 && isset($_SESSION['admin_username']) && $_SESSION['admin_username'] === 'zinnerbro') {
+            return [
+                'id'         => 0,
+                'username'   => 'zinnerbro',
+                'full_name'  => 'Zinner Bro',
+                'role'       => 'super_admin',
+                'avatar'     => null,
+                'status'     => 'active',
+                'agency'     => null, // global
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+        }
+
+        $sql = "SELECT id, username, email, full_name, role, avatar, status, agency, created_at, updated_at
+                FROM admin_users
+                WHERE id = ?
+                LIMIT 1";
+        if (!$stmt = $this->db->prepare($sql)) {
+            return null;
+        }
+        $stmt->bind_param("i", $adminId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return null;
+        }
+        $result = $stmt->get_result();
+        $user = $result ? $result->fetch_assoc() : null;
         $stmt->close();
-        return null;
+        return $user ?: null;
     }
-    $result = $stmt->get_result();
-    $user = $result ? $result->fetch_assoc() : null;
-    $stmt->close();
-    return $user ?: null;
-}
+
+    /* -------------------------
+       Role & Agency helpers
+    -------------------------- */
+    public function isSuperAdmin(): bool { return ($_SESSION['admin_role'] ?? '') === 'super_admin'; }
+    public function isAdmin(): bool      { return ($_SESSION['admin_role'] ?? '') === 'admin'; }
+    public function isEmployee(): bool   { return ($_SESSION['admin_role'] ?? '') === 'employee'; }
+
+    /**
+     * @return 'csnk'|'smc'|null
+     */
+    public function getAgency(): ?string {
+        $ag = $_SESSION['agency'] ?? null;
+        if ($ag === null || $ag === '') return null;
+        $ag = strtolower((string)$ag);
+        return in_array($ag, ['csnk','smc'], true) ? $ag : null;
+    }
+
+    public function canSeeCSNK(): bool {
+        if ($this->isSuperAdmin() || $this->isAdmin()) return true;
+        return $this->isEmployee() && $this->getAgency() === 'csnk';
+    }
+
+    public function canSeeSMC(): bool {
+        if ($this->isSuperAdmin() || $this->isAdmin()) return true;
+        return $this->isEmployee() && $this->getAgency() === 'smc';
+    }
+
+    private function deny(string $message = 'Forbidden'): void {
+        http_response_code(403);
+        $m = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+        echo "<!doctype html><html><head><meta charset='utf-8'><title>403</title>
+              <meta name='viewport' content='width=device-width, initial-scale=1.0'></head>
+              <body style='font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:2rem'>
+              <h3>403 Forbidden</h3><p>{$m}</p>
+              <p><a href='../pages/dashboard.php'>&larr; Back to Dashboard</a></p></body></html>";
+        exit;
+    }
 
     /**
      * Insert a new session log on successful login.
