@@ -99,6 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?php echo APP_NAME; ?></title>
+    <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-iconz.png">
+    <link rel="apple-touch-icon" href="/csnk/resources/img/favicons/apple-touch-icon-180.png">
+    <link rel="icon" href="/csnk/resources/img/csnk-iconz.ico">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
