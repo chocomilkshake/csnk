@@ -83,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-  <!-- Optional meta -->
   <meta name="theme-color" content="#0d6efd">
 </head>
 <body class="bg-body-tertiary">
@@ -95,26 +94,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card border-0 shadow-lg rounded-4">
           <div class="card-body p-4 p-md-5">
 
-            <!-- Branding: two logos always side-by-side (no scroll, no stack) -->
+            <!-- Branding: two logos side-by-side, never wrap, auto-resize -->
             <div class="mb-3">
-              <div class="row g-3 align-items-center justify-content-center mb-2">
-                <div class="col-6">
-                  <img
-                    src="../resources/img/csnklogo.png"
-                    alt="CSNK Logo"
-                    class="img-fluid w-100 d-block"
-                  >
+              <div class="d-flex align-items-center justify-content-between gap-2 flex-nowrap mb-2">
+                <div class="w-50 text-center">
+                  <img src="../resources/img/csnklogo.png" alt="CSNK Logo" class="img-fluid">
                 </div>
-                <div class="col-6">
-                  <img
-                    src="../../resources/img/smcbrandname.png"
-                    alt="SMC Brand Name"
-                    class="img-fluid w-100 d-block"
-                  >
+                <div class="text-secondary px-2">|</div>
+                <div class="w-50 text-center">
+                  <img src="../../resources/img/smcbrandname.png" alt="SMC Brand Name" class="img-fluid">
                 </div>
               </div>
               <div class="text-center">
-                <h5 class="mb-0 fw-semibold"></h5>
+                <h5 class="mb-0 fw-semibold">Admin System</h5>
                 <small class="text-secondary">Secure Login Portal</small>
               </div>
             </div>
@@ -189,14 +181,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="text-center mt-3">
-          <small class="text-secondary">© <?php echo date('Y'); ?> <?php echo APP_NAME; ?></small>
+          <small class="text-secondary">© <?php echo date('Y'); ?> IT Department | <strong>Interns</strong></small>
         </div>
 
       </div>
     </div>
   </div>
 
+  <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     // Init theme from localStorage
     (function initTheme() {
@@ -208,11 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     function updateThemeIcons(theme) {
       const sun = document.getElementById('sunIcon');
       const moon = document.getElementById('moonIcon');
-      if (theme === 'dark') {
-        sun.classList.add('d-none'); moon.classList.remove('d-none');
-      } else {
-        sun.classList.remove('d-none'); moon.classList.add('d-none');
-      }
+      if (theme === 'dark') { sun.classList.add('d-none'); moon.classList.remove('d-none'); }
+      else { sun.classList.remove('d-none'); moon.classList.add('d-none'); }
     }
 
     document.getElementById('themeToggle').addEventListener('click', function () {
@@ -223,11 +214,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       updateThemeIcons(next);
     });
 
-    // Show/Hide password
+    // Show/Hide password (no panda code)
     const pwdInput = document.getElementById('password');
     const togglePwdBtn = document.getElementById('togglePassword');
     const eyeOpen = document.getElementById('eyeOpen');
     const eyeClosed = document.getElementById('eyeClosed');
+
     togglePwdBtn.addEventListener('click', () => {
       const isPassword = pwdInput.type === 'password';
       pwdInput.type = isPassword ? 'text' : 'password';
