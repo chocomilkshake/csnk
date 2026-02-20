@@ -23,6 +23,9 @@ $agency          = $currentUser['agency'] ?? null; // 'csnk' | 'smc' | null
 $canSeeCSNK      = $auth->canSeeCSNK();
 $canSeeSMC       = $auth->canSeeSMC();
 
+// Reports visibility (enable for admin/super_admin)
+$canViewReports  = ($isAdmin || $isSuperAdmin);
+
 // Coming soon regions
 $showRegionPlaceholders = true;
 
@@ -88,8 +91,15 @@ $collapseApplicantsId = 'csnkApplicantsMenu';
 /* ---------- Escape helper ---------- */
 function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/* ---------- Safe default for reports counter ---------- */
-$reportNotesCount = (int)($reportNotesCount ?? 0);
+/* ---------- Reports note count (for badge) ---------- */
+$reportNotesCount = 0;
+if ($canViewReports && $conn instanceof mysqli) {
+    $res = $conn->query("SELECT COUNT(*) FROM applicant_reports");
+    if ($res) {
+        $row = $res->fetch_row();
+        $reportNotesCount = (int)($row[0] ?? 0);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -368,7 +378,7 @@ $reportNotesCount = (int)($reportNotesCount ?? 0);
                 <span class="label"><span class="text">Activity Logs</span></span>
             </a>
 
-            <?php if (!empty($canViewReports) && $canViewReports === true) : ?>
+            <?php if ($canViewReports) : ?>
                 <div class="sidebar-section-label">Reports</div>
                 <a href="reports.php"
                    class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
