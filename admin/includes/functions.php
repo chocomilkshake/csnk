@@ -37,6 +37,32 @@ function uploadFile($file, $folder = 'general') {
     return false;
 }
 
+/**
+ * NEW: Upload multiple files from an <input type="file" name="attachments[]"> control.
+ * Returns array of relative paths (e.g., ['replacements/abc.jpg', ...]).
+ */
+function uploadMultipleFiles(array $filesControl, string $folder = 'general'): array {
+    $saved = [];
+    if (!isset($filesControl['name']) || !is_array($filesControl['name'])) {
+        return $saved;
+    }
+    $count = count($filesControl['name']);
+    for ($i = 0; $i < $count; $i++) {
+        $file = [
+            'name'     => $filesControl['name'][$i],
+            'type'     => $filesControl['type'][$i],
+            'tmp_name' => $filesControl['tmp_name'][$i],
+            'error'    => $filesControl['error'][$i],
+            'size'     => $filesControl['size'][$i],
+        ];
+        $path = uploadFile($file, $folder);
+        if ($path !== false) {
+            $saved[] = $path;
+        }
+    }
+    return $saved;
+}
+
 function deleteFile($filePath) {
     $fullPath = UPLOAD_PATH . $filePath;
     if (is_string($filePath) && $filePath !== '' && file_exists($fullPath)) {
@@ -132,4 +158,28 @@ function redirect($url) {
     echo '<meta http-equiv="refresh" content="0;url=' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">';
     echo '</noscript>';
     exit();
+}
+
+/* =========================
+ * NEW: JSON & Similarity Utils
+ * ========================= */
+function json_to_array_safe($json) {
+    if ($json === null || $json === '' || $json === '[]') return [];
+    $arr = json_decode((string)$json, true);
+    return is_array($arr) ? $arr : [];
+}
+function normalize_string_array(array $arr): array {
+    $out = [];
+    foreach ($arr as $v) {
+        $s = strtolower(trim((string)$v));
+        if ($s !== '' && !in_array($s, $out, true)) {
+            $out[] = $s;
+        }
+    }
+    return $out;
+}
+function overlap_count(array $a, array $b): int {
+    $a = normalize_string_array($a);
+    $b = normalize_string_array($b);
+    return count(array_intersect($a, $b));
 }
