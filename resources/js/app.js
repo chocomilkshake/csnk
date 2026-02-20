@@ -193,6 +193,14 @@ function getPopoverElFor(btn) {
   return id ? document.getElementById(id) : null;
 }
 
+function formatPeso(amount) {
+    if (amount === null || amount === undefined || amount === '') return null;
+    const num = Number(amount);
+    if (!isFinite(num)) return null;
+    return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+
 /* =========================================================
    Skeleton loader
 ========================================================= */
@@ -639,8 +647,17 @@ function createApplicantCard(applicant) {
   const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
   const status         = escapeHtml(String(applicant.status || '').toLowerCase());
 
+  // 🔹 robust daily rate picker
+  const dailyRateValue = (applicant.daily_rate ?? applicant.dailyRate ?? applicant.rate ?? applicant.daily_wage ?? null);
+  const rateText = formatPeso(dailyRateValue);
+
   const html = `
     <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile" data-status="${status}">
+      <!-- 🔹 Top-right Daily Rate badge -->
+      <div class="daily-rate-badge ${rateText ? '' : 'muted'}" aria-label="Daily rate">
+        ${rateText ? `${rateText} / day` : '—'}
+      </div>
+
       <!-- Top photo -->
       <div class="ratio ratio-4x3 card-photo-wrap">
         <img class="card-photo" alt="${fullName}">
@@ -751,6 +768,32 @@ function renderPagination() {
 ========================================================= */
 function ensureModalFooterAndHire(applicant){
   const modalEl = byId('applicantModal');
+  // Helper: format currency (PHP Peso)
+function formatPeso(amount) {
+  if (amount === null || amount === undefined || amount === '') return '—';
+  const num = Number(amount);
+  if (!isFinite(num)) return '—';
+  return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// When binding data into the modal:
+// Assume 'a' is the applicant object returned from your API
+function renderApplicantIntoModal(a) {
+  // ... your existing bindings (name, role, yoe, etc.)
+  // e.g., document.getElementById('name').textContent = a.first_name + ' ' + a.last_name;
+
+  // NEW: Daily Rate
+  const rateEl = document.getElementById('dailyRateValue');
+  if (rateEl) {
+    rateEl.textContent = formatPeso(a.daily_rate);
+  }
+
+  // If you want to add it to the header strip too (optional):
+  // const headerLine = document.getElementById('availabilityLine');
+  // if (headerLine && a.daily_rate != null) {
+  //   headerLine.textContent += ' • ' + formatPeso(a.daily_rate) + ' / day';
+  // }
+}
   if (!modalEl) return;
 
   let footer = modalEl.querySelector('.modal-footer');
@@ -943,6 +986,17 @@ function onProfileHiddenCleanUrl(){
 }
 
 function showApplicantModal(applicant, options = { pushState: true }) {
+
+// 🔹 Accept snake_case or camelCase (depending on your API)
+  const dailyRateValue = (applicant.daily_rate ?? applicant.dailyRate ?? applicant.rate ?? applicant.daily_wage ?? null);
+
+  
+const rateTile = document.getElementById('dailyRateValue');
+  if (rateTile) {
+    const formatted = formatPeso(dailyRateValue);
+    rateTile.textContent = formatted ? (formatted + ' / day') : '—';
+  }
+
   const modalEl = byId('applicantModal');
   if (!modalEl) return;
 
@@ -1070,9 +1124,31 @@ function injectStyles(){
       box-shadow:0 2px 8px rgba(0,0,0,.06);
       background:#fff;
       cursor:pointer;
-      outline: none;
+      outline:none;
+      position:relative; /* 🔹 Needed for the top-right badge */
     }
-    .app-card:focus{ box-shadow:0 0 0 3px rgba(196,0,0,.25), 0 12px 28px rgba(0,0,0,.12); }
+
+    /* 🔹 Top-right Daily Rate badge */
+    .daily-rate-badge{
+      position:absolute;
+      top:.5rem;
+      right:.5rem;
+      z-index:2;
+      background:red;            /* brand black (or use var(--brand-red)) */
+      color:#fff;
+      border-radius:999px;
+      font-weight:700;
+      font-size:.85rem;
+      line-height:1;
+      padding:.2rem .4rem;
+      min-width:max-content;
+    }
+    .daily-rate-badge.muted{
+      background:#f1f3f5;
+      color:#6c757d;
+      border-color:#e9ecef;
+      font-weight:600;
+    }
 
     .card-photo-wrap{ background:#f5f6f8; position:relative; }
     .card-photo{ width:100%; height:100%; object-fit:cover; display:block; }

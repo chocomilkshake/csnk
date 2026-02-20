@@ -1,8 +1,10 @@
 <?php
-class Applicant {
+class Applicant
+{
     private $db;
 
-    public function __construct($database) {
+    public function __construct($database)
+    {
         $this->db = $database->getConnection();
     }
 
@@ -11,7 +13,8 @@ class Applicant {
      * - Excludes deleted by default.
      * - Use getAllForPublic() for client-facing lists.
      */
-    public function getAll($status = null) {
+    public function getAll($status = null)
+    {
         if ($status !== null) {
             $sql = "SELECT * FROM applicants
                     WHERE deleted_at IS NULL
@@ -48,7 +51,8 @@ class Applicant {
      *   i.e., status IN ('pending','on_process').
      * - Ordered by created_at DESC.
      */
-    public function getAllForPublic(): array {
+    public function getAllForPublic(): array
+    {
         $sql = "SELECT *
                 FROM applicants
                 WHERE deleted_at IS NULL
@@ -59,11 +63,13 @@ class Applicant {
                   )
                 ORDER BY created_at DESC";
         $res = $this->db->query($sql);
-        if (!$res) return [];
+        if (!$res)
+            return [];
         return $res->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function getDeleted() {
+    public function getDeleted()
+    {
         $sql = "
             SELECT *
             FROM applicants
@@ -78,7 +84,8 @@ class Applicant {
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function getById($id) {
+    public function getById($id)
+    {
         $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -89,103 +96,248 @@ class Applicant {
     /**
      * Create applicant (includes specialization_skills JSON).
      */
-    public function create($data) {
-        $sql = "INSERT INTO applicants (
+    public function create($data)
+    {
+        // Normalize daily_rate from input
+        $dailyRate = null;
+        if (isset($data['daily_rate']) && $data['daily_rate'] !== '') {
+            $dailyRate = round((float) $data['daily_rate'], 2);
+        }
+
+        // Common values
+        $first = $data['first_name'] ?? null;
+        $middle = $data['middle_name'] ?? null;
+        $last = $data['last_name'] ?? null;
+        $suffix = $data['suffix'] ?? null;
+        $phone = $data['phone_number'] ?? null;
+        $alt = $data['alt_phone_number'] ?? null;
+        $email = $data['email'] ?? null;
+        $dob = $data['date_of_birth'] ?? null;
+        $addr = $data['address'] ?? null;
+        $educA = $data['educational_attainment'] ?? null; // JSON
+        $workH = $data['work_history'] ?? null;           // JSON
+        $pref = $data['preferred_location'] ?? null;     // JSON
+        $langs = $data['languages'] ?? null;              // JSON
+        $skills = $data['specialization_skills'] ?? null;  // JSON
+        $pic = $data['picture'] ?? null;
+        $status = $data['status'] ?? 'pending';
+        $empTy = $data['employment_type'] ?? null;
+        $eduLv = $data['education_level'] ?? null;
+        $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
+        $createdBy = isset($data['created_by']) ? (int) $data['created_by'] : 0;
+
+        if ($dailyRate === null) {
+            // Use NULL explicitly in SQL for true NULL
+            $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
-                    educational_attainment, work_history, preferred_location, languages, specialization_skills,
+                    educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
                     picture, status, employment_type, education_level, years_experience, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $this->db->prepare($sql);
-
-        /*
-         * bind_param types:
-         * - 18 strings: first_name .. education_level  (18 x 's')
-         * - 2 integers: years_experience, created_by   (2 x 'i')
-         */
-        $stmt->bind_param(
-            "ssssssssssssssssssii",
-            $data['first_name'],
-            $data['middle_name'],
-            $data['last_name'],
-            $data['suffix'],
-            $data['phone_number'],
-            $data['alt_phone_number'],
-            $data['email'],
-            $data['date_of_birth'],
-            $data['address'],
-            $data['educational_attainment'], // JSON
-            $data['work_history'],           // JSON
-            $data['preferred_location'],     // JSON
-            $data['languages'],              // JSON
-            $data['specialization_skills'],  // JSON
-            $data['picture'],
-            $data['status'],
-            $data['employment_type'],        // string
-            $data['education_level'],        // string
-            $data['years_experience'],       // int
-            $data['created_by']              // int
-        );
-
-        if ($stmt->execute()) {
-            return $this->db->insert_id;
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('Prepare failed (create NULL rate): ' . $this->db->error);
+                return false;
+            }
+            // 18 strings + 2 ints (years_experience, created_by)
+            $stmt->bind_param(
+                "ssssssssssssssssssii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $createdBy
+            );
+        } else {
+            // daily_rate bound as double (d)
+            $sql = "INSERT INTO applicants (
+                    first_name, middle_name, last_name, suffix,
+                    phone_number, alt_phone_number, email, date_of_birth, address,
+                    educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
+                    picture, status, employment_type, education_level, years_experience, created_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('Prepare failed (create with rate): ' . $this->db->error);
+                return false;
+            }
+            // 12th param is daily_rate (double), then the rest
+            // Types: 18 strings + 1 double + 2 ints => but order matters
+            // Our order: 11 strings, 1 double, 6 strings, 2 ints => "sssssssssss" + "d" + "ssssss" + "ii"
+            $stmt->bind_param(
+                "sssssssssss" . "d" . "sssssss" . "ii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $dailyRate,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $createdBy
+            );
         }
-        return false;
-    }
 
+        $ok = $stmt->execute();
+        if (!$ok) {
+            error_log('Execute failed (create): ' . $stmt->error);
+            $stmt->close();
+            return false;
+        }
+        $newId = $this->db->insert_id;
+        $stmt->close();
+        return $newId ?: false;
+    }
     /**
      * Update applicant (includes specialization_skills JSON).
      */
-    public function update($id, $data) {
-        $sql = "UPDATE applicants SET
+    public function update($id, $data)
+    {
+        // Normalize daily_rate
+        $dailyRate = null;
+        if (isset($data['daily_rate']) && $data['daily_rate'] !== '') {
+            $dailyRate = round((float) $data['daily_rate'], 2);
+        }
+
+        // Common values
+        $first = $data['first_name'] ?? null;
+        $middle = $data['middle_name'] ?? null;
+        $last = $data['last_name'] ?? null;
+        $suffix = $data['suffix'] ?? null;
+        $phone = $data['phone_number'] ?? null;
+        $alt = $data['alt_phone_number'] ?? null;
+        $email = $data['email'] ?? null;
+        $dob = $data['date_of_birth'] ?? null;
+        $addr = $data['address'] ?? null;
+        $educA = $data['educational_attainment'] ?? null; // JSON
+        $workH = $data['work_history'] ?? null;           // JSON
+        $pref = $data['preferred_location'] ?? null;     // JSON
+        $langs = $data['languages'] ?? null;              // JSON
+        $skills = $data['specialization_skills'] ?? null;  // JSON
+        $pic = $data['picture'] ?? null;
+        $status = $data['status'] ?? 'pending';
+        $empTy = $data['employment_type'] ?? null;
+        $eduLv = $data['education_level'] ?? null;
+        $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
+
+        if ($dailyRate === null) {
+            // daily_rate to NULL
+            $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
-                    educational_attainment = ?, work_history = ?, preferred_location = ?, languages = ?, specialization_skills = ?,
+                    educational_attainment = ?, work_history = ?, daily_rate = NULL, preferred_location = ?, languages = ?, specialization_skills = ?,
                     picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?
                 WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('Prepare failed (update NULL rate): ' . $this->db->error);
+                return false;
+            }
+            // 18 strings + 1 int (years) + 1 int (id)
+            $stmt->bind_param(
+                "ssssssssssssssssssii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $id
+            );
+        } else {
+            // daily_rate bound as double
+            $sql = "UPDATE applicants SET
+                    first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
+                    phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
+                    educational_attainment = ?, work_history = ?, daily_rate = ?, preferred_location = ?, languages = ?, specialization_skills = ?,
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?
+                WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('Prepare failed (update with rate): ' . $this->db->error);
+                return false;
+            }
+            // Order before id: 11 strings, 1 double, 6 strings, 1 int (years) → then id
+            // Types: "sssssssssss" + "d" + "ssssss" + "i" + "i"
+            $stmt->bind_param(
+                "sssssssssss" . "d" . "sssssss" . "ii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $dailyRate,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $id
+            );
+        }
 
-        $stmt = $this->db->prepare($sql);
-
-        /*
-         * bind_param types:
-         * - 18 strings before years_experience: first_name .. education_level (18 x 's')
-         * - 1 integer for years_experience (i)
-         * - 1 integer for id (i)
-         *
-         * Total: "ssssssssssssssssssii"
-         */
-        $stmt->bind_param(
-            "ssssssssssssssssssii",
-            $data['first_name'],
-            $data['middle_name'],
-            $data['last_name'],
-            $data['suffix'],
-            $data['phone_number'],
-            $data['alt_phone_number'],
-            $data['email'],
-            $data['date_of_birth'],
-            $data['address'],
-            $data['educational_attainment'], // JSON
-            $data['work_history'],           // JSON
-            $data['preferred_location'],     // JSON
-            $data['languages'],              // JSON
-            $data['specialization_skills'],  // JSON
-            $data['picture'],
-            $data['status'],
-            $data['employment_type'],        // string
-            $data['education_level'],        // string
-            $data['years_experience'],       // int
-            $id                               // int
-        );
-
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if (!$ok) {
+            error_log('Execute failed (update): ' . $stmt->error);
+        }
+        $stmt->close();
+        return $ok;
     }
 
     /**
      * Update video fields for an applicant
      */
-    public function updateVideoFields($id, $videoData) {
+    public function updateVideoFields($id, $videoData)
+    {
         $sql = "UPDATE applicants SET
                     video_url = ?, video_provider = ?, video_type = ?, 
                     video_title = ?, video_thumbnail_url = ?, video_duration_seconds = ?
@@ -206,38 +358,44 @@ class Applicant {
         return $stmt->execute();
     }
 
-    public function softDelete($id) {
+    public function softDelete($id)
+    {
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 
-    public function restore($id) {
+    public function restore($id)
+    {
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NULL, status = 'pending' WHERE id = ?");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 
-    public function permanentDelete($id) {
+    public function permanentDelete($id)
+    {
         $stmt = $this->db->prepare("DELETE FROM applicants WHERE id = ?");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         $stmt = $this->db->prepare("UPDATE applicants SET status = ? WHERE id = ?");
         $stmt->bind_param("si", $status, $id);
         return $stmt->execute();
     }
 
     /** Convenience for booking workflow */
-    public function markOnProcess(int $id): bool {
+    public function markOnProcess(int $id): bool
+    {
         $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 
-    public function getDocuments($applicantId) {
+    public function getDocuments($applicantId)
+    {
         $stmt = $this->db->prepare("SELECT * FROM applicant_documents WHERE applicant_id = ?");
         $stmt->bind_param("i", $applicantId);
         $stmt->execute();
@@ -245,26 +403,30 @@ class Applicant {
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function addDocument($applicantId, $documentType, $filePath) {
+    public function addDocument($applicantId, $documentType, $filePath)
+    {
         $stmt = $this->db->prepare("INSERT INTO applicant_documents (applicant_id, document_type, file_path) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $applicantId, $documentType, $filePath);
         return $stmt->execute();
     }
 
-    public function deleteDocument($documentId) {
+    public function deleteDocument($documentId)
+    {
         $stmt = $this->db->prepare("DELETE FROM applicant_documents WHERE id = ?");
         $stmt->bind_param("i", $documentId);
         return $stmt->execute();
     }
 
     /** NEW: delete all docs of a given type for an applicant (for replacement) */
-    public function deleteDocumentsByType($applicantId, $documentType) {
+    public function deleteDocumentsByType($applicantId, $documentType)
+    {
         $stmt = $this->db->prepare("DELETE FROM applicant_documents WHERE applicant_id = ? AND document_type = ?");
         $stmt->bind_param("is", $applicantId, $documentType);
         return $stmt->execute();
     }
 
-    public function getStatistics() {
+    public function getStatistics()
+    {
         $stats = [];
 
         $result = $this->db->query("
@@ -323,7 +485,8 @@ class Applicant {
      *    client_first_name, client_middle_name, client_last_name, client_phone, client_email,
      *    client_address, booking_status, booking_created_at
      */
-    public function getOnProcessWithLatestBooking(): array {
+    public function getOnProcessWithLatestBooking(): array
+    {
         $sql = "
             SELECT
                 a.*,
@@ -359,7 +522,10 @@ class Applicant {
         ";
 
         $res = $this->db->query($sql);
-        if (!$res) return [];
+        if (!$res)
+            return [];
         return $res->fetch_all(MYSQLI_ASSOC);
     }
+
 }
+

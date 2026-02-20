@@ -29,7 +29,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-function normalizeSkillLabel(string $label): string {
+function normalizeSkillLabel(string $label): string
+{
     // Normalize dashes/ampersands/spacing from stored data
     $x = trim(htmlspecialchars_decode($label, ENT_QUOTES));
     $x = preg_replace('/\s+/', ' ', $x);
@@ -41,7 +42,8 @@ function normalizeSkillLabel(string $label): string {
  * Unifies "and" and "&" to a single " & " form so we can match either variant
  * from the DB/UI (covers both old and new option sets).
  */
-function canonicalizeForRoleMap(string $label): string {
+function canonicalizeForRoleMap(string $label): string
+{
     $x = normalizeSkillLabel($label);
     // Replace any " and " or "&" (with flexible spacing) to " & "
     $x = preg_replace('/\s*(?:&|and)\s*/i', ' & ', $x);
@@ -50,15 +52,16 @@ function canonicalizeForRoleMap(string $label): string {
     return $x;
 }
 
-function mapPrimarySpecialization(array $skills): string {
+function mapPrimarySpecialization(array $skills): string
+{
     // Canonical map (expects " & " form)
     $roleMap = [
-        'Cleaning & Housekeeping (General)'   => 'Housekeeping',
-        'Laundry & Clothing Care'             => 'Laundry Specialist',
-        'Cooking & Food Service'              => 'Cook',
-        'Childcare & Maternity (Yaya)'        => 'Nanny',
-        'Elderly & Special Care (Caregiver)'  => 'Elderly Care',
-        'Pet & Outdoor Maintenance'           => 'Pet Care Specialist',
+        'Cleaning & Housekeeping (General)' => 'Housekeeping',
+        'Laundry & Clothing Care' => 'Laundry Specialist',
+        'Cooking & Food Service' => 'Cook',
+        'Childcare & Maternity (Yaya)' => 'Nanny',
+        'Elderly & Special Care (Caregiver)' => 'Elderly Care',
+        'Pet & Outdoor Maintenance' => 'Pet Care Specialist',
     ];
 
     foreach ($skills as $raw) {
@@ -75,7 +78,8 @@ function mapPrimarySpecialization(array $skills): string {
  * e.g., "Laundry & Clothing Care" => ["Laundry & Clothing Care", "Laundry and Clothing Care"]
  *       "Cleaning and Housekeeping (General)" => ["Cleaning and Housekeeping (General)", "Cleaning & Housekeeping (General)"]
  */
-function andAmpVariants(string $label): array {
+function andAmpVariants(string $label): array
+{
     $a = trim(htmlspecialchars_decode($label, ENT_QUOTES));
     // Collapse spaces
     $a = preg_replace('/\s+/', ' ', $a);
@@ -87,54 +91,59 @@ function andAmpVariants(string $label): array {
     // Unique, preserve order preference: as-provided first, then the alternate
     $out = [];
     foreach ([$a, $withAmp, $withAnd] as $v) {
-        if ($v !== '' && !in_array($v, $out, true)) $out[] = $v;
+        if ($v !== '' && !in_array($v, $out, true))
+            $out[] = $v;
     }
     return $out;
 }
 
-function computeAge(?string $dob): ?int {
-    if (empty($dob)) return null;
+function computeAge(?string $dob): ?int
+{
+    if (empty($dob))
+        return null;
     $d = DateTime::createFromFormat('Y-m-d', $dob);
-    if (!$d) return null;
+    if (!$d)
+        return null;
     $now = new DateTime('now');
-    return (int)$d->diff($now)->y;
+    return (int) $d->diff($now)->y;
 }
 
-function initialsFromName(string $first, ?string $last): string {
+function initialsFromName(string $first, ?string $last): string
+{
     $a = mb_substr(trim($first), 0, 1);
-    $b = mb_substr(trim((string)$last), 0, 1);
+    $b = mb_substr(trim((string) $last), 0, 1);
     return mb_strtoupper($a . $b);
 }
 
 try {
-    $database  = new Database();
+    $database = new Database();
     $applicant = new Applicant($database);
 
     // Pagination / filters (from GET)
-    $page       = max(1, (int)($_GET['page'] ?? 1));
-    $per_page   = min(100, max(1, (int)($_GET['per_page'] ?? 12)));
-    $offset     = ($page - 1) * $per_page;
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $per_page = min(100, max(1, (int) ($_GET['per_page'] ?? 12)));
+    $offset = ($page - 1) * $per_page;
 
-    $q          = trim((string)($_GET['q'] ?? ''));
-    $location   = trim((string)($_GET['location'] ?? ''));
-    $minExp     = (int)($_GET['min_experience'] ?? 0);
-    $availableBy = trim((string)($_GET['available_by'] ?? ''));
-    $sort       = trim((string)($_GET['sort'] ?? ''));
+    $q = trim((string) ($_GET['q'] ?? ''));
+    $location = trim((string) ($_GET['location'] ?? ''));
+    $minExp = (int) ($_GET['min_experience'] ?? 0);
+    $availableBy = trim((string) ($_GET['available_by'] ?? ''));
+    $sort = trim((string) ($_GET['sort'] ?? ''));
 
     // Multi-value filters (arrays)
     $selectedSpecs = $_GET['specializations'] ?? [];
     if (!is_array($selectedSpecs) && $selectedSpecs !== '') {
-        $selectedSpecs = array_filter(array_map('trim', explode(',', (string)$selectedSpecs)));
+        $selectedSpecs = array_filter(array_map('trim', explode(',', (string) $selectedSpecs)));
     }
     $selectedLangs = $_GET['languages'] ?? [];
     if (!is_array($selectedLangs) && $selectedLangs !== '') {
-        $selectedLangs = array_filter(array_map('trim', explode(',', (string)$selectedLangs)));
+        $selectedLangs = array_filter(array_map('trim', explode(',', (string) $selectedLangs)));
     }
 
     // NEW: Availability from UI (Full-time / Part-time)
     $availability = $_GET['availability'] ?? [];
     if (!is_array($availability) && $availability !== '') {
-        $availability = array_filter(array_map('trim', explode(',', (string)$availability)));
+        $availability = array_filter(array_map('trim', explode(',', (string) $availability)));
     }
 
     // Build WHERE clauses and bind params dynamically
@@ -153,7 +162,10 @@ try {
         $where[] = "(CONCAT_WS(' ', first_name, middle_name, last_name) LIKE ? OR specialization_skills LIKE ? OR email LIKE ? OR preferred_location LIKE ? )";
         $like = "%{$q}%";
         $types .= 'ssss';
-        $values[] = $like; $values[] = $like; $values[] = $like; $values[] = $like;
+        $values[] = $like;
+        $values[] = $like;
+        $values[] = $like;
+        $values[] = $like;
     }
 
     if ($location !== '') {
@@ -163,7 +175,9 @@ try {
         $where[] = "(address LIKE ? OR preferred_location LIKE ? OR JSON_SEARCH(preferred_location, 'one', ?, NULL, '$[*]') IS NOT NULL)";
         $likeLoc = "%{$location}%";
         $types .= 'sss';
-        $values[] = $likeLoc; $values[] = $likeLoc; $values[] = "%{$location}%";
+        $values[] = $likeLoc;
+        $values[] = $likeLoc;
+        $values[] = "%{$location}%";
     }
 
     // Specializations: tolerant of "&" vs "and"
@@ -187,7 +201,8 @@ try {
         $parts = [];
         foreach ($selectedLangs as $lang) {
             $parts[] = "languages LIKE ?";
-            $types .= 's'; $values[] = "%{$lang}%";
+            $types .= 's';
+            $values[] = "%{$lang}%";
         }
         $where[] = '(' . implode(' OR ', $parts) . ')';
     }
@@ -195,7 +210,8 @@ try {
     // Experience (min years)
     if ($minExp > 0) {
         $where[] = 'years_experience >= ?';
-        $types .= 'i'; $values[] = $minExp;
+        $types .= 'i';
+        $values[] = $minExp;
     }
 
     // NEW: Availability => employment_type tolerance (Full Time / Part Time)
@@ -204,7 +220,8 @@ try {
         $want = [];
         foreach ($availability as $a) {
             $t = strtolower(preg_replace('/[\s\-]/', '', $a));
-            if (in_array($t, ['fulltime', 'parttime'], true)) $want[$t] = true;
+            if (in_array($t, ['fulltime', 'parttime'], true))
+                $want[$t] = true;
         }
         if (!empty($want)) {
             $in = [];
@@ -216,7 +233,8 @@ try {
                 . ")"
                 . ")";
             foreach (array_keys($want) as $k) {
-                $types .= 's'; $values[] = $k; // 'fulltime' or 'parttime'
+                $types .= 's';
+                $values[] = $k; // 'fulltime' or 'parttime'
             }
         }
     }
@@ -224,7 +242,8 @@ try {
     if ($availableBy !== '') {
         // Compare computed availability = created_at + 30 days <= availableBy
         $where[] = "DATE_ADD(created_at, INTERVAL 30 DAY) <= ?";
-        $types .= 's'; $values[] = $availableBy;
+        $types .= 's';
+        $values[] = $availableBy;
     }
 
     // Sorting
@@ -250,30 +269,31 @@ try {
         // bind params to count statement
         $tmp = array_merge([$types], $values);
         $refs = [];
-        foreach ($tmp as $k => $v) $refs[$k] = &$tmp[$k];
+        foreach ($tmp as $k => $v)
+            $refs[$k] = &$tmp[$k];
         call_user_func_array([$countStmt, 'bind_param'], $refs);
     }
     $countStmt->execute();
     $countRes = $countStmt->get_result();
     $totalRow = $countRes->fetch_assoc();
-    $total = (int)($totalRow['cnt'] ?? 0);
+    $total = (int) ($totalRow['cnt'] ?? 0);
 
     // Advanced randomization: ensures fair distribution across all pages
     // Uses a combination of session-based seed and deterministic hashing for consistent but varied ordering
     $rotateEnabled = !isset($_GET['rotate']) || $_GET['rotate'] !== '0';
-    
+
     if ($rotateEnabled) {
         // Create a unique seed per session (persists across page loads in same session)
         if (!isset($_SESSION['applicant_random_seed'])) {
             // Generate a random seed for this session
             $_SESSION['applicant_random_seed'] = bin2hex(random_bytes(8));
         }
-        
+
         // Combine session seed with daily rotation for better distribution
         $sessionSeed = $_SESSION['applicant_random_seed'];
         $dailySeed = date('Ymd');
         $combinedSeed = $sessionSeed . '_' . $dailySeed;
-        
+
         // Use a more sophisticated randomization that ensures fair distribution:
         // 1. Primary: Hash ID with seed for deterministic but varied ordering
         // 2. Secondary: Use multiplicative hash for better distribution
@@ -285,7 +305,7 @@ try {
                     MOD(id * 2654435761, 10000) ASC,
                     {$orderBy} 
                 LIMIT ?, ?";
-        
+
         $bindTypes = $types . 'sii';
         $bindValues = array_merge($values, [$combinedSeed, $offset, $per_page]);
     } else {
@@ -298,7 +318,8 @@ try {
 
     $tmp = array_merge([$bindTypes], $bindValues);
     $refs = [];
-    foreach ($tmp as $k => $v) $refs[$k] = &$tmp[$k];
+    foreach ($tmp as $k => $v)
+        $refs[$k] = &$tmp[$k];
     call_user_func_array([$stmt, 'bind_param'], $refs);
 
     $stmt->execute();
@@ -306,22 +327,22 @@ try {
     $apps = $result->fetch_all(MYSQLI_ASSOC);
 
     // Base URLs (auto-detect http/https + host)
-    $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     // Adjust this path to your project root if needed:
     $appBase = $scheme . '://' . $host . '/csnk';
 
-    $uploadsBase    = rtrim($appBase, '/') . '/admin/uploads/';
+    $uploadsBase = rtrim($appBase, '/') . '/admin/uploads/';
     $placeholderUrl = rtrim($appBase, '/') . '/resources/img/placeholder-user.svg';
 
     $rows = [];
 
     foreach ($apps as $app) {
         // Parse JSONs safely
-        $skills      = json_decode($app['specialization_skills'] ?? '[]', true) ?: [];
-        $prefLoc     = json_decode($app['preferred_location']     ?? '[]', true) ?: [];
-        $langsArr    = json_decode($app['languages']              ?? '[]', true) ?: [];
-        $educAttain  = json_decode($app['educational_attainment'] ?? '[]', true) ?: [];
+        $skills = json_decode($app['specialization_skills'] ?? '[]', true) ?: [];
+        $prefLoc = json_decode($app['preferred_location'] ?? '[]', true) ?: [];
+        $langsArr = json_decode($app['languages'] ?? '[]', true) ?: [];
+        $educAttain = json_decode($app['educational_attainment'] ?? '[]', true) ?: [];
 
         // Normalize skills (avoid excessive HTML entities)
         $skills = array_values(array_filter(array_map('normalizeSkillLabel', $skills)));
@@ -330,7 +351,7 @@ try {
         $primaryRole = mapPrimarySpecialization($skills);
 
         // Location city (first preferred city shown on card)
-        $locationCity   = !empty($prefLoc) ? (string)$prefLoc[0] : 'N/A';
+        $locationCity = !empty($prefLoc) ? (string) $prefLoc[0] : 'N/A';
         // Region: basic default
         $locationRegion = 'NCR';
 
@@ -340,7 +361,7 @@ try {
         // Photo URL (robust: absolute URL respected, else join with uploads base)
         $photoUrl = $placeholderUrl;
         if (!empty($app['picture'])) {
-            $relative = ltrim((string)$app['picture'], '/');
+            $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
                 $photoUrl = $relative; // already absolute
             } else {
@@ -349,14 +370,14 @@ try {
         }
 
         // Employment type label for client
-        $employmentRaw   = (string)($app['employment_type'] ?? '');
+        $employmentRaw = (string) ($app['employment_type'] ?? '');
         $employmentLabel = ($employmentRaw === 'Full Time')
             ? 'Full-time'
             : (($employmentRaw === 'Part Time') ? 'Part-time' : 'Full-time');
 
         // Availability: default created_at + 30 days (kept for sorting/filter logic only)
-        $createdAt   = $app['created_at'] ?? date('Y-m-d H:i:s');
-        $availDate   = date('Y-m-d', strtotime($createdAt . ' +30 days'));
+        $createdAt = $app['created_at'] ?? date('Y-m-d H:i:s');
+        $availDate = date('Y-m-d', strtotime($createdAt . ' +30 days'));
 
         // Educational attainment display
         $educationLevelEnum = $app['education_level'] ?? null;
@@ -366,7 +387,7 @@ try {
         // Video URL
         $videoUrl = '';
         if (!empty($app['video_url'])) {
-            $normalized = str_replace('\\', '/', (string)$app['video_url']);
+            $normalized = str_replace('\\', '/', (string) $app['video_url']);
             $videoRelative = ltrim($normalized, '/');
             if (preg_match('~^https?://~i', $videoRelative)) {
                 $videoUrl = $videoRelative; // YouTube/Vimeo
@@ -382,42 +403,46 @@ try {
         $videoType = ($videoTypeRaw === 'file') ? 'file' : 'iframe';
 
         $rows[] = [
-            'id'                      => (int)$app['id'],
-            'full_name'               => trim(($app['first_name'] ?? '') . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . ($app['last_name'] ?? '')),
-            'initials'                => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
-            'age'                     => computeAge($app['date_of_birth'] ?? null),
+            'id' => (int) $app['id'],
+            'full_name' => trim(($app['first_name'] ?? '') . ' ' . (($app['middle_name'] ?? '') ? $app['middle_name'] . ' ' : '') . ($app['last_name'] ?? '')),
+            'initials' => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
+            'age' => computeAge($app['date_of_birth'] ?? null),
 
             // STATUS (important for client-side filtering)
-            'status'                  => strtolower(trim((string)($app['status'] ?? ''))),
+            'status' => strtolower(trim((string) ($app['status'] ?? ''))),
 
-            'specialization'          => $primaryRole,
-            'specializations'         => $skills,
+            'specialization' => $primaryRole,
+            'specializations' => $skills,
 
-            'location_city'           => $locationCity,
-            'location_region'         => $locationRegion,
-            'preferred_locations'     => $prefLoc,
+            'location_city' => $locationCity,
+            'location_region' => $locationRegion,
+            'preferred_locations' => $prefLoc,
 
-            'years_experience'        => (int)($app['years_experience'] ?? 0),
+            'years_experience' => (int) ($app['years_experience'] ?? 0),
 
-            'employment_type'         => $employmentLabel,  // Full-time | Part-time
-            'employment_type_raw'     => $employmentRaw,    // Full Time | Part Time (DB)
+            'employment_type' => $employmentLabel,  // Full-time | Part-time
+            'employment_type_raw' => $employmentRaw,    // Full Time | Part Time (DB)
 
-            'availability_date'       => $availDate,
+            // 🔹 ADD THIS: expose DB daily_rate to clients as a number (or null)
+            'daily_rate' => isset($app['daily_rate']) && $app['daily_rate'] !== '' ? (float) $app['daily_rate'] : null,
 
-            'languages'               => $languagesStr,     // "English,Filipino"
-            'languages_array'         => $langsArr,         // ["English","Filipino"]
 
-            'education_level'         => $educationLevelEnum,
-            'educational_attainment'  => $educAttain,
-            'education_display'       => $educationDisplay,
+            'availability_date' => $availDate,
 
-            'photo_url'               => $photoUrl,
-            'photo_placeholder'       => $placeholderUrl,
+            'languages' => $languagesStr,     // "English,Filipino"
+            'languages_array' => $langsArr,         // ["English","Filipino"]
 
-            'video_url'               => $videoUrl,
-            'video_type'              => $videoType,
+            'education_level' => $educationLevelEnum,
+            'educational_attainment' => $educAttain,
+            'education_display' => $educationDisplay,
 
-            'created_at'              => $createdAt
+            'photo_url' => $photoUrl,
+            'photo_placeholder' => $placeholderUrl,
+
+            'video_url' => $videoUrl,
+            'video_type' => $videoType,
+
+            'created_at' => $createdAt
         ];
     }
 
