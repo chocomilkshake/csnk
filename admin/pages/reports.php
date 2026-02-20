@@ -1,22 +1,19 @@
 <?php
 // FILE: pages/reports.php
 $pageTitle = 'Reports (Approved Applicants)';
-require_once '../includes/Applicant.php'; // <-- load only what you need for now
 
-if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
-
-/* ---------------- Inline endpoint: fetch full history as JSON ----------------
+/* -----------------------------------------------------------
+   INLINE JSON ENDPOINT (NO LAYOUT): history for one applicant
    GET  reports.php?action=history&id=123
-   Returns [{admin_name, created_at, note_text}, ...] (newest first)
--------------------------------------------------------------------------------*/
+------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=UTF-8');
 
-    // You still need $database. Bootstrap the DB like header.php does:
     require_once '../includes/config.php';
     require_once '../includes/Database.php';
-    $database = new Database();
-    $conn = $database->getConnection(); // mysqli
+
+    $database = new Database();              // mysqli
+    $conn = $database->getConnection();
 
     $id = (int)$_GET['id'];
     $data = [];
@@ -31,29 +28,34 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
             WHERE ar.applicant_id = ?
             ORDER BY ar.created_at DESC, ar.id DESC
         ";
-        $stmt = $conn->prepare($sqlH);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
-            $data[] = [
-                'note_text'  => (string)($row['note_text'] ?? ''),
-                'created_at' => (string)($row['created_at'] ?? ''),
-                'admin_name' => (string)($row['admin_name'] ?? '—'),
-            ];
+        if ($stmt = $conn->prepare($sqlH)) {
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $data[] = [
+                    'note_text'   => (string)($row['note_text'] ?? ''),
+                    'created_at'  => (string)($row['created_at'] ?? ''),
+                    'admin_name'  => (string)($row['admin_name'] ?? '—'),
+                ];
+            }
+            $stmt->close();
         }
-        $stmt->close();
     } catch (Throwable $e) {
-        error_log('History fetch failed: ' . $e->getMessage());
+        // silently ignore, return empty
     }
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// ---- Normal page rendering continues below ----
+/* -----------------------------------------------------------
+   NORMAL PAGE: include header to bootstrap DB/auth/session
+------------------------------------------------------------ */
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
+if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
 $applicant = new Applicant($database);
+
 /* ---------------- CSRF ---------------- */
 if (empty($_SESSION['csrf_token'])) {
     try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
@@ -74,48 +76,9 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['reports_q'];
 }
 
-/* ---------------- Inline endpoint: fetch full history as JSON ----------------
-   GET  reports.php?action=history&id=123
-   Returns [{admin_name, created_at, note_text}, ...] (newest first)
--------------------------------------------------------------------------------*/
-if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
-    header('Content-Type: application/json; charset=UTF-8');
-    $id = (int)$_GET['id'];
-    $conn = $database->getConnection(); // mysqli
-    $data = [];
-    try {
-        $sqlH = "
-            SELECT
-                ar.note_text,
-                ar.created_at,
-                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
-            FROM applicant_reports ar
-            LEFT JOIN admin_users au ON au.id = ar.admin_id
-            WHERE ar.applicant_id = ?
-            ORDER BY ar.created_at DESC, ar.id DESC
-        ";
-        $stmt = $conn->prepare($sqlH);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
-            $data[] = [
-                'note_text'  => (string)($row['note_text'] ?? ''),
-                'created_at' => (string)($row['created_at'] ?? ''),
-                'admin_name' => (string)($row['admin_name'] ?? '—'),
-            ];
-        }
-        $stmt->close();
-    } catch (Throwable $e) {
-        error_log('History fetch failed: ' . $e->getMessage());
-    }
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 /* ---------------- Handle POST: add a report/note (MySQLi) ----------------
    APPENDS a new row always (never updates) => all previous reports are preserved
--------------------------------------------------------------------------------*/
+---------------------------------------------------------------------------- */
 if (
     isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
     isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
@@ -143,20 +106,22 @@ if (
     $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
 
     try {
-        $stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
-        $stmt->bind_param("iis", $id, $adminId, $noteText);
-        $ok = $stmt->execute();
-        $stmt->close();
-        if ($ok) {
-            setFlashMessage('success', 'Report saved.');
-            if (isset($auth) && method_exists($auth,'logActivity') && isset($_SESSION['admin_id'])) {
-                $auth->logActivity((int)$_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
+        if ($stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)")) {
+            $stmt->bind_param("iis", $id, $adminId, $noteText);
+            $ok = $stmt->execute();
+            $stmt->close();
+            if ($ok) {
+                setFlashMessage('success', 'Report saved.');
+                if (isset($auth) && method_exists($auth,'logActivity') && isset($_SESSION['admin_id'])) {
+                    $auth->logActivity((int)$_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
+                }
+            } else {
+                setFlashMessage('error', 'Failed to save report. Please try again.');
             }
         } else {
             setFlashMessage('error', 'Failed to save report. Please try again.');
         }
     } catch (Throwable $e) {
-        error_log('Add report failed: ' . $e->getMessage());
         setFlashMessage('error', 'Failed to save report. Please try again.');
     }
 
@@ -217,37 +182,37 @@ if ($q !== '') { $rows = filterRowsByQuery($rows, $q); }
 $exportUrl = '../includes/excel_reports.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
 <style>
-    .table-card, .table-card .card-body { overflow: visible !important; }
-    .table-card .table-responsive { overflow: visible !important; }
-    td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
-    .report-count-badge { font-size: .8rem; }
-    .history-note { white-space: pre-wrap; }
+  .table-card, .table-card .card-body { overflow: visible !important; }
+  .table-card .table-responsive { overflow: visible !important; }
+  td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
+  .report-count-badge { font-size: .8rem; }
+  .history-note { white-space: pre-wrap; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">Reports — Approved Applicants</h4>
-    <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
-        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
-    </a>
+  <h4 class="mb-0 fw-semibold">Reports — Approved Applicants</h4>
+  <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+  </a>
 </div>
 
 <!-- Search -->
 <div class="mb-3 d-flex justify-content-end">
-    <form method="get" action="reports.php" class="w-100" style="max-width: 420px;">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control"
-                   placeholder="Search approved, notes or admin..."
-                   value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
-            <button class="btn btn-outline-secondary" type="submit" title="Search">
-                <i class="bi bi-search"></i>
-            </button>
-            <?php if ($q !== ''): ?>
-                <a class="btn btn-outline-secondary" href="reports.php?clear=1" title="Clear">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            <?php endif; ?>
-        </div>
-    </form>
+  <form method="get" action="reports.php" class="w-100" style="max-width: 420px;">
+    <div class="input-group">
+      <input type="text" name="q" class="form-control"
+             placeholder="Search approved, notes or admin..."
+             value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+      <button class="btn btn-outline-secondary" type="submit" title="Search">
+        <i class="bi bi-search"></i>
+      </button>
+      <?php if ($q !== ''): ?>
+        <a class="btn btn-outline-secondary" href="reports.php?clear=1" title="Clear">
+          <i class="bi bi-x-lg"></i>
+        </a>
+      <?php endif; ?>
+    </div>
+  </form>
 </div>
 
 <div class="card table-card">
@@ -255,77 +220,79 @@ $exportUrl = '../includes/excel_reports.php' . ($q !== '' ? ('?q=' . urlencode($
     <table class="table table-bordered table-striped table-hover table-styled align-middle">
       <thead>
         <tr>
-            <th>Photo</th>
-            <th>Applicant</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Latest Report</th>
-            <th>Reported By</th>
-            <th>Reported At</th>
-            <th style="width: 260px;">Actions</th>
+          <th>Photo</th>
+          <th>Applicant</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Latest Report</th>
+          <th>Reported By</th>
+          <th>Reported At</th>
+          <th style="width: 260px;">Actions</th>
         </tr>
       </thead>
       <tbody>
         <?php if (empty($rows)): ?>
-            <tr><td colspan="8" class="text-center text-muted py-5">
-                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                <?php if ($q === ''): ?>
-                    No approved applicants yet.
-                <?php else: ?>
-                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
-                    <a href="reports.php?clear=1" class="ms-1">Clear search</a>
-                <?php endif; ?>
-            </td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <?php if ($q === ''): ?>
+              No approved applicants yet.
+            <?php else: ?>
+              No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+              <a href="reports.php?clear=1" class="ms-1">Clear search</a>
+            <?php endif; ?>
+          </td></tr>
         <?php else: ?>
-            <?php foreach ($rows as $r): ?>
-                <?php
-                    $id = (int)$r['id'];
-                    $name = getFullName($r['first_name'], $r['middle_name'], $r['last_name'], $r['suffix']);
-                    $latestNote = (string)($r['latest_note'] ?? '');
-                    $latestAdmin = (string)($r['latest_note_admin'] ?? '—');
-                    $latestAt = (string)($r['latest_note_at'] ?? '');
-                    $reportCount = (int)($r['report_count'] ?? 0);
-                ?>
-                <tr>
-                    <td>
-                        <?php if (!empty($r['picture'])): ?>
-                            <img src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                 alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
-                        <?php else: ?>
-                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                 style="width:50px;height:50px;"><?php echo strtoupper(substr((string)$r['first_name'],0,1)); ?></div>
-                        <?php endif; ?>
-                    </td>
-                    <td class="fw-semibold">
-                        <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
-                        <?php if ($reportCount > 0): ?>
-                            <span class="badge bg-primary-subtle text-primary border ms-2 report-count-badge"
-                                  title="Total reports for this applicant"><?php echo $reportCount; ?> report<?php echo $reportCount>1?'s':''; ?></span>
-                        <?php endif; ?>
-                    </td>
-                    <td><?php echo htmlspecialchars((string)($r['email'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string)($r['phone_number'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo $latestNote !== '' ? nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')) : '—'; ?></td>
-                    <td><?php echo htmlspecialchars($latestAdmin, ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td class="actions-cell">
-                        <button class="btn btn-sm btn-primary write-report"
-                                data-id="<?php echo $id; ?>"
-                                data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
-                            <i class="bi bi-journal-plus me-1"></i> Write Report
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary view-history"
-                                data-id="<?php echo $id; ?>"
-                                data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
-                                <?php echo $reportCount === 0 ? 'disabled' : ''; ?>>
-                            <i class="bi bi-clock-history me-1"></i> History
-                        </button>
-                        <a class="btn btn-sm btn-info" href="view_approved.php?id=<?php echo $id; ?>">
-                            <i class="bi bi-eye me-1"></i> View
-                        </a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
+          <?php foreach ($rows as $r): ?>
+            <?php
+              $id = (int)$r['id'];
+              $name = getFullName($r['first_name'], $r['middle_name'], $r['last_name'], $r['suffix']);
+              $latestNote = (string)($r['latest_note'] ?? '');
+              $latestAdmin = (string)($r['latest_note_admin'] ?? '—');
+              $latestAt = (string)($r['latest_note_at'] ?? '');
+              $reportCount = (int)($r['report_count'] ?? 0);
+            ?>
+            <tr>
+              <td>
+                <?php if (!empty($r['picture'])): ?>
+                  <img src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                       alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                <?php else: ?>
+                  <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                       style="width:50px;height:50px;"><?php echo strtoupper(substr((string)$r['first_name'],0,1)); ?></div>
+                <?php endif; ?>
+              </td>
+              <td class="fw-semibold">
+                <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
+                <?php if ($reportCount > 0): ?>
+                  <span class="badge bg-primary-subtle text-primary border ms-2 report-count-badge"
+                        title="Total reports for this applicant">
+                        <?php echo $reportCount; ?> report<?php echo $reportCount > 1 ? 's' : ''; ?>
+                  </span>
+                <?php endif; ?>
+              </td>
+              <td><?php echo htmlspecialchars((string)($r['email'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo htmlspecialchars((string)($r['phone_number'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo $latestNote !== '' ? nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')) : '—'; ?></td>
+              <td><?php echo htmlspecialchars($latestAdmin, ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?></td>
+              <td class="actions-cell">
+                <button class="btn btn-sm btn-primary write-report"
+                        data-id="<?php echo $id; ?>"
+                        data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
+                  <i class="bi bi-journal-plus me-1"></i> Write Report
+                </button>
+                <button class="btn btn-sm btn-outline-secondary view-history"
+                        data-id="<?php echo $id; ?>"
+                        data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
+                        <?php echo $reportCount === 0 ? 'disabled' : ''; ?>>
+                  <i class="bi bi-clock-history me-1"></i> History
+                </button>
+                <a class="btn btn-sm btn-info" href="view_approved.php?id=<?php echo $id; ?>">
+                  <i class="bi bi-eye me-1"></i> View
+                </a>
+              </td>
+            </tr>
+          <?php endforeach; ?>
         <?php endif; ?>
       </tbody>
     </table>
@@ -439,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function escapeHtml(s) {
-    return (s||'').replace(/[&<>"']/g, function(c){
+    return (s||'').replace(/[&<>\"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
     });
   }
