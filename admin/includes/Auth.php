@@ -28,7 +28,10 @@ class Auth {
     }
 
     /**
-     * Creates required tables if they don't exist: session_logs, activity_logs.
+     * Creates required tables if they don't exist:
+     * - session_logs
+     * - activity_logs
+     * - applicant_replacements  (for "Replace Applicant" feature)
      * Safe to run multiple times.
      */
     private function ensureRequiredTables(): void {
@@ -51,29 +54,48 @@ class Auth {
         $sqlActivityLogs = "
             CREATE TABLE IF NOT EXISTS `activity_logs` (
                 `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                `admin_id` INT UNSIGNED NOT NULL,
+                `admin_id` INT UNSIGNED DEFAULT NULL,
                 `action` VARCHAR(100) NOT NULL,
                 `description` TEXT NULL,
-                `ip_address` VARCHAR(45) NOT NULL,
-                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ip_address` VARCHAR(45) DEFAULT NULL,
+                `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (`id`),
                 KEY `idx_activity_logs_admin_id` (`admin_id`),
                 KEY `idx_activity_logs_created_at` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ";
 
-        // Execute creation queries (suppress fatal if DB unavailable, but try)
-        try {
-            $this->db->query($sqlSessionLogs);
-        } catch (\Throwable $e) {
-            // error_log('Failed creating session_logs: ' . $e->getMessage());
-        }
+        // applicant_replacements: stores replacement workflow events
+        $sqlApplicantRepl = "
+        CREATE TABLE IF NOT EXISTS `applicant_replacements` (
+          `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+          `original_applicant_id` INT(10) UNSIGNED NOT NULL,
+          `replacement_applicant_id` INT(10) UNSIGNED DEFAULT NULL,
+          `client_booking_id` INT(10) UNSIGNED DEFAULT NULL,
+          `reason` ENUM('AWOL','Client Left','Not Finished Contract','Performance Issue','Other') NOT NULL,
+          `report_text` TEXT NOT NULL,
+          `attachments_json` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`attachments_json`)),
+          `status` ENUM('selection','assigned','cancelled') NOT NULL DEFAULT 'selection',
+          `created_by` INT(10) UNSIGNED DEFAULT NULL,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          `assigned_at` DATETIME DEFAULT NULL,
+          PRIMARY KEY (`id`),
+          KEY `idx_ar_original_applicant_id` (`original_applicant_id`),
+          KEY `idx_ar_replacement_applicant_id` (`replacement_applicant_id`),
+          KEY `idx_ar_client_booking_id` (`client_booking_id`),
+          KEY `idx_ar_status` (`status`),
+          CONSTRAINT `fk_ar_original_applicant` FOREIGN KEY (`original_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+          CONSTRAINT `fk_ar_replacement_applicant` FOREIGN KEY (`replacement_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+          CONSTRAINT `fk_ar_client_booking` FOREIGN KEY (`client_booking_id`) REFERENCES `client_bookings` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+          CONSTRAINT `fk_ar_created_by_admin` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        ";
 
-        try {
-            $this->db->query($sqlActivityLogs);
-        } catch (\Throwable $e) {
-            // error_log('Failed creating activity_logs: ' . $e->getMessage());
-        }
+        // Execute creation queries (suppress fatal if DB unavailable, but try)
+        try { $this->db->query($sqlSessionLogs); } catch (\Throwable $e) { /* silent */ }
+        try { $this->db->query($sqlActivityLogs); } catch (\Throwable $e) { /* silent */ }
+        try { $this->db->query($sqlApplicantRepl); } catch (\Throwable $e) { /* silent */ }
     }
 
     /**
@@ -336,7 +358,6 @@ class Auth {
             }
         } catch (\Throwable $e) {
             // Do not break auth flow if logging fails
-            // error_log('logSession failed: ' . $e->getMessage());
         }
     }
 
@@ -363,7 +384,6 @@ class Auth {
             }
         } catch (\Throwable $e) {
             // Do not prevent logout if logging fails
-            // error_log('updateSessionLogout failed: ' . $e->getMessage());
         }
     }
 
@@ -407,7 +427,6 @@ class Auth {
             }
         } catch (\Throwable $e) {
             // Silent fail for logging (do not affect UX)
-            // error_log('logActivity failed: ' . $e->getMessage());
         }
     }
 }
