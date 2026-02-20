@@ -1,9 +1,10 @@
 <?php
-  // Active page for navbar highlighting
-  $page = 'applicants';
+// Active page for navbar highlighting
+$page = 'applicants';
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,42 +20,34 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 </head>
+
 <body>
 
   <!-- Reusable Navbar -->
   <?php include __DIR__ . '/navbar.php'; ?>
 
   <main class="container py-4">
-    <div class="mb-3"><h1 class="h3 mb-0">Kasambahay Applicants</h1></div>
+    <div class="mb-3">
+      <h1 class="h3 mb-0">Kasambahay Applicants</h1>
+    </div>
 
     <!-- Search Bar -->
     <section class="search-wrap mb-4">
       <form id="searchForm" role="search">
-        <div class="search-pill d-flex align-items-stretch bg-white border border-2 rounded-pill shadow-sm p-2 p-sm-3 w-100">
+        <div
+          class="search-pill d-flex align-items-stretch bg-white border border-2 rounded-pill shadow-sm p-2 p-sm-3 w-100">
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
             <i class="bi bi-hospital-fill text-danger me-2 fs-5"></i>
-            <input
-              type="text"
-              class="form-control border-0 bg-transparent ps-3 min-w-0"
-              id="q"
-              name="q"
-              placeholder="Search for Name, Specialization, Experience..."
-              aria-label="Search keywords"
-            >
+            <input type="text" class="form-control border-0 bg-transparent ps-3 min-w-0" id="q" name="q"
+              placeholder="Search for Name, Specialization, Experience..." aria-label="Search keywords">
           </div>
 
           <div class="d-none d-lg-block align-self-stretch border-start mx-2"></div>
 
           <div class="flex-grow-1 d-flex align-items-center px-2 px-sm-3 min-w-0">
             <i class="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
-            <input
-              type="text"
-              class="form-control border-0 bg-transparent ps-3 min-w-3"
-              id="location"
-              name="location"
-              placeholder="Location"
-              aria-label="Location"
-            >
+            <input type="text" class="form-control border-0 bg-transparent ps-3 min-w-3" id="location" name="location"
+              placeholder="Location" aria-label="Location">
           </div>
 
           <div class="d-flex align-items-center ps-2 ps-sm-3">
@@ -70,7 +63,8 @@
     <div class="row">
       <!-- Sidebar Filters -->
       <aside class="col-12 col-lg-3 mb-4">
-        <button class="btn btn-outline-secondary d-lg-none mb-2" data-bs-toggle="offcanvas" data-bs-target="#filtersCanvas">
+        <button class="btn btn-outline-secondary d-lg-none mb-2" data-bs-toggle="offcanvas"
+          data-bs-target="#filtersCanvas">
           <i class="bi bi-funnel"></i> Filters
         </button>
         <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="filtersCanvas" aria-labelledby="filtersCanvasLabel">
@@ -91,42 +85,48 @@
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-kas">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cleaning &amp; Housekeeping (General)" id="spec-kas">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Cleaning &amp; Housekeeping (General)" id="spec-kas">
                       Cleaning &amp; Housekeeping (General)
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-nan">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Laundry &amp; Clothing Care" id="spec-nan">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Laundry &amp; Clothing Care" id="spec-nan">
                       Laundry &amp; Clothing Care
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-cook">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Cooking &amp; Food Service" id="spec-cook">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Cooking &amp; Food Service" id="spec-cook">
                       Cooking &amp; Food Service
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-elder">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Childcare &amp; Maternity (Yaya)" id="spec-elder">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Childcare &amp; Maternity (Yaya)" id="spec-elder">
                       Childcare &amp; Maternity (Yaya)
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-all">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Elderly &amp; Special Care (Caregiver)" id="spec-all">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Elderly &amp; Special Care (Caregiver)" id="spec-all">
                       Elderly &amp; Special Care (Caregiver)
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="spec-driver">
-                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Pet &amp; Outdoor Maintenance" id="spec-driver">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Pet &amp; Outdoor Maintenance" id="spec-driver">
                       Pet &amp; Outdoor Maintenance
                     </label>
                   </div>
@@ -143,14 +143,16 @@
                 <div class="vstack gap-1">
                   <div class="form-check">
                     <label class="form-check-label" for="avail-ft">
-                      <input class="form-check-input" type="checkbox" name="availability[]" value="Full-time" id="avail-ft">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Full-time"
+                        id="avail-ft">
                       Full-time
                     </label>
                   </div>
 
                   <div class="form-check">
                     <label class="form-check-label" for="avail-pt">
-                      <input class="form-check-input" type="checkbox" name="availability[]" value="Part-time" id="avail-pt">
+                      <input class="form-check-input" type="checkbox" name="availability[]" value="Part-time"
+                        id="avail-pt">
                       Part-time
                     </label>
                   </div>
@@ -160,7 +162,8 @@
               <!-- Experience -->
               <div>
                 <label class="fw-semibold mb-1" for="exp-range">Experience (min years)</label>
-                <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1" value="0" oninput="this.nextElementSibling.value=this.value">
+                <input type="range" class="form-range" id="exp-range" name="min_experience" min="0" max="20" step="1"
+                  value="0" oninput="this.nextElementSibling.value=this.value">
                 <output class="small">0</output>
               </div>
 
@@ -235,13 +238,18 @@
         <!-- Body IDs must match app.js -->
         <div class="modal-body pt-0">
           <!-- Header strip -->
-          <div class="p-3 mb-3 d-flex gap-3 align-items-center rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <div id="avatar" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f4f6;border:1px solid #ffffff;color:#991b1b;font-weight:900;"></div>
+          <div class="p-3 mb-3 d-flex gap-3 align-items-center rounded-3"
+            style="border:1px solid #e5e7eb;background:#fff;">
+            <div id="avatar"
+              style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#f3f4f6;border:1px solid #ffffff;color:#991b1b;font-weight:900;">
+            </div>
             <div class="flex-grow-1">
               <div class="d-flex flex-wrap align-items-center gap-2">
                 <span class="fw-bold fs-6" id="name">Applicant Name</span>
-                <span class="badge rounded-pill" id="primaryRole" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">Role</span>
-                <span class="badge rounded-pill" id="yoeBadge" style="background:#ffffff;color:#991b1b;border:1px solid #000000;">0 yrs</span>
+                <span class="badge rounded-pill" id="primaryRole"
+                  style="background:#ffffff;color:#991b1b;border:1px solid #000000;">Role</span>
+                <span class="badge rounded-pill" id="yoeBadge"
+                  style="background:#ffffff;color:#991b1b;border:1px solid #000000;">0 yrs</span>
               </div>
               <!-- City & Region only -->
               <div class="mt-1 text-muted" id="availabilityLine">City, Region</div>
@@ -250,36 +258,49 @@
 
           <!-- Specialization -->
           <div class="p-3 mb-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <h6 class="mb-2 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Specialization</h6>
+            <h6 class="mb-2 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">
+              Specialization</h6>
             <div class="d-flex flex-wrap gap-2" id="chipsContainer"></div>
           </div>
 
           <!-- Basic Information -->
           <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;background:#fff;">
-            <h6 class="mb-3 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">Basic Information</h6>
+            <h6 class="mb-3 text-uppercase" style="color:#991b1b;letter-spacing:.6px;font-weight:800;font-size:.82rem;">
+              Basic Information</h6>
             <div class="row g-3">
               <div class="col-12 col-md-6">
                 <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — City</div>
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Location — City
+                  </div>
                   <div class="fw-semibold" id="cityValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
                 <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Preferred Locations (All)</div>
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Preferred
+                    Locations (All)</div>
                   <div class="fw-semibold" id="prefLocValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
                 <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of Experience</div>
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Years of
+                    Experience</div>
                   <div class="fw-semibold" id="yoeValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
                 <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type</div>
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Employment Type
+                  </div>
                   <div class="fw-semibold" id="employmentValue">—</div>
+                </div>
+              </div>
+              <!-- Daily Rate -->
+              <div class="col-12 col-md-6">
+                <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Daily Rate</div>
+                  <div class="fw-semibold" id="dailyRateValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
@@ -290,7 +311,8 @@
               </div>
               <div class="col-12 col-md-6">
                 <div class="p-3 rounded-3" style="border:1px solid #e5e7eb;">
-                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Educational Attainment</div>
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#b91c1c;">Educational
+                    Attainment</div>
                   <div class="fw-semibold" id="eduValue">—</div>
                 </div>
               </div>
@@ -305,13 +327,28 @@
 
   <style>
     /* chips used inside Profile modal */
-    #chipsContainer .chip{
-      user-select:none; pointer-events:none;
-      display:inline-block; padding:.4rem .7rem; border-radius:999px;
-      font-weight:700; font-size:.82rem; color:#000000;
-      background:#fafafa; border:1px solid #f0f0f0; position:relative;
+    #chipsContainer .chip {
+      user-select: none;
+      pointer-events: none;
+      display: inline-block;
+      padding: .4rem .7rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .82rem;
+      color: #000000;
+      background: #fafafa;
+      border: 1px solid #f0f0f0;
+      position: relative;
     }
-    #chipsContainer .chip::after{content:""; position:absolute; inset:-2px; border-radius:999px; box-shadow:0 0 0 2px #000000; opacity:.06;}
+
+    #chipsContainer .chip::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 999px;
+      box-shadow: 0 0 0 2px #000000;
+      opacity: .06;
+    }
   </style>
 
   <!-- Booking Modal (5-step wizard) -->
@@ -327,11 +364,21 @@
         <!-- Stepper -->
         <div class="px-4">
           <div class="d-flex gap-2 pb-3 stepper">
-            <div class="step active" data-step="1"><span class="dot">1</span><div>Choose Services</div></div>
-            <div class="step" data-step="2"><span class="dot">2</span><div>Interview Method</div></div>
-            <div class="step" data-step="3"><span class="dot">3</span><div>Date &amp; Time</div></div>
-            <div class="step" data-step="4"><span class="dot">4</span><div>Client Information</div></div>
-            <div class="step" data-step="5"><span class="dot">5</span><div>Review &amp; Submit</div></div>
+            <div class="step active" data-step="1"><span class="dot">1</span>
+              <div>Choose Services</div>
+            </div>
+            <div class="step" data-step="2"><span class="dot">2</span>
+              <div>Interview Method</div>
+            </div>
+            <div class="step" data-step="3"><span class="dot">3</span>
+              <div>Date &amp; Time</div>
+            </div>
+            <div class="step" data-step="4"><span class="dot">4</span>
+              <div>Client Information</div>
+            </div>
+            <div class="step" data-step="5"><span class="dot">5</span>
+              <div>Review &amp; Submit</div>
+            </div>
           </div>
         </div>
 
@@ -340,7 +387,7 @@
           <div class="border rounded-3 p-3 mb-3">
             <div class="d-flex align-items-center gap-3">
               <div id="bkAvatar" class="rounded-circle d-grid place-items-center fw-bolder"
-                   style="width:56px;height:56px;background:#f3f4f6;color:#991b1b;border:1px solid #fff;display:grid;place-items:center;">
+                style="width:56px;height:56px;background:#f3f4f6;color:#991b1b;border:1px solid #fff;display:grid;place-items:center;">
               </div>
               <div class="small">
                 <div class="fw-bold" id="bkName">Applicant Name</div>
@@ -353,14 +400,23 @@
           <div class="step-pane" data-step-pane="1">
             <div class="panel mb-3">
               <h6 class="mb-2">Tell us what work you need from this applicant</h6>
-              <p class="text-muted small mb-3">Select all applicable services. This helps us prepare the interview and match expectations.</p>
+              <p class="text-muted small mb-3">Select all applicable services. This helps us prepare the interview and
+                match expectations.</p>
               <div class="row g-2">
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cleaning &amp; Housekeeping (General)">Cleaning &amp; Housekeeping (General)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Laundry &amp; Clothing Care">Laundry &amp; Clothing Care</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Cooking &amp; Food Service">Cooking &amp; Food Service</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Childcare &amp; Maternity (Yaya)">Childcare &amp; Maternity (Yaya)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Elderly &amp; Special Care (Caregiver)">Elderly &amp; Special Care (Caregiver)</button></div>
-                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag" data-service="Pet &amp; Outdoor Maintenance">Pet &amp; Outdoor Maintenance</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Cleaning &amp; Housekeeping (General)">Cleaning &amp; Housekeeping (General)</button>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Laundry &amp; Clothing Care">Laundry &amp; Clothing Care</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Cooking &amp; Food Service">Cooking &amp; Food Service</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Childcare &amp; Maternity (Yaya)">Childcare &amp; Maternity (Yaya)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Elderly &amp; Special Care (Caregiver)">Elderly &amp; Special Care
+                    (Caregiver)</button></div>
+                <div class="col-12 col-md-6 col-lg-4"><button type="button" class="btn w-100 oval-tag"
+                    data-service="Pet &amp; Outdoor Maintenance">Pet &amp; Outdoor Maintenance</button></div>
               </div>
             </div>
           </div>
@@ -371,20 +427,27 @@
               <h6 class="mb-3">How would you like to interview the applicant?</h6>
               <div class="row g-2">
                 <div class="col-6 col-md-3">
-                  <input type="radio" class="btn-check" name="apptType" id="typeVideo" value="Video Call" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeVideo"><i class="bi bi-camera-video me-1"></i> Video Call</label>
+                  <input type="radio" class="btn-check" name="apptType" id="typeVideo" value="Video Call"
+                    autocomplete="off">
+                  <label class="btn btn-outline-dark w-100 py-3" for="typeVideo"><i class="bi bi-camera-video me-1"></i>
+                    Video Call</label>
                 </div>
                 <div class="col-6 col-md-3">
-                  <input type="radio" class="btn-check" name="apptType" id="typeAudio" value="Audio Call" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeAudio"><i class="bi bi-telephone me-1"></i> Audio Call</label>
+                  <input type="radio" class="btn-check" name="apptType" id="typeAudio" value="Audio Call"
+                    autocomplete="off">
+                  <label class="btn btn-outline-dark w-100 py-3" for="typeAudio"><i class="bi bi-telephone me-1"></i>
+                    Audio Call</label>
                 </div>
                 <div class="col-6 col-md-3">
                   <input type="radio" class="btn-check" name="apptType" id="typeChat" value="Chat" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeChat"><i class="bi bi-chat-dots me-1"></i> Chat</label>
+                  <label class="btn btn-outline-dark w-100 py-3" for="typeChat"><i class="bi bi-chat-dots me-1"></i>
+                    Chat</label>
                 </div>
                 <div class="col-6 col-md-3">
-                  <input type="radio" class="btn-check" name="apptType" id="typeVisit" value="Office Visit" autocomplete="off">
-                  <label class="btn btn-outline-dark w-100 py-3" for="typeVisit"><i class="bi bi-building me-1"></i> Office Visit</label>
+                  <input type="radio" class="btn-check" name="apptType" id="typeVisit" value="Office Visit"
+                    autocomplete="off">
+                  <label class="btn btn-outline-dark w-100 py-3" for="typeVisit"><i class="bi bi-building me-1"></i>
+                    Office Visit</label>
                 </div>
               </div>
               <div class="small text-muted mt-2">
@@ -397,7 +460,9 @@
           <div class="step-pane d-none" data-step-pane="3">
             <div class="panel mb-3">
               <h6 class="mb-2">Choose Date &amp; Time</h6>
-              <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.</p>
+              <p class="text-muted small mb-3">If you select <strong>Office Visit</strong>, available slots are
+                <strong>Mon–Sat, 8:00 AM – 5:00 PM</strong>.
+              </p>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
                   <label class="form-label">Date
@@ -437,17 +502,8 @@
                 <!-- Phone: enforce 11 digits and must start with 09 -->
                 <div class="col-md-6">
                   <label class="form-label">Active Phone Number
-                    <input
-                      type="tel"
-                      class="form-control"
-                      id="bkPhone"
-                      placeholder="09XXXXXXXXX"
-                      inputmode="numeric"
-                      pattern="^09\d{9}$"
-                      maxlength="11"
-                      minlength="11"
-                      aria-describedby="bkPhoneHelp"
-                    >
+                    <input type="tel" class="form-control" id="bkPhone" placeholder="09XXXXXXXXX" inputmode="numeric"
+                      pattern="^09\d{9}$" maxlength="11" minlength="11" aria-describedby="bkPhoneHelp">
                   </label>
                   <div id="bkPhoneHelp" class="form-text">Must be 11 digits and start with 09 (e.g., 09123456789).</div>
                 </div>
@@ -459,7 +515,8 @@
                 </div>
                 <div class="col-12">
                   <label class="form-label">Address
-                    <input type="text" class="form-control" id="bkAddress" placeholder="House No., Street, Barangay, City, Province/Region">
+                    <input type="text" class="form-control" id="bkAddress"
+                      placeholder="House No., Street, Barangay, City, Province/Region">
                   </label>
                 </div>
               </div>
@@ -494,22 +551,76 @@
 
   <!-- Theme (red/black) + small helpers -->
   <style>
-    :root{ --brand-red:#c40000; --brand-black:#111; }
-    .btn-brand{ background:var(--brand-red); border-color:var(--brand-red); }
-    .btn-brand:hover{ filter:brightness(.9); }
-    .btn-darkbrand{ background:var(--brand-black); border-color:var(--brand-black); }
+    :root {
+      --brand-red: #c40000;
+      --brand-black: #111;
+    }
 
-    .panel{ border:1px solid #edf0f3; border-radius:.75rem; padding:1rem; background:#fff; }
+    .btn-brand {
+      background: var(--brand-red);
+      border-color: var(--brand-red);
+    }
 
-    .stepper .step{ flex:1; text-align:center; font-size:.875rem; color:#6c757d; }
-    .stepper .step .dot{ width:28px;height:28px;line-height:28px;border-radius:50%;
-      display:inline-block;background:#dee2e6;color:#495057;font-weight:600;margin-bottom:.35rem;}
-    .stepper .step.active .dot,.stepper .step.completed .dot{ background:var(--brand-red); color:#fff; }
-    .stepper .step.active,.stepper .step.completed{ color:var(--brand-red); font-weight:600; }
+    .btn-brand:hover {
+      filter: brightness(.9);
+    }
 
-    .oval-tag{ border-radius:999px; border:2px solid var(--brand-red); color:var(--brand-red);
-      background:#fff; transition:.15s ease-in-out; }
-    .oval-tag.active,.oval-tag:hover{ background:var(--brand-red); color:#fff; }
+    .btn-darkbrand {
+      background: var(--brand-black);
+      border-color: var(--brand-black);
+    }
+
+    .panel {
+      border: 1px solid #edf0f3;
+      border-radius: .75rem;
+      padding: 1rem;
+      background: #fff;
+    }
+
+    .stepper .step {
+      flex: 1;
+      text-align: center;
+      font-size: .875rem;
+      color: #6c757d;
+    }
+
+    .stepper .step .dot {
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      border-radius: 50%;
+      display: inline-block;
+      background: #dee2e6;
+      color: #495057;
+      font-weight: 600;
+      margin-bottom: .35rem;
+    }
+
+    .stepper .step.active .dot,
+    .stepper .step.completed .dot {
+      background: var(--brand-red);
+      color: #fff;
+    }
+
+    .stepper .step.active,
+    .stepper .step.completed {
+      color: var(--brand-red);
+      font-weight: 600;
+    }
+
+    .oval-tag {
+      border-radius: 999px;
+      border: 2px solid var(--brand-red);
+      color: var(--brand-red);
+      background: #fff;
+      transition: .15s ease-in-out;
+    }
+
+    .oval-tag.active,
+    .oval-tag:hover {
+      background: var(--brand-red);
+      color: #fff;
+    }
   </style>
 
   <!-- JS: Bootstrap bundle -->
@@ -528,7 +639,7 @@
 
   <!-- 🔒 Auto-hide any applicant whose status is "approved" (client display) -->
   <script>
-    (function(){
+    (function () {
       // Configure status values we consider "approved"
       const APPROVED_VALUES = new Set(['approved', 'approve', 'approval']);
 
@@ -536,10 +647,10 @@
       if (!grid) return;
 
       // Heuristics to detect status on a rendered card item
-      function isApprovedCard(cardRoot){
+      function isApprovedCard(cardRoot) {
         // 1) Look for data attributes commonly used
         const attrNames = ['status', 'applicantStatus', 'state'];
-        for (const name of attrNames){
+        for (const name of attrNames) {
           const val = cardRoot.getAttribute('data-' + name) || (cardRoot.dataset ? cardRoot.dataset[name] : '');
           if (val && APPROVED_VALUES.has(String(val).toLowerCase())) return true;
         }
@@ -550,14 +661,14 @@
 
         // 3) Badges / labels containing the word "Approved"
         const statusNodes = cardRoot.querySelectorAll('.badge, .status, [class*="status"], [data-label="status"]');
-        for (const el of statusNodes){
+        for (const el of statusNodes) {
           const txt = (el.textContent || '').trim().toLowerCase();
           if (txt.includes('approved')) return true;
         }
         return false;
       }
 
-      function purgeApproved(container){
+      function purgeApproved(container) {
         // Cards may be direct columns with a .card inside, or cards directly
         const candidates = container.querySelectorAll(':scope > .col, :scope > [class*="col-"], :scope > .card, :scope > *');
         candidates.forEach(node => {
@@ -603,4 +714,5 @@
     })();
   </script>
 </body>
+
 </html>
