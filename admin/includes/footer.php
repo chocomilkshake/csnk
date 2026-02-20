@@ -1,4 +1,4 @@
-        </div>
+</div>
     </div>
 
     <!-- Bootstrap loaded in header.php - do not duplicate -->
