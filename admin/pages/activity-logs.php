@@ -9,6 +9,43 @@ if ($role === 'employee') { setFlashMessage('error','You do not have permission 
 
 $conn = $database->getConnection();
 
+/**
+ * Build a usable URL for an admin avatar.
+ * - Accepts absolute URLs
+ * - Otherwise, uses UPLOAD_URL if defined → <UPLOAD_URL>/avatars/<filename>
+ * - Else fallback to ../uploads/avatars/<filename>
+ * - Optionally, you can extend this to check UPLOAD_PATH file existence if you have it.
+ */
+function adminAvatarUrl(?string $file): string {
+    $file = trim((string)$file);
+    if ($file === '') return '';
+
+    // Absolute URL already
+    if (preg_match('~^https?://~i', $file)) {
+        return $file;
+    }
+
+    // If avatar is stored with path already (e.g., "avatars/john.jpg"), keep it
+    if (strpos($file, '/') !== false) {
+        // If UPLOAD_URL exists, prefix when not absolute
+        if (defined('UPLOAD_URL') && !preg_match('~^https?://~i', $file)) {
+            $base = rtrim(UPLOAD_URL, '/').'/';
+            return $base . ltrim($file, '/');
+        }
+        // Else assume it's already a web path relative to the site root
+        return '../' . ltrim($file, '/');
+    }
+
+    // Filename only → map to uploads/avatars/
+    if (defined('UPLOAD_URL')) {
+        $base = rtrim(UPLOAD_URL, '/').'/avatars/';
+        return $base . rawurlencode($file);
+    }
+
+    // Fallback relative path
+    return '../uploads/avatars/' . rawurlencode($file);
+}
+
 /* Users for filter */
 $adminUsers = [];
 if ($conn instanceof mysqli) {
@@ -126,7 +163,7 @@ function initials(string $full=null, string $user=null): string {
           $desc = enrichDescription((string)$log['description'], $applicantNameMap, $userNameMap);
           $ini  = initials($name, $log['username']);
           $whenPretty = formatDateTime($log['created_at']);
-          $avatarUrl = (!empty($log['avatar']) ? UPLOAD_URL . 'avatars/' . $log['avatar'] : '');
+          $avatarUrl = (!empty($log['avatar']) ? adminAvatarUrl($log['avatar']) : ''); // CHANGED: use helper
       ?>
         <tr class="hover:bg-slate-50 cursor-pointer"
             data-user-id="<?=$log['admin_id']?>"
@@ -143,9 +180,18 @@ function initials(string $full=null, string $user=null): string {
             data-bs-toggle="modal" data-bs-target="#logModal">
           <td>
             <div class="d-flex align-items-center gap-2">
-              <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold"
-                   style="--tw-gradient-from:#4f46e5;--tw-gradient-to:#06b6d4;background-image:linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-to));width:40px;height:40px;">
-                <?=$ini?>
+              <div class="position-relative" style="width:40px;height:40px;">
+                <?php if ($avatarUrl): ?>
+                  <img src="<?=htmlspecialchars($avatarUrl,ENT_QUOTES,'UTF-8')?>"
+                       alt="<?=htmlspecialchars($name,ENT_QUOTES,'UTF-8')?>"
+                       class="rounded-circle object-fit-cover"
+                       width="40" height="40" loading="lazy">
+                <?php else: ?>
+                  <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold"
+                       style="--tw-gradient-from:#4f46e5;--tw-gradient-to:#06b6d4;background-image:linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-to));width:40px;height:40px;">
+                    <?=$ini?>
+                  </div>
+                <?php endif; ?>
               </div>
               <div class="leading-tight">
                 <div class="fw-semibold"><?=htmlspecialchars($name,ENT_QUOTES,'UTF-8')?></div>
@@ -283,8 +329,15 @@ function initials(string $full=null, string $user=null): string {
       const ini = tr.dataset.initials||'U', avatar = tr.dataset.avatar||'';
 
       // Avatar: show image if provided, else initials gradient
-      if (avatar) { mImg.src = avatar; mImg.classList.remove('d-none'); mIni.classList.add('d-none'); }
-      else { mImg.classList.add('d-none'); mIni.classList.remove('d-none'); mIni.textContent = ini; }
+      if (avatar) {
+        // Reset handlers then set a robust onerror fallback to initials
+        mImg.onerror = ()=>{ mImg.classList.add('d-none'); mIni.classList.remove('d-none'); mIni.textContent = ini; };
+        // Optionally append a tiny cache-buster so newly uploaded avatars reflect
+        mImg.src = avatar + (avatar.includes('?') ? '&' : '?') + 'v=1';
+        mImg.classList.remove('d-none'); mIni.classList.add('d-none');
+      } else {
+        mImg.classList.add('d-none'); mIni.classList.remove('d-none'); mIni.textContent = ini;
+      }
 
       // Top identity
       mFull.textContent = full;
