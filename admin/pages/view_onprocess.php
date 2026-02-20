@@ -273,7 +273,7 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // History button tar
 <!-- HEADER ACTIONS: Back → Edit → History (admin/super_admin) → Print -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
   <div class="d-flex align-items-center gap-3">
-    <h4 class="mb-0 fw-semibold">Applicant & Clients</h4>
+    <h4 class="mb-0 fw-semibold">Applicant &amp; Clients</h4>
     <?php $badgeColor = statusBadgeColor((string)$applicantData['status']); ?>
     <span class="badge bg-<?php echo $badgeColor; ?>">
       <?php echo ucfirst(str_replace('_', ' ', (string)$applicantData['status'])); ?>
@@ -416,7 +416,7 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // History button tar
               <div class="fw-semibold"><?php echo safe($latestBooking['appointment_type'] ?? '—'); ?></div>
             </div>
             <div class="col-6">
-              <div class="small-label mb-1">Date & Time</div>
+              <div class="small-label mb-1">Date &amp; Time</div>
               <div class="fw-semibold">
                 <?php
                   $d = !empty($latestBooking['appointment_date']) ? formatDate($latestBooking['appointment_date']) : '—';
@@ -460,7 +460,7 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // History button tar
   <div class="accordion-item">
     <h2 class="accordion-header" id="headingOne">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseApplicantDetails" aria-expanded="false" aria-controls="collapseApplicantDetails">
-        More Applicant Details (Education & Work)
+        More Applicant Details (Education &amp; Work)
       </button>
     </h2>
     <div id="collapseApplicantDetails" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#extraInfoAccordion">
@@ -501,7 +501,7 @@ $historyUrl = 'view-applicant-history.php?id=' . (int)$id; // History button tar
                 <tr>
                   <th>#</th>
                   <th>Appointment</th>
-                  <th>Date & Time</th>
+                  <th>Date &amp; Time</th>
                   <th>Client</th>
                   <th>Contacts</th>
                   <th>Services</th>
