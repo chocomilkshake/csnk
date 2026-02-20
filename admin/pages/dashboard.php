@@ -239,7 +239,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
                         <?php echo strtoupper(substr($applicantData['first_name'] ?? '', 0, 1)); ?>
                       </div>
                     <?php endif; ?>
-                    <strong>
+                    <strong>asd
                       <?php echo safe(getFullName(
                         $applicantData['first_name'] ?? '',
                         $applicantData['middle_name'] ?? '',
