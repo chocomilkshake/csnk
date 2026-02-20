@@ -325,10 +325,6 @@ if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($appl
     $showAssign = true;
 }
 
-function h(?string $s): string
-{
-    return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-}
 ?>
 <style>
     /* Action bar & chips */
