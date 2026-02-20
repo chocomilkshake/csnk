@@ -15,8 +15,18 @@ if (isset($_GET['q'])) {
     }
 }
 
+// Replacement context?
+$replaceId = isset($_GET['replace_id']) ? (int)$_GET['replace_id'] : 0;
+$replaceRecord = null;
+if ($replaceId > 0) {
+    $replaceRecord = $applicant->getReplacementById($replaceId);
+}
+
 if (!isset($_GET['id'])) {
     $dest = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+    if ($replaceRecord) {
+        $dest = 'pending.php?replace_id=' . (int)$replaceId . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+    }
     redirect($dest);
     exit;
 }
@@ -27,6 +37,9 @@ $applicantData = $applicant->getById($id);
 if (!$applicantData) {
     setFlashMessage('error', 'Applicant not found.');
     $dest = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+    if ($replaceRecord) {
+        $dest = 'pending.php?replace_id=' . (int)$replaceId . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+    }
     redirect($dest);
     exit;
 }
@@ -65,11 +78,6 @@ if ($isBlacklisted && $activeBlacklistId) {
    Helpers (renderers + utilities)
    ============================================================ */
 
-/**
- * Preferred locations (JSON) -> HTML badges (show ALL cities)
- * Accepts JSON array or comma-separated string fallback.
- * Returns HTML (do not escape again on echo).
- */
 function renderPreferredLocationBadges(?string $json): string {
     if ($json === null || trim($json) === '') {
         return '<span class="text-muted">N/A</span>';
@@ -86,9 +94,7 @@ function renderPreferredLocationBadges(?string $json): string {
             }
         }
     } else {
-        // Fallback: support comma-separated value or raw single string
         $fallback = trim($json);
-        // Strip common wrappers like ["..."]
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         if ($fallback !== '') {
             $parts = array_map('trim', explode(',', $fallback));
@@ -102,7 +108,6 @@ function renderPreferredLocationBadges(?string $json): string {
         return '<span class="text-muted">N/A</span>';
     }
 
-    // Build badges
     $html = [];
     foreach ($cities as $city) {
         $safe = htmlspecialchars($city, ENT_QUOTES, 'UTF-8');
@@ -111,12 +116,6 @@ function renderPreferredLocationBadges(?string $json): string {
     return implode(' ', $html);
 }
 
-/**
- * Improved Educational Attainment Renderer
- * - Clean card/timeline style (very readable)
- * - Handles missing levels safely
- * RETURNS HTML (do NOT escape again when echoing)
- */
 function renderEducationListHtml(?string $json): string {
     if (empty($json)) {
         return '<span class="text-muted">N/A</span>';
@@ -127,7 +126,6 @@ function renderEducationListHtml(?string $json): string {
         return '<div>'.htmlspecialchars($json, ENT_QUOTES, 'UTF-8').'</div>';
     }
 
-    // Config per level (order + icon)
     $levels = [
         'elementary'  => ['label' => 'Elementary',  'icon' => '📘'],
         'highschool'  => ['label' => 'High School', 'icon' => '📗'],
@@ -179,11 +177,6 @@ function renderEducationListHtml(?string $json): string {
     return $html !== '<div class="edu-timeline"></div>' ? $html : '<span class="text-muted">N/A</span>';
 }
 
-/**
- * Work history JSON array -> structured HTML list.
- * Each item: { company, role, years, location }
- * Returns HTML (do not escape again on echo).
- */
 function renderWorkHistoryListHtml(?string $json): string {
     if ($json === null || trim($json) === '') {
         return '<span class="text-muted">N/A</span>';
@@ -233,9 +226,6 @@ function renderWorkHistoryListHtml(?string $json): string {
     return '<ul class="list-unstyled mb-0">'.implode('', $items).'</ul>';
 }
 
-/**
- * Render languages JSON array -> string (comma-separated)
- */
 function renderLanguages(?string $json): string {
     if ($json === null || trim($json) === '') return 'N/A';
     $arr = json_decode($json, true);
@@ -244,10 +234,6 @@ function renderLanguages(?string $json): string {
     return $clean ? htmlspecialchars(implode(', ', $clean), ENT_QUOTES, 'UTF-8') : 'N/A';
 }
 
-/**
- * Render specialization skills JSON array -> HTML pills
- * IMPORTANT: Returns HTML (do not escape again).
- */
 function renderSkillsPills(?string $json): string {
     if ($json === null || trim($json) === '') return '<span class="text-muted">N/A</span>';
     $arr = json_decode($json, true);
@@ -264,9 +250,6 @@ function renderSkillsPills(?string $json): string {
     return implode(' ', $htmlParts);
 }
 
-/**
- * Status badge color map
- */
 function statusBadgeColor(string $status): string {
     $map = [
         'pending'    => 'warning',
@@ -300,9 +283,21 @@ $skillsPillsHtml  = renderSkillsPills($applicantData['specialization_skills'] ??
 // Back & Edit URLs preserving search (if any)
 $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+if ($replaceRecord) {
+    // During replacement, "back" should return to replacement list
+    $backUrl = 'pending.php?replace_id=' . (int)$replaceId . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+}
 
 // Has video?
 $hasVideo = !empty($applicantData['video_url']);
+
+// Assign visibility (only in replace mode, when candidate is pending, and replacement in 'selection')
+$showAssign = false;
+if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($applicantData['status'] ?? '') === 'pending') {
+    $showAssign = true;
+}
+
+function h(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <style>
 /* Action bar & chips */
@@ -333,6 +328,8 @@ $hasVideo = !empty($applicantData['video_url']);
 .small-label { font-size:.8rem; color:#6c757d; text-transform:uppercase; letter-spacing:.04em; }
 .quick-meta .item { display:flex; justify-content:space-between; gap:.5rem; }
 .quick-meta .value { font-weight:600; }
+.btn-assign-top { background:#0d9488; color:#fff; border:0; }
+.btn-assign-top:hover { background:#0f766e; color:#fff; }
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
@@ -344,16 +341,16 @@ $hasVideo = !empty($applicantData['video_url']);
         </span>
     </div>
 
-    <!-- Top Action Bar: Back → Edit → History (admin) → Blacklist -->
+    <!-- Top Action Bar: Back → Edit → History (admin) → Blacklist → Assign (replace mode) -->
     <div class="page-actions d-flex flex-wrap gap-2">
-        <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to List
+        <a href="<?php echo h($backUrl); ?>" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
         </a>
-        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning">
+        <a href="<?php echo h($editUrl); ?>" class="btn btn-warning">
             <i class="bi bi-pencil me-1"></i> Edit
         </a>
         <?php if (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
-            <a href="<?php echo 'view-applicant-history.php?id='.(int)$id; ?>" class="btn btn-outline-info">
+            <a href="<?php echo 'view-applicant-history.php?id='.(int)$id . ($replaceRecord ? ('&replace_id='.(int)$replaceId) : ''); ?>" class="btn btn-outline-info">
                 <i class="bi bi-clock-history me-1"></i> History
             </a>
         <?php endif; ?>
@@ -361,6 +358,16 @@ $hasVideo = !empty($applicantData['video_url']);
             <a href="<?php echo 'blacklist-applicant.php?id='.(int)$id; ?>" class="btn btn-outline-danger">
                 <i class="bi bi-slash-circle me-1"></i> Blacklist
             </a>
+        <?php endif; ?>
+
+        <?php if ($showAssign && ($isAdmin || $isSuperAdmin)): ?>
+            <form method="post" action="replace-assign.php" class="d-inline">
+                <input type="hidden" name="replace_id" value="<?php echo (int)$replaceId; ?>">
+                <input type="hidden" name="replacement_applicant_id" value="<?php echo (int)$id; ?>">
+                <button type="submit" class="btn btn-assign-top">
+                    <i class="bi bi-check2-circle me-1"></i> Assign (Replacement)
+                </button>
+            </form>
         <?php endif; ?>
     </div>
 </div>
@@ -371,7 +378,7 @@ $hasVideo = !empty($applicantData['video_url']);
         <div class="card">
             <div class="card-body text-center">
                 <?php if ($pictureUrl): ?>
-                    <img src="<?php echo htmlspecialchars($pictureUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                    <img src="<?php echo h($pictureUrl); ?>"
                          alt="Profile" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
                 <?php else: ?>
                     <div class="bg-secondary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
@@ -387,15 +394,15 @@ $hasVideo = !empty($applicantData['video_url']);
                 <div class="text-start mt-3 quick-meta">
                     <div class="item mb-2">
                         <span class="small-label">Phone (Primary)</span>
-                        <span class="value"><?php echo $primaryPhone !== '' ? htmlspecialchars($primaryPhone, ENT_QUOTES, 'UTF-8') : 'N/A'; ?></span>
+                        <span class="value"><?php echo $primaryPhone !== '' ? h($primaryPhone) : 'N/A'; ?></span>
                     </div>
                     <div class="item mb-2">
                         <span class="small-label">Phone (Alternate)</span>
-                        <span class="value"><?php echo htmlspecialchars($alternatePhoneDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="value"><?php echo h($alternatePhoneDisplay); ?></span>
                     </div>
                     <div class="item mb-2">
                         <span class="small-label">Email</span>
-                        <span class="value"><?php echo htmlspecialchars($applicantData['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="value"><?php echo h($applicantData['email'] ?? 'N/A'); ?></span>
                     </div>
                     <div class="item mb-2">
                         <span class="small-label">Date Applied</span>
@@ -448,7 +455,7 @@ $hasVideo = !empty($applicantData['video_url']);
                         <div class="row g-3">
                             <div class="col-12">
                                 <div class="small-label mb-1">Address</div>
-                                <div class="fw-semibold"><?php echo htmlspecialchars($applicantData['address'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="fw-semibold"><?php echo h($applicantData['address']); ?></div>
                             </div>
                             <div class="col-md-6">
                                 <div class="small-label mb-1">Years of Experience</div>
@@ -461,7 +468,7 @@ $hasVideo = !empty($applicantData['video_url']);
                             </div>
                             <div class="col-md-6">
                                 <div class="small-label mb-1">Employment Type</div>
-                                <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? htmlspecialchars($applicantData['employment_type'], ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
+                                <div class="fw-semibold"><?php echo !empty($applicantData['employment_type']) ? h($applicantData['employment_type']) : 'N/A'; ?></div>
                             </div>
                             <div class="col-12">
                                 <div class="small-label mb-1">Preferred Location(s)</div>
@@ -500,7 +507,7 @@ $hasVideo = !empty($applicantData['video_url']);
                                             <i class="bi bi-file-earmark-text me-2"></i>
                                             <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
                                         </span>
-                                        <a href="<?php echo htmlspecialchars(getFileUrl($doc['file_path']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        <a href="<?php echo h(getFileUrl($doc['file_path'])); ?>"
                                            target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye me-1"></i>View
                                         </a>
@@ -515,10 +522,10 @@ $hasVideo = !empty($applicantData['video_url']);
                     <div class="tab-pane fade" id="panel-video" role="tabpanel" aria-labelledby="tab-video" tabindex="0">
                         <div class="mb-2 fw-semibold">
                             <i class="bi bi-film me-2"></i>
-                            <?php echo !empty($applicantData['video_title']) ? htmlspecialchars($applicantData['video_title'], ENT_QUOTES, 'UTF-8') : 'Applicant Video'; ?>
+                            <?php echo !empty($applicantData['video_title']) ? h($applicantData['video_title']) : 'Applicant Video'; ?>
                         </div>
                         <video controls preload="metadata" style="width:100%; max-height:500px; background:#000;">
-                            <source src="<?php echo htmlspecialchars(getFileUrl($applicantData['video_url']), ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                            <source src="<?php echo h(getFileUrl($applicantData['video_url'])); ?>" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     </div>
