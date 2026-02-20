@@ -1,9 +1,10 @@
 <?php
-  // Set the active page for navbar highlighting
-  $page = 'about';
+// Set the active page for navbar highlighting
+$page = 'about';
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -26,138 +27,289 @@
     /* ===========================
        NAVY + GOLD THEME TOKENS
        =========================== */
-    :root{
-      --smc-navy: #0B1F3A;      /* deep navy */
-      --smc-navy-2: #132A4A;    /* secondary navy */
-      --smc-navy-3: #1B355C;    /* accent navy */
-      --smc-navy-ink: #16243B;  /* readable navy text (no pure black) */
-      --smc-gold: #FFD84D;      /* gold accent */
-      --soft-bg: #f5f8ff;       /* page background sections */
-      --soft-border: #e6ecf5;   /* soft border */
-      --shadow: 0 12px 28px rgba(11,31,58,.12);
+    :root {
+      --smc-navy: #0B1F3A;
+      /* deep navy */
+      --smc-navy-2: #132A4A;
+      /* secondary navy */
+      --smc-navy-3: #1B355C;
+      /* accent navy */
+      --smc-navy-ink: #16243B;
+      /* readable navy text (no pure black) */
+      --smc-gold: #FFD84D;
+      /* gold accent */
+      --soft-bg: #f5f8ff;
+      /* page background sections */
+      --soft-border: #e6ecf5;
+      /* soft border */
+      --shadow: 0 12px 28px rgba(11, 31, 58, .12);
       --r-out: 1.25rem;
       --r-in: 1rem;
     }
 
-    body { color: var(--smc-navy-ink); background: #f8f9fb; }
-    img, svg { max-width: 100%; height: auto; }
+    body {
+      color: var(--smc-navy-ink);
+      background: #f8f9fb;
+    }
 
-    .text-navy { color: var(--smc-navy) !important; }
-    .text-muted-navy { color: #6f7e96 !important; }
-    .border-soft { border: 1px solid var(--soft-border); border-radius: var(--r-in); }
+    img,
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
 
-    .btn-navy{
+    .text-navy {
+      color: var(--smc-navy) !important;
+    }
+
+    .text-muted-navy {
+      color: #6f7e96 !important;
+    }
+
+    .border-soft {
+      border: 1px solid var(--soft-border);
+      border-radius: var(--r-in);
+    }
+
+    .btn-navy {
       background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
-      color:#fff; border:0; border-radius: 999px; padding:.8rem 1.3rem; font-weight:800;
-      box-shadow: 0 12px 26px rgba(11,31,58,.22);
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(11, 31, 58, .22);
     }
-    .btn-navy:hover{ filter:brightness(1.03); color:#fff; }
-    .btn-gold{
+
+    .btn-navy:hover {
+      filter: brightness(1.03);
+      color: #fff;
+    }
+
+    .btn-gold {
       background: linear-gradient(180deg, #ffe169, var(--smc-gold));
-      color:#18243b; border:0; border-radius: 999px; padding:.8rem 1.3rem; font-weight:800;
-      box-shadow: 0 12px 26px rgba(255,216,77,.25);
+      color: #18243b;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(255, 216, 77, .25);
     }
-    .btn-gold:hover{ filter:brightness(1.03); color:#18243b; }
+
+    .btn-gold:hover {
+      filter: brightness(1.03);
+      color: #18243b;
+    }
 
     /* ===========================
        HERO
        =========================== */
     .hero-section {
       background-color: #f8f9fb;
-      position: relative; isolation: isolate;
+      position: relative;
+      isolation: isolate;
       padding: clamp(2rem, 6vw, 5rem) 0;
     }
-    .hero-grid,.hero-gradient { position:absolute; inset:0; z-index:0; pointer-events:none; }
+
+    .hero-grid,
+    .hero-gradient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     .hero-grid {
       opacity: .22;
       background-image:
-        linear-gradient(to right, rgba(11,31,58,.08) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(11,31,58,.08) 1px, transparent 1px);
+        linear-gradient(to right, rgba(11, 31, 58, .08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(11, 31, 58, .08) 1px, transparent 1px);
       background-size: 32px 32px, 32px 32px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 12%, rgba(0,0,0,.85) 40%, rgba(0,0,0,.55) 70%, rgba(0,0,0,0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .55) 70%, rgba(0, 0, 0, 0) 100%);
     }
+
     .hero-gradient {
       background:
-        radial-gradient(900px 400px at 15% 35%, rgba(255, 216, 77, 0.25), rgba(0,0,0,0) 60%),
-        radial-gradient(700px 350px at 80% 45%, rgba(19, 42, 74, .10), rgba(19,42,74,0) 60%),
-        linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(240, 244, 255, .6) 60%, rgba(240,244,255, 0) 100%);
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.9) 12%, rgba(0,0,0,.95) 85%, rgba(0,0,0,0) 100%);
+        radial-gradient(900px 400px at 15% 35%, rgba(255, 216, 77, 0.25), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(700px 350px at 80% 45%, rgba(19, 42, 74, .10), rgba(19, 42, 74, 0) 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(240, 244, 255, .6) 60%, rgba(240, 244, 255, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 12%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
     }
-    .hero-section .container { position: relative; z-index: 1; }
+
+    .hero-section .container {
+      position: relative;
+      z-index: 1;
+    }
+
     @media (max-width: 575.98px) {
-      .hero-section { overflow: visible !important; }
+      .hero-section {
+        overflow: visible !important;
+      }
     }
 
     /* Pills container */
-    .hero-pills-abs-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .hero-pills-abs-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     #heroPills {
-      display:inline-flex; width:max-content; max-width:100%; gap:.5rem; align-items:center;
-      padding:.5rem .6rem; border-radius:999px; box-shadow:0 4px 15px rgba(11,31,58,.08); background:#fff;
+      display: inline-flex;
+      width: max-content;
+      max-width: 100%;
+      gap: .5rem;
+      align-items: center;
+      padding: .5rem .6rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 15px rgba(11, 31, 58, .08);
+      background: #fff;
       scroll-snap-type: x proximity;
     }
-    #heroPills .btn { flex:0 0 auto; white-space:nowrap; scroll-snap-align:start; }
+
+    #heroPills .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
     .hero-section .btn-light.active {
-      background: var(--smc-navy); color:#fff; border:0;
+      background: var(--smc-navy);
+      color: #fff;
+      border: 0;
     }
 
     /* ===========================
        TRAINING GALLERY
        =========================== */
     .training-gallery .btn-icon {
-      width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .training-gallery .btn-icon.btn-outline-secondary{
-      border-color: var(--soft-border); color: var(--smc-navy);
+
+    .training-gallery .btn-icon.btn-outline-secondary {
+      border-color: var(--soft-border);
+      color: var(--smc-navy);
     }
-    .training-gallery .btn-icon.btn-outline-secondary:hover{
-      background: var(--smc-navy); color:#fff;
+
+    .training-gallery .btn-icon.btn-outline-secondary:hover {
+      background: var(--smc-navy);
+      color: #fff;
     }
-    .training-gallery .gallery-grid { display:grid; gap:1rem; grid-template-columns:1fr; }
-    @media (min-width:576px){ .training-gallery .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width:992px){
-      .training-gallery .gallery-grid{
+
+    .training-gallery .gallery-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width:576px) {
+      .training-gallery .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width:992px) {
+      .training-gallery .gallery-grid {
         grid-template-columns: 3fr 2fr 3fr;
         grid-template-rows: auto auto;
         grid-template-areas: "a b d" "a c d";
       }
-      .training-gallery .gallery-item[data-area="a"]{ grid-area:a; }
-      .training-gallery .gallery-item[data-area="b"]{ grid-area:b; }
-      .training-gallery .gallery-item[data-area="c"]{ grid-area:c; }
-      .training-gallery .gallery-item[data-area="d"]{ grid-area:d; }
-    }
-    .training-gallery .gallery-item {
-      position:relative; border-radius:1rem; overflow:hidden; background:#f8f9fa;
-      transition: transform .25s ease, box-shadow .25s ease; cursor:zoom-in;
-      box-shadow: 0 10px 20px rgba(11,31,58,.06);
-    }
-    .training-gallery .gallery-item:hover { transform: translateY(-2px); box-shadow:0 12px 28px rgba(11,31,58,.12); }
-    .training-gallery .gallery-item img { width:100%; height:100%; object-fit:cover; display:block; }
-    .training-gallery .gallery-item[data-area="a"],
-    .training-gallery .gallery-item[data-area="d"] { aspect-ratio: 3 / 4; }
-    .training-gallery .gallery-item[data-area="b"],
-    .training-gallery .gallery-item[data-area="c"] { aspect-ratio: 4 / 3; }
-    .training-gallery .gallery-dots button { width:28px; height:4px; border-radius:999px; background:#d9dbe1; border:0; margin:0 .18rem; }
-    .training-gallery .gallery-dots button.active { background: var(--smc-navy); }
 
-    #galleryModal .modal-content { background:#000; }
-    #galleryModalImg { max-height:82vh; object-fit:contain; }
+      .training-gallery .gallery-item[data-area="a"] {
+        grid-area: a;
+      }
+
+      .training-gallery .gallery-item[data-area="b"] {
+        grid-area: b;
+      }
+
+      .training-gallery .gallery-item[data-area="c"] {
+        grid-area: c;
+      }
+
+      .training-gallery .gallery-item[data-area="d"] {
+        grid-area: d;
+      }
+    }
+
+    .training-gallery .gallery-item {
+      position: relative;
+      border-radius: 1rem;
+      overflow: hidden;
+      background: #f8f9fa;
+      transition: transform .25s ease, box-shadow .25s ease;
+      cursor: zoom-in;
+      box-shadow: 0 10px 20px rgba(11, 31, 58, .06);
+    }
+
+    .training-gallery .gallery-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(11, 31, 58, .12);
+    }
+
+    .training-gallery .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .training-gallery .gallery-item[data-area="a"],
+    .training-gallery .gallery-item[data-area="d"] {
+      aspect-ratio: 3 / 4;
+    }
+
+    .training-gallery .gallery-item[data-area="b"],
+    .training-gallery .gallery-item[data-area="c"] {
+      aspect-ratio: 4 / 3;
+    }
+
+    .training-gallery .gallery-dots button {
+      width: 28px;
+      height: 4px;
+      border-radius: 999px;
+      background: #d9dbe1;
+      border: 0;
+      margin: 0 .18rem;
+    }
+
+    .training-gallery .gallery-dots button.active {
+      background: var(--smc-navy);
+    }
+
+    #galleryModal .modal-content {
+      background: #000;
+    }
+
+    #galleryModalImg {
+      max-height: 82vh;
+      object-fit: contain;
+    }
 
     /* ===========================
        CTA
        =========================== */
     .cta-wrap {
       background:
-        radial-gradient(820px 260px at 8% 5%, rgba(255,216,77,.13), rgba(255,216,77,0) 60%),
-        radial-gradient(900px 320px at 92% 110%, rgba(19,42,74,.08), rgba(19,42,74,0) 60%),
+        radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%),
+        radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%),
         linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
       border-radius: var(--r-out);
-      box-shadow: 0 16px 36px rgba(11,31,58,.08), 0 1px 0 rgba(255,255,255,.6) inset;
+      box-shadow: 0 16px 36px rgba(11, 31, 58, .08), 0 1px 0 rgba(255, 255, 255, .6) inset;
     }
 
     /* Minor transitions on hero swap */
-    .is-swapping { opacity:.25; transition: opacity .15s ease; }
+    .is-swapping {
+      opacity: .25;
+      transition: opacity .15s ease;
+    }
   </style>
 </head>
+
 <body class="bg-light">
 
   <!-- ✅ Reusable Navbar -->
@@ -179,7 +331,8 @@
         <!-- LEFT: Text + pills -->
         <div class="col-12 col-lg-6">
           <div class="hero-title-wrap mb-2">
-            <h1 id="heroTitle" class="display-4 fw-bold mb-0 text-navy">Get to know SMC Manpower Agency Philippines Co.</h1>
+            <h1 id="heroTitle" class="display-4 fw-bold mb-0 text-navy">Get to know SMC Manpower Agency Philippines Co.
+            </h1>
           </div>
 
           <div class="hero-lead-wrap mb-4">
@@ -191,25 +344,20 @@
 
           <!-- Pills -->
           <div class="hero-pills-abs-wrapper">
-            <div id="heroPills"
-                 class="rounded-pill px-3 py-2 d-inline-flex align-items-center"
-                 role="tablist" aria-label="Hero options"> 
+            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
+              aria-label="Hero options">
 
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active"
-                      role="tab" aria-selected="true"
-                      data-title="Get to know SMC"
-                      data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
-                      data-img="../resources/img/overview3.png"
-                      data-img-alt="Overview image">
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
+                data-title="Get to know SMC"
+                data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
+                data-img="../resources/img/overview3.png" data-img-alt="Overview image">
                 Overview
               </button>
 
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2"
-                      role="tab" aria-selected="false"
-                      data-title="Meet Founder of SMC"
-                      data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
-                      data-img="../resources/img/MrRog.png"
-                      data-img-alt="Founder image">
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Meet Founder of SMC"
+                data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
+                data-img="../resources/img/MrRog.png" data-img-alt="Founder image">
                 Founder
               </button>
             </div>
@@ -221,11 +369,9 @@
 
         <!-- RIGHT: Image -->
         <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4" style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(260px, 40vw, 520px);">
-            <img id="heroImg"
-                 src="../resources/img/hero1.jpg"
-                 alt="Hero visual"
-                 class="img-fluid">
+          <div class="hero-image-wrap rounded-4"
+            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(260px, 40vw, 520px);">
+            <img id="heroImg" src="../resources/img/hero1.jpg" alt="Hero visual" class="img-fluid">
           </div>
         </div>
 
@@ -243,34 +389,39 @@
 
         <!-- Desktop/Tablet arrows -->
         <div class="d-none d-sm-flex align-items-center gap-2">
-          <button class="btn btn-outline-secondary btn-icon" type="button"
-                  data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
+          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel"
+            data-bs-slide="prev" aria-label="Previous">
             <i class="fa-solid fa-arrow-left"></i>
           </button>
-          <button class="btn btn-outline-secondary btn-icon" type="button"
-                  data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
+          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel"
+            data-bs-slide="next" aria-label="Next">
             <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
-      <div id="galleryCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
+      <div id="galleryCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false"
+        data-bs-touch="true">
         <!-- Slides -->
         <div class="carousel-inner">
 
           <!-- Slide 1 -->
           <div class="carousel-item active">
             <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
                 <img src="../resources/img/smc1.jpg" alt="Training photo 1">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
                 <img src="../resources/img/smc2.jpg" alt="Training photo 2">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
                 <img src="../resources/img/smc3.jpg" alt="Training photo 3">
               </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
+              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3"
+                class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
                 <img src="../resources/img/smc4.jpg" alt="Training photo 4">
               </a>
             </div>
@@ -279,16 +430,20 @@
           <!-- Slide 2 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
                 <img src="../resources/img/smc5.jpg" alt="Training photo 5">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
                 <img src="../resources/img/smc6.jpg" alt="Training photo 6">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
                 <img src="../resources/img/smc7.jpg" alt="Training photo 7">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
                 <img src="../resources/img/smc8.jpg" alt="Training photo 8">
               </a>
             </div>
@@ -297,16 +452,20 @@
           <!-- Slide 3 -->
           <div class="carousel-item">
             <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
+              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3"
+                class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
                 <img src="../resources/img/smc9.jpg" alt="Training photo 9">
               </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
+              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3"
+                class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
                 <img src="../resources/img/smc10.jpg" alt="Training photo 10">
               </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3" class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
+              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3"
+                class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
                 <img src="../resources/img/smc11.jpg" alt="Training photo 11">
               </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000" class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
+              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000"
+                class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
                 <img src="../resources/img/smc12.jpg" alt="Training photo 12">
               </a>
             </div>
@@ -315,16 +474,19 @@
         </div>
 
         <!-- Mobile arrows -->
-        <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
+        <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel"
+          data-bs-slide="prev" aria-label="Previous">
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         </button>
-        <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
+        <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel"
+          data-bs-slide="next" aria-label="Next">
           <span class="carousel-control-next-icon" aria-hidden="true"></span>
         </button>
 
         <!-- Dots -->
         <div class="carousel-indicators gallery-dots mt-4">
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active"
+            aria-current="true" aria-label="Slide 1"></button>
           <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
           <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
         </div>
@@ -335,7 +497,8 @@
     <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-black border-0">
-          <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal"
+            aria-label="Close"></button>
           <div class="p-2 p-sm-3">
             <img id="galleryModalImg" src="" alt="Training photo" class="img-fluid w-100 rounded-3">
           </div>
@@ -372,73 +535,74 @@
 
   <!-- Page‑local: Hero pill swapper -->
   <script>
-  (function(){
-    const container = document.getElementById('heroPills');
-    const titleEl   = document.getElementById('heroTitle');
-    const leadEl    = document.getElementById('heroLead');
-    const imgEl     = document.getElementById('heroImg');
-    if (!container || !titleEl || !leadEl || !imgEl) return;
+    (function () {
+      const container = document.getElementById('heroPills');
+      const titleEl = document.getElementById('heroTitle');
+      const leadEl = document.getElementById('heroLead');
+      const imgEl = document.getElementById('heroImg');
+      if (!container || !titleEl || !leadEl || !imgEl) return;
 
-    const pills = container.querySelectorAll('.btn');
-    function setActive(btn){
-      pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
-    }
-    function applyFrom(btn){
-      if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
-      if (btn.dataset.lead)  leadEl.textContent  = btn.dataset.lead;
-      if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; }
-    }
-    function swap(btn){
-      setActive(btn);
-      [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
-      setTimeout(() => {
-        applyFrom(btn);
-        [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
-      }, 150);
-    }
-    pills.forEach(btn => {
-      btn.addEventListener('click', () => swap(btn));
-      btn.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
+      const pills = container.querySelectorAll('.btn');
+      function setActive(btn) {
+        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      }
+      function applyFrom(btn) {
+        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
+        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
+        if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; }
+      }
+      function swap(btn) {
+        setActive(btn);
+        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
+        setTimeout(() => {
+          applyFrom(btn);
+          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
+        }, 150);
+      }
+      pills.forEach(btn => {
+        btn.addEventListener('click', () => swap(btn));
+        btn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
+        });
       });
-    });
-    const init = container.querySelector('.btn.active') || pills[0];
-    if (init) applyFrom(init);
-  })();
+      const init = container.querySelector('.btn.active') || pills[0];
+      if (init) applyFrom(init);
+    })();
   </script>
 
   <!-- Page‑local: Training Gallery lightbox & keys -->
   <script>
-  (function(){
-    const modalEl = document.getElementById('galleryModal');
-    const modalImg = document.getElementById('galleryModalImg');
-    const gallerySection = document.getElementById('training-gallery');
-    if (!modalEl || !modalImg || !gallerySection) return;
+    (function () {
+      const modalEl = document.getElementById('galleryModal');
+      const modalImg = document.getElementById('galleryModalImg');
+      const gallerySection = document.getElementById('training-gallery');
+      if (!modalEl || !modalImg || !gallerySection) return;
 
-    // Open modal with clicked image
-    gallerySection.querySelectorAll('.gallery-item').forEach(item => {
-      item.addEventListener('click', function(e){
-        e.preventDefault();
-        const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
-        if (!full) return;
-        modalImg.src = full;
-        const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-        m.show();
+      // Open modal with clicked image
+      gallerySection.querySelectorAll('.gallery-item').forEach(item => {
+        item.addEventListener('click', function (e) {
+          e.preventDefault();
+          const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
+          if (!full) return;
+          modalImg.src = full;
+          const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+          m.show();
+        });
       });
-    });
 
-    // Optional: arrow keys go to next/prev slide when modal is open
-    document.addEventListener('keydown', function(e){
-      const isOpen = modalEl.classList.contains('show');
-      if (!isOpen) return;
-      if (e.key === 'ArrowRight') {
-        document.querySelector('#galleryCarousel .carousel-control-next')?.click();
-      } else if (e.key === 'ArrowLeft') {
-        document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
-      }
-    }, false);
-  })();
+      // Optional: arrow keys go to next/prev slide when modal is open
+      document.addEventListener('keydown', function (e) {
+        const isOpen = modalEl.classList.contains('show');
+        if (!isOpen) return;
+        if (e.key === 'ArrowRight') {
+          document.querySelector('#galleryCarousel .carousel-control-next')?.click();
+        } else if (e.key === 'ArrowLeft') {
+          document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
+        }
+      }, false);
+    })();
   </script>
 </body>
+
 </html>
