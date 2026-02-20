@@ -4,9 +4,13 @@ $pageTitle = 'Approved Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// Ensure session is active (for search persistence)
+// Ensure session is active (for search persistence + CSRF)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
+}
+if (empty($_SESSION['csrf_token'])) {
+    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
+    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
 }
 
 $applicant = new Applicant($database);
@@ -220,53 +224,20 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 ?>
 <!-- ===== Fix dropdown clipping & remove table scroll wrapper (same as pending.php) ===== -->
 <style>
-    /* Allow dropdowns to overflow cleanly */
     .table-card, .table-card .card-body { overflow: visible !important; }
-    /* In case a .table-responsive is injected by other includes, disable its clipping */
     .table-card .table-responsive { overflow: visible !important; }
     .table-card table, .table-card tbody, .table-card tr { overflow: visible !important; }
-
-    /* Actions cell can render dropdown outside its bounds */
-    td.actions-cell {
-        position: relative;
-        overflow: visible;
-        z-index: 10;
-        white-space: nowrap;
-    }
-
-    /* Modern dropdown styling (consistent) */
+    td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
     .dd-modern .dropdown-menu {
-        border-radius: .75rem; /* rounded-xl */
-        border: 1px solid #e5e7eb; /* slate-200 */
-        box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
-        z-index: 9999 !important;
-        min-width: 160px;
+        border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+        z-index: 9999 !important; min-width: 160px;
     }
-    .dd-modern .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-        padding: .55rem .9rem;
-        font-weight: 500;
-    }
-    .dd-modern .dropdown-item .bi {
-        font-size: 1rem;
-        opacity: .9;
-    }
-    .dd-modern .dropdown-item:hover {
-        background-color: #f8fafc; /* slate-50 */
-    }
+    .dd-modern .dropdown-item { display: flex; align-items: center; gap: .5rem; padding: .55rem .9rem; font-weight: 500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
     .dd-modern .dropdown-item.disabled,
-    .dd-modern .dropdown-item:disabled {
-        color: #9aa0a6;
-        background-color: transparent;
-        pointer-events: none;
-    }
-    .btn-status {
-        border-radius: .75rem; /* rounded-xl */
-    }
-
-    /* Optional: table spacing without forcing scroll */
+    .dd-modern .dropdown-item:disabled { color: #9aa0a6; background-color: transparent; pointer-events: none; }
+    .btn-status { border-radius: .75rem; }
     table.table-styled { margin-bottom: 0; }
 </style>
 
@@ -313,7 +284,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                     <th>Phone</th>
                     <th>Preferred Location</th>
                     <th>Date Approved</th>
-                    <th style="width: 320px;">Actions</th>
+                    <th style="width: 420px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -334,6 +305,8 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                         <?php
                             $id = (int)$row['id'];
                             $currentStatus = (string)($row['status'] ?? 'approved');
+
+                            $fullName = getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']);
 
                             $viewUrl = 'view_approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                             $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
@@ -364,7 +337,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                             </td>
                             <td>
                                 <div class="fw-semibold">
-                                    <?php echo htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                             </td>
                             <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
@@ -385,7 +358,17 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
-                                    <!-- Optional: Delete (uncomment if you want delete in Approved)
+                                    <!-- Replace (NEW) -->
+                                    <button class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#replaceModal"
+                                            data-applicant-id="<?php echo (int)$id; ?>"
+                                            data-applicant-name="<?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>"
+                                            title="Replace this approved applicant">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Replace
+                                    </button>
+
+                                    <!-- Optional: Delete (commented out by default)
                                     <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                        class="btn btn-sm btn-danger"
                                        title="Delete"
@@ -440,15 +423,91 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     </div>
 </div>
 
+<!-- ===== Replace Modal (NEW) ===== -->
+<div class="modal fade" id="replaceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form id="replaceInitForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Replace Applicant — <span id="replaceApplicantName"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="original_applicant_id" id="replaceOriginalId" value="">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Reason <span class="text-danger">*</span></label>
+              <select name="reason" class="form-select" required>
+                <option value="AWOL">AWOL</option>
+                <option value="Client Left">Client Left</option>
+                <option value="Not Finished Contract">Not Finished Contract</option>
+                <option value="Performance Issue">Performance Issue</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Report / Note <span class="text-danger">*</span></label>
+              <textarea name="report_text" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Attachments (optional)</label>
+              <input type="file" name="attachments[]" class="form-control" multiple>
+              <div class="form-text">You can upload images/documents/videos as evidence. (Up to 200MB per file)</div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <h6 class="fw-semibold">Suggested Replacement Candidates</h6>
+          <div id="replacementCandidates" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-arrow-repeat me-1"></i> Start &amp; Suggest
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts for Replace Modal binding -->
+<script src="../js/replacements.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
-    btns.forEach(function(btn) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
-        }
-    });
-});
+  // optional: expose CSRF to JS (used by replacements.js)
+  window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
+
+  // Fill hidden id + label when opening modal
+  document.getElementById('replaceModal')?.addEventListener('show.bs.modal', function (ev) {
+    const btn = ev.relatedTarget;
+    if (!btn) return;
+    const id   = btn.getAttribute('data-applicant-id') || '';
+    const name = btn.getAttribute('data-applicant-name') || '';
+    document.getElementById('replaceOriginalId').value = id;
+    document.getElementById('replaceApplicantName').textContent = name;
+    // Clear previous results
+    const wrap = document.getElementById('replacementCandidates');
+    if (wrap) wrap.innerHTML = '';
+  });
+
+  // Bind the form to the helper
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.Replacements) {
+      Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+    }
+  });
+
+  // Dropdown popper fix
+  document.addEventListener('DOMContentLoaded', function() {
+      var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+      btns.forEach(function(btn) {
+          if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+              new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+          }
+      });
+  });
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
