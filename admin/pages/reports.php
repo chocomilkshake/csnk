@@ -100,7 +100,7 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['reports_q'];
 }
 
-/* ---------------- New: Status filter & Sort ---------------- */
+/* ---------------- Status filter & Sort ---------------- */
 $allowedStatuses = ['all','pending','on_process','approved','on_hold','deleted'];
 $status = isset($_GET['status']) ? strtolower(trim((string)$_GET['status'])) : 'all';
 if (!in_array($status, $allowedStatuses, true)) $status = 'all';
@@ -109,9 +109,7 @@ $allowedSort = ['latest','reports','name','status'];
 $sort = isset($_GET['sort']) ? strtolower(trim((string)$_GET['sort'])) : 'latest';
 if (!in_array($sort, $allowedSort, true)) $sort = 'latest';
 
-/* ---------------- Handle POST: add a report/note (MySQLi) --------------
-   APPENDS a new row always (never updates) => all previous reports kept
-------------------------------------------------------------------------- */
+/* ---------------- Handle POST: add a report/note (MySQLi) ---------------- */
 if (
     isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
     isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
@@ -165,11 +163,12 @@ if (
     redirect('reports.php' . $qs); exit;
 }
 
-/* ---------------- Fetch Applicants (de-duplicated) ----------------
-   - Only applicants that have at least one report
-   - JOIN latest NOTE by MAX(id) to avoid duplicates
-   - JOIN latest STATUS report by MAX(id) to show FROM → TO
--------------------------------------------------------------------- */
+/* ---------------- Fetch Applicants (de-duplicated list) ----------------
+   - Show each applicant ONCE only.
+   - Require at least one report (applicant_reports exists).
+   - Latest NOTE per applicant by MAX(id) to avoid timestamp ties.
+   - Latest STATUS change per applicant by MAX(id) for arrow display.
+-------------------------------------------------------------------------- */
 $conn = $database->getConnection(); // mysqli
 
 $whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
@@ -294,7 +293,9 @@ function statusBadgeProps(string $status): array {
 <style>
   .table-card, .table-card .card-body { overflow: visible !important; }
   .table-card .table-responsive { overflow: visible !important; }
-  td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
+  td.actions-cell { white-space: nowrap; }
+  .actions-inline { display: inline-flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
+  .actions-inline .btn { flex: 0 0 auto; }
   .report-count-badge { font-size: .75rem; }
   .note-clamp {
     display: -webkit-box;
@@ -394,7 +395,7 @@ function statusBadgeProps(string $status): array {
             <th>Count</th>
             <th>Reported By</th>
             <th>Reported At</th>
-            <th style="width: 320px;">Actions</th>
+            <th style="width: 280px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -435,8 +436,10 @@ function statusBadgeProps(string $status): array {
                 $last_from = (string)($r['last_from_status'] ?? '');
                 $last_to   = (string)($r['last_to_status']   ?? '');
                 if ($last_from !== '' && $last_to !== '' && strcasecmp($last_from, $last_to) !== 0) {
-                    // Show past -> recent (arrow)
-                    $arrow = '<div class="small text-muted mt-1">'.htmlspecialchars(ucwords(str_replace('_',' ', $last_from))).' &rarr; '.htmlspecialchars(ucwords(str_replace('_',' ', $last_to))).'</div>';
+                    $arrow = '<div class="small text-muted mt-1">'.
+                        htmlspecialchars(ucwords(str_replace('_',' ', $last_from)), ENT_QUOTES, 'UTF-8').' &rarr; '.
+                        htmlspecialchars(ucwords(str_replace('_',' ', $last_to)), ENT_QUOTES, 'UTF-8').
+                        '</div>';
                 }
               ?>
               <tr class="border-bottom">
@@ -482,7 +485,7 @@ function statusBadgeProps(string $status): array {
                   <?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
                 <td class="actions-cell">
-                  <div class="d-flex flex-wrap gap-2">
+                  <div class="actions-inline">
                     <!-- Write report -->
                     <button class="btn btn-sm btn-primary write-report"
                             data-id="<?php echo $id; ?>"
@@ -500,11 +503,6 @@ function statusBadgeProps(string $status): array {
                     <!-- View -->
                     <a class="btn btn-sm btn-info" href="<?php echo htmlspecialchars($viewLink, ENT_QUOTES, 'UTF-8'); ?>">
                       <i class="bi bi-eye me-1"></i> View
-                    </a>
-
-                    <!-- Optional: Print / Save as PDF -->
-                    <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars('print-applicant.php?id='.$id, ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                      <i class="bi bi-printer me-1"></i> Print / PDF
                     </a>
                   </div>
                 </td>
@@ -585,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Unified History button
+  // Unified History button (reports + status changes)
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
@@ -644,3 +642,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function escapeHtml(s) {
     return (s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
+    });
+  }
+  function cap(s) {
+    s = s || '';
+    return s.replace(/\b\w/g, function(m){ return m.toUpperCase(); });
+  }
+});
+</script>
+
+<?php require_once '../includes/footer.php'; ?>
