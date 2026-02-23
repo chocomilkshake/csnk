@@ -1,9 +1,10 @@
 <?php
-  // Set the active page for navbar highlighting
-  $page = 'home';
+// Set the active page for navbar highlighting
+$page = 'home';
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,10 +15,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 </head>
+
 <body class="bg-light">
 
-<!-- ✅ Reusable Navbar -->
-<?php include __DIR__ . '/navbar.php'; ?>
+  <!-- ✅ Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
 
 
   <!-- ===================== -->
@@ -27,13 +29,13 @@
   <!-- Hero -->
   <section id="home" class="py-5">
     <div class="container">
-      <div class="p-4 p-lg-5 rounded-4 text-white shadow"
-           style="background: linear-gradient(90deg, #dc3545, #111);">
+      <div class="p-4 p-lg-5 rounded-4 text-white shadow" style="background: linear-gradient(90deg, #dc3545, #111);">
         <div class="row align-items-center g-4">
           <div class="col-lg-6">
             <h1 class="display-6 fw-bold">Welcome to CSNK Manpower Agency</h1>
             <p class="lead mb-4">
-              Your trusted partner for qualified housemaids and nannies. We connect families with properly screened domestic workers through safe and compliant processes.
+              Your trusted partner for qualified housemaids and nannies. We connect families with properly screened
+              domestic workers through safe and compliant processes.
             </p>
 
             <div class="d-flex gap-3 mb-3">
@@ -57,8 +59,8 @@
 
           <div class="col-lg-6">
             <img class="img-fluid rounded-4 shadow"
-                 src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=900"
-                 alt="Office">
+              src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=900"
+              alt="Office">
           </div>
         </div>
       </div>
@@ -68,16 +70,13 @@
   <!-- Slideshow (Card Style Carousel - Auto Only, Same Heights) -->
   <section class="py-4 bg-light">
     <div class="container">
-      <div id="csnkCarouselCards"
-           class="carousel slide"
-           data-bs-ride="carousel"
-           data-bs-interval="4000"
-           data-bs-touch="true"
-           data-bs-pause="false">
+      <div id="csnkCarouselCards" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000"
+        data-bs-touch="true" data-bs-pause="false">
 
         <!-- Dots / Indicators -->
         <div class="carousel-indicators">
-          <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="0" class="active"
+            aria-current="true" aria-label="Slide 1"></button>
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="1" aria-label="Slide 2"></button>
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="2" aria-label="Slide 3"></button>
           <button type="button" data-bs-target="#csnkCarouselCards" data-bs-slide-to="3" aria-label="Slide 4"></button>
@@ -94,16 +93,16 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero1.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 1"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero1.jpg" class="w-100" alt="CSNK Slide 1"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">CSNK Manpower Agency</span>
+                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">CSNK Manpower
+                          Agency</span>
                         <h3 class="fw-bold mt-3 mb-2">Trusted Domestic Recruitment</h3>
-                        <p class="text-muted mb-4">Connecting families with screened housemaids and nannies through verified processes.</p>
+                        <p class="text-muted mb-4">Connecting families with screened housemaids and nannies through
+                          verified processes.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-circle-check text-danger fs-4"></i>
@@ -134,16 +133,16 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero2.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 2"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero2.jpg" class="w-100" alt="CSNK Slide 2"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Fast and Clear Process</span>
+                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Fast and Clear
+                          Process</span>
                         <h3 class="fw-bold mt-3 mb-2">Professional Processing</h3>
-                        <p class="text-muted mb-4">We help applicants prepare requirements and complete each step efficiently.</p>
+                        <p class="text-muted mb-4">We help applicants prepare requirements and complete each step
+                          efficiently.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-file-circle-check text-danger fs-4"></i>
@@ -174,14 +173,13 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero3.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 3"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero3.jpg" class="w-100" alt="CSNK Slide 3"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Safety and Compliance</span>
+                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Safety and
+                          Compliance</span>
                         <h3 class="fw-bold mt-3 mb-2">Verified and Secure</h3>
                         <p class="text-muted mb-4">We prioritize screening, verification, and proper documentation.</p>
 
@@ -214,16 +212,15 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero4.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 4"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero4.jpg" class="w-100" alt="CSNK Slide 4"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Trusted Assistance</span>
                         <h3 class="fw-bold mt-3 mb-2">Guided Step by Step</h3>
-                        <p class="text-muted mb-4">We assist applicants in every stage, from requirements to deployment.</p>
+                        <p class="text-muted mb-4">We assist applicants in every stage, from requirements to deployment.
+                        </p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-handshake text-danger fs-4"></i>
@@ -252,16 +249,15 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero5.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 5"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero5.jpg" class="w-100" alt="CSNK Slide 5"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Quality Service</span>
                         <h3 class="fw-bold mt-3 mb-2">Reliable Processing</h3>
-                        <p class="text-muted mb-4">We maintain quality standards to deliver a smooth and organized process.</p>
+                        <p class="text-muted mb-4">We maintain quality standards to deliver a smooth and organized
+                          process.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-star text-danger fs-4"></i>
@@ -290,14 +286,13 @@
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                   <div class="row g-0">
                     <div class="col-md-6">
-                      <img src="../resources/img/hero6.jpg"
-                           class="w-100"
-                           alt="CSNK Slide 6"
-                           style="height:340px; object-fit:cover;">
+                      <img src="../resources/img/hero6.jpg" class="w-100" alt="CSNK Slide 6"
+                        style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
-                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Global Opportunities</span>
+                        <span class="badge bg-danger rounded-pill align-self-start px-3 py-2">Global
+                          Opportunities</span>
                         <h3 class="fw-bold mt-3 mb-2">Work Abroad Ready</h3>
                         <p class="text-muted mb-4">We connect applicants to employers through trusted channels.</p>
 
@@ -343,7 +338,8 @@
           <div class="col-lg-8 col-md-10 mx-auto">
             <p class="text-muted mb-0">
               CSNK Manpower Agency specializes in the recruitment and placement of qualified housemaids and nannies,
-              supported by structured screening and verified documentation. We connect families with trustworthy domestic
+              supported by structured screening and verified documentation. We connect families with trustworthy
+              domestic
               workers through safe, transparent, and compliant processes.
             </p>
           </div>
@@ -410,12 +406,9 @@
 
           <!-- Map -->
           <div class="col-lg-7">
-            <iframe
-              style="width:100%; height:100%; min-height:420px; border:0;"
+            <iframe style="width:100%; height:100%; min-height:420px; border:0;"
               src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              allowfullscreen>
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
             </iframe>
           </div>
 
@@ -466,9 +459,8 @@
               </div>
 
               <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-danger rounded-pill px-4"
-                   target="_blank" rel="noopener"
-                   href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                <a class="btn btn-danger rounded-pill px-4" target="_blank" rel="noopener"
+                  href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
                   <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
                 </a>
 
@@ -485,16 +477,160 @@
     </div>
   </section>
 
+  <!-- ====================== -->
+  <!-- DOLE   -->
+  <!-- ====================== -->
+  <section class="py-4 py-md-5">
+    <div class="container">
+      <div class="cta-hire">
+        <div class="cta-row">
+          <p class="cta-title">
+            Labor and Employment Standards Compliance<br>
+            <span class="text-danger fw-bold">DOLE-Accredited Manpower Agency</span>
+          </p>
+
+          <div class="cta-actions">
+            <a class="cta-btn"
+              href="https://natlex.ilo.org/dyn/natlex2/natlex2/files/download/15242/PHL15242%202022.pdf"
+              aria-label="Hire Now" target="_blank">
+              View Labor Code <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div><!-- /.cta-hire -->
+    </div>
+  </section>
+
   <!-- ===================== -->
   <!-- Page Content Ends -->
   <!-- ===================== -->
 
-<!-- ✅ Reusable Footer -->
-<?php include __DIR__ . '/footer.php'; ?>
+  <!-- ✅ Reusable Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
 
   <!-- Bootstrap JS (bundle includes Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Policy Modals Handler -->
   <script src="../resources/js/policy-modals.js"></script>
 </body>
+
+<style>
+  /* ====================== */
+  /* FINAL CTA (Hire Now!) */
+  /* ====================== */
+  .cta-hire {
+    /* Soft white card with subtle, directionally-lit gradient like your ref */
+    background:
+      /* top-left warm highlight */
+      radial-gradient(800px 260px at 8% 5%, rgba(255, 170, 120, .18), rgba(255, 170, 120, 0) 60%),
+      /* bottom-right cool fade */
+      radial-gradient(1000px 320px at 92% 110%, rgba(12, 32, 76, .08), rgba(12, 32, 76, 0) 60%),
+      /* gentle vertical wash */
+      linear-gradient(180deg, #ffffff 0%, #fbfcff 60%, #f7f9fc 100%);
+    border-radius: 1.25rem;
+    padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3.5vw, 2rem);
+    box-shadow:
+      0 20px 40px rgba(13, 29, 54, 0.06),
+      0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  }
+
+  .cta-row {
+    display: grid;
+    /* Title left, button right on md+; single column on mobile */
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: clamp(.75rem, 2vw, 1rem);
+  }
+
+  @media (min-width: 768px) {
+    .cta-row {
+      grid-template-columns: 1fr auto;
+    }
+  }
+
+  .cta-title {
+    font-weight: 800;
+    font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+    color: #1b1d22;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .cta-actions {
+    display: flex;
+    justify-content: flex-start;
+    /* mobile */
+  }
+
+  @media (min-width: 768px) {
+    .cta-actions {
+      justify-content: flex-end;
+    }
+
+    /* button to the far right on md+ */
+  }
+
+  /* Button */
+  .cta-btn {
+    --grad-a: #ff7a3d;
+    /* warm orange */
+    --grad-b: #ffb04a;
+    /* soft orange-yellow */
+    background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    border: 0;
+    border-radius: 999px;
+    padding: .85rem 1.5rem;
+    font-weight: 700;
+    letter-spacing: .2px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    box-shadow: 0 12px 26px rgba(255, 122, 61, .28);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    position: relative;
+    /* for decorative ticks */
+    isolation: isolate;
+    /* keep inner effects confined */
+    white-space: nowrap;
+  }
+
+  .cta-btn:hover,
+  .cta-btn:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 34px rgba(255, 122, 61, .34);
+    filter: brightness(1.03);
+    color: #fff;
+  }
+
+  /* Decorative side marks to echo the ref’s “spark” shape */
+  .cta-btn::after {
+    content: "✦ ✦ ✦";
+    font-size: .85rem;
+    color: #ffa95a;
+    position: absolute;
+    right: -2rem;
+    /* sits outside the button’s right edge */
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .95;
+    pointer-events: none;
+  }
+
+  @media (max-width: 575.98px) {
+    .cta-btn::after {
+      right: -1.6rem;
+      font-size: .8rem;
+    }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .cta-btn {
+      transition: none !important;
+    }
+  }
+</style>
+
 </html>
