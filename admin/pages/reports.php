@@ -3,8 +3,9 @@
 $pageTitle = 'Reports - All Applicants';
 
 /* -----------------------------------------------------------
-   INLINE JSON ENDPOINT (NO LAYOUT): history for one applicant
+   INLINE JSON ENDPOINT (NO LAYOUT): full timeline for applicant
    GET  reports.php?action=history&id=123
+   Returns both: applicant_reports + applicant_status_reports
 ------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=UTF-8');
@@ -18,32 +19,55 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
     $id = (int)$_GET['id'];
     $data = [];
     try {
+        // Unified timeline: notes + status changes
         $sqlH = "
-            SELECT
-                ar.note_text,
-                ar.created_at,
-                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
-            FROM applicant_reports ar
-            LEFT JOIN admin_users au ON au.id = ar.admin_id
-            WHERE ar.applicant_id = ?
-            ORDER BY ar.created_at DESC, ar.id DESC
+            (
+                SELECT
+                    'note'                        AS item_type,
+                    ar.note_text                  AS body,
+                    NULL                          AS from_status,
+                    NULL                          AS to_status,
+                    ar.created_at                 AS created_at,
+                    ar.id                         AS origin_id,
+                    COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+                FROM applicant_reports ar
+                LEFT JOIN admin_users au ON au.id = ar.admin_id
+                WHERE ar.applicant_id = ?
+            )
+            UNION ALL
+            (
+                SELECT
+                    'status'                      AS item_type,
+                    asr.report_text               AS body,
+                    asr.from_status               AS from_status,
+                    asr.to_status                 AS to_status,
+                    asr.created_at                AS created_at,
+                    asr.id                        AS origin_id,
+                    COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
+                FROM applicant_status_reports asr
+                LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
+                WHERE asr.applicant_id = ?
+            )
+            ORDER BY created_at DESC, origin_id DESC
         ";
         if ($stmt = $conn->prepare($sqlH)) {
-            $stmt->bind_param("i", $id);
+            $stmt->bind_param("ii", $id, $id);
             $stmt->execute();
             $res = $stmt->get_result();
             while ($row = $res->fetch_assoc()) {
                 $data[] = [
-                    'note_text'   => (string)($row['note_text'] ?? ''),
+                    'item_type'   => (string)($row['item_type'] ?? 'note'),
+                    'body'        => (string)($row['body'] ?? ''),
+                    'from_status' => (string)($row['from_status'] ?? ''),
+                    'to_status'   => (string)($row['to_status'] ?? ''),
                     'created_at'  => (string)($row['created_at'] ?? ''),
                     'admin_name'  => (string)($row['admin_name'] ?? '—'),
                 ];
             }
             $stmt->close();
         }
-    } catch (Throwable $e) {
-        // return empty on error
-    }
+    } catch (Throwable $e) { /* return empty on error */ }
+
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -85,9 +109,9 @@ $allowedSort = ['latest','reports','name','status'];
 $sort = isset($_GET['sort']) ? strtolower(trim((string)$_GET['sort'])) : 'latest';
 if (!in_array($sort, $allowedSort, true)) $sort = 'latest';
 
-/* ---------------- Handle POST: add a report/note (MySQLi) ----------------
-   APPENDS a new row always (never updates) => all previous reports are preserved
----------------------------------------------------------------------------- */
+/* ---------------- Handle POST: add a report/note (MySQLi) --------------
+   APPENDS a new row always (never updates) => all previous reports kept
+------------------------------------------------------------------------- */
 if (
     isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
     isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
@@ -141,10 +165,13 @@ if (
     redirect('reports.php' . $qs); exit;
 }
 
-/* ---------------- Fetch Applicants with Reports + Latest Report + Count ------------- */
+/* ---------------- Fetch Applicants (de-duplicated) ----------------
+   - Only applicants that have at least one report
+   - JOIN latest NOTE by MAX(id) to avoid duplicates
+   - JOIN latest STATUS report by MAX(id) to show FROM → TO
+-------------------------------------------------------------------- */
 $conn = $database->getConnection(); // mysqli
 
-// Build WHERE for status
 $whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
 $params = [];
 $types  = '';
@@ -156,45 +183,55 @@ if ($status !== 'all') {
 }
 
 // Sorting
-// latest: by latest report date desc (default)
-// reports: by report_count desc
-// name: by last_name asc, first_name asc
-// status: by status asc, then latest desc
-$orderSql = " ORDER BY lr.created_at DESC, a.id DESC";
+$orderSql = " ORDER BY lr.id DESC, a.id DESC"; // newest note first
 if ($sort === 'reports') {
-    $orderSql = " ORDER BY report_count DESC, lr.created_at DESC, a.id DESC";
+    $orderSql = " ORDER BY report_count DESC, lr.id DESC, a.id DESC";
 } elseif ($sort === 'name') {
     $orderSql = " ORDER BY a.last_name ASC, a.first_name ASC, a.id ASC";
 } elseif ($sort === 'status') {
-    $orderSql = " ORDER BY a.status ASC, lr.created_at DESC, a.id DESC";
+    $orderSql = " ORDER BY a.status ASC, lr.id DESC, a.id DESC";
 }
 
-// Main SQL
 $sql = "
 SELECT
   a.*,
-  /* Latest report per applicant */
+  /* Latest NOTE per applicant - by MAX(id) to avoid duplicate ties */
   lr.note_text         AS latest_note,
   lr.created_at        AS latest_note_at,
+  lr.id                AS latest_note_id,
   COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS latest_note_admin,
-  /* Total report count for badge/info */
+  /* Latest STATUS row for arrow display */
+  lsr.from_status      AS last_from_status,
+  lsr.to_status        AS last_to_status,
+  lsr.created_at       AS last_status_at,
+  /* Total NOTE count */
   (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) AS report_count
 FROM applicants a
+/* latest note */
 LEFT JOIN (
   SELECT ar1.*
   FROM applicant_reports ar1
   INNER JOIN (
-    SELECT applicant_id, MAX(created_at) AS max_created
+    SELECT applicant_id, MAX(id) AS max_id
     FROM applicant_reports
     GROUP BY applicant_id
-  ) t ON t.applicant_id = ar1.applicant_id AND t.max_created = ar1.created_at
+  ) t ON t.applicant_id = ar1.applicant_id AND t.max_id = ar1.id
 ) lr ON lr.applicant_id = a.id
 LEFT JOIN admin_users au ON au.id = lr.admin_id
+/* latest status change */
+LEFT JOIN (
+  SELECT asr1.*
+  FROM applicant_status_reports asr1
+  INNER JOIN (
+    SELECT applicant_id, MAX(id) AS max_sid
+    FROM applicant_status_reports
+    GROUP BY applicant_id
+  ) ts ON ts.applicant_id = asr1.applicant_id AND ts.max_sid = asr1.id
+) lsr ON lsr.applicant_id = a.id
 WHERE {$whereStatus}
 {$orderSql}
 ";
 
-// Execute with optional bound status
 $rows = [];
 try {
     if ($types !== '') {
@@ -241,6 +278,18 @@ if ($q !== '') $qParams['q'] = $q;
 if ($status !== 'all') $qParams['status'] = $status;
 if ($sort !== 'latest') $qParams['sort'] = $sort;
 $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_query($qParams)) : '');
+
+/* ---------------- Helpers ---------------- */
+function statusBadgeProps(string $status): array {
+    switch($status) {
+        case 'pending':    return ['badge' => 'bg-warning text-dark', 'label' => 'Pending'];
+        case 'on_process': return ['badge' => 'bg-info text-dark',    'label' => 'On Process'];
+        case 'approved':   return ['badge' => 'bg-success',           'label' => 'Approved'];
+        case 'on_hold':    return ['badge' => 'bg-secondary',         'label' => 'On Hold'];
+        case 'deleted':    return ['badge' => 'bg-danger',            'label' => 'Deleted'];
+        default:           return ['badge' => 'bg-secondary',         'label' => $status];
+    }
+}
 ?>
 <style>
   .table-card, .table-card .card-body { overflow: visible !important; }
@@ -250,19 +299,21 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
   .note-clamp {
     display: -webkit-box;
     -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical; 
+    -webkit-box-orient: vertical;
     overflow: hidden;
     max-width: 560px;
   }
   .status-badge { font-weight: 600; }
   .toolbar .form-select, .toolbar .form-control { border-radius: .7rem; }
   .toolbar .btn { border-radius: .7rem; }
+  .timeline .item-note   { border-left: 3px solid #0d6efd; }
+  .timeline .item-status { border-left: 3px solid #20c997; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h4 class="mb-0 fw-semibold">Reports</h4>
-    <div class="text-muted small">All applicants that have at least one report</div>
+    <div class="text-muted small">Applicants with at least one report</div>
   </div>
   <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
     <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -326,9 +377,7 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
         ?>
       </select>
     </div>
-    <div class="col-12 col-md-1 text-md-end">
-      <!-- optional space for future buttons -->
-    </div>
+    <div class="col-12 col-md-1 text-md-end"><!-- reserved --></div>
   </div>
 </form>
 
@@ -380,15 +429,14 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
                     $viewLink = 'view_onprocess.php?id=' . $id;
                 }
 
-                // Status badge
-                $statusClass = 'bg-secondary';
-                $statusLabel = $statusVal;
-                switch($statusVal) {
-                  case 'pending':    $statusClass='bg-warning text-dark'; $statusLabel='Pending'; break;
-                  case 'on_process': $statusClass='bg-info text-dark';    $statusLabel='On Process'; break;
-                  case 'approved':   $statusClass='bg-success';           $statusLabel='Approved'; break;
-                  case 'on_hold':    $statusClass='bg-secondary';         $statusLabel='On Hold'; break;
-                  case 'deleted':    $statusClass='bg-danger';            $statusLabel='Deleted'; break;
+                // Status badge + last change arrow if present
+                $props = statusBadgeProps($statusVal);
+                $arrow = '';
+                $last_from = (string)($r['last_from_status'] ?? '');
+                $last_to   = (string)($r['last_to_status']   ?? '');
+                if ($last_from !== '' && $last_to !== '' && strcasecmp($last_from, $last_to) !== 0) {
+                    // Show past -> recent (arrow)
+                    $arrow = '<div class="small text-muted mt-1">'.htmlspecialchars(ucwords(str_replace('_',' ', $last_from))).' &rarr; '.htmlspecialchars(ucwords(str_replace('_',' ', $last_to))).'</div>';
                 }
               ?>
               <tr class="border-bottom">
@@ -407,9 +455,10 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
                   <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
                 </td>
                 <td>
-                  <span class="badge status-badge <?php echo $statusClass; ?>">
-                    <?php echo $statusLabel; ?>
+                  <span class="badge status-badge <?php echo $props['badge']; ?>">
+                    <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
                   </span>
+                  <?php echo $arrow; ?>
                 </td>
                 <td>
                   <?php if ($latestNote !== ''): ?>
@@ -434,25 +483,27 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
                 </td>
                 <td class="actions-cell">
                   <div class="d-flex flex-wrap gap-2">
+                    <!-- Write report -->
                     <button class="btn btn-sm btn-primary write-report"
                             data-id="<?php echo $id; ?>"
                             data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
                       <i class="bi bi-journal-plus me-1"></i> Write Report
                     </button>
 
+                    <!-- Unified History (notes + status changes) -->
                     <button class="btn btn-sm btn-outline-secondary view-history"
                             data-id="<?php echo $id; ?>"
-                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
-                            <?php echo $reportCount === 0 ? 'disabled' : ''; ?>>
+                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
                       <i class="bi bi-clock-history me-1"></i> History
                     </button>
 
-                    <a class="btn btn-sm btn-info" href="<?php echo $viewLink; ?>">
+                    <!-- View -->
+                    <a class="btn btn-sm btn-info" href="<?php echo htmlspecialchars($viewLink, ENT_QUOTES, 'UTF-8'); ?>">
                       <i class="bi bi-eye me-1"></i> View
                     </a>
 
-                    <!-- Optional: Print / Save as PDF if you use it -->
-                    <a class="btn btn-sm btn-light border" href="<?php echo 'print-applicant.php?id=' . $id; ?>" target="_blank">
+                    <!-- Optional: Print / Save as PDF -->
+                    <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars('print-applicant.php?id='.$id, ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
                       <i class="bi bi-printer me-1"></i> Print / PDF
                     </a>
                   </div>
@@ -494,16 +545,16 @@ $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_que
   </div>
 </div>
 
-<!-- Modal: Report History -->
+<!-- Modal: Unified Timeline (History) -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-semibold">Report History — <span id="hist-applicant"></span></h5>
+        <h5 class="modal-title fw-semibold">History — <span id="hist-applicant"></span></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="hist-container">
+        <div id="hist-container" class="timeline">
           <!-- Filled by JS -->
         </div>
       </div>
@@ -534,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // View History button
+  // Unified History button
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
@@ -548,18 +599,37 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.json(); })
         .then(function (items) {
           if (!Array.isArray(items) || items.length === 0) {
-            container.innerHTML = '<div class="text-muted">No reports found for this applicant.</div>';
+            container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
             return;
           }
           var html = '<div class="list-group">';
           items.forEach(function (it) {
-            html += '<div class="list-group-item">';
-            html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
-            html +=     '<div class="fw-semibold">' + escapeHtml(it.admin_name || '—') + '</div>';
-            html +=     '<div class="text-muted small">' + escapeHtml(it.created_at || '') + '</div>';
-            html +=   '</div>';
-            html +=   '<div class="history-note" style="white-space:pre-wrap;">' + escapeHtml(it.note_text || '') + '</div>';
-            html += '</div>';
+            var type = (it.item_type || 'note').toLowerCase();
+            var admin = it.admin_name || '—';
+            var when  = it.created_at || '';
+            if (type === 'status') {
+              var froms = (it.from_status || '').replaceAll('_',' ');
+              var tos   = (it.to_status   || '').replaceAll('_',' ');
+              html += '<div class="list-group-item item-status py-3">';
+              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
+              html +=     '<div class="fw-semibold text-success"><i class="bi bi-arrow-left-right me-1"></i>'+ escapeHtml(cap(froms)) +' → '+ escapeHtml(cap(tos)) +'</div>';
+              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html +=   '</div>';
+              if (it.body) {
+                html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(it.body) +'</div>';
+              }
+              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
+              html += '</div>';
+            } else {
+              html += '<div class="list-group-item item-note py-3">';
+              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
+              html +=     '<div class="fw-semibold"><i class="bi bi-journal-text me-1"></i>Report</div>';
+              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html +=   '</div>';
+              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(it.body || '') +'</div>';
+              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
+              html += '</div>';
+            }
           });
           html += '</div>';
           container.innerHTML = html;
@@ -574,10 +644,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function escapeHtml(s) {
     return (s||'').replace(/[&<>"']/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
-    });
-  }
-});
-</script>
-
-<?php require_once '../includes/footer.php'; ?>
