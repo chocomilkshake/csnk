@@ -253,8 +253,6 @@ $page = 'about';
       background: transparent;
       border-radius: 12px;
       overflow: hidden;
-      cursor: pointer;
-      position: relative;
     }
 
     .gallery-tile img {
@@ -263,17 +261,6 @@ $page = 'about';
       height: 100%;
       aspect-ratio: 1 / 1;
       object-fit: cover;
-      transition: transform .25s ease;
-    }
-
-    .gallery-tile:focus-visible {
-      outline: 3px solid #0d6efd;
-      /* Bootstrap primary */
-      outline-offset: 2px;
-    }
-
-    .gallery-tile:hover img {
-      transform: scale(1.02);
     }
 
     /* Utility for hiding filtered items with a smooth transition */
@@ -281,14 +268,12 @@ $page = 'about';
       display: none !important;
     }
 
-    /* Maintain object-fit for preview image in Bootstrap ratio */
-    .object-fit-cover {
-      object-fit: cover;
-    }
 
     .btn-outline-secondary {
       height: 50px;
       width: 120px;
+      font-size: 1rem;
+      font-weight: 700;
     }
 
     .btn-outline-secondary.active {
@@ -523,37 +508,37 @@ $page = 'about';
       <div id="galleryGrid" class="gallery-grid">
         <!-- Add data-category with one or more categories separated by spaces -->
         <!-- You can also use figure/figcaption for better semantics -->
-        <button class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 1">
+        <div class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 1">
           <img src="../resources/img/about1.jpg" alt="Training photo 1">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 2">
+        <div class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 2">
           <img src="../resources/img/about2.jpg" alt="Training photo 2">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Mechanic aria-label="Open Training photo 3">
+        <div class="gallery-tile" data-category=Mechanic aria-label="Open Training photo 3">
           <img src="../resources/img/about3.jpg" alt="Training photo 3">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Electrician aria-label="Open Training photo 4">
+        <div class="gallery-tile" data-category=Electrician aria-label="Open Training photo 4">
           <img src="../resources/img/about4.jpg" alt="Training photo 4">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Mechanic aria-label="Open Training photo 5">
+        <div class="gallery-tile" data-category=Mechanic aria-label="Open Training photo 5">
           <img src="../resources/img/about5.jpg" alt="Training photo 5">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 6">
+        <div class="gallery-tile" data-category=Kasambahay aria-label="Open Training photo 6">
           <img src="../resources/img/about6.jpg" alt="Training photo 6">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Mechanic ning aria-label="Open Training photo 7">
+        <div class="gallery-tile" data-category=Mechanic aria-label="Open Training photo 7">
           <img src="../resources/img/about7.jpg" alt="Training photo 7">
-        </button>
+        </div>
 
-        <button class="gallery-tile" data-category=Electrician aria-label="Open Training photo 8">
+        <div class="gallery-tile" data-category=Electrician aria-label="Open Training photo 8">
           <img src="../resources/img/about8.jpg" alt="Training photo 8">
-        </button>
+        </div>
       </div>
     </div>
   </section>
