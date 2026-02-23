@@ -1,50 +1,52 @@
 <?php
-// FILE: pages/on-hold.php
+// FILE: admin/pages/on-hold.php
 $pageTitle = 'On Hold Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// Ensure session is active (for search persistence)
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    @session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+
+// CSRF token (used by revert form)
+if (empty($_SESSION['csrf_token'])) {
+    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
+    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
 }
 
 $applicant = new Applicant($database);
 
 /**
- * --- Search Memory Behavior (consistent with other pages) ---
- * - If ?clear=1 → clear stored search and redirect to clean list
- * - If ?q=...  → store in session and use
- * - Else if session has last query → use it
+ * --- Search Memory (same behavior as other lists) ---
  */
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
     unset($_SESSION['onhold_q']);
-    redirect('on-hold.php');
-    exit;
+    redirect('on-hold.php'); exit;
 }
-
 $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
-    if (mb_strlen($q) > 100) {
-        $q = mb_substr($q, 0, 100);
-    }
+    if (mb_strlen($q) > 100) $q = mb_substr($q, 0, 100);
     $_SESSION['onhold_q'] = $q;
 } elseif (!empty($_SESSION['onhold_q'])) {
     $q = (string)$_SESSION['onhold_q'];
 }
 
 /**
- * Load list for display
+ * Load list
  */
-$applicants = $applicant->getAll('on_hold');
+$applicants = [];
+if (method_exists($applicant, 'getAllByStatus')) {
+    $applicants = $applicant->getAllByStatus('on_hold');
+} elseif (method_exists($applicant, 'getAll')) {
+    // fallback if your class uses getAll(status)
+    $applicants = $applicant->getAll('on_hold');
+}
 
-// Filter by search
-$applicants = (function(array $rows, string $query): array {
-    if ($query === '') return $rows;
-
-    $needle = mb_strtolower($query);
-    return array_values(array_filter($rows, function(array $app) use ($needle) {
+/**
+ * Filter by search
+ */
+if ($q !== '') {
+    $needle = mb_strtolower($q);
+    $applicants = array_values(array_filter($applicants, function(array $app) use ($needle) {
         $first  = (string)($app['first_name']   ?? '');
         $middle = (string)($app['middle_name']  ?? '');
         $last   = (string)($app['last_name']    ?? '');
@@ -65,287 +67,357 @@ $applicants = (function(array $rows, string $query): array {
         ]));
         return mb_strpos($stack, $needle) !== false;
     }));
-})($applicants, $q);
+}
 
 /**
- * Helper: Render preferred_location JSON as clean text.
+ * Helpers
  */
-function renderPreferredLocation(?string $json, int $maxLen = 30): string {
+function renderPreferredLocation(?string $json, int $maxLen = 34): string {
     if (empty($json)) return 'N/A';
-
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-
-    $cities = array_values(array_filter(array_map('trim', $arr), function($v){
-        return is_string($v) && $v !== '';
-    }));
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
     if (empty($cities)) return 'N/A';
-
     $full = implode(', ', $cities);
     if (mb_strlen($full) > $maxLen) {
-        return $cities[0];
+        return $cities[0] . '…';
     }
     return $full;
 }
 
-// Preserve the search in action links
+// Preserve query in links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
-
 <style>
-    /* Dropdown fix */
-    .table-card,
-    .table-card .card-body,
-    .table-card .table-responsive,
-    .table-card table,
-    .table-card thead,
-    .table-card tbody,
-    .table-card tr,
-    .table-card th,
-    .table-card td { overflow: visible !important; }
+  /* Keep dropdowns visible above table clipping */
+  .table-card,
+  .table-card .card-body,
+  .table-card .table-responsive { overflow: visible !important; }
+  .table-card tr.row-raised { position: relative; z-index: 1060; }
 
-    .table-card { position: relative; z-index: 0; }
-    td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
-    .table-card tr.row-raised { position: relative; z-index: 1060; }
+  td.actions-cell { white-space: nowrap; }
+  .actions-inline { display: inline-flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
+  .actions-inline .btn { flex: 0 0 auto; }
 
-    .dd-modern .dropdown-menu {
-        border-radius: .75rem;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
-        min-width: 180px;
-        z-index: 9999 !important;
-    }
-    .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
-    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
-    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
-    .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled { color:#9aa0a6; background:transparent; pointer-events:none; }
-    .btn-status { border-radius: .75rem; }
-    table.table-styled { margin-bottom: 0; }
+  .dd-modern .dropdown-menu {
+    border-radius: .75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    min-width: 180px;
+    z-index: 9999 !important;
+  }
+  .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+  .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+  .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
 
-    .badge-onhold {
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fcd34d;
-        border-radius: .5rem;
-        padding: .25rem .5rem;
-        font-weight: 600;
-    }
+  .badge-onhold {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    padding: .25rem .5rem;
+    font-weight: 600;
+  }
+
+  /* Modal polish */
+  .revert-modal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .revert-modal .app-header {
+    display: flex; gap: 12px; align-items: center;
+    padding: .25rem 0 1rem 0;
+    border-bottom: 1px solid #eef2f7;
+    margin-bottom: 1rem;
+  }
+  .revert-modal .app-photo {
+    width: 44px; height: 44px; object-fit: cover; border-radius: 8px;
+    background: #f1f5f9;
+  }
+  .revert-modal .status-chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .15rem .5rem; border: 1px solid #e2e8f0; border-radius: .5rem;
+    font-size: .8rem; color: #334155; background: #f8fafc;
+  }
+  .revert-modal .form-text { color: #64748b; }
+  .revert-modal .counter {
+    font-size: .8rem; color: #64748b;
+  }
+  .revert-modal .modal-footer { border-top: none; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">On Hold Applicants</h4>
+  <h4 class="mb-0 fw-semibold">On Hold Applicants</h4>
 </div>
 
-<!-- 🔎 Search bar -->
+<!-- 🔎 Search -->
 <div class="mb-3 d-flex justify-content-end">
-    <form action="on-hold.php" method="get" class="w-100" style="max-width: 420px;">
-        <div class="input-group">
-            <input
-                type="text"
-                name="q"
-                class="form-control"
-                placeholder="Search on hold applicants..."
-                value="<?php echo h($q); ?>"
-                autocomplete="off"
-            >
-            <button class="btn btn-outline-secondary" type="submit" title="Search">
-                <i class="bi bi-search"></i>
-            </button>
-            <?php if ($q !== ''): ?>
-                <a href="on-hold.php?clear=1" class="btn btn-outline-secondary" title="Clear">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            <?php endif; ?>
-        </div>
-    </form>
+  <form action="on-hold.php" method="get" class="w-100" style="max-width: 420px;">
+    <div class="input-group">
+      <input
+        type="text"
+        name="q"
+        class="form-control"
+        placeholder="Search on hold applicants…"
+        value="<?php echo h($q); ?>"
+        autocomplete="off">
+      <button class="btn btn-outline-secondary" type="submit" title="Search">
+        <i class="bi bi-search"></i>
+      </button>
+      <?php if ($q !== ''): ?>
+        <a href="on-hold.php?clear=1" class="btn btn-outline-secondary" title="Clear">
+          <i class="bi bi-x-lg"></i>
+        </a>
+      <?php endif; ?>
+    </div>
+  </form>
 </div>
 
 <div class="card table-card">
-    <div class="card-body">
-        <table class="table table-bordered table-striped table-hover table-styled align-middle">
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Location</th>
-                    <th>Date Applied</th>
-                    <th style="width: 320px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($applicants)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            <?php if ($q === ''): ?>
-                                No on hold applicants.
-                            <?php else: ?>
-                                No results for "<strong><?php echo h($q); ?></strong>".
-                                <a href="on-hold.php?clear=1" class="ms-1">Clear search</a>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($applicants as $app): ?>
-                        <?php
-                            $id = (int)($app['id'] ?? 0);
-                            $currentStatus = (string)($app['status'] ?? 'on_hold');
+  <div class="card-body">
+    <table class="table table-bordered table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Location</th>
+          <th>Date Applied</th>
+          <th style="width: 360px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php if (empty($applicants)): ?>
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <?php if ($q === ''): ?>
+              No on hold applicants.
+            <?php else: ?>
+              No results for "<strong><?php echo h($q); ?></strong>".
+              <a href="on-hold.php?clear=1" class="ms-1">Clear search</a>
+            <?php endif; ?>
+          </td>
+        </tr>
+      <?php else: ?>
+        <?php foreach ($applicants as $app): ?>
+          <?php
+            $id = (int)($app['id'] ?? 0);
+            $name = getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']);
+            $viewUrl = 'view-applicant.php?id=' . $id . $preserveQ;
+            $historyUrl = 'view-applicant-history.php?id=' . $id . $preserveQ;
+            $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
+          ?>
+          <tr>
+            <td>
+              <?php if ($photo): ?>
+                <img src="<?php echo h($photo); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit:cover;">
+              <?php else: ?>
+                <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;">
+                  <?php echo strtoupper(substr((string)($app['first_name'] ?? ''), 0, 1)); ?>
+                </div>
+              <?php endif; ?>
+            </td>
+            <td class="fw-semibold">
+              <?php echo h($name); ?>
+              <span class="badge-onhold ms-2">On Hold</span>
+            </td>
+            <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+            <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+            <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+            <td><?php echo h(formatDate($app['created_at'] ?? '')); ?></td>
 
-                            // View link
-                            $viewUrl = 'view-applicant.php?id=' . $id . $preserveQ;
-                            $historyUrl = 'view-applicant-history.php?id=' . $id . $preserveQ;
-                        ?>
-                        <tr>
-                            <td>
-                                <?php if (!empty($app['picture'])): ?>
-                                    <img
-                                        src="<?php echo h(getFileUrl($app['picture'])); ?>"
-                                        alt="Photo"
-                                        class="rounded"
-                                        width="50"
-                                        height="50"
-                                        style="object-fit: cover;"
-                                    >
-                                <?php else: ?>
-                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                         style="width: 50px; height: 50px;">
-                                        <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
-                                    </div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <strong>
-                                    <?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?>
-                                </strong>
-                            </td>
-                            <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-                            <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-                            <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                            <td><?php echo h(formatDate($app['created_at'])); ?></td>
+            <td class="actions-cell">
+              <div class="actions-inline dd-modern">
+                <!-- View -->
+                <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
+                  <i class="bi bi-eye"></i> View
+                </a>
 
-                            <td class="actions-cell">
-                                <div class="btn-group dropup dd-modern">
-                                    <!-- View -->
-                                    <a href="<?php echo h($viewUrl); ?>"
-                                       class="btn btn-sm btn-info" title="View">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
+                <!-- History -->
+                <a href="<?php echo h($historyUrl); ?>" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-clock-history"></i> History
+                </a>
 
-                                    <!-- History -->
-                                    <a href="<?php echo h($historyUrl); ?>"
-                                       class="btn btn-sm btn-outline-secondary" title="History">
-                                        <i class="bi bi-clock-history"></i> History
-                                    </a>
+                <!-- Change Status -->
+                <div class="dropdown">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="true"
+                    data-bs-display="static"
+                    data-bs-offset="0,8"
+                    aria-expanded="false"
+                    id="changeStatusBtn-<?php echo $id; ?>">
+                    <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                    <li>
+                      <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#revertModal-<?php echo $id; ?>">
+                        <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                        <span>Revert to Pending</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="blacklist-applicant.php?id=<?php echo $id; ?>">
+                        <i class="bi bi-slash-circle text-danger"></i>
+                        <span>Blacklist</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </td>
+          </tr>
 
-                                    <!-- Change Status Dropdown -->
-                                    <div class="dropdown">
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-primary dropdown-toggle btn-status"
-                                            data-bs-toggle="dropdown"
-                                            data-bs-auto-close="true"
-                                            data-bs-display="static"
-                                            data-bs-offset="0,8"
-                                            aria-expanded="false"
-                                            aria-haspopup="true"
-                                            title="Change Status"
-                                            id="changeStatusBtn-<?php echo (int)$app['id']; ?>">
-                                            <i class="bi bi-arrow-left-right me-1"></i>
-                                            Change Status
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow"
-                                            aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
-                                            <li>
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#revertModal-<?php echo (int)$app['id']; ?>">
-                                                    <i class="bi bi-arrow-counterclockwise text-warning"></i>
-                                                    <span>Revert to Pending</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="blacklist-applicant.php?id=<?php echo (int)$app['id']; ?>">
-                                                    <i class="bi bi-slash-circle text-danger"></i>
-                                                    <span>Blacklist</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
+          <!-- Revert Modal -->
+          <div class="modal fade revert-modal" id="revertModal-<?php echo $id; ?>" tabindex="-1"
+               aria-labelledby="revertModalLabel-<?php echo $id; ?>" aria-hidden="true"
+               data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+              <form class="modal-content border-0 shadow-lg" method="POST" action="onhold-revert.php">
+                <div class="modal-header bg-light border-0 pb-0">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-25 p-2 rounded-circle">
+                      <i class="bi bi-arrow-counterclockwise text-warning fs-5"></i>
+                    </div>
+                    <div>
+                      <h5 class="modal-title fw-bold mb-0" id="revertModalLabel-<?php echo $id; ?>">
+                        Revert to Pending
+                      </h5>
+                      <p class="text-muted small mb-0">Applicant will be moved back to pending status</p>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-                        <!-- Revert Modal -->
-                        <div class="modal fade" id="revertModal-<?php echo (int)$app['id']; ?>" tabindex="-1" aria-labelledby="revertModalLabel-<?php echo (int)$app['id']; ?>" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <form class="modal-content" method="POST" action="revert-onhold.php">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="revertModalLabel-<?php echo (int)$app['id']; ?>">
-                                            <i class="bi bi-arrow-counterclockwise me-2"></i>Revert to Pending
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <input type="hidden" name="applicant_id" value="<?php echo (int)$app['id']; ?>">
-                                        
-                                        <div class="alert alert-info d-flex align-items-start gap-2">
-                                            <i class="bi bi-info-circle mt-1"></i>
-                                            <div>
-                                                You are reverting <strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong> 
-                                                from <span class="badge badge-warning">On Hold</span> to <span class="badge badge-secondary">Pending</span>.
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label class="form-label">Reason <span class="text-danger">*</span></label>
-                                            <select name="reason" class="form-select" required>
-                                                <option value="">Select a reason</option>
-                                                <option value="Health Issues Resolved">Health Issues Resolved</option>
-                                                <option value="Personal Problems Solved">Personal Problems Solved</option>
-                                                <option value="Ready to Work">Ready to Work</option>
-                                                <option value="Documents Complete">Documents Complete</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label class="form-label">Description <span class="text-danger">*</span></label>
-                                            <textarea name="description" class="form-control" rows="4" placeholder="Provide details about why the applicant is being reverted..." required></textarea>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-check2-circle me-1"></i> Revert to Pending
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                <div class="modal-body py-3">
+                  <!-- Applicant header card -->
+                  <div class="card border bg-light mb-4">
+                    <div class="card-body py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <?php if ($photo): ?>
+                          <img src="<?php echo h($photo); ?>" class="rounded-circle shadow-sm" width="56" height="56" style="object-fit: cover;" alt="Photo">
+                        <?php else: ?>
+                          <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm" style="width:56px;height:56px;">
+                            <span class="fs-5 fw-bold"><?php echo strtoupper(substr((string)($app['first_name'] ?? ''), 0, 1)); ?></span>
+                          </div>
+                        <?php endif; ?>
+                        <div class="flex-grow-1">
+                          <div class="fw-bold fs-5"><?php echo h($name); ?></div>
+                          <div class="d-flex align-items-center gap-2 mt-1">
+                            <span class="badge bg-secondary bg-opacity-25 text-dark">
+                              <i class="bi bi-pause-circle me-1"></i>On Hold
+                            </span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-warning bg-opacity-25 text-dark">
+                              <i class="bi bi-hourglass-split me-1"></i>Pending
+                            </span>
+                          </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['csrf_token']); ?>">
+                  <input type="hidden" name="applicant_id" value="<?php echo $id; ?>">
+
+                  <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold">
+                        Reason <span class="text-danger">*</span>
+                      </label>
+                      <select name="reason" class="form-select form-select-lg" required>
+                        <option value="" selected>Select a reason</option>
+                        <option value="Health Issues Resolved">Health Issues Resolved</option>
+                        <option value="Personal Problems Solved">Personal Problems Solved</option>
+                        <option value="Ready to Work">Ready to Work</option>
+                        <option value="Documents Complete">Documents Complete</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <div class="form-text mt-1">Pick the most accurate reason for reverting.</div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold d-flex justify-content-between">
+                        <span>Description <span class="text-danger">*</span></span>
+                        <span class="counter badge bg-light text-secondary" data-count="#desc-<?php echo $id; ?>">0/1000</span>
+                      </label>
+                      <textarea
+                        id="desc-<?php echo $id; ?>"
+                        name="description"
+                        class="form-control"
+                        rows="4"
+                        maxlength="1000"
+                        required
+                        placeholder="Provide details (e.g., proof of recovery, availability confirmation, notes from applicant)…"></textarea>
+                      <div class="form-text mt-1">This will be added to Reports and Status History.</div>
+                    </div>
+                  </div>
+
+                  <!-- Info box -->
+                  <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="bi bi-info-circle-fill text-info mt-1"></i>
+                      <div class="small">
+                        <strong>Note:</strong> The applicant will be moved to Pending status and this action will be recorded in the reports.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0 pt-0">
+                  <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                  </button>
+                  <button type="submit" class="btn btn-warning btn-lg text-dark">
+                    <i class="bi bi-check2-circle me-2"></i> Revert to Pending
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Raise the active row while a dropdown is open so it sits above neighbors
-    document.querySelectorAll('.actions-cell .dropdown').forEach(function(dd) {
-        dd.addEventListener('show.bs.dropdown', function() {
-            var tr = dd.closest('tr');
-            if (tr) tr.classList.add('row-raised');
-        });
-        dd.addEventListener('hidden.bs.dropdown', function() {
-            var tr = dd.closest('tr');
-            if (tr) tr.classList.remove('row-raised');
-        });
+  // Raise row above others while a dropdown is open
+  document.querySelectorAll('td.actions-cell .dropdown').forEach(function(dd) {
+    dd.addEventListener('show.bs.dropdown', function() {
+      var tr = dd.closest('tr'); if (tr) tr.classList.add('row-raised');
     });
+    dd.addEventListener('hidden.bs.dropdown', function() {
+      var tr = dd.closest('tr'); if (tr) tr.classList.remove('row-raised');
+    });
+  });
+
+  // Live counter for each description field
+  document.querySelectorAll('.revert-modal textarea[maxlength]').forEach(function(ta) {
+    var max = parseInt(ta.getAttribute('maxlength') || '1000', 10);
+    var counterEl = ta.closest('.col-12, .col-md-7').querySelector('.counter');
+    var update = function() { if (!counterEl) return; counterEl.textContent = (ta.value.length) + '/' + max; };
+    ta.addEventListener('input', update);
+    update();
+  });
+
+  // Autofocus reason on open
+  document.querySelectorAll('.revert-modal').forEach(function(modalEl){
+    modalEl.addEventListener('shown.bs.modal', function(){
+      var select = modalEl.querySelector('select[name="reason"]');
+      if (select) select.focus();
+    });
+  });
 });
 </script>
 
