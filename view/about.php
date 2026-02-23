@@ -649,24 +649,6 @@ $page = 'about';
       const previewImg = document.getElementById('galleryPreviewImg');
       const previewCaption = document.getElementById('galleryPreviewCaption');
 
-      // Helper: update inline preview
-      function updatePreview(imgEl) {
-        const src = imgEl.getAttribute('src');
-        const alt = imgEl.getAttribute('alt') || 'Selected image';
-        // Swap preview image and caption
-        previewImg.src = src;
-        previewImg.alt = alt;
-        previewCaption.textContent = alt;
-      }
-
-      // Click a tile -> update preview
-      grid.addEventListener('click', (e) => {
-        const tile = e.target.closest('.gallery-tile');
-        if (!tile) return;
-        const img = tile.querySelector('img');
-        if (img) updatePreview(img);
-      });
-
       // Filter buttons
       filters.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-filter]');
@@ -694,7 +676,6 @@ $page = 'about';
         const visibleTile = tiles.find(t => !t.hidden);
         if (visibleTile) {
           const img = visibleTile.querySelector('img');
-          if (img) updatePreview(img);
         } else {
           // If nothing matches, clear preview gracefully
           previewImg.src = '';
