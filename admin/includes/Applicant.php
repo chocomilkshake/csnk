@@ -798,13 +798,30 @@ class Applicant
                 throw new \RuntimeException('Failed to move candidate to on_process.');
             }
 
-            // 2) Insert status report line
+            // 2) Insert status report line for replacement
             $stmt2 = $this->db->prepare("
                 INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
                 VALUES (?, 'pending', 'on_process', ?, ?)
             ");
             $stmt2->bind_param("isi", $replacementApplicantId, $reportText, $adminId);
             $stmt2->execute();
+
+            // 2b) Set original applicant status => on_hold (replaced)
+            $stmt2b = $this->db->prepare("UPDATE applicants SET status = 'on_hold', updated_at = NOW() WHERE id = ? AND status = 'approved' AND deleted_at IS NULL");
+            $stmt2b->bind_param("i", $originalId);
+            $stmt2b->execute();
+            if ($this->db->affected_rows <= 0) {
+                throw new \RuntimeException('Failed to set original applicant to on_hold.');
+            }
+
+            // 2c) Insert status report line for original applicant
+            $origReportText = "Replaced by Applicant ID {$replacementApplicantId}. Reason: {$reason}.";
+            $stmt2c = $this->db->prepare("
+                INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
+                VALUES (?, 'approved', 'on_hold', ?, ?)
+            ");
+            $stmt2c->bind_param("isi", $originalId, $origReportText, $adminId);
+            $stmt2c->execute();
 
             // 3) Reassign client booking if available
             if ($clientBookingId !== null) {
