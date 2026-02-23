@@ -50,6 +50,7 @@ foreach ($candidates as $row) {
         'employment_type'    => (string)($row['employment_type'] ?? ''),
         'education_level'    => (string)($row['education_level'] ?? ''),
         'picture_url'        => !empty($row['picture']) ? getFileUrl($row['picture']) : null,
+        '_score'             => (int)($row['_score'] ?? 0),
         'specialization_skills' => $skillsArr,
         'preferred_location'    => $citiesArr,
         'created_at'         => (string)($row['created_at'] ?? ''),
