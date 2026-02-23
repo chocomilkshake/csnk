@@ -57,6 +57,7 @@ if ($canSeeCSNK) {
     $onProcessCount   = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_process' AND deleted_at IS NULL{$notBlacklisted}");
     $approvedCount    = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='approved' AND deleted_at IS NULL{$notBlacklisted}");
     $deletedCount     = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE deleted_at IS NOT NULL{$notBlacklisted}");
+    $onHoldCount      = csnk_count($conn, "SELECT COUNT(*) FROM applicants WHERE status='on_hold' AND deleted_at IS NULL{$notBlacklisted}");
 
     /* Active blacklisted applicants (visible to admin/super_admin) */
     $blacklistedCount = csnk_count($conn, "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1");
@@ -85,7 +86,7 @@ if ($conn instanceof mysqli && $canSeeCSNK) {
 }
 
 /* ---------- Sidebar submenu state ---------- */
-$isApplicantsActive   = in_array($currentPage, ['applicants','pending','on-process','approved','deleted','blacklisted','blacklisted-view'], true);
+$isApplicantsActive   = in_array($currentPage, ['applicants','pending','on-process','approved','on-hold','deleted','blacklisted','blacklisted-view'], true);
 $collapseApplicantsId = 'csnkApplicantsMenu';
 
 /* ---------- Escape helper ---------- */
@@ -271,6 +272,20 @@ if ($canViewReports && $conn instanceof mysqli) {
                               aria-label="Approved applicants count"><?php echo (int)$approvedCount; ?></span>
                     </span>
                 </a>
+
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                <a href="on-hold.php"
+                   class="sidebar-item <?php echo $currentPage === 'on-hold' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'on-hold' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="On Hold Applicants">
+                    <i class="bi bi-pause-circle"></i>
+                    <span class="label"><span class="text">On Hold</span></span>
+                    <span class="side-badge">
+                        <span class="pill-count <?php echo $onHoldCount === 0 ? 'is-zero' : ''; ?>"
+                              aria-label="On hold applicants count"><?php echo (int)$onHoldCount; ?></span>
+                    </span>
+                </a>
+                <?php endif; ?>
 
                 <a href="deleted.php"
                    class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>"
