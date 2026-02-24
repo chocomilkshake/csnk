@@ -11,6 +11,9 @@ $isSuperAdmin = ($role === 'super_admin');
 $isAdmin      = ($role === 'admin');
 $isEmployee   = ($role === 'employee');
 
+// Get current user's agency for filtering
+$currentAgency = $currentUser['agency'] ?? null;
+
 /* ============================
    Validation helpers
 ============================= */
@@ -250,6 +253,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_account'])) {
    Load lists for the view
 ============================= */
 $employeeAccounts = $admin->getByRole('employee');
+
+// Filter employee accounts by agency for non-admin/super_admin users
+// Super admins and admins can see all employees, employees only see their own agency
+if (!$isSuperAdmin && !$isAdmin && $currentAgency) {
+    $employeeAccounts = array_filter($employeeAccounts, function($acc) use ($currentAgency) {
+        return ($acc['agency'] ?? null) === $currentAgency;
+    });
+    // Re-index array after filtering
+    $employeeAccounts = array_values($employeeAccounts);
+}
+
 $adminAccounts    = $admin->getByRole('admin');
 $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // only SA can view
 ?>
@@ -306,12 +320,14 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
             <th>Agency</th>
             <th>Status</th>
             <th>Created</th>
+            <?php if ($isSuperAdmin || $isAdmin): ?>
             <th>Actions</th>
+            <?php endif; ?>
           </tr>
         </thead>
         <tbody>
         <?php if (empty($employeeAccounts)): ?>
-          <tr><td colspan="7" class="text-center text-muted">No employee accounts.</td></tr>
+          <tr><td colspan="<?php echo ($isSuperAdmin || $isAdmin) ? '7' : '6'; ?>" class="text-center text-muted">No employee accounts.</td></tr>
         <?php else: foreach ($employeeAccounts as $acc): ?>
           <tr>
             <td>
@@ -334,6 +350,7 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
               </span>
             </td>
             <td><?php echo formatDate($acc['created_at']); ?></td>
+            <?php if ($isSuperAdmin || $isAdmin): ?>
             <td>
               <?php if ($isSuperAdmin): ?>
                 <div class="btn-group">
@@ -381,10 +398,9 @@ $superAccounts    = $isSuperAdmin ? $admin->getByRole('super_admin') : []; // on
                        title="Delete"><i class="bi bi-trash"></i></a>
                   <?php endif; ?>
                 </div>
-              <?php else: ?>
-                <span class="text-muted">—</span>
               <?php endif; ?>
             </td>
+            <?php endif; ?>
           </tr>
         <?php endforeach; endif; ?>
         </tbody>

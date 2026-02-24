@@ -1,10 +1,14 @@
 // app.js — Client listing UX (photo-top modern cards)
-// v2.9 — approved applicants hidden server-side; cards clickable + modern, NO availability on cards, Hire inside modal (closes then opens booking), pushState with ID + clean URL on close
-//        + Auto Rumble: newest pinned on top, remaining shuffle on each refresh (client-side)
-console.log('app.js loaded successfully - v2.9');
+// v3.2 — DPA-safe rate everywhere (cards + modal):
+//        - Reads exact `daily_rate` (or compatible aliases) from API
+//        - Converts 695 → "₱700 - ₱800 / day" (round UP to nearest ₱100)
+//        - Hides rate UI when missing/invalid
+//        - Cleans & parses strings like "₱695", "695.00/day" reliably
+//        - Keeps v2.9 features: cards clickable, video popover, deep-link, polling, rumble
+console.log('app.js loaded successfully - v3.2');
 
 /* =========================================================
-   State
+  State
 ========================================================= */
 let allApplicants = [];
 let filteredApplicants = [];
@@ -12,18 +16,15 @@ let currentPage = 1;
 const itemsPerPage = 12;
 
 /* =========================================================
-   Auto Rumble (client-side unbiased rotation)
-   - Keeps newest applicants on top
-   - Randomizes the rest on every page load/refresh
-   - Applies only when sort === 'newest' (default) to not break other sorts
+  Auto Rumble (client-side unbiased rotation)
 ========================================================= */
-const RUMBLE_ENABLED = true;                 // Master switch
-const RUMBLE_ONLY_ON_SORT_NEWEST = true;     // Respect user sorting; rumble only when 'Newest'
-const PIN_NEWEST_COUNT = 4;                  // Keep the first N newest items pinned at the top (page-level)
-const PIN_WITHIN_DAYS = 0;                   // Alternative: if > 0, pin all created within X days (overrides count)
+const RUMBLE_ENABLED = true;
+const RUMBLE_ONLY_ON_SORT_NEWEST = true;
+const PIN_NEWEST_COUNT = 4;
+const PIN_WITHIN_DAYS = 0;
 
 /* =========================================================
-   DOM
+  DOM
 ========================================================= */
 const searchForm   = document.getElementById('searchForm');
 const filtersForm  = document.getElementById('filtersForm');
@@ -32,7 +33,7 @@ const resultsCount = document.getElementById('resultsCount');
 const pagination   = document.getElementById('pagination');
 
 /* =========================================================
-   Helpers
+  Basic helpers
 ========================================================= */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, s => (
@@ -55,9 +56,6 @@ function arrFromMaybe(val){
   }
   return [];
 }
-function normLabel(s){
-  return String(s || '').toLowerCase().replace(/[\s\-]/g, '');
-}
 
 /** Update URL with applicant ID without navigating */
 function pushApplicantId(id){
@@ -74,32 +72,28 @@ function removeApplicantIdFromUrl(){
   }
 }
 
-// ---- CONFIG: set your app root path here, including leading and trailing slashes ----
-// NOTE: this must match your server mount (e.g., '/csnk-1/' for this project)
-const APP_BASE = '/csnk-1/'; // <-- CHANGE if your app is mounted elsewhere (e.g., '/')
+// ---- CONFIG: app root path (match your mount, e.g., '/csnk-1/') ----
+const APP_BASE = '/csnk-1/';
 
-// Polling interval (ms) — keeps the listing up-to-date when admin updates statuses
-// Set to 0 to disable. Reasonable default: 15 seconds.
+// Poll interval for live refresh
 const POLL_INTERVAL_MS = 15000;
 
-function normalizeSlashes(url) {
-  return String(url || '').replace(/\\/g, '/').trim();
-}
+function normalizeSlashes(url) { return String(url || '').replace(/\\/g, '/').trim(); }
 function isAbsoluteUrl(u) { return /^https?:\/\//i.test(u); }
 
 function absoluteFromAppRoot(path) {
   if (!path) return '';
   const p = normalizeSlashes(path);
   if (isAbsoluteUrl(p)) return p;
-
-  // Ensure exactly one slash between origin, base and path
-  const base = APP_BASE.replace(/\/+$/,'');        // '/csnk'
-  const rel  = p.replace(/^\/+/,'');               // 'admin/uploads/video/trial1.mp4'
-  return `${location.origin}${base}/${rel}`.replace(/\/{2,}/g,'/'); // http://localhost/csnk/admin/uploads/video/trial1.mp4
+  const base = APP_BASE.replace(/\/+$/,'');
+  const rel  = p.replace(/^\/+/,'');
+  return `${location.origin}${base}/${rel}`.replace(/\/{2,}/g,'/');
 }
 
+/* =========================================================
+  Video helpers
+========================================================= */
 function isIframeHost(url) { return /youtube\.com|youtu\.be|vimeo\.com/i.test(url); }
-
 function toEmbedUrl(url) {
   try {
     const u = new URL(url);
@@ -118,11 +112,8 @@ function toEmbedUrl(url) {
       return `https://player.vimeo.com/video/${id}`;
     }
     return url;
-  } catch {
-    return url;
-  }
+  } catch { return url; }
 }
-
 function guessMime(url) {
   const u = url.split('?')[0].toLowerCase();
   if (u.endsWith('.mp4')) return 'video/mp4';
@@ -130,7 +121,6 @@ function guessMime(url) {
   if (u.endsWith('.ogg') || u.endsWith('.ogv')) return 'video/ogg';
   return 'video/mp4';
 }
-
 function buildApplicantVideoHtml(url, video_type) {
   const raw = (url || '').trim();
   if (!raw) {
@@ -141,26 +131,17 @@ function buildApplicantVideoHtml(url, video_type) {
       </div>
     `;
   }
-
-  // Check if URL is already absolute first
-  const isAbsolute = /^https?:\/\//i.test(raw);
-  
-  // Only process through absoluteFromAppRoot if it's a relative path
-  const resolved = isAbsolute ? raw : absoluteFromAppRoot(raw);
-
-  // Use DB-declared type if present, else infer by host
+  const isAbs = /^https?:\/\//i.test(raw);
+  const resolved = isAbs ? raw : absoluteFromAppRoot(raw);
   const declared = String(video_type || '').toLowerCase();
   const useIframe = (declared === 'iframe') || (declared !== 'file' && isIframeHost(resolved));
 
-  console.debug('[Video Build]', { raw, resolved, useIframe, video_type, declared, isAbsolute });
-
   if (useIframe) {
-    const embed = toEmbedUrl(resolved);
-    const safe  = escapeHtml(embed);
-    console.debug('[Video] Embedding iframe:', safe);
+    const embed = escapeHtml(toEmbedUrl(resolved));
+    // Proper iframe element (avoid broken markup)
     return `
       <div class="ratio ratio-16x9">
-        <iframe src="${safe}" title="Applicant video"
+        <iframe src="${embed}" title="Applicant video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="border:0;"></iframe>
       </div>
@@ -169,7 +150,6 @@ function buildApplicantVideoHtml(url, video_type) {
 
   const src  = escapeHtml(resolved);
   const mime = guessMime(resolved);
-  console.debug('[Video] Native video source:', { src, mime, resolved });
   return `
     <video controls playsinline preload="metadata" style="width:100%; display:block; background:#000; border-radius:12px;">
       <source src="${src}" type="${mime}">
@@ -177,32 +157,56 @@ function buildApplicantVideoHtml(url, video_type) {
     </video>
   `;
 }
-
 function pauseAnyVideoIn(root) {
   const v = root.querySelector('video');
   if (v) { try { v.pause(); } catch(_){} }
   const iframe = root.querySelector('iframe');
-  if (iframe && iframe.src) {
-    const s = iframe.src;
-    iframe.src = s; // reload to stop
-  }
+  if (iframe && iframe.src) { const s = iframe.src; iframe.src = s; }
 }
-
 function getPopoverElFor(btn) {
   const id = btn.getAttribute('aria-describedby');
   return id ? document.getElementById(id) : null;
 }
 
-function formatPeso(amount) {
-    if (amount === null || amount === undefined || amount === '') return null;
-    const num = Number(amount);
-    if (!isFinite(num)) return null;
-    return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/* =========================================================
+  DPA-safe RATE helpers  (uses your DB `daily_rate` field)
+========================================================= */
+/** Parse numeric from various formats: "₱695", "695.00 / day", 695, "700" */
+function parseDailyRate(val){
+  if (val == null) return null;
+  if (typeof val === 'number') return Number.isFinite(val) ? val : null;
+  if (typeof val === 'string') {
+    const cleaned = val
+      .replace(/,/g,'')
+      .replace(/₱/g,'')
+      .replace(/per\s*day/gi,'')
+      .replace(/\/\s*day/gi,'')
+      .replace(/[^\d.]/g,'')      // keep digits & dot
+      .replace(/(\..*?)\./g,'$1'); // keep first dot only
+    const num = parseFloat(cleaned);
+    return Number.isFinite(num) ? num : null;
   }
+  return null;
+}
 
+/** Accept possible API field names but prefer DB `daily_rate` */
+function getApplicantRate(a){
+  const raw = (a?.daily_rate ?? a?.dailyRate ?? a?.rate ?? a?.daily_wage ?? null);
+  return parseDailyRate(raw);
+}
+
+/** Convert exact amount to a DPA-safe range, rounded UP to the nearest ₱100 */
+function formatRateAsRange(amount) {
+  const num = parseDailyRate(amount);
+  if (!Number.isFinite(num) || num <= 0) return '—';
+  const rounded = Math.ceil(num / 100) * 100;
+  const lower = rounded;
+  const upper = rounded + 100;
+  return `₱${lower.toLocaleString('en-PH')} - ₱${upper.toLocaleString('en-PH')} / day`;
+}
 
 /* =========================================================
-   Skeleton loader
+  Skeleton loader
 ========================================================= */
 function renderSkeleton(count = 8) {
   if (!cardsGrid) return;
@@ -232,15 +236,14 @@ function renderSkeleton(count = 8) {
 }
 
 /* =========================================================
-   Image loader (safe + mixed content aware)
+  Image loader (safe + mixed content aware)
 ========================================================= */
 function setAvatar(imgEl, src, placeholder) {
   if (!imgEl) return;
   const fallback = placeholder || '../resources/img/avatar_placeholder.png';
-  const isHttpsPage = location.protocol === 'https:';
+  const isHttps = location.protocol === 'https:';
   const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
-  // Avoid mixed content on HTTPS pages
-  const useSrc = (!cleanSrc || (isHttpsPage && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
+  const useSrc = (!cleanSrc || (isHttps && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
 
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
@@ -250,16 +253,7 @@ function setAvatar(imgEl, src, placeholder) {
 }
 
 /* =========================================================
-   Micro UI (pills etc.)
-========================================================= */
-function employmentPill(typeLabel) {
-  const t = (typeLabel || '').toLowerCase();
-  const cls = t.includes('full') ? 'emp-full' : 'emp-part';
-  return `<span class="emp-pill ${cls}">${escapeHtml(typeLabel || '—')}</span>`;
-}
-
-/* =========================================================
-   Init
+  Init
 ========================================================= */
 function initApp(){
   injectStyles();
@@ -267,15 +261,11 @@ function initApp(){
   renderSkeleton(8);
   fetchApplicants({ page: 1 }).then(() => {
     setupEventListeners();
-
-    // Start background polling so status changes (e.g., approved) propagate to clients without manual reload
+    // Background polling
     if (typeof POLL_INTERVAL_MS === 'number' && POLL_INTERVAL_MS > 0) {
-      setInterval(() => {
-        try { fetchApplicants({ page: currentPage }); } catch(_){}
-      }, POLL_INTERVAL_MS);
+      setInterval(() => { try { fetchApplicants({ page: currentPage }); } catch(_){ } }, POLL_INTERVAL_MS);
     }
-
-    // Deep-link: auto-open modal if URL has ?applicant=ID
+    // Deep-link
     const url = new URL(window.location.href);
     const idParam = url.searchParams.get('applicant');
     if (idParam) {
@@ -284,7 +274,6 @@ function initApp(){
     }
   });
 }
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
@@ -292,22 +281,18 @@ if (document.readyState === 'loading') {
 }
 
 /* =========================================================
-   Data loading
+  Data loading (server-driven)
 ========================================================= */
-// Server-driven fetch (supports filters, pagination)
 let serverTotal = 0;
 let serverPerPage = itemsPerPage;
 
 async function fetchApplicants(options = {}) {
-  // prevent overlapping requests
   if (fetchApplicants._inFlight) return;
   fetchApplicants._inFlight = true;
 
-  // options may include page and per_page
   const page = options.page || 1;
   const per_page = options.per_page || serverPerPage || itemsPerPage;
 
-  // Build params from current forms
   const params = new URLSearchParams();
   const formData    = searchForm ? new FormData(searchForm)   : new FormData();
   const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
@@ -318,9 +303,7 @@ async function fetchApplicants(options = {}) {
   const minExp = parseInt(filtersData.get('min_experience')) || 0; if (minExp > 0) params.set('min_experience', String(minExp));
   const sortBy = (filtersData.get('sort') || '').trim(); if (sortBy) params.set('sort', sortBy);
 
-  // multiple values: specializations[] and languages[]
   let specs = filtersData.getAll('specializations[]');
-  // fallback: collect checked boxes directly if FormData returns nothing (handles malformed markup browsers might tolerate differently)
   if (!specs || specs.length === 0) {
     specs = Array.from(document.querySelectorAll('input[name="specializations[]"]:checked')).map(el => el.value);
   }
@@ -335,7 +318,6 @@ async function fetchApplicants(options = {}) {
   params.set('page', String(page));
   params.set('per_page', String(per_page));
 
-  // Forward rotate opt-out flag if present in URL (e.g., ?rotate=0)
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('rotate') === '0') params.set('rotate', '0');
 
@@ -348,32 +330,22 @@ async function fetchApplicants(options = {}) {
 
     if (json.error) throw new Error(json.error);
 
-    // Set local state
     filteredApplicants = Array.isArray(json.data) ? json.data : [];
-    serverTotal = Number(json.total || 0);
+    serverTotal  = Number(json.total || 0);
     serverPerPage = Number(json.per_page || per_page);
-    currentPage = Number(json.page || page);
+    currentPage  = Number(json.page || page);
 
-    // --- Advanced Client-Side Randomization (works with server-side randomization) ---
-    // Additional shuffling to ensure even more variety, especially when paginating
-    // Server-side randomization handles cross-session fairness, client-side adds per-page variety
+    // Client-side page shuffle (deterministic per page)
     try {
-      const urlParams = new URLSearchParams(window.location.search);
       const rotateDisabled = urlParams.get('rotate') === '0';
       if (!rotateDisabled && filteredApplicants.length > 1) {
-        // Use Fisher-Yates shuffle with a seed based on current page and session
-        // This ensures different pages show different orders while maintaining consistency
         const pageSeed = currentPage || 1;
         const sessionKey = 'csnk_shuffle_seed_' + pageSeed;
         let seed = parseInt(sessionStorage.getItem(sessionKey) || '0', 10);
-        
-        // Generate a new seed if this is the first time viewing this page
         if (seed === 0) {
           seed = Math.floor(Math.random() * 1000000);
           sessionStorage.setItem(sessionKey, String(seed));
         }
-        
-        // Shuffle using seeded random (deterministic but varied per page)
         filteredApplicants = seededShuffle(filteredApplicants, seed);
         console.debug('[Advanced Randomization] Applied seeded shuffle for page', currentPage);
       }
@@ -386,42 +358,27 @@ async function fetchApplicants(options = {}) {
     console.error('Error fetching applicants:', err);
     if (cardsGrid) cardsGrid.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading applicants. Please try again.</p></div>';
   } finally {
-    // allow the next poll/request
     fetchApplicants._inFlight = false;
   }
 }
 
 /* =========================================================
-   Events
+  Events
 ========================================================= */
 function setupEventListeners() {
   if (searchForm) {
-    searchForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      applyFilters();
-    });
-
-    // Live search (debounced) for smoother UX
+    searchForm.addEventListener('submit', function(e) { e.preventDefault(); applyFilters(); });
     const qInput = searchForm.querySelector('input[name="q"]');
     if (qInput) qInput.addEventListener('input', debounce(() => applyFilters(), 250));
-    
-    // Live search for location field (debounced)
     const locationInput = searchForm.querySelector('input[name="location"]');
     if (locationInput) locationInput.addEventListener('input', debounce(() => applyFilters(), 250));
   }
 
   if (filtersForm) {
-    filtersForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      applyFilters();
-    });
-
-    // Auto-apply when any filter changes (debounced)
+    filtersForm.addEventListener('submit', function(e) { e.preventDefault(); applyFilters(); });
     filtersForm.querySelectorAll('input, select').forEach(el => {
       el.addEventListener('change', debounce(() => applyFilters(), 220));
     });
-
-    // Also listen to range input in real time (min experience)
     const expRange = filtersForm.querySelector('input[name="min_experience"]');
     if (expRange) expRange.addEventListener('input', debounce(() => applyFilters(), 180));
 
@@ -456,14 +413,8 @@ function setupEventListeners() {
 }
 
 /* =========================================================
-   Filtering + Sorting
-   - Normalizes specialization labels so "&" and "and" variants match
-   - Location search matches city, region and preferred locations
-   - Languages matching is case-insensitive
-   - Debounced input + auto-apply for a smooth UX
+  Filtering (delegated to server)
 ========================================================= */
-
-// Simple debounce helper
 function debounce(fn, wait = 300){
   let t = null;
   return function(...args){
@@ -471,57 +422,27 @@ function debounce(fn, wait = 300){
     t = setTimeout(()=> fn.apply(this, args), wait);
   };
 }
-
-// Normalize values for comparison (lowercase, collapse spaces/dashes, replace &/and)
-function cmpNorm(val){
-  if (val == null) return '';
-  return String(val).toLowerCase().replace(/\s+|[-_]/g, '').replace(/&|and/g, 'and').trim();
-}
-
 const debouncedApplyFilters = debounce(applyFiltersRaw, 220);
-
 function applyFilters() { debouncedApplyFilters(); }
-
 async function applyFiltersRaw(){
-  const formData    = searchForm ? new FormData(searchForm)   : new FormData();
-  const filtersData = filtersForm ? new FormData(filtersForm) : new FormData();
-
-  const searchQuery   = (formData.get('q') || '').toLowerCase().trim();
-  const locationQuery = (formData.get('location') || '').toLowerCase().trim();
-  const availableBy   = formData.get('available_by');
-
-  const selectedSpecs = filtersData.getAll('specializations[]');
-  const selectedAvail = filtersData.getAll('availability[]'); // employment type in UI
-  const minExperience = parseInt(filtersData.get('min_experience')) || 0;
-  const selectedLangs = filtersData.getAll('languages[]');
-  const sortBy        = filtersData.get('sort');
-
-  const selectedSpecNorms = selectedSpecs.map(cmpNorm);
-  const selectedLangNorms = selectedLangs.map(s => String(s || '').toLowerCase());
-
-  // For server-side filtering we simply request page 1 with current filters
   currentPage = 1;
   await fetchApplicants({ page: 1 });
 }
 
 /* =========================================================
-   Auto Rumble helpers
+  Auto Rumble helpers
 ========================================================= */
 function getCurrentSortValue() {
-  try {
-    return (filtersForm?.querySelector('#sort')?.value || 'newest').trim();
-  } catch { return 'newest'; }
+  try { return (filtersForm?.querySelector('#sort')?.value || 'newest').trim(); }
+  catch { return 'newest'; }
 }
-
 function randomSource() {
-  // Use crypto if available for better randomness; fallback to Math.random
   try {
     const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
     return arr[0] / 0x100000000;
   } catch { return Math.random(); }
 }
-
 function shuffleArray(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -530,8 +451,6 @@ function shuffleArray(arr) {
   }
   return a;
 }
-
-// Seeded shuffle function for deterministic randomization
 function seededShuffle(arr, seed) {
   const a = arr.slice();
   let rng = seededRandom(seed);
@@ -541,8 +460,6 @@ function seededShuffle(arr, seed) {
   }
   return a;
 }
-
-// Simple seeded random number generator
 function seededRandom(seed) {
   let value = seed;
   return function() {
@@ -550,50 +467,39 @@ function seededRandom(seed) {
     return value / 233280;
   };
 }
-
 function isWithinDays(dateStr, days) {
   const d = toDate(dateStr);
   if (!d || !Number.isFinite(days) || days <= 0) return false;
   const now = new Date();
-  const delta = now - d; // ms
-  return delta <= (days * 24 * 60 * 60 * 1000);
+  return (now - d) <= (days * 24 * 60 * 60 * 1000);
 }
-
 function rumbleApplicants(list) {
-  // Ensure we don’t mutate original list
-  const ordered = list.slice(); // server already returns sorted by chosen 'sort'
-  // Decide if rumble should apply under current sort selection
+  const ordered = list.slice();
   const sortVal = getCurrentSortValue();
   if (!RUMBLE_ENABLED) return ordered;
   if (RUMBLE_ONLY_ON_SORT_NEWEST && sortVal !== 'newest') return ordered;
 
-  let pinned = [];
-  let rest = [];
-
+  let pinned = [], rest = [];
   if (PIN_WITHIN_DAYS > 0) {
-    pinned = ordered.filter(a => isWithinDays(a.created_at, PIN_WITHIN_DAYS));
-    // Keep pinned in true 'newest' order:
-    pinned.sort((a, b) => (toDate(b.created_at) - toDate(a.created_at)));
-    const pinnedIds = new Set(pinned.map(a => a.id));
-    rest = ordered.filter(a => !pinnedIds.has(a.id));
+    pinned = ordered.filter(a => isWithinDays(a.created_at, PIN_WITHIN_DAYS))
+                    .sort((a,b)=> (toDate(b.created_at) - toDate(a.created_at)));
+    const set = new Set(pinned.map(a=>a.id));
+    rest = ordered.filter(a=>!set.has(a.id));
   } else if (PIN_NEWEST_COUNT > 0) {
     pinned = ordered.slice(0, PIN_NEWEST_COUNT);
-    rest = ordered.slice(PIN_NEWEST_COUNT);
+    rest   = ordered.slice(PIN_NEWEST_COUNT);
   } else {
-    // No pinning; fully shuffle (still respects sort gate)
     return shuffleArray(ordered);
   }
-
-  const shuffledRest = shuffleArray(rest);
-  return [...pinned, ...shuffledRest];
+  return [...pinned, ...shuffleArray(rest)];
 }
 
 /* =========================================================
-   Rendering
+  Rendering (cards)
 ========================================================= */
 function renderApplicants() {
   const perPage = serverPerPage || itemsPerPage;
-  const list = filteredApplicants; // server already returns the requested page
+  const list = filteredApplicants;
 
   const totalResults = serverTotal || list.length;
   const startResult  = (totalResults > 0) ? ((currentPage - 1) * perPage) + 1 : 0;
@@ -611,10 +517,9 @@ function renderApplicants() {
     return;
   }
 
-  // 🔀 Apply Auto Rumble here (pin newest on top, shuffle the rest per refresh)
   let displayList = rumbleApplicants(list);
 
-  // Read excluded statuses from the container (e.g., data-exclude-status="approved") and filter them out
+  // Filter out excluded statuses (e.g., approved)
   try {
     const excludeAttr = cardsGrid?.dataset?.excludeStatus || '';
     if (excludeAttr) {
@@ -623,17 +528,14 @@ function renderApplicants() {
         displayList = displayList.filter(a => !excludeSet.has(String(a.status || '').toLowerCase()));
       }
     }
-  } catch (e) {
-    console.warn('Failed to apply exclude filter for applicants:', e);
-  }
+  } catch(e){ console.warn('Exclude filter failed', e); }
 
   displayList.forEach(applicant => cardsGrid.appendChild(createApplicantCard(applicant)));
   renderPagination();
 }
 
 /* =========================================================
-   Card (photo-top modern layout) — NO availability on card
-   Entire card is clickable (+ keyboard) to open the modal.
+  Card — with DPA-safe rate BADGE (top-right of the photo)
 ========================================================= */
 function createApplicantCard(applicant) {
   const col = document.createElement('div');
@@ -641,26 +543,21 @@ function createApplicantCard(applicant) {
 
   const yoe   = `${toInt(applicant.years_experience)} yrs of experience`;
 
-  const fullName       = escapeHtml(applicant.full_name || '—');
-  const specialization = escapeHtml(applicant.specialization || '—');
+  const fullName       = escapeHtml(applicant.full_name || [applicant.first_name, applicant.middle_name, applicant.last_name].filter(Boolean).join(' ') || '—');
+  const specialization = escapeHtml(applicant.specialization || applicant.specialization_skills || '—');
   const employmentType = escapeHtml(applicant.employment_type || '—');
-  const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
+  const location       = `${escapeHtml(applicant.location_city || (applicant.city ?? '') || '—')}, ${escapeHtml(applicant.location_region || (applicant.region ?? '') || '—')}`;
   const status         = escapeHtml(String(applicant.status || '').toLowerCase());
 
-  // 🔹 robust daily rate picker
-  const dailyRateValue = (applicant.daily_rate ?? applicant.dailyRate ?? applicant.rate ?? applicant.daily_wage ?? null);
-  const rateText = formatPeso(dailyRateValue);
+  const exactRate = getApplicantRate(applicant);
+  const rateRange = formatRateAsRange(exactRate);
 
   const html = `
     <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile" data-status="${status}">
-      <!-- 🔹 Top-right Daily Rate badge -->
-      <div class="daily-rate-badge ${rateText ? '' : 'muted'}" aria-label="Daily rate">
-        ${rateText ? `${rateText} / day` : '—'}
-      </div>
-
       <!-- Top photo -->
-      <div class="ratio ratio-4x3 card-photo-wrap">
+      <div class="ratio ratio-4x3 card-photo-wrap position-relative">
         <img class="card-photo" alt="${fullName}">
+        <div class="rate-badge">${escapeHtml(rateRange)}</div>
       </div>
 
       <!-- Body -->
@@ -689,7 +586,18 @@ function createApplicantCard(applicant) {
 
   // Photo
   const img = col.querySelector('.card-photo');
-  setAvatar(img, applicant.photo_url, applicant.photo_placeholder);
+  setAvatar(img, applicant.photo_url || applicant.picture, applicant.photo_placeholder);
+
+  // Hide badge if no valid rate
+  const badge = col.querySelector('.rate-badge');
+  if (badge) {
+    const txt = (badge.textContent || '').trim();
+    if (!txt || txt === '—') {
+      badge.style.display = 'none';
+    } else {
+      badge.style.display = '';
+    }
+  }
 
   // View Profile button
   const viewBtn = col.querySelector('.view-profile-btn');
@@ -699,28 +607,17 @@ function createApplicantCard(applicant) {
     showApplicantModal(applicant);
   });
 
-  // Entire card is clickable (and keyboard-accessible)
+  // Entire card is clickable + keyboard
   const card = col.querySelector('.clickable-card');
-  const open = () => {
-    pushApplicantId(applicant.id);
-    showApplicantModal(applicant);
-  };
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('.view-profile-btn')) return;
-    open();
-  });
-  card.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      open();
-    }
-  });
+  const open = () => { pushApplicantId(applicant.id); showApplicantModal(applicant); };
+  card.addEventListener('click', (e) => { if (e.target.closest('.view-profile-btn')) return; open(); });
+  card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
 
   return col;
 }
 
 /* =========================================================
-   Pagination
+  Pagination
 ========================================================= */
 function renderPagination() {
   if (!pagination) return;
@@ -761,39 +658,10 @@ function renderPagination() {
 }
 
 /* =========================================================
-   Modal (Profile) — add "Hire Me" inside modal footer
-   + City & Region only in header
-   + Close profile then open booking (smooth handoff)
-   + Clean URL when profile modal closes
+  Modal (Profile) — DPA-safe rate in the tile
 ========================================================= */
 function ensureModalFooterAndHire(applicant){
   const modalEl = byId('applicantModal');
-  // Helper: format currency (PHP Peso)
-function formatPeso(amount) {
-  if (amount === null || amount === undefined || amount === '') return '—';
-  const num = Number(amount);
-  if (!isFinite(num)) return '—';
-  return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-// When binding data into the modal:
-// Assume 'a' is the applicant object returned from your API
-function renderApplicantIntoModal(a) {
-  // ... your existing bindings (name, role, yoe, etc.)
-  // e.g., document.getElementById('name').textContent = a.first_name + ' ' + a.last_name;
-
-  // NEW: Daily Rate
-  const rateEl = document.getElementById('dailyRateValue');
-  if (rateEl) {
-    rateEl.textContent = formatPeso(a.daily_rate);
-  }
-
-  // If you want to add it to the header strip too (optional):
-  // const headerLine = document.getElementById('availabilityLine');
-  // if (headerLine && a.daily_rate != null) {
-  //   headerLine.textContent += ' • ' + formatPeso(a.daily_rate) + ' / day';
-  // }
-}
   if (!modalEl) return;
 
   let footer = modalEl.querySelector('.modal-footer');
@@ -828,21 +696,11 @@ function renderApplicantIntoModal(a) {
   }
 }
 
-/* =========================================================
-   Modal video popover (top-right button)
-   - Adds a small "Video" button to the modal header (right side)
-   - Shows a Bootstrap Popover with <video> or YouTube/Vimeo <iframe>
-   - Pauses video when popover or modal closes; closes on outside click
-========================================================= */
 function ensureModalVideoButton(applicant) {
   const modalEl = byId('applicantModal');
-  if (!modalEl) {
-    console.warn('Modal not found.');
-    return;
-  }
+  if (!modalEl) return;
   const hasPopover = !!(window.bootstrap?.Popover);
 
-  // ----- Ensure header + tools container -----
   let header = modalEl.querySelector('.modal-header');
   if (!header) {
     header = document.createElement('div');
@@ -861,7 +719,6 @@ function ensureModalVideoButton(applicant) {
     header.appendChild(tools);
   }
 
-  // ----- Ensure the Video button -----
   let videoBtn = tools.querySelector('#modalVideoBtn');
   if (!videoBtn) {
     videoBtn = document.createElement('button');
@@ -873,41 +730,22 @@ function ensureModalVideoButton(applicant) {
     tools.appendChild(videoBtn);
   }
 
-  // ----- Bind data from applicant -----
   const videoUrl  = (applicant && typeof applicant.video_url === 'string' && applicant.video_url.trim() !== '')
-    ? applicant.video_url.trim()
-    : '';
+    ? applicant.video_url.trim() : '';
   const videoType = (applicant && applicant.video_type) ? String(applicant.video_type).trim() : '';
-
-  console.debug('[Video] Applicant:', {
-    id: applicant?.id,
-    raw_url: applicant?.video_url,
-    trimmed_url: videoUrl,
-    type: videoType,
-    hasPopover
-  });
 
   videoBtn.dataset.videoUrl  = videoUrl;
   videoBtn.dataset.videoType = videoType;
 
-  // Hide button if no video URL
-  if (!videoUrl) {
-    videoBtn.style.display = 'none';
-    return;
-  }
+  if (!videoUrl) { videoBtn.style.display = 'none'; return; }
   videoBtn.style.display = '';
 
   if (hasPopover) {
-    // Use Bootstrap Popover if available
     const existing = bootstrap.Popover.getInstance(videoBtn);
     if (existing) existing.dispose();
 
     const pop = new bootstrap.Popover(videoBtn, {
-      html: true,
-      trigger: 'manual',
-      placement: 'bottom',   // adjust: 'bottom-end', 'right-start', 'auto', etc.
-      sanitize: false,       // we provide safe markup
-      container: modalEl,
+      html: true, trigger: 'manual', placement: 'bottom', sanitize: false, container: modalEl,
       template: `
         <div class="popover video-popover" role="tooltip">
           <div class="popover-arrow"></div>
@@ -917,32 +755,17 @@ function ensureModalVideoButton(applicant) {
       content: () => buildApplicantVideoHtml(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType),
     });
 
-    // Toggle popover
     videoBtn.onclick = () => {
       const isShown = !!videoBtn.getAttribute('aria-describedby');
       isShown ? pop.hide() : pop.show();
     };
 
-    // Outside click to close + pause on hide
     const onShown = () => {
       const popEl = getPopoverElFor(videoBtn);
-
-      // Helpful: log the resolved absolute URL that the player will use
-      try {
-        const raw = videoBtn.dataset.videoUrl || '';
-        const resolved = absoluteFromAppRoot(raw);
-        console.debug('[Video] Resolved:', { raw, resolved, type: videoBtn.dataset.videoType });
-      } catch(_) {}
-
-      const onDocClick = (e) => {
-        if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) {
-          pop.hide();
-        }
-      };
+      const onDocClick = (e) => { if (popEl && !popEl.contains(e.target) && !videoBtn.contains(e.target)) pop.hide(); };
       document.addEventListener('mousedown', onDocClick, { capture: true });
       videoBtn._video_onDocClick = onDocClick;
     };
-
     const onHidden = () => {
       const popEl = getPopoverElFor(videoBtn);
       if (popEl) pauseAnyVideoIn(popEl);
@@ -951,11 +774,9 @@ function ensureModalVideoButton(applicant) {
         videoBtn._video_onDocClick = null;
       }
     };
-
     videoBtn.addEventListener('shown.bs.popover', onShown);
     videoBtn.addEventListener('hide.bs.popover', onHidden);
 
-    // ----- Also hide the popover when the modal closes -----
     if (!modalEl.dataset.videoPopoverBound) {
       modalEl.addEventListener('hide.bs.modal', () => {
         const inst = bootstrap.Popover.getInstance(videoBtn);
@@ -964,10 +785,7 @@ function ensureModalVideoButton(applicant) {
       modalEl.dataset.videoPopoverBound = '1';
     }
   } else {
-    // Fallback: open a simple video modal when Popover isn't available
     videoBtn.onclick = () => openVideoFallbackModal(videoBtn.dataset.videoUrl, videoBtn.dataset.videoType);
-
-    // Ensure the fallback modal is hidden when profile modal closes
     if (!modalEl.dataset.videoFallbackBound) {
       modalEl.addEventListener('hide.bs.modal', () => {
         const fb = byId('applicantVideoModal');
@@ -981,45 +799,45 @@ function ensureModalVideoButton(applicant) {
   }
 }
 
-function onProfileHiddenCleanUrl(){
-  removeApplicantIdFromUrl();
-}
+function onProfileHiddenCleanUrl(){ removeApplicantIdFromUrl(); }
 
+/* =========================================================
+  Modal show — bind values + DPA-safe rate
+========================================================= */
 function showApplicantModal(applicant, options = { pushState: true }) {
-
-// 🔹 Accept snake_case or camelCase (depending on your API)
-  const dailyRateValue = (applicant.daily_rate ?? applicant.dailyRate ?? applicant.rate ?? applicant.daily_wage ?? null);
-
-  
-const rateTile = document.getElementById('dailyRateValue');
-  if (rateTile) {
-    const formatted = formatPeso(dailyRateValue);
-    rateTile.textContent = formatted ? (formatted + ' / day') : '—';
-  }
+  const dailyRateValue = getApplicantRate(applicant);
+  const rateTile = byId('dailyRateValue');
+  if (rateTile) rateTile.textContent = formatRateAsRange(dailyRateValue);
 
   const modalEl = byId('applicantModal');
   if (!modalEl) return;
 
   const prefEl = byId('prefLocValue');
   if (prefEl) {
-    const arr = Array.isArray(applicant.preferred_locations) ? applicant.preferred_locations : [];
+    const arr = Array.isArray(applicant.preferred_locations || applicant.preferred_location) ? (applicant.preferred_locations || applicant.preferred_location) : [];
     prefEl.innerHTML = arr.length
       ? arr.map(x=>`<span class="badge text-bg-light border me-1 mb-1">${escapeHtml(x)}</span>`).join('')
       : '—';
   }
-  const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.education_level || '—';
+
+  const eduEl = byId('eduValue'); if (eduEl) eduEl.textContent = applicant.education_display || applicant.educational_attainment || applicant.education_level || '—';
 
   const avatar = byId('avatar');
   if (avatar) {
-    if (applicant.photo_url) {
-      avatar.style.backgroundImage = `url(${applicant.photo_url})`;
+    const photo = applicant.photo_url || applicant.picture;
+    if (photo) {
+      avatar.style.backgroundImage = `url(${photo})`;
       avatar.style.backgroundSize = 'cover';
       avatar.textContent = '';
     } else {
       avatar.style.backgroundImage = '';
     }
   }
-  const nameEl = byId('name'); if (nameEl) nameEl.textContent = applicant.full_name || '—';
+  const nameEl = byId('name');
+  if (nameEl) {
+    const safeName = applicant.full_name || [applicant.first_name, applicant.middle_name, applicant.last_name].filter(Boolean).join(' ') || '—';
+    nameEl.textContent = safeName;
+  }
   const primaryRoleEl = byId('primaryRole'); if (primaryRoleEl) primaryRoleEl.textContent = applicant.specialization || '—';
   const yoeBadgeEl = byId('yoeBadge'); if (yoeBadgeEl) yoeBadgeEl.textContent = `${toInt(applicant.years_experience)} yrs of experience`;
 
@@ -1030,7 +848,7 @@ const rateTile = document.getElementById('dailyRateValue');
 
   const chipsContainer = byId('chipsContainer');
   if (chipsContainer) {
-    const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : applicant.specialization);
+    const chips = arrFromMaybe(applicant.specializations?.length ? applicant.specializations : (applicant.specialization || applicant.specialization_skills));
     chipsContainer.innerHTML = chips.length
       ? chips.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join('')
       : `<span class="chip">${escapeHtml(applicant.specialization || '—')}</span>`;
@@ -1043,8 +861,9 @@ const rateTile = document.getElementById('dailyRateValue');
   const availEl = byId('availValue'); if (availEl) availEl.textContent = applicant.availability_date || '—';
   const langEl = byId('langValue');
   if (langEl) {
-    const langs = arrFromMaybe(applicant.languages);
-    langEl.textContent = langs.length ? langs.join(', ') : (applicant.languages || '—');
+    // DB stores as longtext JSON sometimes
+    const langsArr = Array.isArray(applicant.languages) ? applicant.languages : arrFromMaybe(applicant.languages);
+    langEl.textContent = langsArr.length ? langsArr.join(', ') : (applicant.languages || '—');
   }
 
   ensureModalFooterAndHire(applicant);
@@ -1058,17 +877,15 @@ const rateTile = document.getElementById('dailyRateValue');
 }
 window.showApplicantModal = showApplicantModal;
 
-/* Booking: helper to enforce button types in some templates */
+/* =========================================================
+  Booking (Hire)
+========================================================= */
 (function enforceButtonTypes(){
   ['bkSubmit','bkNext','bkBack'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.setAttribute('type','button');
   });
 })();
-
-/* =========================================================
-   Booking (Hire)
-========================================================= */
 function launchBooking(applicant){
   window._lastApplicantForBooking = applicant;
   const modalEl = byId('bookingModal');
@@ -1076,11 +893,12 @@ function launchBooking(applicant){
 
   const bkAvatar = modalEl.querySelector('#bkAvatar');
   if (bkAvatar) {
-    bkAvatar.style.backgroundImage = applicant.photo_url ? `url('${applicant.photo_url}')` : '';
-    bkAvatar.style.backgroundSize = applicant.photo_url ? 'cover' : '';
-    bkAvatar.textContent = applicant.photo_url ? '' : '';
+    const photo = applicant.photo_url || applicant.picture;
+    bkAvatar.style.backgroundImage = photo ? `url('${photo}')` : '';
+    bkAvatar.style.backgroundSize = photo ? 'cover' : '';
+    bkAvatar.textContent = photo ? '' : '';
   }
-  const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || '—';
+  const bkName = modalEl.querySelector('#bkName'); if (bkName) bkName.textContent = applicant.full_name || [applicant.first_name, applicant.middle_name, applicant.last_name].filter(Boolean).join(' ') || '—';
   const bkMeta = modalEl.querySelector('#bkMeta'); if (bkMeta) bkMeta.textContent = `${applicant.specialization || '—'} • ${applicant.location_city || '—'}, ${applicant.location_region || '—'}`;
 
   const panes = modalEl.querySelectorAll('[data-step-pane]');
@@ -1102,7 +920,7 @@ function launchBooking(applicant){
 }
 
 /* =========================================================
-   Styles injection (modern professional cards)
+  Styles injection (card layout + rate badge + shimmer)
 ========================================================= */
 function injectStyles(){
   if (document.getElementById('app-modern-card-styles')) return;
@@ -1117,37 +935,13 @@ function injectStyles(){
     .hover-lift:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.12); border-color:#dee3eb; }
 
     .app-card{
-      border:1px solid (--card-border, #e6e9ef);
       border:1px solid var(--card-border);
       border-radius:16px;
-      overflow:hidden; /* round the top photo */
+      overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,.06);
       background:#fff;
       cursor:pointer;
       outline:none;
-      position:relative; /* 🔹 Needed for the top-right badge */
-    }
-
-    /* 🔹 Top-right Daily Rate badge */
-    .daily-rate-badge{
-      position:absolute;
-      top:.5rem;
-      right:.5rem;
-      z-index:2;
-      background:red;            /* brand black (or use var(--brand-red)) */
-      color:#fff;
-      border-radius:999px;
-      font-weight:700;
-      font-size:.85rem;
-      line-height:1;
-      padding:.2rem .4rem;
-      min-width:max-content;
-    }
-    .daily-rate-badge.muted{
-      background:#f1f3f5;
-      color:#6c757d;
-      border-color:#e9ecef;
-      font-weight:600;
     }
 
     .card-photo-wrap{ background:#f5f6f8; position:relative; }
@@ -1159,13 +953,24 @@ function injectStyles(){
       pointer-events:none;
     }
 
-    .app-name-title{ font-weight:800; }
-    .emp-pill{
-      display:inline-block; border-radius:999px; padding:.26rem .56rem;
-      font-weight:700; font-size:.78rem; border:1px solid transparent;
+    /* DPA-safe rate badge (top-right) */
+    .rate-badge{
+      position:absolute;
+      top:8px; right:8px;
+      background:var(--brand-red);
+      color:#fff;
+      font-size:.78rem;
+      font-weight:800;
+      border-radius:999px;
+      padding:.28rem .6rem;
+      box-shadow:0 4px 10px rgba(0,0,0,.15);
+      max-width:85%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
-    .emp-pill.emp-full{ background:#eaf7ef; color:#15803d; border-color:#cce9d7; }
-    .emp-pill.emp-part{ background:#e6effd; color:#1d4ed8; border-color:#cfe0fb; }
+
+    .app-name-title{ font-weight:800; }
 
     .meta-pill{
       display:inline-flex; align-items:center; gap:.35rem;
@@ -1192,27 +997,23 @@ function injectStyles(){
 }
 
 /* =========================================================
-   Styles: video popover
+  Styles: video popover
 ========================================================= */
 function ensureVideoPopoverStyles(){
   if (document.getElementById('video-popover-styles')) return;
   const css = `
-  /* Make it look like a mini-player panel */
-.video-popover{
-  width: min(92vw, 760px);
-  max-width: min(92vw, 760px);
-}
-@media (min-width: 992px){ /* lg+ screens */
-  .video-popover {
-    width: 680px; /* or 820px, your call */
+  .video-popover{
+    width: min(92vw, 760px);
+    max-width: min(92vw, 760px);
   }
-}
-.video-popover .popover-body{ padding:0; }
-.video-popover .ratio > iframe,
-.video-popover video{ border-radius:12px; }
+  @media (min-width: 992px){
+    .video-popover { width: 680px; }
+  }
+  .video-popover .popover-body{ padding:0; }
+  .video-popover .ratio > iframe,
+  .video-popover video{ border-radius:12px; }
 
-    /* Keep the header tools tidy */
-    .modal-header .modal-tools .btn{ white-space: nowrap; }
+  .modal-header .modal-tools .btn{ white-space: nowrap; }
   `;
   const style = document.createElement('style');
   style.id = 'video-popover-styles';
@@ -1220,7 +1021,9 @@ function ensureVideoPopoverStyles(){
   document.head.appendChild(style);
 }
 
-// Fallback modal for video playback when Bootstrap Popover isn't available
+/* =========================================================
+  Video fallback modal
+========================================================= */
 function openVideoFallbackModal(rawUrl, videoType) {
   const modalId = 'applicantVideoModal';
   let modal = byId(modalId);
@@ -1241,21 +1044,14 @@ function openVideoFallbackModal(rawUrl, videoType) {
       </div>
     `;
     document.body.appendChild(modal);
-
-    // Pause video on hide
     modal.addEventListener('hide.bs.modal', () => pauseAnyVideoIn(modal));
   }
-
   const body = modal.querySelector('.video-modal-body');
-  if (body) {
-    // Build content using existing helper (it will resolve relative URLs)
-    body.innerHTML = buildApplicantVideoHtml(rawUrl, videoType);
-  }
+  if (body) body.innerHTML = buildApplicantVideoHtml(rawUrl, videoType);
 
   if (window.bootstrap?.Modal) {
     bootstrap.Modal.getOrCreateInstance(modal).show();
   } else {
-    // Last resort: open video in new tab/window
     const resolved = absoluteFromAppRoot(rawUrl);
     window.open(resolved || rawUrl, '_blank');
   }
