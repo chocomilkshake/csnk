@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Dashboard';
+$pageTitle = 'CSNK Dashboard';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 require_once '../includes/Admin.php';
