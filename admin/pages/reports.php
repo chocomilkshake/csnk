@@ -6,7 +6,7 @@ $pageTitle = 'Reports - All Applicants';
    INLINE JSON ENDPOINT (NO LAYOUT): Full history for applicant
    GET  reports.php?action=history&id=123
    Combines: applicant_reports + applicant_status_reports + applicant_replacements
-   Sorted: past -> recent (ASC)
+   Sorted: recent -> oldest (DESC)
 ------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=UTF-8');
@@ -84,7 +84,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
             LEFT JOIN admin_users au3 ON au3.id = ar2.created_by
             WHERE ar2.original_applicant_id = ? OR ar2.replacement_applicant_id = ?
         )
-        ORDER BY created_at ASC, origin_id ASC
+        ORDER BY created_at DESC, origin_id DESC
     ";
 
     try {
@@ -477,9 +477,7 @@ function statusBadgeClass(string $status): string {
                   <?php if (!empty($r['picture'])): ?>
                     <img
                       src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                      alt="Photo"
-                      class="rounded"
-                      width="48" height="48"
+                      alt="Photo" class="rounded" width="48" height="48"
                     >
                   <?php else: ?>
                     <div class="rounded bg-secondary text-white d-flex align-items-center justify-content-center"
@@ -493,7 +491,7 @@ function statusBadgeClass(string $status): string {
                   <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
                 </td>
 
-                <!-- Status: horizontal with arrow: Previous → Current (exactly as requested) -->
+                <!-- Status: horizontal with arrow: Previous → Current -->
                 <td>
                   <div class="d-flex align-items-center gap-2 flex-wrap">
                     <?php if ($hasTransition): ?>
@@ -589,7 +587,7 @@ function statusBadgeClass(string $status): string {
   </div>
 </div>
 
-<!-- Modal: Unified Timeline (Full History) -->
+<!-- Modal: Full History (Roadmap style, newest first) -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -598,15 +596,17 @@ function statusBadgeClass(string $status): string {
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <!-- Friendly guidance -->
+
+        <!-- Simple guidance -->
         <div class="alert alert-light border d-flex align-items-center" role="alert">
           <i class="bi bi-info-circle me-2 text-primary"></i>
           <div>
-            Entries show <strong>oldest to newest</strong>. Status changes display the move from <em>Previous</em> to <em>Current</em>.
+            Entries show <strong>newest first</strong>. Status changes display the move from <em>Previous</em> to <em>Current</em>.
           </div>
         </div>
 
-        <div id="hist-container" class="list-group">
+        <!-- Roadmap rail (border-start) + items -->
+        <div class="border-start ps-3" id="hist-container">
           <!-- Filled by JS -->
         </div>
       </div>
@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var historyModalEl = document.getElementById('historyModal');
   var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
 
-  // Full History loader
+  // Full History loader (newest first from server)
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
@@ -641,39 +641,48 @@ document.addEventListener('DOMContentLoaded', function () {
 
       document.getElementById('hist-applicant').textContent = name;
       var container = document.getElementById('hist-container');
-      container.innerHTML = '<div class="list-group-item text-muted">Loading history…</div>';
+      container.innerHTML = '<div class="text-muted">Loading history…</div>';
 
       fetch('reports.php?action=history&id=' + encodeURIComponent(id), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (items) {
           if (!Array.isArray(items) || items.length === 0) {
-            container.innerHTML = '<div class="list-group-item text-muted">No history found for this applicant.</div>';
+            container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
             return;
           }
 
           var html = '';
-          items.forEach(function (it) {
+          items.forEach(function (it, idx) {
             var type = (it.item_type || 'note').toLowerCase();
             var admin = it.admin_name || '—';
             var when  = it.created_at || '';
             var body  = it.body || '';
 
+            // Left icon per type
+            var icon = '<i class="bi bi-journal-text text-secondary"></i>';
+            if (type === 'status') icon = '<i class="bi bi-arrow-left-right text-success"></i>';
+            if (type === 'replacement') icon = '<i class="bi bi-arrow-repeat text-primary"></i>';
+
+            // Build item block (inside the roadmap rail)
             if (type === 'status') {
               var froms = humanize((it.from_status || '').replaceAll('_',' '));
               var tos   = humanize((it.to_status   || '').replaceAll('_',' '));
               html +=
-                '<div class="list-group-item">' +
-                  '<div class="d-flex justify-content-between align-items-start">' +
-                    '<div class="d-flex align-items-center gap-2 flex-wrap">' +
-                      '<span class="badge text-bg-success">Status</span>' +
-                      '<span class="badge rounded-pill ' + badgeClass(it.from_status) + '">' + escapeHtml(froms) + '</span>' +
-                      '<i class="bi bi-arrow-right text-muted"></i>' +
-                      '<span class="badge rounded-pill ' + badgeClass(it.to_status) + '">' + escapeHtml(tos) + '</span>' +
+                '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                    '<div class="mt-1">' + icon + '</div>' +
+                    '<div class="flex-grow-1">' +
+                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                        '<span class="badge text-bg-success">Status</span>' +
+                        '<span class="badge rounded-pill ' + badgeClass(it.from_status) + '">' + escapeHtml(froms) + '</span>' +
+                        '<i class="bi bi-arrow-right text-muted"></i>' +
+                        '<span class="badge rounded-pill ' + badgeClass(it.to_status) + '">' + escapeHtml(tos) + '</span>' +
+                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                      '</div>' +
+                      (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                     '</div>' +
-                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
                   '</div>' +
-                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
-                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                 '</div>';
             } else if (type === 'replacement') {
               var role = (it.role || '').toLowerCase();
@@ -697,31 +706,37 @@ document.addEventListener('DOMContentLoaded', function () {
               if (assigned)detail += (detail ? ' • ' : '') + 'Assigned at: ' + escapeHtml(assigned);
 
               html +=
-                '<div class="list-group-item">' +
-                  '<div class="d-flex justify-content-between align-items-start">' +
-                    '<div class="d-flex align-items-center gap-2 flex-wrap">' +
-                      '<span class="badge text-bg-primary">Replacement</span>' +
-                      '<span class="fw-semibold">' + escapeHtml(title) + '</span>' +
+                '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                    '<div class="mt-1">' + icon + '</div>' +
+                    '<div class="flex-grow-1">' +
+                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                        '<span class="badge text-bg-primary">Replacement</span>' +
+                        '<span class="fw-semibold">' + escapeHtml(title) + '</span>' +
+                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                      '</div>' +
+                      (detail ? ('<div class="mt-1">' + detail + '</div>') : '') +
+                      (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                     '</div>' +
-                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
                   '</div>' +
-                  (detail ? ('<div class="mt-1">' + detail + '</div>') : '') +
-                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
-                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                 '</div>';
             } else {
               // note
               html +=
-                '<div class="list-group-item">' +
-                  '<div class="d-flex justify-content-between align-items-start">' +
-                    '<div class="d-flex align-items-center gap-2 flex-wrap">' +
-                      '<span class="badge text-bg-secondary">Report</span>' +
-                      '<span class="fw-semibold">Report</span>' +
+                '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                    '<div class="mt-1">' + icon + '</div>' +
+                    '<div class="flex-grow-1">' +
+                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                        '<span class="badge text-bg-secondary">Report</span>' +
+                        '<span class="fw-semibold">Report</span>' +
+                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                      '</div>' +
+                      '<div class="mt-2">' + (body ? escapeHtml(body) : '—') + '</div>' +
+                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                     '</div>' +
-                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
                   '</div>' +
-                  '<div class="mt-2">' + (body ? escapeHtml(body) : '—') + '</div>' +
-                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
                 '</div>';
             }
           });
@@ -729,7 +744,7 @@ document.addEventListener('DOMContentLoaded', function () {
           container.innerHTML = html;
         })
         .catch(function () {
-          container.innerHTML = '<div class="list-group-item text-danger">Failed to load history. Please try again.</div>';
+          container.innerHTML = '<div class="text-danger">Failed to load history. Please try again.</div>';
         });
 
       if (historyModal) historyModal.show();
