@@ -20,7 +20,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
     $id = (int)$_GET['id'];
     $data = [];
 
-    // Unified timeline (3 sources) in ascending order
     $sql = "
         (
             SELECT
@@ -90,7 +89,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
 
     try {
         if ($stmt = $conn->prepare($sql)) {
-            // placeholders: notes(1), status(1), role-check(2), filter(2) => total 6
+            // 6 integers: notes(1), status(1), role-check(2), filter(2)
             $stmt->bind_param("iiiiii", $id, $id, $id, $id, $id, $id);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -113,7 +112,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
             $stmt->close();
         }
     } catch (Throwable $e) {
-        // swallow; return what we have
+        // Return what we have
     }
 
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -121,7 +120,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
 }
 
 /* -----------------------------------------------------------
-   NORMAL PAGE: include header to bootstrap DB/auth/session
+   NORMAL PAGE
 ------------------------------------------------------------ */
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
@@ -157,7 +156,7 @@ $allowedSort = ['latest','reports','name','status'];
 $sort = isset($_GET['sort']) ? strtolower(trim((string)$_GET['sort'])) : 'latest';
 if (!in_array($sort, $allowedSort, true)) $sort = 'latest';
 
-/* ---------------- Handle POST: add a report/note (MySQLi) ---------------- */
+/* ---------------- Handle POST: add a report/note ---------------- */
 if (
     isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
     isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
@@ -211,12 +210,7 @@ if (
     redirect('reports.php' . $qs); exit;
 }
 
-/* ---------------- Fetch Applicants (deduplicated) ----------------
-   - Show each applicant ONCE only.
-   - Require at least one note (applicant_reports exists).
-   - Latest NOTE per applicant by MAX(id) to avoid timestamp ties.
-   - Latest STATUS change per applicant by MAX(id) (used for history only).
--------------------------------------------------------------------- */
+/* ---------------- Fetch Applicants (deduplicated) ---------------- */
 $conn = $database->getConnection(); // mysqli
 
 $whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
@@ -247,7 +241,7 @@ SELECT
   lr.created_at        AS latest_note_at,
   lr.id                AS latest_note_id,
   COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS latest_note_admin,
-  /* Latest STATUS row kept for context (not shown inline) */
+  /* Latest STATUS change for display (previous -> current) */
   lsr.from_status      AS last_from_status,
   lsr.to_status        AS last_to_status,
   lsr.created_at       AS last_status_at,
@@ -327,125 +321,21 @@ if ($sort !== 'latest') $qParams['sort'] = $sort;
 $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_query($qParams)) : '');
 
 /* ---------------- Helpers ---------------- */
-function statusBadgeProps(string $status): array {
-    switch($status) {
-        case 'pending':    return ['badge' => 'bg-warning text-dark', 'label' => 'Pending'];
-        case 'on_process': return ['badge' => 'bg-info text-dark',    'label' => 'On Process'];
-        case 'approved':   return ['badge' => 'bg-success',           'label' => 'Approved'];
-        case 'on_hold':    return ['badge' => 'bg-secondary',         'label' => 'On Hold'];
-        case 'deleted':    return ['badge' => 'bg-danger',            'label' => 'Deleted'];
-        default:           return ['badge' => 'bg-secondary',         'label' => $status];
+function humanizeStatus(string $s): string {
+    $s = str_replace('_', ' ', $s);
+    return ucwords($s);
+}
+function statusBadgeClass(string $status): string {
+    switch ($status) {
+        case 'pending':    return 'bg-warning text-dark';
+        case 'on_process': return 'bg-info text-dark';
+        case 'approved':   return 'bg-success';
+        case 'on_hold':    return 'bg-secondary';
+        case 'deleted':    return 'bg-danger';
+        default:           return 'bg-secondary';
     }
 }
 ?>
-<style>
-  /* ====== Modern Table Layout ====== */
-  .table-card, .table-card .card-body { overflow: visible !important; }
-  .table-card .table-responsive { overflow: visible !important; }
-
-  .table-modern {
-    table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  .table-modern thead th {
-    font-weight: 600;
-    color: #6b7280;
-    white-space: nowrap;
-  }
-  .table-modern tbody tr { border-bottom: 1px solid #eef2f7; }
-  .table-modern tbody tr:hover { background: #fafbfc; }
-
-  td.actions-cell { white-space: nowrap; }
-
-  /* Column widths via colgroup */
-  col.col-photo    { width: 64px; }
-  col.col-name     { width: 280px; }
-  col.col-status   { width: 140px; }
-  col.col-latest   { width: auto; }
-  col.col-count    { width: 80px;  }
-  col.col-by       { width: 190px; }
-  col.col-at       { width: 170px; }
-  col.col-actions  { width: 260px; }
-
-  /* Photo */
-  .avatar-48 { width: 48px; height: 48px; object-fit: cover; border-radius: .6rem; }
-  .avatar-fallback {
-    width: 48px; height: 48px; border-radius: .6rem;
-    background: #e5e7eb; color: #374151; font-weight: 700;
-    display: grid; place-items: center;
-  }
-
-  /* Name */
-  .name-cell { font-weight: 600; line-height: 1.2; }
-
-  /* Status badge only (no icon, no extra text) */
-  .status-badge { font-weight: 600; border-radius: 999px; padding: .25rem .6rem; font-size: .8rem; white-space: nowrap; }
-
-  /* Latest report text clamp */
-  .note-clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    color: #4b5563;
-    max-width: 100%;
-  }
-
-  /* Count */
-  .report-count-badge {
-    font-size: .75rem; border-radius: 999px; padding: .25rem .5rem;
-    background: #eef6ff; color: #1d4ed8; border: 1px solid #dbeafe;
-  }
-
-  /* Toolbar */
-  .toolbar .form-select, .toolbar .form-control { border-radius: .7rem; }
-  .toolbar .btn { border-radius: .7rem; }
-
-  /* ====== History modal (vertical timeline) ====== */
-  .timeline {
-    position: relative;
-    margin-left: .5rem;
-    padding-left: 1.25rem;
-  }
-  .timeline:before {
-    content: "";
-    position: absolute;
-    left: .25rem;
-    top: .25rem;
-    bottom: .25rem;
-    width: 2px;
-    background: #e5e7eb;
-  }
-  .tl-item {
-    position: relative;
-    padding: .5rem 0 .5rem 1rem;
-  }
-  .tl-dot {
-    position: absolute;
-    left: -2px;
-    width: .75rem; height: .75rem;
-    border-radius: 999px;
-    background: #94a3b8;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #e5e7eb;
-    top: .9rem;
-  }
-  .tl-item.note   .tl-dot { background: #0d6efd; }
-  .tl-item.status .tl-dot { background: #20c997; }
-  .tl-item.repl   .tl-dot { background: #6366f1; }
-
-  .tl-head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: .25rem;
-  }
-  .tl-title { font-weight: 600; }
-  .tl-meta  { color: #6b7280; font-size: .85rem; white-space: nowrap; margin-left: .5rem; }
-  .tl-body  { color: #4b5563; white-space: pre-wrap; }
-
-  .text-indigo { color: #6366f1; }
-</style>
-
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h4 class="mb-0 fw-semibold">Reports</h4>
@@ -457,7 +347,7 @@ function statusBadgeProps(string $status): array {
 </div>
 
 <!-- Filters / Search toolbar -->
-<form method="get" action="reports.php" class="toolbar mb-3">
+<form method="get" action="reports.php" class="mb-3">
   <div class="row g-2 align-items-center">
     <div class="col-12 col-md-5">
       <div class="input-group">
@@ -517,31 +407,20 @@ function statusBadgeProps(string $status): array {
   </div>
 </form>
 
-<div class="card table-card">
+<div class="card">
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-borderless align-middle table-modern">
-        <colgroup>
-          <col class="col-photo">
-          <col class="col-name">
-          <col class="col-status">
-          <col class="col-latest">
-          <col class="col-count">
-          <col class="col-by">
-          <col class="col-at">
-          <col class="col-actions">
-        </colgroup>
-
-        <thead class="border-bottom">
-          <tr class="text-muted small">
-            <th>Photo</th>
+      <table class="table table-hover align-middle mb-0">
+        <thead class="text-muted">
+          <tr>
+            <th style="width:64px;">Photo</th>
             <th>Applicant</th>
-            <th>Status</th>
+            <th style="width:160px;">Status</th>
             <th>Latest Report</th>
-            <th class="text-center">Count</th>
-            <th>Reported By</th>
-            <th>Reported At</th>
-            <th>Actions</th>
+            <th style="width:90px;" class="text-center">Count</th>
+            <th style="width:200px;">Reported By</th>
+            <th style="width:170px;">Reported At</th>
+            <th style="width:300px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -566,44 +445,55 @@ function statusBadgeProps(string $status): array {
                 $latestAdmin = (string)($r['latest_note_admin'] ?? '—');
                 $latestAt = (string)($r['latest_note_at'] ?? '');
                 $reportCount = (int)($r['report_count'] ?? 0);
-                $statusVal = (string)($r['status'] ?? '');
 
-                $props = statusBadgeProps($statusVal); // badge only (no icon)
+                $currentStatusRaw = (string)($r['status'] ?? '');
+                $prevStatusRaw    = (string)($r['last_from_status'] ?? '');
+                $toStatusRaw      = (string)($r['last_to_status'] ?? '');
+
+                // Determine current status to display: prefer last_to_status if present; fallback to a.status
+                $currentStatusToShow = $toStatusRaw !== '' ? $toStatusRaw : $currentStatusRaw;
+                $hasTransition = ($prevStatusRaw !== '' && $currentStatusToShow !== '' && strcasecmp($prevStatusRaw, $currentStatusToShow) !== 0);
+
+                $currBadgeClass = statusBadgeClass($currentStatusToShow);
+                $prevBadgeClass = statusBadgeClass($prevStatusRaw);
               ?>
               <tr>
                 <td>
                   <?php if (!empty($r['picture'])): ?>
                     <img src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                         alt="Photo" class="avatar-48">
+                         alt="Photo" class="rounded" width="48" height="48">
                   <?php else: ?>
-                    <div class="avatar-fallback">
+                    <div class="rounded bg-secondary text-white d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;">
                       <?php echo strtoupper(substr((string)$r['first_name'], 0, 1)); ?>
                     </div>
                   <?php endif; ?>
                 </td>
 
-                <td class="name-cell">
+                <td class="fw-semibold">
                   <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
                 </td>
 
+                <!-- Status: show recent history like the 2nd image: previous -> current as stacked badges -->
                 <td>
-                  <span class="badge status-badge <?php echo $props['badge']; ?>">
-                    <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
-                  </span>
+                  <div class="d-flex flex-column gap-1">
+                    <?php if ($hasTransition): ?>
+                      <span class="badge rounded-pill <?php echo $prevBadgeClass; ?>">
+                        <?php echo htmlspecialchars(humanizeStatus($prevStatusRaw), ENT_QUOTES, 'UTF-8'); ?>
+                      </span>
+                    <?php endif; ?>
+                    <span class="badge rounded-pill <?php echo $currBadgeClass; ?>">
+                      <?php echo htmlspecialchars(humanizeStatus($currentStatusToShow), ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                  </div>
                 </td>
 
-                <td>
-                  <?php if ($latestNote !== ''): ?>
-                    <div class="note-clamp">
-                      <?php echo nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')); ?>
-                    </div>
-                  <?php else: ?>
-                    <span class="text-muted">—</span>
-                  <?php endif; ?>
+                <td class="text-truncate" title="<?php echo htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8'); ?>">
+                  <?php echo $latestNote !== '' ? nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')) : '<span class="text-muted">—</span>'; ?>
                 </td>
 
                 <td class="text-center">
-                  <span class="report-count-badge" title="Total reports for this applicant">
+                  <span class="badge rounded-pill text-bg-primary" title="Total reports for this applicant">
                     <?php echo $reportCount; ?>
                   </span>
                 </td>
@@ -616,16 +506,18 @@ function statusBadgeProps(string $status): array {
                   <?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
 
-                <td class="actions-cell">
+                <td class="text-nowrap">
                   <div class="d-inline-flex gap-2 align-items-center">
                     <!-- Write report -->
-                    <button class="btn btn-sm btn-primary write-report"
+                    <button class="btn btn-sm btn-primary"
                             data-id="<?php echo $id; ?>"
-                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
+                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
+                            data-bs-toggle="modal" data-bs-target="#reportModal"
+                            onclick="prepReportModal(this)">
                       <i class="bi bi-journal-plus me-1"></i> Write Report
                     </button>
 
-                    <!-- Full History (modal) -->
+                    <!-- Full History -->
                     <button class="btn btn-sm btn-outline-secondary view-history"
                             data-id="<?php echo $id; ?>"
                             data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
@@ -670,16 +562,27 @@ function statusBadgeProps(string $status): array {
   </div>
 </div>
 
-<!-- Modal: Unified Timeline (History) -->
+<!-- Modal: Unified Timeline (Full History) -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-semibold">Full History — <span id="hist-applicant"></span></h5>
+        <h5 class="modal-title fw-semibold" id="historyModalLabel">Full History — <span id="hist-applicant"></span></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="hist-container" class="timeline"><!-- Filled by JS --></div>
+        <!-- Guidance for non-technical users -->
+        <div class="alert alert-light border d-flex align-items-center" role="alert">
+          <i class="bi bi-info-circle me-2 text-primary"></i>
+          <div>
+            Entries are shown from <strong>oldest to newest</strong>. Status changes show <em>From → To</em>.
+            Replacement entries show who was replaced or assigned.
+          </div>
+        </div>
+
+        <div id="hist-container" class="d-flex flex-column gap-3">
+          <!-- Filled by JS -->
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
@@ -689,34 +592,30 @@ function statusBadgeProps(string $status): array {
 </div>
 
 <script>
+function prepReportModal(btn) {
+  var id = btn.getAttribute('data-id') || '';
+  var name = btn.getAttribute('data-name') || '';
+  if (!id) return;
+  document.getElementById('rpt-id').value = id;
+  document.getElementById('rpt-applicant').textContent = name;
+  var ta = document.getElementById('note_text');
+  if (ta) ta.value = '';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-  var reportModalEl = document.getElementById('reportModal');
   var historyModalEl = document.getElementById('historyModal');
-  var reportModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(reportModalEl) : null;
   var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
 
-  // Write Report button
-  document.querySelectorAll('.write-report').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var id = btn.dataset.id || '';
-      var name = btn.dataset.name || '';
-      if (!id) return;
-      document.getElementById('rpt-id').value = id;
-      document.getElementById('rpt-applicant').textContent = name;
-      document.getElementById('note_text').value = '';
-      if (reportModal) reportModal.show();
-    });
-  });
-
-  // Full History (unified timeline: notes + status + replacements)
+  // Full History (notes + status + replacements)
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
       var name = btn.dataset.name || '';
       if (!id) return;
+
       document.getElementById('hist-applicant').textContent = name;
       var container = document.getElementById('hist-container');
-      container.innerHTML = '<div class="text-muted">Loading history...</div>';
+      container.innerHTML = '<div class="text-muted">Loading history…</div>';
 
       fetch('reports.php?action=history&id=' + encodeURIComponent(id), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
@@ -725,6 +624,7 @@ document.addEventListener('DOMContentLoaded', function () {
             container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
             return;
           }
+
           var html = '';
           items.forEach(function (it) {
             var type = (it.item_type || 'note').toLowerCase();
@@ -733,19 +633,23 @@ document.addEventListener('DOMContentLoaded', function () {
             var body  = it.body || '';
 
             if (type === 'status') {
-              var froms = (it.from_status || '').replaceAll('_',' ');
-              var tos   = (it.to_status   || '').replaceAll('_',' ');
-              html += '<div class="tl-item status">';
-              html +=   '<span class="tl-dot"></span>';
-              html +=   '<div class="tl-head">';
-              html +=     '<div class="tl-title text-success"><i class="bi bi-arrow-left-right me-1"></i>'+ escapeHtml(cap(froms)) +' → '+ escapeHtml(cap(tos)) +'</div>';
-              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
-              html +=   '</div>';
-              if (body) {
-                html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
-              }
-              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
-              html += '</div>';
+              var froms = humanize((it.from_status || '').replaceAll('_',' '));
+              var tos   = humanize((it.to_status   || '').replaceAll('_',' '));
+              html +=
+                '<div class="border rounded p-3">' +
+                  '<div class="d-flex justify-content-between align-items-start">' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                      '<span class="badge text-bg-success">Status</span>' +
+                      '<div class="d-flex flex-column gap-1">' +
+                        '<span class="badge rounded-pill ' + badgeClass(it.from_status) + '">' + escapeHtml(froms) + '</span>' +
+                        '<span class="badge rounded-pill ' + badgeClass(it.to_status) + '">' + escapeHtml(tos) + '</span>' +
+                      '</div>' +
+                    '</div>' +
+                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
+                  '</div>' +
+                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                '</div>';
             } else if (type === 'replacement') {
               var role = (it.role || '').toLowerCase();
               var orig = it.orig_id || '';
@@ -753,41 +657,50 @@ document.addEventListener('DOMContentLoaded', function () {
               var reason = it.reason || '';
               var rstat  = it.replacement_status || '';
               var assigned = it.assigned_at || '';
-              var line = '';
-              if (role === 'replacement_out') {
-                line = 'Replacement created — Replaced by Applicant ID ' + escapeHtml(String(repl || '—')) + (reason ? (' • Reason: ' + escapeHtml(reason)) : '');
-              } else if (role === 'replacement_in') {
-                line = 'Replacement assignment — Assigned as replacement for Applicant ID ' + escapeHtml(String(orig || '—')) + (reason ? (' • Reason: ' + escapeHtml(reason)) : '');
-              } else {
-                line = 'Replacement entry';
-              }
-              if (rstat) { line += ' • Status: ' + escapeHtml(rstat); }
-              if (assigned) { line += ' • Assigned at: ' + escapeHtml(assigned); }
 
-              html += '<div class="tl-item repl">';
-              html +=   '<span class="tl-dot"></span>';
-              html +=   '<div class="tl-head">';
-              html +=     '<div class="tl-title text-indigo"><i class="bi bi-arrow-repeat me-1"></i>' + line + '</div>';
-              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
-              html +=   '</div>';
-              if (body) {
-                html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
+              var title = 'Replacement';
+              var detail = '';
+              if (role === 'replacement_out') {
+                title = 'Replacement Created';
+                detail = 'Replaced by Applicant ID ' + escapeHtml(String(repl || '—'));
+              } else if (role === 'replacement_in') {
+                title = 'Replacement Assignment';
+                detail = 'Assigned as replacement for Applicant ID ' + escapeHtml(String(orig || '—'));
               }
-              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
-              html += '</div>';
+              if (reason)  detail += (detail ? ' • ' : '') + 'Reason: ' + escapeHtml(reason);
+              if (rstat)   detail += (detail ? ' • ' : '') + 'Status: ' + escapeHtml(rstat);
+              if (assigned)detail += (detail ? ' • ' : '') + 'Assigned at: ' + escapeHtml(assigned);
+
+              html +=
+                '<div class="border rounded p-3">' +
+                  '<div class="d-flex justify-content-between align-items-start">' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                      '<span class="badge text-bg-indigo bg-primary-subtle text-primary">Replacement</span>' +
+                      '<div class="fw-semibold">' + escapeHtml(title) + '</div>' +
+                    '</div>' +
+                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
+                  '</div>' +
+                  (detail ? ('<div class="mt-1">' + detail + '</div>') : '') +
+                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                '</div>';
             } else {
               // note
-              html += '<div class="tl-item note">';
-              html +=   '<span class="tl-dot"></span>';
-              html +=   '<div class="tl-head">';
-              html +=     '<div class="tl-title"><i class="bi bi-journal-text me-1"></i>Report</div>';
-              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
-              html +=   '</div>';
-              html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
-              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
-              html += '</div>';
+              html +=
+                '<div class="border rounded p-3">' +
+                  '<div class="d-flex justify-content-between align-items-start">' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                      '<span class="badge text-bg-primary">Report</span>' +
+                      '<div class="fw-semibold">Report</div>' +
+                    '</div>' +
+                    '<div class="text-muted small">' + escapeHtml(when) + '</div>' +
+                  '</div>' +
+                  '<div class="mt-2">' + (body ? escapeHtml(body) : '—') + '</div>' +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                '</div>';
             }
           });
+
           container.innerHTML = html;
         })
         .catch(function () {
@@ -798,14 +711,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Helpers for UI
+  function humanize(s) {
+    s = s || '';
+    return s.replace(/\b\w/g, function(m){ return m.toUpperCase(); });
+  }
+  function badgeClass(status) {
+    status = (status || '').toLowerCase();
+    switch (status) {
+      case 'pending':    return 'bg-warning text-dark';
+      case 'on_process': return 'bg-info text-dark';
+      case 'approved':   return 'bg-success';
+      case 'on_hold':    return 'bg-secondary';
+      case 'deleted':    return 'bg-danger';
+      default:           return 'bg-secondary';
+    }
+  }
   function escapeHtml(s) {
     return (s||'').replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
     });
-  }
-  function cap(s) {
-    s = s || '';
-    return s.replace(/\b\w/g, function(m){ return m.toUpperCase(); });
   }
 });
 </script>
