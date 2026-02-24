@@ -90,7 +90,10 @@ $isApplicantsActive   = in_array($currentPage, ['applicants','pending','on-proce
 $collapseApplicantsId = 'csnkApplicantsMenu';
 
 /* ---------- Escape helper ---------- */
-function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+/* Avoid redeclaration if 'h' is already defined elsewhere (e.g., functions.php or a page) */
+if (!function_exists('h')) {
+    function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+}
 
 /* ---------- Reports note count (for badge) ---------- */
 $reportNotesCount = 0;
@@ -351,7 +354,7 @@ if ($canViewReports && $conn instanceof mysqli) {
                 </a>
             </div>
 
-            <!-- SMC-Bahrain -->
+            <!-- SMC-Bahrain
             <button class="sidebar-item sidebar-toggle" type="button"
                     data-bs-toggle="collapse" data-bs-target="#smcBahrainMenu"
                     aria-expanded="false" aria-controls="smcBahrainMenu"
@@ -379,7 +382,7 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
                     <i class="bi bi-slash-circle"></i><span class="label"><span class="text">Blacklisted</span></span>
                 </a>
-            </div>
+            </div> -->
             <?php endif; ?>
 
             <?php if ($canViewActivity): ?>
