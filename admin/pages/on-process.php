@@ -397,13 +397,10 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
     <h4 class="mb-0 fw-semibold">On Process Applicants</h4>
     <div class="d-flex gap-2">
         <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
-            <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+            <i class="bi bi-file-earmark-excel me-2"></i>On Process Excel
         </a>
         <a href="<?php echo htmlspecialchars($exportReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-success">
-            <i class="bi bi-journal-text me-2"></i>Export Reports
-        </a>
-        <a href="<?php echo htmlspecialchars($printReportsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
-            <i class="bi bi-printer me-2"></i>Reports
+            <i class="bi bi-journal-text me-2"></i>Report Excel
         </a>
     </div>
 </div>
