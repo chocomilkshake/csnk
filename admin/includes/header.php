@@ -16,15 +16,15 @@ $currentRole     = $currentUser['role'] ?? 'employee';
 $isSuperAdmin    = ($currentRole === 'super_admin');
 $isAdmin         = ($currentRole === 'admin');
 $isEmployee      = ($currentRole === 'employee');
-$canViewActivity = ($isAdmin || $isSuperAdmin);
+$canViewActivity = ($isAdmin || $isSuperAdmin || $isEmployee);
 
 // Agency flags (employees only; admins are global)
 $agency          = $currentUser['agency'] ?? null; // 'csnk' | 'smc' | null
 $canSeeCSNK      = $auth->canSeeCSNK();
 $canSeeSMC       = $auth->canSeeSMC();
 
-// Reports visibility (enable for admin/super_admin)
-$canViewReports  = ($isAdmin || $isSuperAdmin);
+// Reports visibility (enable for admin/super_admin and employee)
+$canViewReports  = ($isAdmin || $isSuperAdmin || $isEmployee);
 
 // Coming soon regions
 $showRegionPlaceholders = true;
@@ -276,7 +276,6 @@ if ($canViewReports && $conn instanceof mysqli) {
                     </span>
                 </a>
 
-                <?php if ($isAdmin || $isSuperAdmin): ?>
                 <a href="on-hold.php"
                    class="sidebar-item <?php echo $currentPage === 'on-hold' ? 'active' : ''; ?>"
                    aria-current="<?php echo $currentPage === 'on-hold' ? 'page' : 'false'; ?>"
@@ -288,7 +287,6 @@ if ($canViewReports && $conn instanceof mysqli) {
                               aria-label="On hold applicants count"><?php echo (int)$onHoldCount; ?></span>
                     </span>
                 </a>
-                <?php endif; ?>
 
                 <a href="deleted.php"
                    class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>"
