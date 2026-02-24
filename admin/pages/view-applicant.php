@@ -445,7 +445,7 @@ if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($appl
         <?php if (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
             <a href="<?php echo 'view-applicant-history.php?id=' . (int) $id . ($replaceRecord ? ('&replace_id=' . (int) $replaceId) : ''); ?>"
                 class="btn btn-outline-info">
-                <i class="bi bi-clock-history me-1"></i> History
+                <i class="bi bi-clock-history me-1"></i> Blacklist History
             </a>
         <?php endif; ?>
         <?php if (!$isBlacklisted && (($isAdmin ?? false) || ($isSuperAdmin ?? false))): ?>
