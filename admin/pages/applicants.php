@@ -9,7 +9,16 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
 
+
 $applicant = new Applicant($database);
+
+// Get current user's allowed BU IDs (for filtering applicants by country)
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+
+// Determine if user has global access (admin/super_admin)
+// If allowed_bu_ids is empty, user has access to all BUs
+$hasGlobalAccess = empty($allowedBuIds);
 
 /**
  * --- Search & Status Memory Behavior ---
@@ -38,24 +47,24 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 // Handle search query memory
 $q = '';
 if (isset($_GET['q'])) {
-    $q = trim((string)$_GET['q']);
+    $q = trim((string) $_GET['q']);
     // Limit length to avoid abuse
     if (mb_strlen($q) > 100) {
         $q = mb_substr($q, 0, 100);
     }
     $_SESSION['applicants_q'] = $q;
 } elseif (!empty($_SESSION['applicants_q'])) {
-    $q = (string)$_SESSION['applicants_q'];
+    $q = (string) $_SESSION['applicants_q'];
 }
 
 // Handle status memory
 $status = 'all';
 if (isset($_GET['status'])) {
-    $statusCandidate = strtolower(trim((string)$_GET['status']));
+    $statusCandidate = strtolower(trim((string) $_GET['status']));
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
     $_SESSION['applicants_status'] = $status;
 } elseif (!empty($_SESSION['applicants_status'])) {
-    $statusCandidate = strtolower((string)$_SESSION['applicants_status']);
+    $statusCandidate = strtolower((string) $_SESSION['applicants_status']);
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
 }
 
@@ -63,7 +72,7 @@ if (isset($_GET['status'])) {
  * Delete action: keep the search & status in the redirect to preserve context.
  */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+    $id = (int) $_GET['id'];
     if ($applicant->softDelete($id)) {
         if (isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
             $fullName = null;
@@ -80,19 +89,23 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
             }
             $label = $fullName ?: "ID {$id}";
             $auth->logActivity(
-                (int)$_SESSION['admin_id'],
+                (int) $_SESSION['admin_id'],
                 'Delete Applicant',
                 "Deleted applicant {$label}"
             );
         }
-        if (function_exists('setFlashMessage')) setFlashMessage('success', 'Applicant deleted successfully.');
+        if (function_exists('setFlashMessage'))
+            setFlashMessage('success', 'Applicant deleted successfully.');
     } else {
-        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Failed to delete applicant.');
+        if (function_exists('setFlashMessage'))
+            setFlashMessage('error', 'Failed to delete applicant.');
     }
 
     $params = [];
-    if ($q !== '') $params['q'] = $q;
-    if ($status !== 'all') $params['status'] = $status;
+    if ($q !== '')
+        $params['q'] = $q;
+    if ($status !== 'all')
+        $params['status'] = $status;
 
     $qs = !empty($params) ? ('?' . http_build_query($params)) : '';
     redirect('applicants.php' . $qs);
@@ -102,13 +115,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 /**
  * Load applicants and apply filters.
  * getAll() → show active/non-deleted applicants across statuses.
+ * Filter by business_unit_id if user has restricted access (not global admin).
  */
-$applicants = $applicant->getAll();
+if ($hasGlobalAccess) {
+    // Admin/Super Admin: show all applicants
+    $applicants = $applicant->getAll();
+} else {
+    // Employee: show only applicants from their allowed business units
+    $applicants = $applicant->getAll(null, $currentBuId);
+}
 
 /**
  * Helper: Render preferred_location JSON as clean text.
  */
-function renderPreferredLocation(?string $json, int $maxLen = 30): string {
+function renderPreferredLocation(?string $json, int $maxLen = 30): string
+{
     if (empty($json)) {
         return 'N/A';
     }
@@ -118,7 +139,7 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-    $cities = array_values(array_filter(array_map('trim', $arr), function($v){
+    $cities = array_values(array_filter(array_map('trim', $arr), function ($v) {
         return is_string($v) && $v !== '';
     }));
 
@@ -138,19 +159,21 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
 /**
  * Helper: Apply a case-insensitive contains filter across multiple fields.
  */
-function filterApplicantsByQuery(array $rows, string $query): array {
-    if ($query === '') return $rows;
+function filterApplicantsByQuery(array $rows, string $query): array
+{
+    if ($query === '')
+        return $rows;
 
     $needle = mb_strtolower($query);
 
-    return array_values(array_filter($rows, function(array $app) use ($needle) {
-        $first  = (string)($app['first_name']   ?? '');
-        $middle = (string)($app['middle_name']  ?? '');
-        $last   = (string)($app['last_name']    ?? '');
-        $suffix = (string)($app['suffix']       ?? '');
-        $email  = (string)($app['email']        ?? '');
-        $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
+    return array_values(array_filter($rows, function (array $app) use ($needle) {
+        $first = (string) ($app['first_name'] ?? '');
+        $middle = (string) ($app['middle_name'] ?? '');
+        $last = (string) ($app['last_name'] ?? '');
+        $suffix = (string) ($app['suffix'] ?? '');
+        $email = (string) ($app['email'] ?? '');
+        $phone = (string) ($app['phone_number'] ?? '');
+        $loc = renderPreferredLocation($app['preferred_location'] ?? null, 999);
 
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
@@ -158,9 +181,17 @@ function filterApplicantsByQuery(array $rows, string $query): array {
         $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
 
         $haystack = mb_strtolower(implode(' | ', [
-            $first, $middle, $last, $suffix,
-            $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone, $loc
+            $first,
+            $middle,
+            $last,
+            $suffix,
+            $fullName1,
+            $fullName2,
+            $fullName3,
+            $fullName4,
+            $email,
+            $phone,
+            $loc
         ]));
 
         return mb_strpos($haystack, $needle) !== false;
@@ -170,9 +201,11 @@ function filterApplicantsByQuery(array $rows, string $query): array {
 /**
  * Helper: Filter by status (pending, on_process, approved). 'all' returns as-is.
  */
-function filterApplicantsByStatus(array $rows, string $status): array {
-    if ($status === 'all') return $rows;
-    return array_values(array_filter($rows, function(array $app) use ($status) {
+function filterApplicantsByStatus(array $rows, string $status): array
+{
+    if ($status === 'all')
+        return $rows;
+    return array_values(array_filter($rows, function (array $app) use ($status) {
         return isset($app['status']) && $app['status'] === $status;
     }));
 }
@@ -187,15 +220,19 @@ if ($q !== '') {
 
 // Preserve params for links
 $paramsForLinks = [];
-if ($q !== '') $paramsForLinks['q'] = $q;
-if ($status !== 'all') $paramsForLinks['status'] = $status;
+if ($q !== '')
+    $paramsForLinks['q'] = $q;
+if ($status !== 'all')
+    $paramsForLinks['status'] = $status;
 $preserveQS = !empty($paramsForLinks) ? ('&' . http_build_query($paramsForLinks)) : '';
 $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($paramsForLinks)) : '';
 
 // Export URL includes filters
 $exportParams = [];
-if ($q !== '') $exportParams['q'] = $q;
-if ($status !== 'all') $exportParams['status'] = $status;
+if ($q !== '')
+    $exportParams['q'] = $q;
+if ($status !== 'all')
+    $exportParams['status'] = $status;
 $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' . http_build_query($exportParams)) : '');
 
 ?>
@@ -205,48 +242,67 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
         display: inline-flex;
         gap: .5rem;
         padding: .5rem;
-        border: 1px solid #e5e7eb;          /* slate-200 */
-        border-radius: 1rem;                 /* rounded-2xl */
-        background: rgba(255,255,255,0.85);  /* white/85 */
+        border: 1px solid #e5e7eb;
+        /* slate-200 */
+        border-radius: 1rem;
+        /* rounded-2xl */
+        background: rgba(255, 255, 255, 0.85);
+        /* white/85 */
         backdrop-filter: saturate(140%) blur(2px);
-        box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.10);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 3px rgba(0, 0, 0, .10);
     }
+
     .status-btn {
         display: inline-flex;
         align-items: center;
         gap: .5rem;
         padding: .45rem .9rem;
-        border-radius: .75rem;               /* rounded-xl */
-        font-size: .875rem;                  /* text-sm */
-        font-weight: 500;                    /* medium */
+        border-radius: .75rem;
+        /* rounded-xl */
+        font-size: .875rem;
+        /* text-sm */
+        font-weight: 500;
+        /* medium */
         text-decoration: none;
-        border: 1px solid #cbd5e1;           /* slate-300 */
-        color: #334155;                      /* slate-700 */
+        border: 1px solid #cbd5e1;
+        /* slate-300 */
+        color: #334155;
+        /* slate-700 */
         background: #ffffff;
         transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
     }
+
     .status-btn:hover {
         transform: translateY(-2px);
-        background: #f8fafc;                 /* slate-50 */
-        border-color: #94a3b8;               /* slate-400 */
+        background: #f8fafc;
+        /* slate-50 */
+        border-color: #94a3b8;
+        /* slate-400 */
         box-shadow: 0 6px 12px rgba(15, 23, 42, .06);
     }
+
     .status-btn:focus {
-        outline: 3px solid rgba(99,102,241,.35); /* indigo-500 ring */
+        outline: 3px solid rgba(99, 102, 241, .35);
+        /* indigo-500 ring */
         outline-offset: 2px;
     }
+
     .status-btn--active {
         color: #fff;
-        border-color: #4f46e5;               /* indigo-600 */
-        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); /* indigo-500 -> 600 */
-        box-shadow: 0 8px 18px rgba(79,70,229,.25);
+        border-color: #4f46e5;
+        /* indigo-600 */
+        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+        /* indigo-500 -> 600 */
+        box-shadow: 0 8px 18px rgba(79, 70, 229, .25);
     }
+
     .status-btn--active:hover {
         background: linear-gradient(180deg, #5457ee 0%, #463fd3 100%);
         border-color: #463fd3;
         transform: translateY(-2px);
     }
+
     .status-icon {
         font-size: .95em;
         line-height: 1;
@@ -264,25 +320,27 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
              * Renders a modern status button that preserves current search,
              * highlights the active status, and uses Bootstrap Icons.
              */
-            function renderStatusBtnModern(string $label, string $value, string $currentStatus, string $q = '', string $icon = ''): string {
+            function renderStatusBtnModern(string $label, string $value, string $currentStatus, string $q = '', string $icon = ''): string
+            {
                 $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
                 $href = 'applicants.php?status=' . urlencode($value);
-                if ($q !== '') $href .= '&q=' . urlencode($q);
+                if ($q !== '')
+                    $href .= '&q=' . urlencode($q);
 
                 $classes = 'status-btn' . ($isActive ? ' status-btn--active' : '');
 
                 $iconHtml = $icon !== '' ? '<i class="status-icon ' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '"></i>' : '';
                 return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="' . $classes . '">' .
-                        $iconHtml . '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></a>';
+                    $iconHtml . '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></a>';
             }
 
             $qParam = $_SESSION['applicants_q'] ?? '';
 
             echo '<div class="status-group">';
-                echo renderStatusBtnModern('All',        'all',        $status, $qParam, 'bi bi-list-ul');
-                echo renderStatusBtnModern('Pending',    'pending',    $status, $qParam, 'bi bi-hourglass-split');
-                echo renderStatusBtnModern('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat');
-                echo renderStatusBtnModern('Hired',      'approved',   $status, $qParam, 'bi bi-check2-circle');
+            echo renderStatusBtnModern('All', 'all', $status, $qParam, 'bi bi-list-ul');
+            echo renderStatusBtnModern('Pending', 'pending', $status, $qParam, 'bi bi-hourglass-split');
+            echo renderStatusBtnModern('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat');
+            echo renderStatusBtnModern('Hired', 'approved', $status, $qParam, 'bi bi-check2-circle');
             echo '</div>';
             ?>
         </div>
@@ -300,21 +358,17 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
 <div class="mb-3">
     <form method="get" action="applicants.php" class="d-flex justify-content-end">
         <div class="input-group" style="max-width: 420px;">
-            <input
-                type="text"
-                name="q"
-                class="form-control"
-                placeholder="Search applicants..."
-                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
-                autocomplete="off"
-            >
+            <input type="text" name="q" class="form-control" placeholder="Search applicants..."
+                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
             <!-- Preserve selected status when searching -->
             <input type="hidden" name="status" value="<?php echo htmlspecialchars($status, ENT_QUOTES, 'UTF-8'); ?>">
             <button class="btn btn-outline-secondary" type="submit" title="Search">
                 <i class="bi bi-search"></i>
             </button>
             <?php if ($q !== ''): ?>
-                <a class="btn btn-outline-secondary" href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>" title="Clear search">
+                <a class="btn btn-outline-secondary"
+                    href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>"
+                    title="Clear search">
                     <i class="bi bi-x-lg"></i>
                 </a>
             <?php endif; ?>
@@ -347,29 +401,34 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
                                     No applicants found. Click "Add New Applicant" to get started.
                                 <?php else: ?>
                                     No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
-                                    <a href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>" class="ms-2">Clear search</a>
+                                    <a href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>"
+                                        class="ms-2">Clear search</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($applicants as $app): ?>
                             <?php
-                                $currentStatus = (string)($app['status'] ?? '');
-                                $params = [];
-                                if ($q !== '') $params['q'] = $q;
-                                if ($status !== 'all') $params['status'] = $status;
-                                $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
+                            $currentStatus = (string) ($app['status'] ?? '');
+                            $params = [];
+                            if ($q !== '')
+                                $params['q'] = $q;
+                            if ($status !== 'all')
+                                $params['status'] = $status;
+                            $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
 
-                                $viewUrl  = 'view-applicant.php?id=' . (int)$app['id'] . $tail;
-                                $editUrl  = 'edit-applicant.php?id=' . (int)$app['id'] . $tail;
-                                $delUrl   = 'applicants.php?action=delete&id=' . (int)$app['id'] . $tail;
+                            $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
+                            $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
+                            $delUrl = 'applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
                             ?>
                             <tr>
                                 <td>
                                     <?php if (!empty($app['picture'])): ?>
-                                        <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                     <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                            style="width: 50px; height: 50px;">
                                             <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
@@ -379,14 +438,15 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
                                 </td>
                                 <td><?php echo htmlspecialchars($app['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars($app['email'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(renderPreferredLocation($app['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?>
+                                </td>
                                 <td>
                                     <?php
                                     $statusColors = [
-                                        'pending'    => 'warning',
+                                        'pending' => 'warning',
                                         'on_process' => 'info',
-                                        'approved'   => 'success',
-                                        'deleted'    => 'secondary'
+                                        'approved' => 'success',
+                                        'deleted' => 'secondary'
                                     ];
                                     $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
                                     ?>
@@ -398,16 +458,20 @@ $exportUrl = '../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' 
                                 <td>
                                     <div class="btn-group">
                                         <!-- View (always) -->
-                                        <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-info" title="View">
+                                        <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                            class="btn btn-sm btn-info" title="View">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <!-- Edit (always) -->
-                                        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                            class="btn btn-sm btn-warning" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <!-- Delete only if status === pending -->
                                         <?php if ($currentStatus === 'pending'): ?>
-                                            <a href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                            <a href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                                class="btn btn-sm btn-danger delete-btn" title="Delete"
+                                                onclick="return confirm('Are you sure you want to delete this applicant?');">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         <?php endif; ?>
