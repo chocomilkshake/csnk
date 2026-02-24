@@ -4,6 +4,7 @@ $pageTitle = 'On Process';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
 // We assume $database (mysqli), and helpers: redirect, formatDate, formatDateTime, getFileUrl, getFullName, setFlashMessage
 $applicant = new Applicant($database);
 

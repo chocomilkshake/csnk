@@ -6,6 +6,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   @session_start();
 }
 
+
+
 /* ------------------------------------------------------------------
    Absolutely NO output before this point.
    Make sure your editor hasn't added a UTF-8 BOM or spaces before <?php

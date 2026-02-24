@@ -8,6 +8,8 @@
 
 declare(strict_types=1);
 
+
+
 // Start session (to reuse stored search if needed)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
@@ -24,15 +26,18 @@ $autoloadCandidates = [
 ];
 $autoload = null;
 foreach ($autoloadCandidates as $candidate) {
-    if (is_readable($candidate)) { $autoload = $candidate; break; }
+    if (is_readable($candidate)) {
+        $autoload = $candidate;
+        break;
+    }
 }
 if ($autoload === null) {
     http_response_code(500);
     header('Content-Type: text/plain; charset=UTF-8');
     echo "Composer autoload not found:\n" . implode("\n", $autoloadCandidates) . "\n\n"
-       . "Install PhpSpreadsheet from project root:\n"
-       . "  composer require phpoffice/phpspreadsheet:^2 --with-all-dependencies\n"
-       . "(For PHP < 8.1 use: ^1.29)\n";
+        . "Install PhpSpreadsheet from project root:\n"
+        . "  composer require phpoffice/phpspreadsheet:^2 --with-all-dependencies\n"
+        . "(For PHP < 8.1 use: ^1.29)\n";
     exit;
 }
 require_once $autoload;
@@ -58,20 +63,30 @@ $bootstrapCandidates = [
     dirname(__DIR__) . '/db.php',
 ];
 foreach ($bootstrapCandidates as $file) {
-    if (is_readable($file)) { require_once $file; }
+    if (is_readable($file)) {
+        require_once $file;
+    }
 }
 if (!isset($database) || !is_object($database)) {
-    if (!class_exists('Database')) { @include_once __DIR__ . '/Database.php'; }
-    if (class_exists('Database')) { $database = new Database(); }
+    if (!class_exists('Database')) {
+        @include_once __DIR__ . '/Database.php';
+    }
+    if (class_exists('Database')) {
+        $database = new Database();
+    }
 }
 
 /** Normalize: we need an object exposing getConnection() that returns mysqli */
 if ($database instanceof mysqli) {
     $mysqliConn = $database;
-    $database = new class($mysqliConn) {
+    $database = new class ($mysqliConn) {
         private $conn;
-        public function __construct($conn) { $this->conn = $conn; }
-        public function getConnection() { return $this->conn; }
+        public function __construct($conn)
+        {
+            $this->conn = $conn; }
+        public function getConnection()
+        {
+            return $this->conn; }
     };
 }
 if (!is_object($database) || !method_exists($database, 'getConnection')) {
@@ -85,23 +100,24 @@ $conn = $database->getConnection(); // mysqli
 /* -------------------------------------------------
  *  Input / Filters (?q=, ?from=YYYY-MM-DD, ?to=YYYY-MM-DD)
  * -------------------------------------------------*/
-function clean_str(string $v): string {
+function clean_str(string $v): string
+{
     $v = trim($v);
     $v = str_replace(["\r\n", "\r"], "\n", $v);
     return filter_var($v, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW);
 }
 
-$q = isset($_GET['q']) ? clean_str((string)$_GET['q']) : '';
+$q = isset($_GET['q']) ? clean_str((string) $_GET['q']) : '';
 if ($q === '' && !empty($_SESSION['onproc_q'])) {
     // Reuse on-process search if present (optional)
-    $q = (string)$_SESSION['onproc_q'];
+    $q = (string) $_SESSION['onproc_q'];
 }
 
-$from = isset($_GET['from']) ? trim((string)$_GET['from']) : '';
-$to   = isset($_GET['to'])   ? trim((string)$_GET['to'])   : '';
+$from = isset($_GET['from']) ? trim((string) $_GET['from']) : '';
+$to = isset($_GET['to']) ? trim((string) $_GET['to']) : '';
 
 $fromDate = $from !== '' ? date_create($from) : null;
-$toDate   = $to   !== '' ? date_create($to)   : null;
+$toDate = $to !== '' ? date_create($to) : null;
 
 /* -------------------------------------------------
  *  Build SQL (MySQLi, ? placeholders) + bind params
@@ -133,7 +149,7 @@ WHERE 1 = 1
 
 $where = '';
 $params = [];
-$types  = '';
+$types = '';
 
 if ($q !== '') {
     // Escape LIKE metacharacters, then wrap with %...%
@@ -150,19 +166,24 @@ if ($q !== '') {
         OR au.email      LIKE ?
       )
     ";
-    $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
-    $params[] = $like; $params[] = $like; $params[] = $like;
-    $types   .= 'sssssss';
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $types .= 'sssssss';
 }
 if ($fromDate instanceof DateTimeInterface) {
-    $where   .= " AND r.created_at >= ? ";
+    $where .= " AND r.created_at >= ? ";
     $params[] = $fromDate->format('Y-m-d 00:00:00');
-    $types   .= 's';
+    $types .= 's';
 }
 if ($toDate instanceof DateTimeInterface) {
-    $where   .= " AND r.created_at <= ? ";
+    $where .= " AND r.created_at <= ? ";
     $params[] = $toDate->format('Y-m-d 23:59:59');
-    $types   .= 's';
+    $types .= 's';
 }
 
 $sql .= $where . " ORDER BY r.created_at DESC, r.id DESC ";
@@ -177,14 +198,18 @@ try {
     if (!empty($params)) {
         // bind_param requires references in PHP
         $refs = [];
-        foreach ($params as $k => $v) { $refs[$k] = &$params[$k]; }
+        foreach ($params as $k => $v) {
+            $refs[$k] = &$params[$k];
+        }
         array_unshift($refs, $types);
         call_user_func_array([$stmt, 'bind_param'], $refs);
     }
     $stmt->execute();
     $res = $stmt->get_result();
     if ($res) {
-        while ($row = $res->fetch_assoc()) { $rows[] = $row; }
+        while ($row = $res->fetch_assoc()) {
+            $rows[] = $row;
+        }
         $res->free();
     }
     $stmt->close();
@@ -211,20 +236,20 @@ $spreadsheet->getProperties()
 $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(11);
 
 // Palette
-$ink          = 'FF111827'; // #111827
-$muted        = 'FF6B7280'; // #6B7280
-$headerFill   = 'FFE5E7EB'; // #E5E7EB
-$zebraFill    = 'FFF9FAFB'; // #F9FAFB
-$borderLight  = 'FFE5E7EB'; // #E5E7EB
+$ink = 'FF111827'; // #111827
+$muted = 'FF6B7280'; // #6B7280
+$headerFill = 'FFE5E7EB'; // #E5E7EB
+$zebraFill = 'FFF9FAFB'; // #F9FAFB
+$borderLight = 'FFE5E7EB'; // #E5E7EB
 
 // Columns (change "Admin ID" -> "Admin")
-$cols    = ['A','B','C','D','E','F','G','H'];
+$cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 $headers = ['#', 'Applicant ID', 'Applicant', 'From Status', 'To Status', 'Report', 'Admin', 'Changed At'];
 $lastHeaderCol = end($cols);
 
 // Title & subtitle rows
-$headerRow  = 4;
-$dataStart  = $headerRow + 1;
+$headerRow = 4;
+$dataStart = $headerRow + 1;
 
 // Optional logo (same path pattern as your other exporter)
 $logoPath = realpath(__DIR__ . '/../resources/img/whychoose.png');
@@ -246,9 +271,15 @@ $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(20)->getColor()->setAR
 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
 $subtitleParts = ['Exported on ' . date('M j, Y') . ' | ' . date('h:i A')];
-if ($q !== '')   { $subtitleParts[] = 'Filter: ' . $q; }
-if ($from !== ''){ $subtitleParts[] = 'From: ' . $from; }
-if ($to !== '')  { $subtitleParts[] = 'To: ' . $to; }
+if ($q !== '') {
+    $subtitleParts[] = 'Filter: ' . $q;
+}
+if ($from !== '') {
+    $subtitleParts[] = 'From: ' . $from;
+}
+if ($to !== '') {
+    $subtitleParts[] = 'To: ' . $to;
+}
 $sheet->setCellValue('B2', implode(' — ', $subtitleParts));
 $sheet->mergeCells('B2:H2');
 $sheet->getStyle('B2')->getFont()->setSize(10)->getColor()->setARGB($muted);
@@ -274,27 +305,29 @@ $sheet->getRowDimension($headerRow)->setRowHeight(22);
 $row = $dataStart;
 foreach ($rows as $r) {
     $fullName = trim(
-        ((string)($r['first_name'] ?? '')) . ' ' .
-        ((string)($r['middle_name'] ?? '')) . ' ' .
-        ((string)($r['last_name'] ?? '')) . ' ' .
-        ((string)($r['suffix'] ?? ''))
+        ((string) ($r['first_name'] ?? '')) . ' ' .
+        ((string) ($r['middle_name'] ?? '')) . ' ' .
+        ((string) ($r['last_name'] ?? '')) . ' ' .
+        ((string) ($r['suffix'] ?? ''))
     );
     $fullName = $fullName !== '' ? $fullName : '—';
 
-    $sheet->setCellValueExplicit("A{$row}", (int)$r['report_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
-    $sheet->setCellValueExplicit("B{$row}", (int)$r['applicant_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+    $sheet->setCellValueExplicit("A{$row}", (int) $r['report_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+    $sheet->setCellValueExplicit("B{$row}", (int) $r['applicant_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
     $sheet->setCellValue("C{$row}", $fullName);
-    $sheet->setCellValue("D{$row}", (string)$r['from_status']);
-    $sheet->setCellValue("E{$row}", (string)$r['to_status']);
-    $sheet->setCellValue("F{$row}", (string)$r['report_text']);
+    $sheet->setCellValue("D{$row}", (string) $r['from_status']);
+    $sheet->setCellValue("E{$row}", (string) $r['to_status']);
+    $sheet->setCellValue("F{$row}", (string) $r['report_text']);
 
     // G: Admin name (string)
-    $adminName = trim((string)($r['admin_name'] ?? ''));
-    if ($adminName === '') { $adminName = '—'; }
+    $adminName = trim((string) ($r['admin_name'] ?? ''));
+    if ($adminName === '') {
+        $adminName = '—';
+    }
     $sheet->setCellValue("G{$row}", $adminName);
 
     // H: Created at → Excel date if parsable
-    $createdAt = (string)($r['created_at'] ?? '');
+    $createdAt = (string) ($r['created_at'] ?? '');
     $excelDate = null;
     if ($createdAt !== '') {
         $ts = strtotime($createdAt);
@@ -311,7 +344,7 @@ foreach ($rows as $r) {
 
     if ($row % 2 === 0) {
         $sheet->getStyle("A{$row}:H{$row}")
-              ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($zebraFill);
+            ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($zebraFill);
     }
     $sheet->getRowDimension($row)->setRowHeight(20);
     $row++;
@@ -321,9 +354,9 @@ $lastDataRow = max($row - 1, $headerRow);
 
 // Borders
 $sheet->getStyle("A{$headerRow}:{$lastHeaderCol}{$lastDataRow}")
-      ->getBorders()->getAllBorders()
-      ->setBorderStyle(Border::BORDER_HAIR)
-      ->getColor()->setARGB($borderLight);
+    ->getBorders()->getAllBorders()
+    ->setBorderStyle(Border::BORDER_HAIR)
+    ->getColor()->setARGB($borderLight);
 
 // Freeze + AutoFilter + Autosize
 $sheet->freezePane("A{$dataStart}");
@@ -339,7 +372,9 @@ $sheet->mergeCells("A{$footerRow}:{$lastHeaderCol}{$footerRow}");
 
 // Download
 $filename = 'status_change_reports_' . date('Ymd_His') . '.xlsx';
-while (ob_get_level() > 0) { ob_end_clean(); }
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

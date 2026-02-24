@@ -4,6 +4,8 @@ $pageTitle = 'Deleted Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
+
 // Ensure session is active (for storing last search)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
@@ -25,14 +27,14 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 
 $q = '';
 if (isset($_GET['q'])) {
-    $q = trim((string)$_GET['q']);
+    $q = trim((string) $_GET['q']);
     // Limit length to avoid abuse
     if (mb_strlen($q) > 100) {
         $q = mb_substr($q, 0, 100);
     }
     $_SESSION['deleted_q'] = $q;
 } elseif (!empty($_SESSION['deleted_q'])) {
-    $q = (string)$_SESSION['deleted_q'];
+    $q = (string) $_SESSION['deleted_q'];
 }
 
 /**
@@ -40,7 +42,7 @@ if (isset($_GET['q'])) {
  * - Keep the search in the redirect to preserve context
  */
 if (isset($_GET['action']) && isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+    $id = (int) $_GET['id'];
 
     if ($_GET['action'] === 'restore') {
         if ($applicant->restore($id)) {
@@ -58,7 +60,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             }
             $label = $fullName ?: "ID {$id}";
             $auth->logActivity(
-                (int)$_SESSION['admin_id'],
+                (int) $_SESSION['admin_id'],
                 'Restore Applicant',
                 "Restored applicant {$label}"
             );
@@ -82,7 +84,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             }
             $label = $fullName ?: "ID {$id}";
             $auth->logActivity(
-                (int)$_SESSION['admin_id'],
+                (int) $_SESSION['admin_id'],
                 'Permanent Delete',
                 "Permanently deleted applicant {$label}"
             );
@@ -107,18 +109,20 @@ $applicants = $applicant->getDeleted();
  * Helper: Apply a case-insensitive contains filter across multiple fields.
  * (name variants, email, phone)
  */
-function filterApplicantsByQuery(array $rows, string $query): array {
-    if ($query === '') return $rows;
+function filterApplicantsByQuery(array $rows, string $query): array
+{
+    if ($query === '')
+        return $rows;
 
     $needle = mb_strtolower($query);
 
-    return array_values(array_filter($rows, function(array $app) use ($needle) {
-        $first  = (string)($app['first_name']   ?? '');
-        $middle = (string)($app['middle_name']  ?? '');
-        $last   = (string)($app['last_name']    ?? '');
-        $suffix = (string)($app['suffix']       ?? '');
-        $email  = (string)($app['email']        ?? '');
-        $phone  = (string)($app['phone_number'] ?? '');
+    return array_values(array_filter($rows, function (array $app) use ($needle) {
+        $first = (string) ($app['first_name'] ?? '');
+        $middle = (string) ($app['middle_name'] ?? '');
+        $last = (string) ($app['last_name'] ?? '');
+        $suffix = (string) ($app['suffix'] ?? '');
+        $email = (string) ($app['email'] ?? '');
+        $phone = (string) ($app['phone_number'] ?? '');
 
         // Combine a few name variants
         $fullName1 = trim($first . ' ' . $last);
@@ -127,9 +131,16 @@ function filterApplicantsByQuery(array $rows, string $query): array {
         $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
 
         $haystack = mb_strtolower(implode(' | ', [
-            $first, $middle, $last, $suffix,
-            $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone
+            $first,
+            $middle,
+            $last,
+            $suffix,
+            $fullName1,
+            $fullName2,
+            $fullName3,
+            $fullName4,
+            $email,
+            $phone
         ]));
 
         return mb_strpos($haystack, $needle) !== false;
@@ -159,14 +170,8 @@ $exportUrl = '../includes/excel_deleted-applicants.php' . ($q !== '' ? '?q=' . u
 <div class="mb-3 d-flex justify-content-end">
     <form action="deleted.php" method="get" class="w-100" style="max-width: 420px;" role="search">
         <div class="input-group" style="max-width: 420px;">
-            <input
-                type="text"
-                name="q"
-                class="form-control"
-                placeholder="Search deleted applicants..."
-                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
-                autocomplete="off"
-            >
+            <input type="text" name="q" class="form-control" placeholder="Search deleted applicants..."
+                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
             <button class="btn btn-outline-secondary" type="submit" title="Search">
                 <i class="bi bi-search"></i>
             </button>
@@ -212,31 +217,33 @@ $exportUrl = '../includes/excel_deleted-applicants.php' . ($q !== '' ? '?q=' . u
                                 <td>
                                     <?php if (!empty($app['picture'])): ?>
                                         <img src="<?php echo htmlspecialchars(getFileUrl($app['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                            alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                             style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr((string)$app['first_name'], 0, 1)); ?>
+                                            style="width: 50px; height: 50px;">
+                                            <?php echo strtoupper(substr((string) $app['first_name'], 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <strong><?php echo getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix']); ?></strong>
                                 </td>
-                                <td><?php echo htmlspecialchars((string)$app['phone_number'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars((string)($app['email'] ?? 'N/A'), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) $app['phone_number'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($app['email'] ?? 'N/A'), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo formatDate($app['deleted_at']); ?></td>
                                 <td>
                                     <?php
-                                        $restoreUrl = 'deleted.php?action=restore&id=' . (int)$app['id'] . $preserveQ;
-                                        $permaUrl   = 'deleted.php?action=permanent_delete&id=' . (int)$app['id'] . $preserveQ;
+                                    $restoreUrl = 'deleted.php?action=restore&id=' . (int) $app['id'] . $preserveQ;
+                                    $permaUrl = 'deleted.php?action=permanent_delete&id=' . (int) $app['id'] . $preserveQ;
                                     ?>
                                     <div class="btn-group">
-                                        <a href="<?php echo htmlspecialchars($restoreUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-success" title="Restore">
+                                        <a href="<?php echo htmlspecialchars($restoreUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                            class="btn btn-sm btn-success" title="Restore">
                                             <i class="bi bi-arrow-counterclockwise"></i> Restore
                                         </a>
-                                        <a href="<?php echo htmlspecialchars($permaUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-danger delete-btn" title="Permanent Delete"
-                                           onclick="return confirm('This will permanently delete the applicant. Continue?');">
+                                        <a href="<?php echo htmlspecialchars($permaUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                            class="btn btn-sm btn-danger delete-btn" title="Permanent Delete"
+                                            onclick="return confirm('This will permanently delete the applicant. Continue?');">
                                             <i class="bi bi-trash-fill"></i> Delete Forever
                                         </a>
                                     </div>

@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Bootstrap admin side
 require_once __DIR__ . '/../admin/includes/config.php';
+
+set_public_bu_from_host($mysqli);   // sets $_SESSION['current_bu_id'] based on host
+$currentBuId = require_bu_context();
+
+
 require_once __DIR__ . '/../admin/includes/Database.php';
 require_once __DIR__ . '/../admin/includes/Applicant.php';
 

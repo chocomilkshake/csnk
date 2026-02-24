@@ -4,6 +4,7 @@ $pageTitle = 'View Applicant';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
 $applicant = new Applicant($database);
 
 // Preserve list search (if user came from a searched list)

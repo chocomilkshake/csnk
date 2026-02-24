@@ -4,6 +4,8 @@ $pageTitle = 'Applicant History';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
+
 // Ensure session for consistency (header.php usually starts it)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -880,5 +882,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
 
 <?php require_once '../includes/footer.php'; ?>

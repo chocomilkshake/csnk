@@ -12,11 +12,11 @@ if (session_status() === PHP_SESSION_NONE) {
  * Resolve current user & role robustly.
  */
 $currentUser = $currentUser ?? ($_SESSION['currentUser'] ?? []);
-$role = isset($currentUser['role']) ? (string)$currentUser['role'] : 'employee';
+$role = isset($currentUser['role']) ? (string) $currentUser['role'] : 'employee';
 
 $isSuperAdmin = ($role === 'super_admin');
-$isAdmin      = ($role === 'admin');
-$canManage    = ($isAdmin || $isSuperAdmin);
+$isAdmin = ($role === 'admin');
+$canManage = ($isAdmin || $isSuperAdmin);
 
 if (!$canManage) {
     if (function_exists('setFlashMessage')) {
@@ -45,7 +45,7 @@ if (!isset($_GET['id'])) {
     exit;
 }
 
-$id = (int)$_GET['id'];
+$id = (int) $_GET['id'];
 if ($id <= 0) {
     setFlashMessage('error', 'Invalid applicant ID.');
     redirect('applicants.php');
@@ -67,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid request. Please reload the page and try again.';
     }
 
-    $reason = trim((string)($_POST['reason'] ?? ''));
-    $issue  = trim((string)($_POST['issue'] ?? ''));
+    $reason = trim((string) ($_POST['reason'] ?? ''));
+    $issue = trim((string) ($_POST['issue'] ?? ''));
 
     if ($reason === '') {
         $errors[] = 'Reason is required.';
@@ -81,26 +81,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['proofs']) && is_array($_FILES['proofs']['name'])) {
         $names = $_FILES['proofs']['name'];
         $types = $_FILES['proofs']['type'];
-        $tmps  = $_FILES['proofs']['tmp_name'];
-        $errs  = $_FILES['proofs']['error'];
+        $tmps = $_FILES['proofs']['tmp_name'];
+        $errs = $_FILES['proofs']['error'];
         $sizes = $_FILES['proofs']['size'];
 
         $count = count($names);
         for ($i = 0; $i < $count; $i++) {
-            $err = (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE);
+            $err = (int) ($errs[$i] ?? UPLOAD_ERR_NO_FILE);
             if ($err !== UPLOAD_ERR_OK) {
                 continue;
             }
 
             $file = [
-                'name'     => (string)($names[$i] ?? ''),
-                'type'     => (string)($types[$i] ?? ''),
-                'tmp_name' => (string)($tmps[$i] ?? ''),
-                'error'    => (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE),
-                'size'     => (int)($sizes[$i] ?? 0),
+                'name' => (string) ($names[$i] ?? ''),
+                'type' => (string) ($types[$i] ?? ''),
+                'tmp_name' => (string) ($tmps[$i] ?? ''),
+                'error' => (int) ($errs[$i] ?? UPLOAD_ERR_NO_FILE),
+                'size' => (int) ($sizes[$i] ?? 0),
             ];
 
-            if (strpos((string)$file['type'], 'image/') !== 0) {
+            if (strpos((string) $file['type'], 'image/') !== 0) {
                 $errors[] = 'Only image files are allowed for proof uploads.';
                 break;
             }
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $proofJson = !empty($proofPaths) ? json_encode($proofPaths) : null;
 
                 // Resolve created_by robustly
-                $createdBy = (int)(
+                $createdBy = (int) (
                     $_SESSION['admin_id']
                     ?? $_SESSION['user_id']
                     ?? ($currentUser['id'] ?? 0)
@@ -198,7 +198,7 @@ $fullName = getFullName(
         <h4 class="mb-0 fw-semibold">Blacklist Applicant</h4>
         <small class="text-muted">Mark this applicant as blacklisted with documented reason and proof.</small>
     </div>
-    <a href="view-applicant.php?id=<?php echo (int)$id; ?>" class="btn btn-outline-secondary">
+    <a href="view-applicant.php?id=<?php echo (int) $id; ?>" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-2"></i>Back to Applicant
     </a>
 </div>
@@ -218,46 +218,34 @@ $fullName = getFullName(
         <h5 class="fw-semibold mb-3"><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></h5>
 
         <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="csrf_token"
+                value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
             <div class="mb-3">
                 <label class="form-label">Reason <span class="text-danger">*</span></label>
-                <input
-                    type="text"
-                    name="reason"
-                    class="form-control"
-                    value="<?php echo htmlspecialchars($_POST['reason'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                    maxlength="255"
-                    required
-                    placeholder="Short reason (e.g. Policy violation, Fraud attempt)">
+                <input type="text" name="reason" class="form-control"
+                    value="<?php echo htmlspecialchars($_POST['reason'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" maxlength="255"
+                    required placeholder="Short reason (e.g. Policy violation, Fraud attempt)">
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Details / Issue</label>
-                <textarea
-                    name="issue"
-                    class="form-control"
-                    rows="4"
+                <textarea name="issue" class="form-control" rows="4"
                     placeholder="Describe what happened or which policy was violated."><?php
                     echo htmlspecialchars($_POST['issue'] ?? '', ENT_QUOTES, 'UTF-8');
-                ?></textarea>
+                    ?></textarea>
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Upload Proof (photos, screenshots)</label>
-                <input
-                    type="file"
-                    name="proofs[]"
-                    class="form-control"
-                    accept="image/*"
-                    multiple>
+                <input type="file" name="proofs[]" class="form-control" accept="image/*" multiple>
                 <small class="text-muted">
                     You can upload multiple images. They will be stored securely in the server's blacklist folder.
                 </small>
             </div>
 
             <div class="mt-4 d-flex justify-content-end gap-2">
-                <a href="view-applicant.php?id=<?php echo (int)$id; ?>" class="btn btn-outline-secondary">
+                <a href="view-applicant.php?id=<?php echo (int) $id; ?>" class="btn btn-outline-secondary">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-danger">

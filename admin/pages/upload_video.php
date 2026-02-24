@@ -11,7 +11,7 @@ ini_set('error_log', __DIR__ . '/../logs/php_upload_errors.log'); // ensure the 
 header('Content-Type: application/json');
 
 // 1) Add this block near the top: resolve folders under the web root and create them if needed
-$docRoot   = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
+$docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
 $videosDir = $docRoot . '/uploads/videos';
 $thumbsDir = $docRoot . '/uploads/video_thumbnails';
 
@@ -27,12 +27,13 @@ if (!is_dir($thumbsDir) && !mkdir($thumbsDir, 0775, true)) {
 }
 
 //Helpers
-function urlFromPathUnderDocRoot(string $absPath): string {
-    $docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT']), '/');
-    $abs     = str_replace('\\','/', $absPath);
-    $rel     = substr($abs, strlen($docRoot)); // e.g. /uploads/videos/abc.mp4
-    $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
+function urlFromPathUnderDocRoot(string $absPath): string
+{
+    $docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
+    $abs = str_replace('\\', '/', $absPath);
+    $rel = substr($abs, strlen($docRoot)); // e.g. /uploads/videos/abc.mp4
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     return $scheme . '://' . $host . $rel;
 }
 
@@ -51,7 +52,7 @@ if (!isset($_FILES['video'])) {
 
 $file = $_FILES['video'];
 if (!empty($file['error'])) {
-    echo json_encode(['success' => false, 'message' => 'Upload error code: '.$file['error']]);
+    echo json_encode(['success' => false, 'message' => 'Upload error code: ' . $file['error']]);
     exit;
 }
 
@@ -62,23 +63,23 @@ if ($file['size'] > $maxBytes) {
     exit;
 }
 $finfo = new finfo(FILEINFO_MIME_TYPE);
-$mime  = $finfo->file($file['tmp_name']);
+$mime = $finfo->file($file['tmp_name']);
 $allowed = [
-    'mp4'  => 'video/mp4',
+    'mp4' => 'video/mp4',
     'webm' => 'video/webm',
-    'ogg'  => 'video/ogg',
-    'mov'  => 'video/quicktime',
-    'mkv'  => 'video/x-matroska',
+    'ogg' => 'video/ogg',
+    'mov' => 'video/quicktime',
+    'mkv' => 'video/x-matroska',
 ];
 $ext = array_search($mime, $allowed, true);
 if ($ext === false) {
-    echo json_encode(['success' => false, 'message' => 'Unsupported video type: '.$mime]);
+    echo json_encode(['success' => false, 'message' => 'Unsupported video type: ' . $mime]);
     exit;
 }
 
 // 5) (Existing) save file using the *public* directories defined above
-$basename   = bin2hex(random_bytes(8)) . '_' . time();
-$filename   = $basename . '.' . $ext;
+$basename = bin2hex(random_bytes(8)) . '_' . time();
+$filename = $basename . '.' . $ext;
 $targetPath = $videosDir . '/' . $filename;
 
 if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
@@ -103,7 +104,7 @@ $ffmpeg = trim((string) shell_exec('command -v ffmpeg'));
 if ($ffmpeg !== '') {
     $thumbPath = $thumbsDir . '/' . $basename . '.jpg';
     $cmd = $ffmpeg . ' -y -ss 00:00:01 -i ' . escapeshellarg($targetPath)
-         . ' -frames:v 1 -vf "scale=640:-1" -q:v 3 ' . escapeshellarg($thumbPath) . ' 2>&1';
+        . ' -frames:v 1 -vf "scale=640:-1" -q:v 3 ' . escapeshellarg($thumbPath) . ' 2>&1';
     shell_exec($cmd);
     if (file_exists($thumbPath)) {
         $thumbnailUrl = urlFromPathUnderDocRoot($thumbPath);
@@ -111,8 +112,8 @@ if ($ffmpeg !== '') {
 }
 
 // 7) Build URLs using the helper (these become your JSON response)
-$videoUrl  = urlFromPathUnderDocRoot($targetPath);
-$title     = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
+$videoUrl = urlFromPathUnderDocRoot($targetPath);
+$title = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
 
 // 8) Respond with JSON only
 echo json_encode([

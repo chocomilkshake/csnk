@@ -6,13 +6,15 @@ require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
 require_once '../includes/functions.php';
 
+
+
 // Ensure session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 $database = new Database();
-$auth     = new Auth($database);
+$auth = new Auth($database);
 
 // Require login
 $auth->requireLogin();
@@ -28,14 +30,15 @@ if (isset($currentUser) && is_array($currentUser)) {
     $resolvedUser = $currentUser;
 } elseif (method_exists($auth, 'getCurrentUser')) {
     $u = $auth->getCurrentUser();
-    if (is_array($u)) $resolvedUser = $u;
+    if (is_array($u))
+        $resolvedUser = $u;
 } else {
-    $resolvedUser = (array)($_SESSION['currentUser'] ?? []);
+    $resolvedUser = (array) ($_SESSION['currentUser'] ?? []);
 }
 
-$role         = (string)($resolvedUser['role'] ?? 'employee');
+$role = (string) ($resolvedUser['role'] ?? 'employee');
 $isSuperAdmin = ($role === 'super_admin');
-$isAdmin      = ($role === 'admin');
+$isAdmin = ($role === 'admin');
 
 // Only Admin/Super Admin
 if (!($isAdmin || $isSuperAdmin)) {
@@ -45,7 +48,7 @@ if (!($isAdmin || $isSuperAdmin)) {
 }
 
 /** Resolve acting admin ID robustly */
-$adminId = (int)(
+$adminId = (int) (
     $_SESSION['admin_id']
     ?? $_SESSION['user_id']
     ?? $resolvedUser['id']
@@ -54,19 +57,19 @@ $adminId = (int)(
     ?? 0
 );
 
-$errors  = [];
+$errors = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF check
-    $postedToken  = (string)($_POST['csrf_token'] ?? '');
-    $sessionToken = (string)($_SESSION['csrf_token'] ?? '');
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    $sessionToken = (string) ($_SESSION['csrf_token'] ?? '');
     if ($postedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $postedToken)) {
         $errors[] = 'Invalid request. Please reload the page and try again.';
     }
 
-    $blacklistId    = (int)($_POST['blacklist_id'] ?? 0);
-    $complianceNote = trim((string)($_POST['compliance_note'] ?? ''));
+    $blacklistId = (int) ($_POST['blacklist_id'] ?? 0);
+    $complianceNote = trim((string) ($_POST['compliance_note'] ?? ''));
 
     if ($blacklistId <= 0) {
         $errors[] = 'Invalid blacklist record ID.';
@@ -93,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmtGet = $conn->prepare($sqlGet)) {
                 $stmtGet->bind_param("i", $blacklistId);
                 $stmtGet->execute();
-                $res  = $stmtGet->get_result();
+                $res = $stmtGet->get_result();
                 $data = $res ? $res->fetch_assoc() : null;
                 $stmtGet->close();
 
@@ -105,12 +108,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (isset($_FILES['compliance_proofs']) && is_array($_FILES['compliance_proofs']['name'])) {
                         $names = $_FILES['compliance_proofs']['name'];
                         $types = $_FILES['compliance_proofs']['type'];
-                        $tmps  = $_FILES['compliance_proofs']['tmp_name'];
-                        $errs  = $_FILES['compliance_proofs']['error'];
+                        $tmps = $_FILES['compliance_proofs']['tmp_name'];
+                        $errs = $_FILES['compliance_proofs']['error'];
                         $sizes = $_FILES['compliance_proofs']['size'];
 
                         $allowedMimePrefixes = ['image/'];
-                        $allowedExactMimes   = [
+                        $allowedExactMimes = [
                             'application/pdf',
                             'application/msword',
                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -118,17 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $count = count($names);
                         for ($i = 0; $i < $count; $i++) {
-                            $err = (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE);
+                            $err = (int) ($errs[$i] ?? UPLOAD_ERR_NO_FILE);
                             if ($err !== UPLOAD_ERR_OK) {
                                 continue;
                             }
 
                             $file = [
-                                'name'     => (string)($names[$i] ?? ''),
-                                'type'     => (string)($types[$i] ?? ''),
-                                'tmp_name' => (string)($tmps[$i] ?? ''),
-                                'error'    => (int)($errs[$i] ?? UPLOAD_ERR_NO_FILE),
-                                'size'     => (int)($sizes[$i] ?? 0),
+                                'name' => (string) ($names[$i] ?? ''),
+                                'type' => (string) ($types[$i] ?? ''),
+                                'tmp_name' => (string) ($tmps[$i] ?? ''),
+                                'error' => (int) ($errs[$i] ?? UPLOAD_ERR_NO_FILE),
+                                'size' => (int) ($sizes[$i] ?? 0),
                             ];
 
                             $mime = $file['type'] ?? '';

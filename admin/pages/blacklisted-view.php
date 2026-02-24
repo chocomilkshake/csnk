@@ -3,25 +3,28 @@ $pageTitle = 'Blacklist Details';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+
 // Only admin / super admin can view
-$role         = $currentUser['role'] ?? 'employee';
+$role = $currentUser['role'] ?? 'employee';
 $isSuperAdmin = ($role === 'super_admin');
-$isAdmin      = ($role === 'admin');
+$isAdmin = ($role === 'admin');
 
 if (!($isAdmin || $isSuperAdmin)) {
     setFlashMessage('error', 'You do not have permission to view blacklist details.');
     redirect('dashboard.php');
 }
 
-$blacklistId = (int)($_GET['id'] ?? 0);
+$blacklistId = (int) ($_GET['id'] ?? 0);
 if ($blacklistId <= 0) {
     setFlashMessage('error', 'Invalid blacklist record.');
     redirect('blacklisted.php');
 }
 
 // Ensure CSRF for revert modal
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+if (session_status() === PHP_SESSION_NONE)
+    session_start();
+if (empty($_SESSION['csrf_token']))
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $csrfToken = $_SESSION['csrf_token'];
 
 $conn = $database->getConnection();
@@ -51,7 +54,7 @@ if ($conn instanceof mysqli) {
     }
 
     if ($record && !empty($record['applicant_id'])) {
-        $applicantId = (int)$record['applicant_id'];
+        $applicantId = (int) $record['applicant_id'];
         $sqlHist = "
             SELECT
                 b.*,
@@ -73,10 +76,13 @@ if ($conn instanceof mysqli) {
     }
 }
 
-function jsonToList(?string $json): array {
-    if ($json === null || trim($json) === '') return [];
+function jsonToList(?string $json): array
+{
+    if ($json === null || trim($json) === '')
+        return [];
     $arr = json_decode($json, true);
-    if (!is_array($arr)) return [];
+    if (!is_array($arr))
+        return [];
     return array_values(array_filter(array_map('strval', $arr)));
 }
 
@@ -91,13 +97,13 @@ $appName = getFullName(
     $record['last_name'] ?? '',
     $record['suffix'] ?? ''
 );
-$createdBy  = $record['created_by_name'] ?: ($record['created_by_username'] ?: 'System');
+$createdBy = $record['created_by_name'] ?: ($record['created_by_username'] ?: 'System');
 $revertedBy = $record['reverted_by_name'] ?: ($record['reverted_by_username'] ?: '');
 
-$proofs           = jsonToList($record['proof_paths'] ?? null);
+$proofs = jsonToList($record['proof_paths'] ?? null);
 $complianceProofs = jsonToList($record['compliance_proof_paths'] ?? null);
 
-$isActive = (int)($record['is_active'] ?? 0) === 1;
+$isActive = (int) ($record['is_active'] ?? 0) === 1;
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -109,7 +115,8 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
         <a href="blacklisted.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>Back
         </a>
-        <a href="view-applicant.php?id=<?php echo (int)$record['applicant_id']; ?>" class="btn btn-outline-primary btn-sm">
+        <a href="view-applicant.php?id=<?php echo (int) $record['applicant_id']; ?>"
+            class="btn btn-outline-primary btn-sm">
             <i class="bi bi-person-vcard me-1"></i>Applicant Profile
         </a>
         <?php if ($isActive): ?>
@@ -125,20 +132,21 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
         <div class="d-flex align-items-center gap-3">
             <?php if (!empty($record['picture'])): ?>
                 <img src="<?php echo htmlspecialchars(getFileUrl($record['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                     class="rounded-circle" width="64" height="64" style="object-fit: cover;" alt="Photo">
+                    class="rounded-circle" width="64" height="64" style="object-fit: cover;" alt="Photo">
             <?php else: ?>
                 <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                     style="width: 64px; height: 64px;">
-                    <?php echo strtoupper(substr((string)($record['first_name'] ?? ''), 0, 1)); ?>
+                    style="width: 64px; height: 64px;">
+                    <?php echo strtoupper(substr((string) ($record['first_name'] ?? ''), 0, 1)); ?>
                 </div>
             <?php endif; ?>
 
             <div class="flex-grow-1">
                 <div class="fw-semibold fs-5"><?php echo htmlspecialchars($appName, ENT_QUOTES, 'UTF-8'); ?></div>
                 <div class="text-muted small">
-                    Applicant ID: <?php echo (int)$record['applicant_id']; ?>
+                    Applicant ID: <?php echo (int) $record['applicant_id']; ?>
                     <?php if ($isActive): ?>
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-2">Active Blacklist</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-2">Active
+                            Blacklist</span>
                     <?php else: ?>
                         <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">Reverted</span>
                     <?php endif; ?>
@@ -151,18 +159,22 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="small text-muted mb-1">Reason</div>
-                <div class="fw-semibold text-danger"><?php echo htmlspecialchars((string)($record['reason'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold text-danger">
+                    <?php echo htmlspecialchars((string) ($record['reason'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                </div>
             </div>
             <div class="col-md-6">
                 <div class="small text-muted mb-1">Logged by</div>
                 <div class="fw-semibold"><?php echo htmlspecialchars($createdBy, ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="text-muted small"><?php echo htmlspecialchars(formatDateTime($record['created_at']), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="text-muted small">
+                    <?php echo htmlspecialchars(formatDateTime($record['created_at']), ENT_QUOTES, 'UTF-8'); ?>
+                </div>
             </div>
 
             <?php if (!empty($record['issue'])): ?>
                 <div class="col-12">
                     <div class="small text-muted mb-1">Issue / Details</div>
-                    <div><?php echo nl2br(htmlspecialchars((string)$record['issue'], ENT_QUOTES, 'UTF-8')); ?></div>
+                    <div><?php echo nl2br(htmlspecialchars((string) $record['issue'], ENT_QUOTES, 'UTF-8')); ?></div>
                 </div>
             <?php endif; ?>
         </div>
@@ -176,7 +188,7 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
                     <?php foreach ($proofs as $i => $p): ?>
                         <?php $url = getFileUrl($p); ?>
                         <a class="btn btn-sm btn-outline-secondary" target="_blank"
-                           href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+                            href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
                             <i class="bi bi-paperclip me-1"></i>Proof <?php echo $i + 1; ?>
                         </a>
                     <?php endforeach; ?>
@@ -190,12 +202,18 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="small text-muted mb-1">Reverted by</div>
-                        <div class="fw-semibold"><?php echo htmlspecialchars($revertedBy !== '' ? $revertedBy : '—', ENT_QUOTES, 'UTF-8'); ?></div>
-                        <div class="text-muted small"><?php echo !empty($record['reverted_at']) ? htmlspecialchars(formatDateTime($record['reverted_at']), ENT_QUOTES, 'UTF-8') : '—'; ?></div>
+                        <div class="fw-semibold">
+                            <?php echo htmlspecialchars($revertedBy !== '' ? $revertedBy : '—', ENT_QUOTES, 'UTF-8'); ?>
+                        </div>
+                        <div class="text-muted small">
+                            <?php echo !empty($record['reverted_at']) ? htmlspecialchars(formatDateTime($record['reverted_at']), ENT_QUOTES, 'UTF-8') : '—'; ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="small text-muted mb-1">Compliance note</div>
-                        <div><?php echo !empty($record['compliance_note']) ? nl2br(htmlspecialchars((string)$record['compliance_note'], ENT_QUOTES, 'UTF-8')) : '<span class="text-muted">—</span>'; ?></div>
+                        <div>
+                            <?php echo !empty($record['compliance_note']) ? nl2br(htmlspecialchars((string) $record['compliance_note'], ENT_QUOTES, 'UTF-8')) : '<span class="text-muted">—</span>'; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -208,7 +226,7 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
                             <?php foreach ($complianceProofs as $i => $p): ?>
                                 <?php $url = getFileUrl($p); ?>
                                 <a class="btn btn-sm btn-outline-success" target="_blank"
-                                   href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+                                    href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
                                     <i class="bi bi-file-earmark-check me-1"></i>File <?php echo $i + 1; ?>
                                 </a>
                             <?php endforeach; ?>
@@ -241,34 +259,46 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
                 </thead>
                 <tbody>
                     <?php if (empty($history)): ?>
-                        <tr><td colspan="4" class="text-center text-muted py-4">No history.</td></tr>
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No history.</td>
+                        </tr>
                     <?php else: ?>
                         <?php foreach ($history as $h): ?>
                             <?php
-                                $active = (int)($h['is_active'] ?? 0) === 1;
-                                $who = $h['created_by_name'] ?: ($h['created_by_username'] ?: 'System');
+                            $active = (int) ($h['is_active'] ?? 0) === 1;
+                            $who = $h['created_by_name'] ?: ($h['created_by_username'] ?: 'System');
                             ?>
                             <tr>
                                 <td>
-                                    <div class="fw-semibold"><?php echo htmlspecialchars(formatDateTime($h['created_at']), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="fw-semibold">
+                                        <?php echo htmlspecialchars(formatDateTime($h['created_at']), ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
                                     <?php if (!$active && !empty($h['reverted_at'])): ?>
-                                        <div class="text-muted small">Reverted: <?php echo htmlspecialchars(formatDateTime($h['reverted_at']), ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div class="text-muted small">Reverted:
+                                            <?php echo htmlspecialchars(formatDateTime($h['reverted_at']), ENT_QUOTES, 'UTF-8'); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div class="fw-semibold text-danger"><?php echo htmlspecialchars((string)($h['reason'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="fw-semibold text-danger">
+                                        <?php echo htmlspecialchars((string) ($h['reason'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
                                     <?php if (!empty($h['issue'])): ?>
-                                        <div class="text-muted small text-truncate" style="max-width: 520px;"><?php echo htmlspecialchars((string)$h['issue'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div class="text-muted small text-truncate" style="max-width: 520px;">
+                                            <?php echo htmlspecialchars((string) $h['issue'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($active): ?>
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Active</span>
                                     <?php else: ?>
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Reverted</span>
+                                        <span
+                                            class="badge bg-success-subtle text-success border border-success-subtle">Reverted</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="fw-semibold"><?php echo htmlspecialchars($who, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                <td><span class="fw-semibold"><?php echo htmlspecialchars($who, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -289,21 +319,26 @@ $isActive = (int)($record['is_active'] ?? 0) === 1;
                 </div>
                 <form method="POST" action="revert-blacklist.php" enctype="multipart/form-data">
                     <div class="modal-body">
-                        <input type="hidden" name="blacklist_id" value="<?php echo (int)$record['id']; ?>">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="blacklist_id" value="<?php echo (int) $record['id']; ?>">
+                        <input type="hidden" name="csrf_token"
+                            value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                         <div class="mb-3">
-                            <label class="form-label">Compliance Note <span class="text-muted small">(Optional)</span></label>
+                            <label class="form-label">Compliance Note <span
+                                    class="text-muted small">(Optional)</span></label>
                             <textarea name="compliance_note" class="form-control" rows="4"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Compliance Proof <span class="text-muted small">(Optional)</span></label>
-                            <input type="file" name="compliance_proofs[]" class="form-control" accept="image/*,.pdf,.doc,.docx" multiple>
+                            <label class="form-label">Compliance Proof <span
+                                    class="text-muted small">(Optional)</span></label>
+                            <input type="file" name="compliance_proofs[]" class="form-control"
+                                accept="image/*,.pdf,.doc,.docx" multiple>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Confirm Revert</button>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Confirm
+                            Revert</button>
                     </div>
                 </form>
             </div>

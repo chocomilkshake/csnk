@@ -4,71 +4,129 @@ require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
 
 $database = new Database();
-$auth     = new Auth($database);
+/** @var mysqli $mysqli */
+$mysqli = $database->getConnection(); // <-- ensure Database::getConnection() returns mysqli
+$auth = new Auth($database);
 
 // Ensure session + CSRF token
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
+  session_start();
 }
 if (empty($_SESSION['csrf_login'])) {
-    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+  $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
 }
 
 // If already logged in
 if ($auth->isLoggedIn()) {
-    header('Location: dashboard.php');
-    exit();
+  header('Location: dashboard.php');
+  exit();
 }
 
 $error = '';
 
 // Throttle (5 mins window / 5 attempts)
 if (!isset($_SESSION['login_attempts'])) {
-    $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
+  $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
 }
 $windowSeconds = 300;
-$maxAttempts   = 5;
+$maxAttempts = 5;
 
 if (time() - $_SESSION['login_attempts']['first_attempt'] > $windowSeconds) {
-    $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
+  $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
 }
 if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
-    $error = 'Too many failed attempts. Please wait a few minutes and try again.';
+  $error = 'Too many failed attempts. Please wait a few minutes and try again.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $csrf = $_POST['csrf_login'] ?? '';
-    $tokenValid = hash_equals($_SESSION['csrf_login'] ?? '', $csrf);
+  $csrf = $_POST['csrf_login'] ?? '';
+  $tokenValid = hash_equals($_SESSION['csrf_login'] ?? '', $csrf);
 
-    if (!$tokenValid) {
-        $error = 'Security verification failed.';
-        $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-    } else {
-        $username = trim((string)($_POST['username'] ?? ''));
-        if (strlen($username) > 64) { $username = substr($username, 0, 64); }
-        $password = (string)($_POST['password'] ?? '');
-
-        if ($username === '' || $password === '') {
-            $error = 'Please fill in all fields.';
-        } else {
-            if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
-                $error = 'Too many failed attempts. Please wait a few minutes and try again.';
-            } else if ($auth->login($username, $password)) {
-                $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-                $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-                header('Location: dashboard.php');
-                exit();
-            } else {
-                $error = 'Invalid username or password.';
-                $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-                $_SESSION['login_attempts']['count']++;
-            }
-        }
+  if (!$tokenValid) {
+    $error = 'Security verification failed.';
+    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+  } else {
+    $username = trim((string) ($_POST['username'] ?? ''));
+    if (strlen($username) > 64) {
+      $username = substr($username, 0, 64);
     }
+    $password = (string) ($_POST['password'] ?? '');
+
+    if ($username === '' || $password === '') {
+      $error = 'Please fill in all fields.';
+    } else {
+      if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
+        $error = 'Too many failed attempts. Please wait a few minutes and try again.';
+      } else {
+        /**
+         * IMPORTANT CHANGE:
+         * Make sure Auth::login($username, $password) returns the full user row on success,
+         * including: id, role, business_unit_id (int), and (optionally) username/email.
+         * If your current method returns true/false only, update Auth::login to return user array on success.
+         */
+        $user = $auth->login($username, $password);
+
+        if (is_array($user)) {
+          // -------------------------------
+          // NEW: Establish BU context
+          // -------------------------------
+          $_SESSION['user_id'] = (int) $user['id'];
+          $_SESSION['role'] = $user['role']; // 'super_admin' | 'admin' | 'employee'
+          $_SESSION['username'] = $user['username'] ?? $username;
+          $_SESSION['current_bu_id'] = (int) $user['business_unit_id']; // << REQUIRED for BU scoping
+
+          // (Optional) Load allowed BU IDs for super_admin switcher
+          if ($_SESSION['role'] === 'super_admin') {
+            $_SESSION['allowed_bu_ids'] = [];
+            $sql = "SELECT business_unit_id FROM admin_user_business_units WHERE admin_user_id = ?";
+            if ($stmt = mysqli_prepare($mysqli, $sql)) {
+              mysqli_stmt_bind_param($stmt, 'i', $_SESSION['user_id']);
+              mysqli_stmt_execute($stmt);
+              $res = mysqli_stmt_get_result($stmt);
+              while ($r = mysqli_fetch_assoc($res)) {
+                $_SESSION['allowed_bu_ids'][] = (int) $r['business_unit_id'];
+              }
+              mysqli_stmt_close($stmt);
+            }
+            if (empty($_SESSION['allowed_bu_ids']) && $_SESSION['current_bu_id']) {
+              $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
+            }
+          } else {
+            // Non-super admins have only their current BU
+            $_SESSION['allowed_bu_ids'] = [(int) $_SESSION['current_bu_id']];
+          }
+
+          // (Optional) Session log: record login
+          // Wrap in try/catch style and ignore on failure
+          $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+          $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+          $sql = "INSERT INTO session_logs (admin_id, ip_address, user_agent, login_time)
+                            VALUES (?, ?, ?, NOW())";
+          if ($stmt = mysqli_prepare($mysqli, $sql)) {
+            mysqli_stmt_bind_param($stmt, 'iss', $_SESSION['user_id'], $ip, $ua);
+            @mysqli_stmt_execute($stmt);
+            @mysqli_stmt_close($stmt);
+          }
+
+          // Reset CSRF & throttling and redirect
+          $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+          $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
+          header('Location: dashboard.php');
+          exit();
+        } else {
+          // Failed login
+          $error = 'Invalid username or password.';
+          $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+          $_SESSION['login_attempts']['count']++;
+        }
+      }
+    }
+  }
 }
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <meta name="theme-color" content="#0d6efd">
 </head>
+
 <body class="bg-body-tertiary">
 
   <div class="container py-4 py-md-5">
@@ -131,21 +190,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Login form -->
             <form method="POST" action="" autocomplete="on" novalidate>
               <input type="hidden" name="csrf_login"
-                     value="<?php echo htmlspecialchars($_SESSION['csrf_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                value="<?php echo htmlspecialchars($_SESSION['csrf_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 
               <div class="mb-3">
                 <label for="username" class="form-label fw-semibold">Username</label>
                 <div class="input-group input-group-lg">
                   <span class="input-group-text"><i class="bi bi-person"></i></span>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    class="form-control"
-                    placeholder="Enter your username"
-                    required
-                    autofocus
-                    autocomplete="username">
+                  <input type="text" id="username" name="username" class="form-control"
+                    placeholder="Enter your username" required autofocus autocomplete="username">
                 </div>
               </div>
 
@@ -153,15 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="password" class="form-label fw-semibold">Password</label>
                 <div class="input-group input-group-lg">
                   <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    class="form-control"
-                    placeholder="Enter your password"
-                    required
-                    autocomplete="current-password">
-                  <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show or hide password">
+                  <input type="password" id="password" name="password" class="form-control"
+                    placeholder="Enter your password" required autocomplete="current-password">
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                    aria-label="Show or hide password">
                     <i class="bi bi-eye" id="eyeOpen"></i>
                     <i class="bi bi-eye-slash d-none" id="eyeClosed"></i>
                   </button>
@@ -228,4 +275,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
   </script>
 </body>
+
 </html>
