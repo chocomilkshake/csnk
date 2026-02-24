@@ -3,10 +3,10 @@
 $pageTitle = 'Reports - All Applicants';
 
 /* -----------------------------------------------------------
-   INLINE JSON ENDPOINT (NO LAYOUT): full timeline for applicant
+   INLINE JSON ENDPOINT (NO LAYOUT): Full history for applicant
    GET  reports.php?action=history&id=123
-   Returns: applicant_reports + applicant_status_reports
-            + (optionally) client_bookings + blacklisted_applicants
+   Combines: applicant_reports + applicant_status_reports + applicant_replacements
+   Sorted: past -> recent (ASC)
 ------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=UTF-8');
@@ -20,17 +20,23 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
     $id = (int)$_GET['id'];
     $data = [];
 
-    // Extended unified timeline attempt: notes + status + bookings + blacklist (fallback-safe)
-    $sqlExtended = "
+    // Unified timeline (3 sources) in ascending order
+    $sql = "
         (
             SELECT
-                'note'                        AS item_type,
-                ar.note_text                  AS body,
-                NULL                          AS from_status,
-                NULL                          AS to_status,
-                ar.created_at                 AS created_at,
-                ar.id                         AS origin_id,
-                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+                'note' AS item_type,
+                ar.note_text AS body,
+                NULL AS from_status,
+                NULL AS to_status,
+                ar.created_at AS created_at,
+                ar.id AS origin_id,
+                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name,
+                NULL AS role,
+                NULL AS orig_id,
+                NULL AS repl_id,
+                NULL AS reason,
+                NULL AS replacement_status,
+                NULL AS assigned_at
             FROM applicant_reports ar
             LEFT JOIN admin_users au ON au.id = ar.admin_id
             WHERE ar.applicant_id = ?
@@ -38,13 +44,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
         UNION ALL
         (
             SELECT
-                'status'                      AS item_type,
-                asr.report_text               AS body,
-                asr.from_status               AS from_status,
-                asr.to_status                 AS to_status,
-                asr.created_at                AS created_at,
-                asr.id                        AS origin_id,
-                COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
+                'status' AS item_type,
+                asr.report_text AS body,
+                asr.from_status AS from_status,
+                asr.to_status AS to_status,
+                asr.created_at AS created_at,
+                asr.id AS origin_id,
+                COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name,
+                NULL AS role,
+                NULL AS orig_id,
+                NULL AS repl_id,
+                NULL AS reason,
+                NULL AS replacement_status,
+                NULL AS assigned_at
             FROM applicant_status_reports asr
             LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
             WHERE asr.applicant_id = ?
@@ -52,83 +64,34 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
         UNION ALL
         (
             SELECT
-                'booking'                     AS item_type,
-                CONCAT(
-                    'Client booking: ',
-                    COALESCE(cb.appointment_type, 'Appointment'),
-                    CASE
-                      WHEN COALESCE(cb.client_first_name,'') <> '' OR COALESCE(cb.client_last_name,'') <> '' THEN
-                        CONCAT(' — Client: ',
-                               TRIM(CONCAT(COALESCE(cb.client_first_name,''),' ',COALESCE(cb.client_last_name,''))))
-                      ELSE ''
-                    END
-                )                              AS body,
-                NULL                            AS from_status,
-                NULL                            AS to_status,
-                cb.created_at                   AS created_at,
-                cb.id                           AS origin_id,
-                COALESCE(NULLIF(au3.full_name,''), NULLIF(au3.username,''), NULLIF(au3.email,'')) AS admin_name
-            FROM client_bookings cb
-            LEFT JOIN admin_users au3 ON au3.id = cb.admin_id
-            WHERE cb.applicant_id = ?
-        )
-        UNION ALL
-        (
-            SELECT
-                'blacklist'                   AS item_type,
+                'replacement' AS item_type,
+                ar2.report_text AS body,
+                NULL AS from_status,
+                NULL AS to_status,
+                ar2.created_at AS created_at,
+                ar2.id AS origin_id,
+                COALESCE(NULLIF(au3.full_name,''), NULLIF(au3.username,''), NULLIF(au3.email,'')) AS admin_name,
                 CASE
-                  WHEN b.is_active = 1
-                    THEN CONCAT('Blacklisted', CASE WHEN NULLIF(b.reason, '') IS NOT NULL THEN CONCAT(' — ', b.reason) ELSE '' END)
-                  ELSE 'Blacklist removed'
-                END                            AS body,
-                NULL                            AS from_status,
-                NULL                            AS to_status,
-                b.created_at                    AS created_at,
-                b.id                            AS origin_id,
-                COALESCE(NULLIF(au4.full_name,''), NULLIF(au4.username,''), NULLIF(au4.email,'')) AS admin_name
-            FROM blacklisted_applicants b
-            LEFT JOIN admin_users au4 ON au4.id = b.admin_id
-            WHERE b.applicant_id = ?
+                    WHEN ar2.original_applicant_id = ? THEN 'replacement_out'
+                    WHEN ar2.replacement_applicant_id = ? THEN 'replacement_in'
+                    ELSE 'replacement'
+                END AS role,
+                ar2.original_applicant_id AS orig_id,
+                ar2.replacement_applicant_id AS repl_id,
+                ar2.reason AS reason,
+                ar2.status AS replacement_status,
+                ar2.assigned_at AS assigned_at
+            FROM applicant_replacements ar2
+            LEFT JOIN admin_users au3 ON au3.id = ar2.created_by
+            WHERE ar2.original_applicant_id = ? OR ar2.replacement_applicant_id = ?
         )
-        ORDER BY created_at DESC, origin_id DESC
-    ";
-
-    // Original (safe) SQL with two sources only (fallback)
-    $sqlBasic = "
-        (
-            SELECT
-                'note'                        AS item_type,
-                ar.note_text                  AS body,
-                NULL                          AS from_status,
-                NULL                          AS to_status,
-                ar.created_at                 AS created_at,
-                ar.id                         AS origin_id,
-                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
-            FROM applicant_reports ar
-            LEFT JOIN admin_users au ON au.id = ar.admin_id
-            WHERE ar.applicant_id = ?
-        )
-        UNION ALL
-        (
-            SELECT
-                'status'                      AS item_type,
-                asr.report_text               AS body,
-                asr.from_status               AS from_status,
-                asr.to_status                 AS to_status,
-                asr.created_at                AS created_at,
-                asr.id                        AS origin_id,
-                COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
-            FROM applicant_status_reports asr
-            LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
-            WHERE asr.applicant_id = ?
-        )
-        ORDER BY created_at DESC, origin_id DESC
+        ORDER BY created_at ASC, origin_id ASC
     ";
 
     try {
-        // Try extended
-        if ($stmt = $conn->prepare($sqlExtended)) {
-            $stmt->bind_param("iiii", $id, $id, $id, $id);
+        if ($stmt = $conn->prepare($sql)) {
+            // placeholders: notes(1), status(1), role-check(2), filter(2) => total 6
+            $stmt->bind_param("iiiiii", $id, $id, $id, $id, $id, $id);
             $stmt->execute();
             $res = $stmt->get_result();
             while ($row = $res->fetch_assoc()) {
@@ -139,30 +102,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
                     'to_status'   => (string)($row['to_status'] ?? ''),
                     'created_at'  => (string)($row['created_at'] ?? ''),
                     'admin_name'  => (string)($row['admin_name'] ?? '—'),
+                    'role'        => (string)($row['role'] ?? ''),
+                    'orig_id'     => isset($row['orig_id']) ? (int)$row['orig_id'] : null,
+                    'repl_id'     => isset($row['repl_id']) ? (int)$row['repl_id'] : null,
+                    'reason'      => (string)($row['reason'] ?? ''),
+                    'replacement_status' => (string)($row['replacement_status'] ?? ''),
+                    'assigned_at' => (string)($row['assigned_at'] ?? ''),
                 ];
             }
             $stmt->close();
-        } else {
-            // Fallback basic
-            if ($stmt2 = $conn->prepare($sqlBasic)) {
-                $stmt2->bind_param("ii", $id, $id);
-                $stmt2->execute();
-                $res2 = $stmt2->get_result();
-                while ($row = $res2->fetch_assoc()) {
-                    $data[] = [
-                        'item_type'   => (string)($row['item_type'] ?? 'note'),
-                        'body'        => (string)($row['body'] ?? ''),
-                        'from_status' => (string)($row['from_status'] ?? ''),
-                        'to_status'   => (string)($row['to_status'] ?? ''),
-                        'created_at'  => (string)($row['created_at'] ?? ''),
-                        'admin_name'  => (string)($row['admin_name'] ?? '—'),
-                    ];
-                }
-                $stmt2->close();
-            }
         }
     } catch (Throwable $e) {
-        // Silent failure -> return what we have (maybe empty)
+        // swallow; return what we have
     }
 
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -264,7 +215,7 @@ if (
    - Show each applicant ONCE only.
    - Require at least one note (applicant_reports exists).
    - Latest NOTE per applicant by MAX(id) to avoid timestamp ties.
-   - Latest STATUS change per applicant by MAX(id) for arrow display.
+   - Latest STATUS change per applicant by MAX(id) (used for history only).
 -------------------------------------------------------------------- */
 $conn = $database->getConnection(); // mysqli
 
@@ -296,7 +247,7 @@ SELECT
   lr.created_at        AS latest_note_at,
   lr.id                AS latest_note_id,
   COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS latest_note_admin,
-  /* Latest STATUS row for arrow display */
+  /* Latest STATUS row kept for context (not shown inline) */
   lsr.from_status      AS last_from_status,
   lsr.to_status        AS last_to_status,
   lsr.created_at       AS last_status_at,
@@ -393,13 +344,13 @@ function statusBadgeProps(string $status): array {
   .table-card .table-responsive { overflow: visible !important; }
 
   .table-modern {
-    table-layout: fixed;       /* prevent column bloat */
-    border-collapse: separate; /* keep subtle row separators */
+    table-layout: fixed;
+    border-collapse: separate;
     border-spacing: 0;
   }
   .table-modern thead th {
     font-weight: 600;
-    color: #6b7280; /* muted */
+    color: #6b7280;
     white-space: nowrap;
   }
   .table-modern tbody tr { border-bottom: 1px solid #eef2f7; }
@@ -410,9 +361,9 @@ function statusBadgeProps(string $status): array {
   /* Column widths via colgroup */
   col.col-photo    { width: 64px; }
   col.col-name     { width: 280px; }
-  col.col-status   { width: 150px; }   /* Status column kept compact */
-  col.col-latest   { width: auto; }    /* Flexible */
-  col.col-count    { width: 80px;  text-align: center; }
+  col.col-status   { width: 140px; }
+  col.col-latest   { width: auto; }
+  col.col-count    { width: 80px;  }
   col.col-by       { width: 190px; }
   col.col-at       { width: 170px; }
   col.col-actions  { width: 260px; }
@@ -428,25 +379,13 @@ function statusBadgeProps(string $status): array {
   /* Name */
   .name-cell { font-weight: 600; line-height: 1.2; }
 
-  /* Status badge row: badge + info icon, single line, no wrap */
-  .status-wrap {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    white-space: nowrap;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .status-badge { font-weight: 600; border-radius: 999px; padding: .25rem .6rem; font-size: .8rem; }
-  .status-info {
-    color: #6b7280; cursor: help; display: inline-flex; align-items: center;
-  }
+  /* Status badge only (no icon, no extra text) */
+  .status-badge { font-weight: 600; border-radius: 999px; padding: .25rem .6rem; font-size: .8rem; white-space: nowrap; }
 
   /* Latest report text clamp */
   .note-clamp {
     display: -webkit-box;
-    -webkit-line-clamp: 2;           /* tighter (2 lines) to fit neatly */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     color: #4b5563;
@@ -463,12 +402,48 @@ function statusBadgeProps(string $status): array {
   .toolbar .form-select, .toolbar .form-control { border-radius: .7rem; }
   .toolbar .btn { border-radius: .7rem; }
 
-  /* History modal timeline */
-  .timeline .list-group-item { border-left: 3px solid #e5e7eb; }
-  .timeline .item-note      { border-left-color: #0d6efd; }   /* blue */
-  .timeline .item-status    { border-left-color: #20c997; }   /* teal/green */
-  .timeline .item-booking   { border-left-color: #6366f1; }   /* indigo */
-  .timeline .item-blacklist { border-left-color: #ef4444; }   /* red */
+  /* ====== History modal (vertical timeline) ====== */
+  .timeline {
+    position: relative;
+    margin-left: .5rem;
+    padding-left: 1.25rem;
+  }
+  .timeline:before {
+    content: "";
+    position: absolute;
+    left: .25rem;
+    top: .25rem;
+    bottom: .25rem;
+    width: 2px;
+    background: #e5e7eb;
+  }
+  .tl-item {
+    position: relative;
+    padding: .5rem 0 .5rem 1rem;
+  }
+  .tl-dot {
+    position: absolute;
+    left: -2px;
+    width: .75rem; height: .75rem;
+    border-radius: 999px;
+    background: #94a3b8;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    top: .9rem;
+  }
+  .tl-item.note   .tl-dot { background: #0d6efd; }
+  .tl-item.status .tl-dot { background: #20c997; }
+  .tl-item.repl   .tl-dot { background: #6366f1; }
+
+  .tl-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: .25rem;
+  }
+  .tl-title { font-weight: 600; }
+  .tl-meta  { color: #6b7280; font-size: .85rem; white-space: nowrap; margin-left: .5rem; }
+  .tl-body  { color: #4b5563; white-space: pre-wrap; }
+
+  .text-indigo { color: #6366f1; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -593,15 +568,7 @@ function statusBadgeProps(string $status): array {
                 $reportCount = (int)($r['report_count'] ?? 0);
                 $statusVal = (string)($r['status'] ?? '');
 
-                // Status badge + (moved) last change as tooltip (not inline text)
-                $props = statusBadgeProps($statusVal);
-                $last_from = (string)($r['last_from_status'] ?? '');
-                $last_to   = (string)($r['last_to_status']   ?? '');
-                $hasTransition = ($last_from !== '' && $last_to !== '' && strcasecmp($last_from, $last_to) !== 0);
-                $transitionLabel = '';
-                if ($hasTransition) {
-                    $transitionLabel = ucwords(str_replace('_',' ', $last_from)) . ' → ' . ucwords(str_replace('_',' ', $last_to));
-                }
+                $props = statusBadgeProps($statusVal); // badge only (no icon)
               ?>
               <tr>
                 <td>
@@ -620,16 +587,8 @@ function statusBadgeProps(string $status): array {
                 </td>
 
                 <td>
-                  <span class="status-wrap">
-                    <span class="badge status-badge <?php echo $props['badge']; ?>">
-                      <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
-                    </span>
-                    <?php if ($hasTransition): ?>
-                      <span class="status-info" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="<?php echo htmlspecialchars($transitionLabel, ENT_QUOTES, 'UTF-8'); ?>">
-                        <i class="bi bi-info-circle"></i>
-                      </span>
-                    <?php endif; ?>
+                  <span class="badge status-badge <?php echo $props['badge']; ?>">
+                    <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
                   </span>
                 </td>
 
@@ -736,13 +695,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var reportModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(reportModalEl) : null;
   var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
 
-  // Enable Bootstrap tooltips (for the status transition icon)
-  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-      new bootstrap.Tooltip(el);
-    });
-  }
-
   // Write Report button
   document.querySelectorAll('.write-report').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -756,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Full History (unified timeline)
+  // Full History (unified timeline: notes + status + replacements)
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
@@ -773,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
             container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
             return;
           }
-          var html = '<div class="list-group">';
+          var html = '';
           items.forEach(function (it) {
             var type = (it.item_type || 'note').toLowerCase();
             var admin = it.admin_name || '—';
@@ -783,47 +735,59 @@ document.addEventListener('DOMContentLoaded', function () {
             if (type === 'status') {
               var froms = (it.from_status || '').replaceAll('_',' ');
               var tos   = (it.to_status   || '').replaceAll('_',' ');
-              html += '<div class="list-group-item item-status py-3">';
-              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
-              html +=     '<div class="fw-semibold text-success"><i class="bi bi-arrow-left-right me-1"></i>'+ escapeHtml(cap(froms)) +' → '+ escapeHtml(cap(tos)) +'</div>';
-              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html += '<div class="tl-item status">';
+              html +=   '<span class="tl-dot"></span>';
+              html +=   '<div class="tl-head">';
+              html +=     '<div class="tl-title text-success"><i class="bi bi-arrow-left-right me-1"></i>'+ escapeHtml(cap(froms)) +' → '+ escapeHtml(cap(tos)) +'</div>';
+              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
               html +=   '</div>';
               if (body) {
-                html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
+                html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
               }
               html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
               html += '</div>';
-            } else if (type === 'booking') {
-              html += '<div class="list-group-item item-booking py-3">';
-              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
-              html +=     '<div class="fw-semibold text-indigo"><i class="bi bi-calendar2-check me-1"></i>Booking</div>';
-              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+            } else if (type === 'replacement') {
+              var role = (it.role || '').toLowerCase();
+              var orig = it.orig_id || '';
+              var repl = it.repl_id || '';
+              var reason = it.reason || '';
+              var rstat  = it.replacement_status || '';
+              var assigned = it.assigned_at || '';
+              var line = '';
+              if (role === 'replacement_out') {
+                line = 'Replacement created — Replaced by Applicant ID ' + escapeHtml(String(repl || '—')) + (reason ? (' • Reason: ' + escapeHtml(reason)) : '');
+              } else if (role === 'replacement_in') {
+                line = 'Replacement assignment — Assigned as replacement for Applicant ID ' + escapeHtml(String(orig || '—')) + (reason ? (' • Reason: ' + escapeHtml(reason)) : '');
+              } else {
+                line = 'Replacement entry';
+              }
+              if (rstat) { line += ' • Status: ' + escapeHtml(rstat); }
+              if (assigned) { line += ' • Assigned at: ' + escapeHtml(assigned); }
+
+              html += '<div class="tl-item repl">';
+              html +=   '<span class="tl-dot"></span>';
+              html +=   '<div class="tl-head">';
+              html +=     '<div class="tl-title text-indigo"><i class="bi bi-arrow-repeat me-1"></i>' + line + '</div>';
+              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
               html +=   '</div>';
-              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
-              html +=   '<div class="small text-muted mt-1">'+ (admin ? ('By '+ escapeHtml(admin)) : 'System') +'</div>';
-              html += '</div>';
-            } else if (type === 'blacklist') {
-              html += '<div class="list-group-item item-blacklist py-3">';
-              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
-              html +=     '<div class="fw-semibold text-danger"><i class="bi bi-slash-circle me-1"></i>Blacklist</div>';
-              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
-              html +=   '</div>';
-              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
+              if (body) {
+                html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
+              }
               html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
               html += '</div>';
             } else {
               // note
-              html += '<div class="list-group-item item-note py-3">';
-              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
-              html +=     '<div class="fw-semibold"><i class="bi bi-journal-text me-1"></i>Report</div>';
-              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html += '<div class="tl-item note">';
+              html +=   '<span class="tl-dot"></span>';
+              html +=   '<div class="tl-head">';
+              html +=     '<div class="tl-title"><i class="bi bi-journal-text me-1"></i>Report</div>';
+              html +=     '<div class="tl-meta">'+ escapeHtml(when) +'</div>';
               html +=   '</div>';
-              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
+              html +=   '<div class="tl-body">'+ escapeHtml(body) +'</div>';
               html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
               html += '</div>';
             }
           });
-          html += '</div>';
           container.innerHTML = html;
         })
         .catch(function () {
