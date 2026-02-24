@@ -14,9 +14,17 @@ if (empty($_SESSION['csrf_login'])) {
     $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
 }
 
-// If already logged in
+// If already logged in - redirect to appropriate dashboard based on agency
 if ($auth->isLoggedIn()) {
-    header('Location: dashboard.php');
+    $currentUser = $auth->getCurrentUser();
+    $userAgency = isset($currentUser['agency']) ? strtolower($currentUser['agency']) : null;
+    
+    // Redirect to appropriate dashboard based on agency
+    if ($userAgency === 'smc') {
+        header('Location: dashboard-smc.php');
+    } else {
+        header('Location: dashboard.php');
+    }
     exit();
 }
 
@@ -56,7 +64,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else if ($auth->login($username, $password)) {
                 $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
                 $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-                header('Location: dashboard.php');
+                
+                // Check user's agency and redirect accordingly
+                $currentUser = $auth->getCurrentUser();
+                $userAgency = isset($currentUser['agency']) ? strtolower($currentUser['agency']) : null;
+                
+                // Redirect to appropriate dashboard based on agency
+                if ($userAgency === 'smc') {
+                    header('Location: dashboard-smc.php');
+                } else {
+                    header('Location: dashboard.php');
+                }
                 exit();
             } else {
                 $error = 'Invalid username or password.';
