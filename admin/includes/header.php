@@ -95,10 +95,10 @@ if (!function_exists('h')) {
     function h(?string $v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 }
 
-/* ---------- Reports note count (for badge) ---------- */
+/* ---------- Reports note count (for badge) - count unique applicants with reports ---------- */
 $reportNotesCount = 0;
 if ($canViewReports && $conn instanceof mysqli) {
-    $res = $conn->query("SELECT COUNT(*) FROM applicant_reports");
+    $res = $conn->query("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports");
     if ($res) {
         $row = $res->fetch_row();
         $reportNotesCount = (int)($row[0] ?? 0);
