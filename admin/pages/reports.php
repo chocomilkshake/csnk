@@ -67,7 +67,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
                 NULL                            AS to_status,
                 cb.created_at                   AS created_at,
                 cb.id                           AS origin_id,
-                /* admin may be null if your table doesn't track it */
                 COALESCE(NULLIF(au3.full_name,''), NULLIF(au3.username,''), NULLIF(au3.email,'')) AS admin_name
             FROM client_bookings cb
             LEFT JOIN admin_users au3 ON au3.id = cb.admin_id
@@ -389,20 +388,78 @@ function statusBadgeProps(string $status): array {
 }
 ?>
 <style>
+  /* ====== Modern Table Layout ====== */
   .table-card, .table-card .card-body { overflow: visible !important; }
   .table-card .table-responsive { overflow: visible !important; }
+
+  .table-modern {
+    table-layout: fixed;       /* prevent column bloat */
+    border-collapse: separate; /* keep subtle row separators */
+    border-spacing: 0;
+  }
+  .table-modern thead th {
+    font-weight: 600;
+    color: #6b7280; /* muted */
+    white-space: nowrap;
+  }
+  .table-modern tbody tr { border-bottom: 1px solid #eef2f7; }
+  .table-modern tbody tr:hover { background: #fafbfc; }
+
   td.actions-cell { white-space: nowrap; }
-  .actions-inline { display: inline-flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
-  .actions-inline .btn { flex: 0 0 auto; }
-  .report-count-badge { font-size: .75rem; }
+
+  /* Column widths via colgroup */
+  col.col-photo    { width: 64px; }
+  col.col-name     { width: 280px; }
+  col.col-status   { width: 150px; }   /* Status column kept compact */
+  col.col-latest   { width: auto; }    /* Flexible */
+  col.col-count    { width: 80px;  text-align: center; }
+  col.col-by       { width: 190px; }
+  col.col-at       { width: 170px; }
+  col.col-actions  { width: 260px; }
+
+  /* Photo */
+  .avatar-48 { width: 48px; height: 48px; object-fit: cover; border-radius: .6rem; }
+  .avatar-fallback {
+    width: 48px; height: 48px; border-radius: .6rem;
+    background: #e5e7eb; color: #374151; font-weight: 700;
+    display: grid; place-items: center;
+  }
+
+  /* Name */
+  .name-cell { font-weight: 600; line-height: 1.2; }
+
+  /* Status badge row: badge + info icon, single line, no wrap */
+  .status-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status-badge { font-weight: 600; border-radius: 999px; padding: .25rem .6rem; font-size: .8rem; }
+  .status-info {
+    color: #6b7280; cursor: help; display: inline-flex; align-items: center;
+  }
+
+  /* Latest report text clamp */
   .note-clamp {
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;           /* tighter (2 lines) to fit neatly */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    max-width: 560px;
+    color: #4b5563;
+    max-width: 100%;
   }
-  .status-badge { font-weight: 600; }
+
+  /* Count */
+  .report-count-badge {
+    font-size: .75rem; border-radius: 999px; padding: .25rem .5rem;
+    background: #eef6ff; color: #1d4ed8; border: 1px solid #dbeafe;
+  }
+
+  /* Toolbar */
   .toolbar .form-select, .toolbar .form-control { border-radius: .7rem; }
   .toolbar .btn { border-radius: .7rem; }
 
@@ -488,17 +545,28 @@ function statusBadgeProps(string $status): array {
 <div class="card table-card">
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-borderless align-middle">
+      <table class="table table-borderless align-middle table-modern">
+        <colgroup>
+          <col class="col-photo">
+          <col class="col-name">
+          <col class="col-status">
+          <col class="col-latest">
+          <col class="col-count">
+          <col class="col-by">
+          <col class="col-at">
+          <col class="col-actions">
+        </colgroup>
+
         <thead class="border-bottom">
           <tr class="text-muted small">
-            <th style="width:56px">Photo</th>
+            <th>Photo</th>
             <th>Applicant</th>
             <th>Status</th>
             <th>Latest Report</th>
-            <th>Count</th>
+            <th class="text-center">Count</th>
             <th>Reported By</th>
             <th>Reported At</th>
-            <th style="width: 320px;">Actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -525,62 +593,72 @@ function statusBadgeProps(string $status): array {
                 $reportCount = (int)($r['report_count'] ?? 0);
                 $statusVal = (string)($r['status'] ?? '');
 
-                // Status badge + last change arrow if present
+                // Status badge + (moved) last change as tooltip (not inline text)
                 $props = statusBadgeProps($statusVal);
-                $arrow = '';
                 $last_from = (string)($r['last_from_status'] ?? '');
                 $last_to   = (string)($r['last_to_status']   ?? '');
-                if ($last_from !== '' && $last_to !== '' && strcasecmp($last_from, $last_to) !== 0) {
-                    $arrow = '<div class="small text-muted mt-1">'.
-                        htmlspecialchars(ucwords(str_replace('_',' ', $last_from)), ENT_QUOTES, 'UTF-8').' &rarr; '.
-                        htmlspecialchars(ucwords(str_replace('_',' ', $last_to)), ENT_QUOTES, 'UTF-8').
-                        '</div>';
+                $hasTransition = ($last_from !== '' && $last_to !== '' && strcasecmp($last_from, $last_to) !== 0);
+                $transitionLabel = '';
+                if ($hasTransition) {
+                    $transitionLabel = ucwords(str_replace('_',' ', $last_from)) . ' → ' . ucwords(str_replace('_',' ', $last_to));
                 }
               ?>
-              <tr class="border-bottom">
+              <tr>
                 <td>
                   <?php if (!empty($r['picture'])): ?>
                     <img src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                         alt="Photo" class="rounded" width="48" height="48" style="object-fit: cover;">
+                         alt="Photo" class="avatar-48">
                   <?php else: ?>
-                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                         style="width:48px;height:48px;">
+                    <div class="avatar-fallback">
                       <?php echo strtoupper(substr((string)$r['first_name'], 0, 1)); ?>
                     </div>
                   <?php endif; ?>
                 </td>
-                <td class="fw-semibold">
+
+                <td class="name-cell">
                   <?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>
                 </td>
+
                 <td>
-                  <span class="badge status-badge <?php echo $props['badge']; ?>">
-                    <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
+                  <span class="status-wrap">
+                    <span class="badge status-badge <?php echo $props['badge']; ?>">
+                      <?php echo htmlspecialchars($props['label'], ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                    <?php if ($hasTransition): ?>
+                      <span class="status-info" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="<?php echo htmlspecialchars($transitionLabel, ENT_QUOTES, 'UTF-8'); ?>">
+                        <i class="bi bi-info-circle"></i>
+                      </span>
+                    <?php endif; ?>
                   </span>
-                  <?php echo $arrow; ?>
                 </td>
+
                 <td>
                   <?php if ($latestNote !== ''): ?>
-                    <div class="note-clamp text-secondary">
+                    <div class="note-clamp">
                       <?php echo nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')); ?>
                     </div>
                   <?php else: ?>
                     <span class="text-muted">—</span>
                   <?php endif; ?>
                 </td>
-                <td>
-                  <span class="badge bg-primary-subtle text-primary border report-count-badge"
-                        title="Total reports for this applicant">
-                        <?php echo $reportCount; ?>
+
+                <td class="text-center">
+                  <span class="report-count-badge" title="Total reports for this applicant">
+                    <?php echo $reportCount; ?>
                   </span>
                 </td>
+
                 <td class="text-secondary">
                   <?php echo htmlspecialchars($latestAdmin ?: '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
+
                 <td class="text-secondary">
                   <?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
+
                 <td class="actions-cell">
-                  <div class="actions-inline">
+                  <div class="d-inline-flex gap-2 align-items-center">
                     <!-- Write report -->
                     <button class="btn btn-sm btn-primary write-report"
                             data-id="<?php echo $id; ?>"
@@ -657,6 +735,13 @@ document.addEventListener('DOMContentLoaded', function () {
   var historyModalEl = document.getElementById('historyModal');
   var reportModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(reportModalEl) : null;
   var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
+
+  // Enable Bootstrap tooltips (for the status transition icon)
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+      new bootstrap.Tooltip(el);
+    });
+  }
 
   // Write Report button
   document.querySelectorAll('.write-report').forEach(function (btn) {
