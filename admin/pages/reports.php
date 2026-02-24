@@ -5,7 +5,8 @@ $pageTitle = 'Reports - All Applicants';
 /* -----------------------------------------------------------
    INLINE JSON ENDPOINT (NO LAYOUT): full timeline for applicant
    GET  reports.php?action=history&id=123
-   Returns both: applicant_reports + applicant_status_reports
+   Returns: applicant_reports + applicant_status_reports
+            + (optionally) client_bookings + blacklisted_applicants
 ------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=UTF-8');
@@ -18,40 +19,117 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
 
     $id = (int)$_GET['id'];
     $data = [];
+
+    // Extended unified timeline attempt: notes + status + bookings + blacklist (fallback-safe)
+    $sqlExtended = "
+        (
+            SELECT
+                'note'                        AS item_type,
+                ar.note_text                  AS body,
+                NULL                          AS from_status,
+                NULL                          AS to_status,
+                ar.created_at                 AS created_at,
+                ar.id                         AS origin_id,
+                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+            FROM applicant_reports ar
+            LEFT JOIN admin_users au ON au.id = ar.admin_id
+            WHERE ar.applicant_id = ?
+        )
+        UNION ALL
+        (
+            SELECT
+                'status'                      AS item_type,
+                asr.report_text               AS body,
+                asr.from_status               AS from_status,
+                asr.to_status                 AS to_status,
+                asr.created_at                AS created_at,
+                asr.id                        AS origin_id,
+                COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
+            FROM applicant_status_reports asr
+            LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
+            WHERE asr.applicant_id = ?
+        )
+        UNION ALL
+        (
+            SELECT
+                'booking'                     AS item_type,
+                CONCAT(
+                    'Client booking: ',
+                    COALESCE(cb.appointment_type, 'Appointment'),
+                    CASE
+                      WHEN COALESCE(cb.client_first_name,'') <> '' OR COALESCE(cb.client_last_name,'') <> '' THEN
+                        CONCAT(' — Client: ',
+                               TRIM(CONCAT(COALESCE(cb.client_first_name,''),' ',COALESCE(cb.client_last_name,''))))
+                      ELSE ''
+                    END
+                )                              AS body,
+                NULL                            AS from_status,
+                NULL                            AS to_status,
+                cb.created_at                   AS created_at,
+                cb.id                           AS origin_id,
+                /* admin may be null if your table doesn't track it */
+                COALESCE(NULLIF(au3.full_name,''), NULLIF(au3.username,''), NULLIF(au3.email,'')) AS admin_name
+            FROM client_bookings cb
+            LEFT JOIN admin_users au3 ON au3.id = cb.admin_id
+            WHERE cb.applicant_id = ?
+        )
+        UNION ALL
+        (
+            SELECT
+                'blacklist'                   AS item_type,
+                CASE
+                  WHEN b.is_active = 1
+                    THEN CONCAT('Blacklisted', CASE WHEN NULLIF(b.reason, '') IS NOT NULL THEN CONCAT(' — ', b.reason) ELSE '' END)
+                  ELSE 'Blacklist removed'
+                END                            AS body,
+                NULL                            AS from_status,
+                NULL                            AS to_status,
+                b.created_at                    AS created_at,
+                b.id                            AS origin_id,
+                COALESCE(NULLIF(au4.full_name,''), NULLIF(au4.username,''), NULLIF(au4.email,'')) AS admin_name
+            FROM blacklisted_applicants b
+            LEFT JOIN admin_users au4 ON au4.id = b.admin_id
+            WHERE b.applicant_id = ?
+        )
+        ORDER BY created_at DESC, origin_id DESC
+    ";
+
+    // Original (safe) SQL with two sources only (fallback)
+    $sqlBasic = "
+        (
+            SELECT
+                'note'                        AS item_type,
+                ar.note_text                  AS body,
+                NULL                          AS from_status,
+                NULL                          AS to_status,
+                ar.created_at                 AS created_at,
+                ar.id                         AS origin_id,
+                COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+            FROM applicant_reports ar
+            LEFT JOIN admin_users au ON au.id = ar.admin_id
+            WHERE ar.applicant_id = ?
+        )
+        UNION ALL
+        (
+            SELECT
+                'status'                      AS item_type,
+                asr.report_text               AS body,
+                asr.from_status               AS from_status,
+                asr.to_status                 AS to_status,
+                asr.created_at                AS created_at,
+                asr.id                        AS origin_id,
+                COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
+            FROM applicant_status_reports asr
+            LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
+            WHERE asr.applicant_id = ?
+        )
+        ORDER BY created_at DESC, origin_id DESC
+    ";
+
     try {
-        // Unified timeline: notes + status changes
-        $sqlH = "
-            (
-                SELECT
-                    'note'                        AS item_type,
-                    ar.note_text                  AS body,
-                    NULL                          AS from_status,
-                    NULL                          AS to_status,
-                    ar.created_at                 AS created_at,
-                    ar.id                         AS origin_id,
-                    COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
-                FROM applicant_reports ar
-                LEFT JOIN admin_users au ON au.id = ar.admin_id
-                WHERE ar.applicant_id = ?
-            )
-            UNION ALL
-            (
-                SELECT
-                    'status'                      AS item_type,
-                    asr.report_text               AS body,
-                    asr.from_status               AS from_status,
-                    asr.to_status                 AS to_status,
-                    asr.created_at                AS created_at,
-                    asr.id                        AS origin_id,
-                    COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS admin_name
-                FROM applicant_status_reports asr
-                LEFT JOIN admin_users au2 ON au2.id = asr.admin_id
-                WHERE asr.applicant_id = ?
-            )
-            ORDER BY created_at DESC, origin_id DESC
-        ";
-        if ($stmt = $conn->prepare($sqlH)) {
-            $stmt->bind_param("ii", $id, $id);
+        // Try extended
+        if ($stmt = $conn->prepare($sqlExtended)) {
+            $stmt->bind_param("iiii", $id, $id, $id, $id);
             $stmt->execute();
             $res = $stmt->get_result();
             while ($row = $res->fetch_assoc()) {
@@ -65,8 +143,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
                 ];
             }
             $stmt->close();
+        } else {
+            // Fallback basic
+            if ($stmt2 = $conn->prepare($sqlBasic)) {
+                $stmt2->bind_param("ii", $id, $id);
+                $stmt2->execute();
+                $res2 = $stmt2->get_result();
+                while ($row = $res2->fetch_assoc()) {
+                    $data[] = [
+                        'item_type'   => (string)($row['item_type'] ?? 'note'),
+                        'body'        => (string)($row['body'] ?? ''),
+                        'from_status' => (string)($row['from_status'] ?? ''),
+                        'to_status'   => (string)($row['to_status'] ?? ''),
+                        'created_at'  => (string)($row['created_at'] ?? ''),
+                        'admin_name'  => (string)($row['admin_name'] ?? '—'),
+                    ];
+                }
+                $stmt2->close();
+            }
         }
-    } catch (Throwable $e) { /* return empty on error */ }
+    } catch (Throwable $e) {
+        // Silent failure -> return what we have (maybe empty)
+    }
 
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
@@ -163,12 +261,12 @@ if (
     redirect('reports.php' . $qs); exit;
 }
 
-/* ---------------- Fetch Applicants (de-duplicated list) ----------------
+/* ---------------- Fetch Applicants (deduplicated) ----------------
    - Show each applicant ONCE only.
-   - Require at least one report (applicant_reports exists).
+   - Require at least one note (applicant_reports exists).
    - Latest NOTE per applicant by MAX(id) to avoid timestamp ties.
    - Latest STATUS change per applicant by MAX(id) for arrow display.
--------------------------------------------------------------------------- */
+-------------------------------------------------------------------- */
 $conn = $database->getConnection(); // mysqli
 
 $whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
@@ -307,8 +405,13 @@ function statusBadgeProps(string $status): array {
   .status-badge { font-weight: 600; }
   .toolbar .form-select, .toolbar .form-control { border-radius: .7rem; }
   .toolbar .btn { border-radius: .7rem; }
-  .timeline .item-note   { border-left: 3px solid #0d6efd; }
-  .timeline .item-status { border-left: 3px solid #20c997; }
+
+  /* History modal timeline */
+  .timeline .list-group-item { border-left: 3px solid #e5e7eb; }
+  .timeline .item-note      { border-left-color: #0d6efd; }   /* blue */
+  .timeline .item-status    { border-left-color: #20c997; }   /* teal/green */
+  .timeline .item-booking   { border-left-color: #6366f1; }   /* indigo */
+  .timeline .item-blacklist { border-left-color: #ef4444; }   /* red */
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -395,7 +498,7 @@ function statusBadgeProps(string $status): array {
             <th>Count</th>
             <th>Reported By</th>
             <th>Reported At</th>
-            <th style="width: 280px;">Actions</th>
+            <th style="width: 320px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -421,14 +524,6 @@ function statusBadgeProps(string $status): array {
                 $latestAt = (string)($r['latest_note_at'] ?? '');
                 $reportCount = (int)($r['report_count'] ?? 0);
                 $statusVal = (string)($r['status'] ?? '');
-
-                // View link by status
-                $viewLink = 'view-applicant.php?id=' . $id;
-                if ($statusVal === 'approved') {
-                    $viewLink = 'view_approved.php?id=' . $id;
-                } elseif ($statusVal === 'on_process') {
-                    $viewLink = 'view_onprocess.php?id=' . $id;
-                }
 
                 // Status badge + last change arrow if present
                 $props = statusBadgeProps($statusVal);
@@ -493,17 +588,12 @@ function statusBadgeProps(string $status): array {
                       <i class="bi bi-journal-plus me-1"></i> Write Report
                     </button>
 
-                    <!-- Unified History (notes + status changes) -->
+                    <!-- Full History (modal) -->
                     <button class="btn btn-sm btn-outline-secondary view-history"
                             data-id="<?php echo $id; ?>"
                             data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
-                      <i class="bi bi-clock-history me-1"></i> History
+                      <i class="bi bi-clock-history me-1"></i> Full History
                     </button>
-
-                    <!-- View -->
-                    <a class="btn btn-sm btn-info" href="<?php echo htmlspecialchars($viewLink, ENT_QUOTES, 'UTF-8'); ?>">
-                      <i class="bi bi-eye me-1"></i> View
-                    </a>
                   </div>
                 </td>
               </tr>
@@ -548,13 +638,11 @@ function statusBadgeProps(string $status): array {
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-semibold">History — <span id="hist-applicant"></span></h5>
+        <h5 class="modal-title fw-semibold">Full History — <span id="hist-applicant"></span></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="hist-container" class="timeline">
-          <!-- Filled by JS -->
-        </div>
+        <div id="hist-container" class="timeline"><!-- Filled by JS --></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
@@ -583,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Unified History button (reports + status changes)
+  // Full History (unified timeline)
   document.querySelectorAll('.view-history').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id || '';
@@ -605,6 +693,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var type = (it.item_type || 'note').toLowerCase();
             var admin = it.admin_name || '—';
             var when  = it.created_at || '';
+            var body  = it.body || '';
+
             if (type === 'status') {
               var froms = (it.from_status || '').replaceAll('_',' ');
               var tos   = (it.to_status   || '').replaceAll('_',' ');
@@ -613,18 +703,37 @@ document.addEventListener('DOMContentLoaded', function () {
               html +=     '<div class="fw-semibold text-success"><i class="bi bi-arrow-left-right me-1"></i>'+ escapeHtml(cap(froms)) +' → '+ escapeHtml(cap(tos)) +'</div>';
               html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
               html +=   '</div>';
-              if (it.body) {
-                html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(it.body) +'</div>';
+              if (body) {
+                html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
               }
               html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
               html += '</div>';
+            } else if (type === 'booking') {
+              html += '<div class="list-group-item item-booking py-3">';
+              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
+              html +=     '<div class="fw-semibold text-indigo"><i class="bi bi-calendar2-check me-1"></i>Booking</div>';
+              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html +=   '</div>';
+              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
+              html +=   '<div class="small text-muted mt-1">'+ (admin ? ('By '+ escapeHtml(admin)) : 'System') +'</div>';
+              html += '</div>';
+            } else if (type === 'blacklist') {
+              html += '<div class="list-group-item item-blacklist py-3">';
+              html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
+              html +=     '<div class="fw-semibold text-danger"><i class="bi bi-slash-circle me-1"></i>Blacklist</div>';
+              html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
+              html +=   '</div>';
+              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
+              html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
+              html += '</div>';
             } else {
+              // note
               html += '<div class="list-group-item item-note py-3">';
               html +=   '<div class="d-flex justify-content-between align-items-center mb-1">';
               html +=     '<div class="fw-semibold"><i class="bi bi-journal-text me-1"></i>Report</div>';
               html +=     '<div class="text-muted small">'+ escapeHtml(when) +'</div>';
               html +=   '</div>';
-              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(it.body || '') +'</div>';
+              html +=   '<div class="text-secondary" style="white-space:pre-wrap;">'+ escapeHtml(body) +'</div>';
               html +=   '<div class="small text-muted mt-1">By '+ escapeHtml(admin) +'</div>';
               html += '</div>';
             }
