@@ -10,6 +10,75 @@ class Applicant
     }
 
     /* ============================================================
+     * BU (Business Unit/Country) Helpers
+     * ============================================================ */
+
+    /**
+     * Get all business units (countries) from database.
+     * @param bool $activeOnly - If true, only return active BUs
+     * @return array
+     */
+    public function getAllBusinessUnits(bool $activeOnly = true): array
+    {
+        $rows = [];
+        $where = $activeOnly ? " WHERE bu.active = 1 " : "";
+        $sql = "
+        SELECT 
+            bu.id,
+            bu.code,
+            bu.name         AS bu_name,
+            c.id            AS country_id,
+            c.name          AS country_name,
+            CONCAT(bu.code, ' — ', c.name) AS label
+        FROM business_units bu
+        JOIN countries c ON c.id = bu.country_id
+        {$where}
+        ORDER BY bu.code
+    ";
+
+        $res = $this->db->query($sql);
+        if ($res) {
+            while ($r = $res->fetch_assoc()) {
+                $rows[] = $r;
+            }
+        }
+        return $rows;
+    }
+
+    /**
+     * Check if applicant belongs to the specified business unit.
+     * @param int $applicantId
+     * @param int $businessUnitId
+     * @return bool
+     */
+    public function isApplicantInBusinessUnit(int $applicantId, int $businessUnitId): bool
+    {
+        $stmt = $this->db->prepare("SELECT business_unit_id FROM applicants WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $applicantId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+
+        return $row && isset($row['business_unit_id']) && (int) $row['business_unit_id'] === $businessUnitId;
+    }
+
+    /**
+     * Update applicant's business unit (country assignment).
+     * @param int $applicantId
+     * @param int $businessUnitId
+     * @return bool
+     */
+    public function updateBusinessUnit(int $applicantId, int $businessUnitId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE applicants SET business_unit_id = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->bind_param("ii", $businessUnitId, $applicantId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /* ============================================================
      * EXISTING METHODS (kept)
      * ============================================================ */
 
@@ -17,37 +86,50 @@ class Applicant
      * Admin/general: Get all applicants (optionally by a single status).
      * - Excludes deleted by default.
      * - Use getAllForPublic() for client-facing lists.
+     * - NEW: Optionally filter by business_unit_id
      */
-    public function getAll($status = null)
+    public function getAll($status = null, ?int $businessUnitId = null): array
     {
-        if ($status !== null) {
-            $sql = "SELECT * FROM applicants
-                    WHERE deleted_at IS NULL
-                      AND status = ?
-                      AND NOT EXISTS (
-                        SELECT 1 FROM blacklisted_applicants b
-                        WHERE b.applicant_id = applicants.id AND b.is_active = 1
-                      )
-                    ORDER BY created_at DESC";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param("s", $status);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            return $result->fetch_all(MYSQLI_ASSOC);
+        $where = [];
+        $types = '';
+        $params = [];
+
+        if ($businessUnitId !== null && $businessUnitId > 0) {
+            $where[] = "applicants.business_unit_id = ?";
+            $types .= "i";
+            $params[] = $businessUnitId;
         }
 
-        $sql = "
-            SELECT *
-            FROM applicants
-            WHERE deleted_at IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = applicants.id AND b.is_active = 1
-              )
-            ORDER BY created_at DESC
-        ";
-        $result = $this->db->query($sql);
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $where[] = "applicants.deleted_at IS NULL";
+        $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = applicants.id AND b.is_active = 1
+    )";
+
+        if ($status !== null) {
+            $where[] = "applicants.status = ?";
+            $types .= "s";
+            $params[] = $status;
+        }
+
+        $sql = "SELECT * FROM applicants WHERE " . implode(" AND ", $where) . " ORDER BY created_at DESC";
+
+        if (!empty($params)) {
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('Prepare failed (getAll): ' . $this->db->error);
+                return [];
+            }
+            $this->bindByRef($stmt, $types, $params); // <— helper above
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+            $stmt->close();
+            return $rows;
+        } else {
+            $res = $this->db->query($sql);
+            return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        }
     }
 
     /**
@@ -99,7 +181,7 @@ class Applicant
     }
 
     /**
-     * Create applicant (includes specialization_skills JSON).
+     * Create applicant (includes specialization_skills JSON and business_unit_id).
      */
     public function create($data)
     {
@@ -131,22 +213,26 @@ class Applicant
         $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
         $createdBy = isset($data['created_by']) ? (int) $data['created_by'] : 0;
 
+        // Business Unit (Country) - NEW
+        $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
+
         if ($dailyRate === null) {
             // Use NULL explicitly in SQL for true NULL
+            // Include business_unit_id in the insert
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create NULL rate): ' . $this->db->error);
                 return false;
             }
-            // 18 strings + 2 ints (years_experience, created_by)
+            // 18 strings + 3 ints (years_experience, created_by, business_unit_id)
             $stmt->bind_param(
-                "ssssssssssssssssssii",
+                "ssssssssssssssssssiii",
                 $first,
                 $middle,
                 $last,
@@ -166,26 +252,27 @@ class Applicant
                 $empTy,
                 $eduLv,
                 $years,
-                $createdBy
+                $createdBy,
+                $businessUnitId
             );
         } else {
             // daily_rate bound as double (d)
+            // Include business_unit_id in the insert
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create with rate): ' . $this->db->error);
                 return false;
             }
-            // 12th param is daily_rate (double), then the rest
-            // Types: 18 strings + 1 double + 2 ints => but order matters
-            // Our order: 11 strings, 1 double, 6 strings, 2 ints => "sssssssssss" + "d" + "ssssss" + "ii"
+            // 12th param is daily_rate (double), then the rest + business_unit_id
+            // Types: 18 strings + 1 double + 3 ints => "sssssssssss" + "d" + "ssssss" + "iii"
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "ii",
+                "sssssssssss" . "d" . "sssssss" . "iii",
                 $first,
                 $middle,
                 $last,
@@ -206,7 +293,8 @@ class Applicant
                 $empTy,
                 $eduLv,
                 $years,
-                $createdBy
+                $createdBy,
+                $businessUnitId
             );
         }
 
@@ -221,7 +309,7 @@ class Applicant
         return $newId ?: false;
     }
     /**
-     * Update applicant (includes specialization_skills JSON).
+     * Update applicant (includes specialization_skills JSON and business_unit_id).
      */
     public function update($id, $data)
     {
@@ -252,22 +340,28 @@ class Applicant
         $eduLv = $data['education_level'] ?? null;
         $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
 
+        // Business Unit (Country) - NEW
+        $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== ''
+            ? (int) $data['business_unit_id']
+            : null;
+
         if ($dailyRate === null) {
             // daily_rate to NULL
+            // Include business_unit_id in the update
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = NULL, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (update NULL rate): ' . $this->db->error);
                 return false;
             }
-            // 18 strings + 1 int (years) + 1 int (id)
+            // 18 strings + 2 ints (years, business_unit_id) + 1 int (id)
             $stmt->bind_param(
-                "ssssssssssssssssssii",
+                "ssssssssssssssssssiii",
                 $first,
                 $middle,
                 $last,
@@ -287,25 +381,27 @@ class Applicant
                 $empTy,
                 $eduLv,
                 $years,
+                $businessUnitId,
                 $id
             );
         } else {
             // daily_rate bound as double
+            // Include business_unit_id in the update
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = ?, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (update with rate): ' . $this->db->error);
                 return false;
             }
-            // Order before id: 11 strings, 1 double, 6 strings, 1 int (years) → then id
-            // Types: "sssssssssss" + "d" + "ssssss" + "i" + "i"
+            // Order before id: 11 strings, 1 double, 6 strings, 2 ints (years, business_unit_id) → then id
+            // Types: "sssssssssss" + "d" + "ssssss" + "ii" + "i"
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "ii",
+                "sssssssssss" . "d" . "sssssss" . "iii",
                 $first,
                 $middle,
                 $last,
@@ -326,6 +422,7 @@ class Applicant
                 $empTy,
                 $eduLv,
                 $years,
+                $businessUnitId,
                 $id
             );
         }
@@ -600,6 +697,18 @@ class Applicant
         return count(array_intersect($a, $b));
     }
 
+    /** Bind params by reference to a prepared statement. */
+    private function bindByRef(mysqli_stmt $stmt, string $types, array $values): void
+    {
+        $refs = [];
+        $refs[] = &$types;
+        foreach ($values as $k => $v) {
+            $values[$k] = $v;     // ensure variable
+            $refs[] = &$values[$k];
+        }
+        call_user_func_array([$stmt, 'bind_param'], $refs);
+    }
+
     /** Get latest booking id for applicant (or null) */
     public function getLatestBookingIdForApplicant(int $applicantId): ?int
     {
@@ -798,30 +907,13 @@ class Applicant
                 throw new \RuntimeException('Failed to move candidate to on_process.');
             }
 
-            // 2) Insert status report line for replacement
+            // 2) Insert status report line
             $stmt2 = $this->db->prepare("
                 INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
                 VALUES (?, 'pending', 'on_process', ?, ?)
             ");
             $stmt2->bind_param("isi", $replacementApplicantId, $reportText, $adminId);
             $stmt2->execute();
-
-            // 2b) Set original applicant status => on_hold (replaced)
-            $stmt2b = $this->db->prepare("UPDATE applicants SET status = 'on_hold', updated_at = NOW() WHERE id = ? AND status = 'approved' AND deleted_at IS NULL");
-            $stmt2b->bind_param("i", $originalId);
-            $stmt2b->execute();
-            if ($this->db->affected_rows <= 0) {
-                throw new \RuntimeException('Failed to set original applicant to on_hold.');
-            }
-
-            // 2c) Insert status report line for original applicant
-            $origReportText = "Replaced by Applicant ID {$replacementApplicantId}. Reason: {$reason}.";
-            $stmt2c = $this->db->prepare("
-                INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
-                VALUES (?, 'approved', 'on_hold', ?, ?)
-            ");
-            $stmt2c->bind_param("isi", $originalId, $origReportText, $adminId);
-            $stmt2c->execute();
 
             // 3) Reassign client booking if available
             if ($clientBookingId !== null) {
