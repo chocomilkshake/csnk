@@ -647,17 +647,10 @@ function createApplicantCard(applicant) {
   const location       = `${escapeHtml(applicant.location_city || '—')}, ${escapeHtml(applicant.location_region || '—')}`;
   const status         = escapeHtml(String(applicant.status || '').toLowerCase());
 
-  // 🔹 robust daily rate picker
-  const dailyRateValue = (applicant.daily_rate ?? applicant.dailyRate ?? applicant.rate ?? applicant.daily_wage ?? null);
-  const rateText = formatPeso(dailyRateValue);
+  // Floating rate badge removed - rate now shown in modal only as range for DPA compliance
 
   const html = `
     <article class="card app-card h-100 hover-lift clickable-card" role="button" tabindex="0" aria-label="View ${fullName} profile" data-status="${status}">
-      <!-- 🔹 Top-right Daily Rate badge -->
-      <div class="daily-rate-badge ${rateText ? '' : 'muted'}" aria-label="Daily rate">
-        ${rateText ? `${rateText} / day` : '—'}
-      </div>
-
       <!-- Top photo -->
       <div class="ratio ratio-4x3 card-photo-wrap">
         <img class="card-photo" alt="${fullName}">
@@ -985,6 +978,27 @@ function onProfileHiddenCleanUrl(){
   removeApplicantIdFromUrl();
 }
 
+/**
+ * Convert exact rate to a range for DPA compliance
+ * e.g., 695 -> "₱700 - ₱800 / day"
+ * The range rounds UP to nearest 100
+ */
+function formatRateAsRange(amount) {
+  if (amount === null || amount === undefined || amount === '') return '—';
+  const num = Number(amount);
+  if (!isFinite(num) || num <= 0) return '—';
+  
+  // Round up to nearest 100
+  const roundedUp = Math.ceil(num / 100) * 100;
+  // Range is from roundedUp - 100 to roundedUp
+  const lowerBound = roundedUp - 100;
+  
+  const lowerFormatted = '₱' + lowerBound.toLocaleString('en-PH');
+  const upperFormatted = '₱' + roundedUp.toLocaleString('en-PH');
+  
+  return `${lowerFormatted} - ${upperFormatted} / day`;
+}
+
 function showApplicantModal(applicant, options = { pushState: true }) {
 
 // 🔹 Accept snake_case or camelCase (depending on your API)
@@ -993,8 +1007,9 @@ function showApplicantModal(applicant, options = { pushState: true }) {
   
 const rateTile = document.getElementById('dailyRateValue');
   if (rateTile) {
-    const formatted = formatPeso(dailyRateValue);
-    rateTile.textContent = formatted ? (formatted + ' / day') : '—';
+    // Display as range for DPA compliance (e.g., 695 becomes "₱700 - ₱800 / day")
+    const rangeText = formatRateAsRange(dailyRateValue);
+    rateTile.textContent = rangeText;
   }
 
   const modalEl = byId('applicantModal');
