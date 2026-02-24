@@ -198,7 +198,7 @@ if (
         $conn->commit();
         $ok = true;
     } catch (Throwable $e) {
-        if ($conn->errno) { /* no-op, just ensures we can rollback safely */ }
+        if ($conn->errno) { /* ensure rollback safe */ }
         $conn->rollback();
         error_log('Status change (MySQLi) failed: ' . $e->getMessage());
         $ok = false;
@@ -349,9 +349,9 @@ if ($q !== '') {
 }
 
 // Preserve the search in action links and export URL
-$preserveQAmp = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+$preserveQAmp = ($q !== '') ? ('&amp;q=' . urlencode($q)) : '';
 $preserveQQ   = ($q !== '') ? ('?q=' . urlencode($q)) : '';
-$exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('&q=' . urlencode($q)) : '');
+$exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ? ('&amp;q=' . urlencode($q)) : '');
 ?>
 <!-- ===== Fix dropdown clipping & remove table scroll wrapper ===== -->
 <style>
@@ -375,6 +375,18 @@ $exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ?
     }
     .btn-status { border-radius: .75rem; }
     table.table-styled { margin-bottom: 0; }
+
+    /* Modal polish — match On-Hold modal look */
+    .status-modal .modal-header { border-bottom: none; padding-bottom: 0; }
+    .status-modal .modal-footer { border-top: none; }
+    .status-modal .app-card { border: 1px solid #eef2f7; background: #f8fafc; }
+    .status-modal .badge-soft {
+        display:inline-flex; align-items:center; gap:.35rem;
+        padding:.15rem .5rem; border-radius:.5rem; font-size:.8rem;
+        border: 1px solid #e2e8f0; background:#f8fafc; color:#334155;
+    }
+    .status-modal .counter { font-size:.8rem; color:#64748b; }
+    .status-modal .form-text { color:#64748b; }
 </style>
 
 <?php
@@ -422,217 +434,239 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
 
 <div class="card table-card">
     <div class="card-body">
-        <table class="table table-bordered table-striped table-hover table-styled align-middle">
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Applicant</th>
-                    <th>Client</th>
-                    <th>Interview</th>
-                    <th>Date &amp; Time</th>
-                    <th>Applicant Contact</th>
-                    <th>Client Contact</th>
-                    <th>Date Applied</th>
-                    <th style="width: 320px;">Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <?php if (empty($applicants)): ?>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover table-styled align-middle mb-0">
+                <thead>
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            <?php if ($q === ''): ?>
-                                No applicants currently on process.
-                            <?php else: ?>
-                                No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
-                                <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
-                            <?php endif; ?>
-                        </td>
+                        <th>Photo</th>
+                        <th>Applicant</th>
+                        <th>Client</th>
+                        <th>Interview</th>
+                        <th>Date &amp; Time</th>
+                        <th>Applicant Contact</th>
+                        <th>Client Contact</th>
+                        <th>Date Applied</th>
+                        <th style="width: 320px;">Actions</th>
                     </tr>
+                </thead>
 
-                <?php else: ?>
-                    <?php foreach ($applicants as $row): ?>
-                        <?php
-                            $id = (int)$row['id'];
-                            $currentStatus = (string)($row['status'] ?? 'on_process');
-
-                            $viewUrl = 'view_onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                            $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                            $deleteUrl = 'on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-
-                            // Change Status target links (preserve q in GET)
-                            $toPendingUrl    = 'on-process.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQAmp;
-                            $toOnProcessUrl  = 'on-process.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQAmp;
-                            $toApprovedUrl   = 'on-process.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQAmp;
-
-                            $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
-                            $clientName = $clientName !== '' ? $clientName : '—';
-
-                            $apptType   = $row['appointment_type'] ?? '—';
-                            $apptDate   = (string)($row['appointment_date'] ?? '');
-                            $apptTime   = (string)($row['appointment_time'] ?? '');
-                            $dateTimeDisplay = trim($apptDate . ' ' . $apptTime);
-                            $dateTimeDisplay = $dateTimeDisplay !== '' ? $dateTimeDisplay : '—';
-
-                            $appContact = trim(($row['phone_number'] ?? '') . ((($row['email'] ?? '') !== '') ? ' / ' . $row['email'] : ''));
-                            $appContact = $appContact !== '' ? $appContact : '—';
-
-                            $cliContact = trim(($row['client_phone'] ?? '') . ((($row['client_email'] ?? '') !== '') ? ' / ' . $row['client_email'] : ''));
-                            $cliContact = $cliContact !== '' ? $cliContact : '—';
-
-                            $applicantName = htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8');
-                        ?>
+                <tbody>
+                    <?php if (empty($applicants)): ?>
                         <tr>
-                            <td class="tbl-photo">
-                                <?php if (!empty($row['picture'])): ?>
-                                    <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                                         alt="Photo"
-                                         class="rounded"
-                                         width="50" height="50"
-                                         style="object-fit: cover;">
+                            <td colspan="9" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <?php if ($q === ''): ?>
+                                    No applicants currently on process.
                                 <?php else: ?>
-                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                         style="width: 50px; height: 50px;">
-                                        <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
-                                    </div>
+                                    No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                    <a href="on-process.php?clear=1" class="ms-1">Clear search</a>
                                 <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <div class="fw-semibold">
-                                    <?php echo $applicantName; ?>
-                                </div>
-                                <div class="text-muted-small">
-                                    <?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="fw-semibold">
-                                    <?php echo htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8'); ?>
-                                </div>
-                                <div class="text-muted-small">
-                                    <?php echo htmlspecialchars($row['client_address'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
-                                </div>
-                            </td>
-
-                            <td><?php echo htmlspecialchars($apptType, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars($dateTimeDisplay, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars($appContact, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars($cliContact, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
-
-                            <td class="actions-cell">
-                                <div class="btn-group dd-modern dropup">
-                                    <!-- View -->
-                                    <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                       class="btn btn-sm btn-info" title="View">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-
-                                    <!-- Edit -->
-                                    <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                       class="btn btn-sm btn-warning" title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-
-                                    <!-- Delete -->
-                                    <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                       class="btn btn-sm btn-danger"
-                                       title="Delete"
-                                       onclick="return confirm('Are you sure you want to delete this applicant?');">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-
-                                    <!-- Change Status Dropdown -->
-                                    <div class="dropdown dropup">
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
-                                                data-bs-toggle="dropdown"
-                                                data-bs-auto-close="true"
-                                                aria-expanded="false"
-                                                aria-haspopup="true"
-                                                title="Change Status"
-                                                id="changeStatusBtn-<?php echo $id; ?>">
-                                            <i class="bi bi-arrow-left-right me-1"></i> Change Status
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status"
-                                               href="#"
-                                               data-href="<?php echo htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-id="<?php echo $id; ?>"
-                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-to="pending"
-                                               data-applicant="<?php echo $applicantName; ?>">
-                                                <i class="bi bi-hourglass-split text-warning"></i>
-                                                <span>Pending</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?> change-status"
-                                               href="#"
-                                               data-href="<?php echo htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-id="<?php echo $id; ?>"
-                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-to="on_process"
-                                               data-applicant="<?php echo $applicantName; ?>">
-                                                <i class="bi bi-arrow-repeat text-info"></i>
-                                                <span>On-Process</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?> change-status"
-                                               href="#"
-                                               data-href="<?php echo htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-id="<?php echo $id; ?>"
-                                               data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
-                                               data-to="approved"
-                                               data-applicant="<?php echo $applicantName; ?>">
-                                                <i class="bi bi-check2-circle text-success"></i>
-                                                <span>Approved</span>
-                                            </a>
-                                        </li>
-                                        </ul>
-                                    </div>
-                                </div>
                             </td>
                         </tr>
 
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
+                    <?php else: ?>
+                        <?php foreach ($applicants as $row): ?>
+                            <?php
+                                $id = (int)$row['id'];
+                                $currentStatus = (string)($row['status'] ?? 'on_process');
 
-        </table>
+                                $viewUrl   = 'view_onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $editUrl   = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $deleteUrl = 'on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                                // Change Status target links (preserve q in GET)
+                                $toPendingUrl    = 'on-process.php?action=update_status&id=' . $id . '&to=pending'    . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $toOnProcessUrl  = 'on-process.php?action=update_status&id=' . $id . '&to=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $toApprovedUrl   = 'on-process.php?action=update_status&id=' . $id . '&to=approved'   . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                                $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
+                                $clientName = $clientName !== '' ? $clientName : '—';
+
+                                $apptType   = $row['appointment_type'] ?? '—';
+                                $apptDate   = (string)($row['appointment_date'] ?? '');
+                                $apptTime   = (string)($row['appointment_time'] ?? '');
+                                $dateTimeDisplay = trim($apptDate . ' ' . $apptTime);
+                                $dateTimeDisplay = $dateTimeDisplay !== '' ? $dateTimeDisplay : '—';
+
+                                $appContact = trim(($row['phone_number'] ?? '') . ((($row['email'] ?? '') !== '') ? ' / ' . $row['email'] : ''));
+                                $appContact = $appContact !== '' ? $appContact : '—';
+
+                                $cliContact = trim(($row['client_phone'] ?? '') . ((($row['client_email'] ?? '') !== '') ? ' / ' . $row['client_email'] : ''));
+                                $cliContact = $cliContact !== '' ? $cliContact : '—';
+
+                                $applicantName = htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8');
+
+                                $photo = !empty($row['picture']) ? getFileUrl($row['picture']) : '';
+                            ?>
+                            <tr>
+                                <td class="tbl-photo">
+                                    <?php if (!empty($row['picture'])): ?>
+                                        <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                             alt="Photo"
+                                             class="rounded"
+                                             width="50" height="50"
+                                             style="object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                             style="width: 50px; height: 50px;">
+                                            <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">
+                                        <?php echo $applicantName; ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">
+                                        <?php echo htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                    <div class="text-muted-small">
+                                        <?php echo htmlspecialchars($row['client_address'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                </td>
+
+                                <td><?php echo htmlspecialchars($apptType, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($dateTimeDisplay, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($appContact, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($cliContact, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
+
+                                <td class="actions-cell">
+                                    <div class="btn-group dd-modern dropup">
+                                        <!-- View -->
+                                        <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                           class="btn btn-sm btn-info" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <!-- Edit -->
+                                        <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                           class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <!-- Delete -->
+                                        <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                           class="btn btn-sm btn-danger"
+                                           title="Delete"
+                                           onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+
+                                        <!-- Change Status Dropdown -->
+                                        <div class="dropdown dropup">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-auto-close="true"
+                                                    aria-expanded="false"
+                                                    aria-haspopup="true"
+                                                    title="Change Status"
+                                                    id="changeStatusBtn-<?php echo $id; ?>">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status"
+                                                       href="#"
+                                                       data-href="<?php echo htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-id="<?php echo $id; ?>"
+                                                       data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-to="pending"
+                                                       data-applicant="<?php echo $applicantName; ?>"
+                                                       data-app-photo="<?php echo htmlspecialchars($photo, ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <i class="bi bi-hourglass-split text-warning"></i>
+                                                        <span>Pending</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?> change-status"
+                                                       href="#"
+                                                       data-href="<?php echo htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-id="<?php echo $id; ?>"
+                                                       data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-to="on_process"
+                                                       data-applicant="<?php echo $applicantName; ?>"
+                                                       data-app-photo="<?php echo htmlspecialchars($photo, ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <i class="bi bi-arrow-repeat text-info"></i>
+                                                        <span>On-Process</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?> change-status"
+                                                       href="#"
+                                                       data-href="<?php echo htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-id="<?php echo $id; ?>"
+                                                       data-from="<?php echo htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8'); ?>"
+                                                       data-to="approved"
+                                                       data-applicant="<?php echo $applicantName; ?>"
+                                                       data-app-photo="<?php echo htmlspecialchars($photo, ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <i class="bi bi-check2-circle text-success"></i>
+                                                        <span>Approved</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+
+            </table>
+        </div>
     </div>
 </div>
 
-<!-- === Status Change Report Modal === -->
-<div class="modal fade" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <form method="post" action="on-process.php" id="statusReportForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-semibold" id="statusReportModalLabel">Change Status &amp; Add Report</h5>
+<!-- === Status Change Report Modal (polished like On-Hold) === -->
+<div class="modal fade status-modal" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <form method="post" action="on-process.php" id="statusReportForm" class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-light border-0 pb-0">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-primary bg-opacity-25 p-2 rounded-circle">
+            <i class="bi bi-arrow-left-right text-primary fs-5"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="statusReportModalLabel">Change Status &amp; Add Report</h5>
+            <p class="text-muted small mb-0">This change will be recorded in the reports log.</p>
+          </div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <div class="modal-body">
-        <div class="mb-2 text-muted small">
-          <div>Applicant: <span id="sr-applicant" class="fw-semibold"></span></div>
-          <div>
-            From: <span id="sr-from" class="badge bg-secondary"></span>
-            &nbsp;→&nbsp;
-            To: <span id="sr-to" class="badge bg-primary"></span>
+      <div class="modal-body py-3">
+        <!-- Applicant header card (photo + name + badges) -->
+        <div class="card app-card mb-4">
+          <div class="card-body py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="photo-slot">
+                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none"
+                     id="srAvatarFallback" style="width:56px;height:56px;">
+                  <span class="fs-5 fw-bold" id="srAvatarLetter">A</span>
+                </div>
+                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56"
+                     style="object-fit: cover;" alt="Photo" id="srAvatarImg">
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-bold fs-5" id="sr-applicant">Applicant Name</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="badge-soft"><i class="bi bi-hourglass-split"></i><span id="sr-from">on process</span></span>
+                  <i class="bi bi-arrow-right text-muted"></i>
+                  <span class="badge-soft"><i class="bi bi-check2"></i><span id="sr-to">approved</span></span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div class="mb-3">
-          <label for="sr-text" class="form-label">Reason / Report <span class="text-danger">*</span></label>
-          <textarea class="form-control" id="sr-text" name="report_text" rows="4"
-                    required minlength="5" maxlength="2000"
-                    placeholder="Write a brief reason for this status change..."></textarea>
-          <div class="form-text">Minimum 5 characters. This will be stored in the reports log.</div>
         </div>
 
         <!-- Hidden fields -->
@@ -640,15 +674,54 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
         <input type="hidden" name="id" id="sr-id" value="">
         <input type="hidden" name="to" id="sr-to-val" value="">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
-        <!-- Optional: preserve q on redirect if you want tighter control:
-        <input type="hidden" name="q" value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>">
-        -->
+
+        <div class="row g-4">
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold">Reason</label>
+            <select class="form-select form-select-lg" id="sr-reason">
+              <option value="" selected>Select a reason (optional)</option>
+              <option value="Interview rescheduled">Interview rescheduled</option>
+              <option value="Client confirmed / Ready">Client confirmed / Ready</option>
+              <option value="Requirements complete">Requirements complete</option>
+              <option value="Passed interview / assessment">Passed interview / assessment</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="form-text mt-1">Pick a quick label; you can add details on the right.</div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold d-flex justify-content-between">
+              <span>Description <span class="text-danger">*</span></span>
+              <span class="counter badge bg-light text-secondary" id="sr-counter">0/1000</span>
+            </label>
+            <textarea
+              class="form-control"
+              id="sr-text"
+              name="report_text"
+              rows="4"
+              maxlength="1000"
+              required
+              placeholder="Write details for this status change (e.g., client confirmation, documents verified, interview result)..."></textarea>
+            <div class="form-text mt-1">Minimum 5 characters. This will be stored in the reports log.</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle-fill text-info mt-1"></i>
+            <div class="small">
+              <strong>Note:</strong> The applicant's status will be updated and this action recorded in Reports.
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-save2 me-1"></i> Save &amp; Update Status
+      <div class="modal-footer bg-light border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+          <i class="bi bi-x-lg me-1"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-check2-square me-2"></i> Save &amp; Update Status
         </button>
       </div>
     </form>
@@ -657,17 +730,40 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Manually initialize Change Status dropdowns
-    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
-    btns.forEach(function(btn) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
-        }
-    });
+  // Initialize Change Status dropdowns with stable positioning
+  var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+  btns.forEach(function(btn) {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+          new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+      }
+  });
 
   var modalEl = document.getElementById('statusReportModal');
   var modal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(modalEl) : null;
 
+  // Modal elements
+  var applicantNameEl = document.getElementById('sr-applicant');
+  var fromBadgeEl = document.getElementById('sr-from');
+  var toBadgeEl = document.getElementById('sr-to');
+  var idInput = document.getElementById('sr-id');
+  var toInput = document.getElementById('sr-to-val');
+  var reasonSelect = document.getElementById('sr-reason');
+  var descTA = document.getElementById('sr-text');
+  var counterEl = document.getElementById('sr-counter');
+
+  var avatarImg = document.getElementById('srAvatarImg');
+  var avatarFallback = document.getElementById('srAvatarFallback');
+  var avatarLetter = document.getElementById('srAvatarLetter');
+
+  // Counter
+  var updateCounter = function() {
+    var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
+    counterEl.textContent = (descTA.value.length) + '/' + max;
+  };
+  descTA.addEventListener('input', updateCounter);
+  updateCounter();
+
+  // Open modal (require report only when FROM on_process and TO != from)
   document.querySelectorAll('.change-status').forEach(function (el) {
     el.addEventListener('click', function (ev) {
       ev.preventDefault();
@@ -678,20 +774,34 @@ document.addEventListener('DOMContentLoaded', function () {
       var href   = el.dataset.href || '#';
       var id     = el.dataset.id || '';
       var name   = el.dataset.applicant || '';
+      var photo  = el.dataset.appPhoto || '';
 
       // Require a report when changing FROM on_process
       if (fromSt === 'on_process' && toSt !== fromSt) {
-        document.getElementById('sr-applicant').textContent = name;
-        document.getElementById('sr-from').textContent = fromSt.replace('_', ' ');
-        document.getElementById('sr-to').textContent = toSt.replace('_', ' ');
-        document.getElementById('sr-id').value = id;
-        document.getElementById('sr-to-val').value = toSt;
-        document.getElementById('sr-text').value = '';
+        idInput.value = id;
+        toInput.value = toSt;
 
-        if (!id) {
-          console.warn('Missing applicant id on change-status item.');
-          return;
+        applicantNameEl.textContent = name;
+        fromBadgeEl.textContent = fromSt.replace('_', ' ');
+        toBadgeEl.textContent = toSt.replace('_', ' ');
+
+        // Photo or fallback
+        if (photo && photo.trim() !== '') {
+          avatarImg.src = photo;
+          avatarImg.classList.remove('d-none');
+          avatarFallback.classList.add('d-none');
+        } else {
+          var firstLetter = (name.trim().charAt(0) || 'A').toUpperCase();
+          avatarLetter.textContent = firstLetter;
+          avatarImg.classList.add('d-none');
+          avatarFallback.classList.remove('d-none');
         }
+
+        // Reset reason + description
+        reasonSelect.value = '';
+        descTA.value = '';
+        updateCounter();
+
         if (modal) modal.show();
         return;
       }
@@ -700,6 +810,25 @@ document.addEventListener('DOMContentLoaded', function () {
       window.location.href = href;
     });
   });
+
+  // When submitting, if a Reason is chosen and not already in the text, prefix it
+  document.getElementById('statusReportForm').addEventListener('submit', function() {
+    var reason = reasonSelect.value.trim();
+    var text = descTA.value.trim();
+    if (reason && reason.toLowerCase() !== 'other') {
+      // Prepend reason label if not yet present
+      if (text.toLowerCase().indexOf(reason.toLowerCase()) !== 0) {
+        descTA.value = reason + (text ? ': ' + text : '');
+      }
+    }
+  });
+
+  // Autofocus reason on open
+  if (modalEl) {
+    modalEl.addEventListener('shown.bs.modal', function(){
+      reasonSelect?.focus();
+    });
+  }
 });
 </script>
 
