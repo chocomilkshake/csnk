@@ -363,7 +363,7 @@ $historyUrl = 'view-applicant-history.php?id=' . (int) $id; // History button ta
     </a>
     <?php if (($isAdmin ?? false) || ($isSuperAdmin ?? false)): ?>
       <a href="<?php echo safe($historyUrl); ?>" class="btn btn-outline-info">
-        <i class="bi bi-clock-history me-1"></i> History
+        <i class="bi bi-clock-history me-1"></i> Blacklist History
       </a>
     <?php endif; ?>
     <a href="<?php echo safe($printUrl); ?>" target="_blank" class="btn btn-dark">
