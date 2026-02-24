@@ -59,24 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Too many failed attempts. Please wait a few minutes and try again.';
       } else {
         /**
-         * IMPORTANT CHANGE:
-         * Make sure Auth::login($username, $password) returns the full user row on success,
-         * including: id, role, business_unit_id (int), and (optionally) username/email.
-         * If your current method returns true/false only, update Auth::login to return user array on success.
+         * Auth::login() now returns user array on success with consistent session keys.
+         * Session variables are already set in Auth::login().
          */
         $user = $auth->login($username, $password);
 
         if (is_array($user)) {
-          // -------------------------------
-          // NEW: Establish BU context
-          // -------------------------------
-          $_SESSION['user_id'] = (int) $user['id'];
-          $_SESSION['role'] = $user['role']; // 'super_admin' | 'admin' | 'employee'
-          $_SESSION['username'] = $user['username'] ?? $username;
-          $_SESSION['current_bu_id'] = (int) $user['business_unit_id']; // << REQUIRED for BU scoping
+          // Session variables are already set by Auth::login()
+          // Just ensure current_bu_id is set (it may have been resolved to a default)
 
-          // (Optional) Load allowed BU IDs for super_admin switcher
-          if ($_SESSION['role'] === 'super_admin') {
+          // If current_bu_id is 0 or not set, use the resolved value from session
+          if (empty($_SESSION['current_bu_id']) || $_SESSION['current_bu_id'] === 0) {
+            // Get the resolved BU from the user's business_unit_id or default
+            $_SESSION['current_bu_id'] = 1; // Default to CSNK-PH (id=1)
+          }
+
+          // (Optional) Load allowed BU IDs for super_admin switcher (only if not already set by Auth)
+          if (!isset($_SESSION['allowed_bu_ids']) && $_SESSION['role'] === 'super_admin') {
             $_SESSION['allowed_bu_ids'] = [];
             $sql = "SELECT business_unit_id FROM admin_user_business_units WHERE admin_user_id = ?";
             if ($stmt = mysqli_prepare($mysqli, $sql)) {
@@ -91,22 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($_SESSION['allowed_bu_ids']) && $_SESSION['current_bu_id']) {
               $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
             }
-          } else {
-            // Non-super admins have only their current BU
-            $_SESSION['allowed_bu_ids'] = [(int) $_SESSION['current_bu_id']];
           }
 
-          // (Optional) Session log: record login
-          // Wrap in try/catch style and ignore on failure
-          $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-          $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-          $sql = "INSERT INTO session_logs (admin_id, ip_address, user_agent, login_time)
-                            VALUES (?, ?, ?, NOW())";
-          if ($stmt = mysqli_prepare($mysqli, $sql)) {
-            mysqli_stmt_bind_param($stmt, 'iss', $_SESSION['user_id'], $ip, $ua);
-            @mysqli_stmt_execute($stmt);
-            @mysqli_stmt_close($stmt);
-          }
+          // Session log is already recorded in Auth::login(), no need to duplicate
 
           // Reset CSRF & throttling and redirect
           $_SESSION['csrf_login'] = bin2hex(random_bytes(32));

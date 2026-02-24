@@ -15,6 +15,8 @@ if (empty($_SESSION['current_bu_id'])) {
     exit;
 }
 
+
+
 $currentUser = $auth->getCurrentUser();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 

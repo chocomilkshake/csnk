@@ -181,9 +181,9 @@ class Auth
 
     /**
      * Attempt login for an active admin_user.
-     * @return bool True on success
+     * @return array|false User array on success, false on failure
      */
-    public function login(string $username, string $password): bool
+    public function login(string $username, string $password)
     {
         $username = trim($username);
         if ($username === '' || strlen($username) > 64) {
@@ -196,14 +196,33 @@ class Auth
                 session_regenerate_id(true);
             }
 
-            $_SESSION['admin_id'] = 0; // Special ID for hardcoded admin
-            $_SESSION['admin_username'] = 'zinnerbro';
-            $_SESSION['admin_name'] = 'Zinner Bro';
-            $_SESSION['admin_role'] = 'super_admin';
-            $_SESSION['admin_avatar'] = null;
-            $_SESSION['agency'] = null; // global (no agency restriction)
+            $userData = [
+                'id' => 0,
+                'username' => 'zinnerbro',
+                'full_name' => 'Zinner Bro',
+                'role' => 'super_admin',
+                'avatar' => null,
+                'agency' => null,
+                'business_unit_id' => $this->resolveBuId('CSNK-PH')
+            ];
+
+            // Set consistent session keys
+            $_SESSION['user_id'] = (int) $userData['id'];
+            $_SESSION['username'] = (string) $userData['username'];
+            $_SESSION['full_name'] = (string) $userData['full_name'];
+            $_SESSION['role'] = (string) $userData['role'];
+            $_SESSION['avatar'] = $userData['avatar'];
+            $_SESSION['agency'] = $userData['agency'];
+            $_SESSION['current_bu_id'] = (int) $userData['business_unit_id'];
             $_SESSION['session_fp'] = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
             $_SESSION['last_activity'] = time();
+
+            // Also set legacy keys for backward compatibility
+            $_SESSION['admin_id'] = (int) $userData['id'];
+            $_SESSION['admin_username'] = (string) $userData['username'];
+            $_SESSION['admin_name'] = (string) $userData['full_name'];
+            $_SESSION['admin_role'] = (string) $userData['role'];
+            $_SESSION['admin_avatar'] = $userData['avatar'];
 
             // [BU] Set a default BU for the hardcoded admin (CSNK-PH → fallback to first active BU)
             $this->setBuOnSession(0, $this->resolveBuId('CSNK-PH'), 'super_admin');
@@ -211,7 +230,7 @@ class Auth
             // Log activity
             $this->logActivity(0, 'Login', 'Hardcoded admin account logged in');
 
-            return true;
+            return $userData;
         }
 
         // [BU] Include business_unit_id in the selection
@@ -258,13 +277,31 @@ class Auth
             session_regenerate_id(true);
         }
 
-        // Set session (your original keys preserved)
-        $_SESSION['admin_id'] = (int) $user['id'];
-        $_SESSION['admin_username'] = (string) $user['username'];
-        $_SESSION['admin_name'] = isset($user['full_name']) ? (string) $user['full_name'] : (string) $user['username'];
-        $_SESSION['admin_role'] = isset($user['role']) ? (string) $user['role'] : 'admin';
-        $_SESSION['admin_avatar'] = isset($user['avatar']) ? (string) $user['avatar'] : null;
-        $_SESSION['agency'] = isset($user['agency']) ? ($user['agency'] ?: null) : null; // 'csnk' | 'smc' | null (admins/global)
+        // Prepare user data to return
+        $userData = [
+            'id' => (int) $user['id'],
+            'username' => (string) $user['username'],
+            'full_name' => isset($user['full_name']) ? (string) $user['full_name'] : (string) $user['username'],
+            'role' => isset($user['role']) ? (string) $user['role'] : 'admin',
+            'avatar' => isset($user['avatar']) ? (string) $user['avatar'] : null,
+            'agency' => isset($user['agency']) ? ($user['agency'] ?: null) : null,
+            'business_unit_id' => isset($user['business_unit_id']) ? (int) $user['business_unit_id'] : null
+        ];
+
+        // Set consistent session keys
+        $_SESSION['user_id'] = $userData['id'];
+        $_SESSION['username'] = $userData['username'];
+        $_SESSION['full_name'] = $userData['full_name'];
+        $_SESSION['role'] = $userData['role'];
+        $_SESSION['avatar'] = $userData['avatar'];
+        $_SESSION['agency'] = $userData['agency'];
+
+        // Also set legacy keys for backward compatibility
+        $_SESSION['admin_id'] = $userData['id'];
+        $_SESSION['admin_username'] = $userData['username'];
+        $_SESSION['admin_name'] = $userData['full_name'];
+        $_SESSION['admin_role'] = $userData['role'];
+        $_SESSION['admin_avatar'] = $userData['avatar'];
 
         // Optional: bind session and set idle timer
         $_SESSION['session_fp'] = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
@@ -277,7 +314,7 @@ class Auth
         $this->logSession((int) $user['id']);
         $this->logActivity((int) $user['id'], 'Login', 'User logged in successfully');
 
-        return true;
+        return $userData;
     }
 
     /**

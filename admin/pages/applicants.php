@@ -12,6 +12,14 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 $applicant = new Applicant($database);
 
+// Get current user's allowed BU IDs (for filtering applicants by country)
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+
+// Determine if user has global access (admin/super_admin)
+// If allowed_bu_ids is empty, user has access to all BUs
+$hasGlobalAccess = empty($allowedBuIds);
+
 /**
  * --- Search & Status Memory Behavior ---
  * - If ?clear=1 → clear stored search (q) only and redirect to same status
@@ -107,8 +115,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 /**
  * Load applicants and apply filters.
  * getAll() → show active/non-deleted applicants across statuses.
+ * Filter by business_unit_id if user has restricted access (not global admin).
  */
-$applicants = $applicant->getAll();
+if ($hasGlobalAccess) {
+    // Admin/Super Admin: show all applicants
+    $applicants = $applicant->getAll();
+} else {
+    // Employee: show only applicants from their allowed business units
+    $applicants = $applicant->getAll(null, $currentBuId);
+}
 
 /**
  * Helper: Render preferred_location JSON as clean text.

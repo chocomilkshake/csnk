@@ -9,6 +9,14 @@ require_once '../includes/Applicant.php';
 $applicant = new Applicant($database);
 $errors = [];
 
+// Get current user's BU (Business Unit/Country)
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+
+// Get business units (countries) for dropdown
+// Show ALL active countries from database (not filtered by user's allowed BUs)
+$businessUnits = $applicant->getAllBusinessUnits(true);
+
 /* ------------------------------ Search Context ------------------------------ */
 $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
 if (mb_strlen($q) > 200)
@@ -364,6 +372,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Compute years of experience
     $yearsExperience = computeTotalYears($workHistoryArr);
 
+    // Get business_unit_id from POST
+    $businessUnitId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+
     if (empty($errors)) {
         $data = [
             'first_name' => $firstName,
@@ -386,6 +397,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'employment_type' => $employmentType,
             'education_level' => $educationLevel,
             'years_experience' => $yearsExperience,
+            'business_unit_id' => $businessUnitId,
         ];
 
         $ok = $applicant->update($id, $data);
@@ -474,6 +486,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $skillsSet = [];
     foreach ($skillsArr as $s)
         $skillsSet[norm_label($s)] = true;
+
+    // Handle business_unit_id from POST
+    $applicantData['business_unit_id'] = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $applicantData['business_unit_id'];
 
 } else {
     // Prefill basic fields
@@ -866,7 +881,20 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         </div>
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-8">
+                <div class="col-md-4">
+                    <label class="form-label">Country <span class="text-danger">*</span>
+                        <select class="form-select" name="business_unit_id" required>
+                            <option value="">Select Country...</option>
+                            <?php foreach ($businessUnits as $bu): ?>
+                                <option value="<?= (int) $bu['id'] ?>" <?= ($currentBuId == (int) $bu['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="col-md-4">
                     <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
                             each)</small>
                         <div class="d-flex gap-2 mb-2">

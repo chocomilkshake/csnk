@@ -10,6 +10,19 @@ require_once '../includes/Applicant.php';
 $applicant = new Applicant($database);
 $errors = [];
 
+// Get current user's BU (Business Unit/Country)
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+
+// Get business units (countries) for dropdown
+// Show ALL active countries from database (not filtered by user's allowed BUs)
+$businessUnits = $applicant->getAllBusinessUnits(true);
+
+// If employee, force their BU as the only option
+$isEmployee = ($currentRole === 'employee');
+$isAdminUser = ($isAdmin || $isSuperAdmin);
+
+
 /**
  * ---- Helpers to compute Years of Experience from Work History ----
  * Accepts either a range "2019-2021" / "2019–2021" / "2019 — 2021"
@@ -203,6 +216,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Auto-compute years of experience from work history
     $yearsExperience = computeTotalYears($workHistoryArr);
 
+    // Get business_unit_id from POST (admin can select country) or fallback to current user's session
+    $dataBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+
+    // Validate business_unit_id belongs to allowed BUs if user has restrictions
+    if (!empty($allowedBuIds) && !in_array($dataBuId, $allowedBuIds)) {
+        $dataBuId = $currentBuId; // Fallback to user's BU if invalid
+    }
+
     if (empty($errors)) {
         $data = [
             'first_name' => $firstName,
@@ -228,7 +249,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             'picture' => $picturePath,
             'status' => $status,
-            'created_by' => $_SESSION['admin_id']
+            'created_by' => $_SESSION['admin_id'],
+            'business_unit_id' => $dataBuId
         ];
 
         $applicantId = $applicant->create($data);
@@ -589,6 +611,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="card-body">
             <div class="row g-3">
+                <!-- Country (Business Unit) -->
+                <div class="col-md-5">
+                    <label class="form-label">Country <span class="text-danger">*</span>
+                        <select class="form-select" name="business_unit_id" required>
+                            <option value="">Select Country...</option>
+                            <?php foreach ($businessUnits as $bu): ?>
+                                <option value="<?= (int) $bu['id'] ?>" <?= ($currentBuId == (int) $bu['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+
                 <!-- Preferred Cities (tags) -->
                 <div class="col-md-7">
                     <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
