@@ -85,8 +85,8 @@ if ($canSeeCSNK) {
     $approvedCount = csnk_count_bu($conn, "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$notBlacklisted}", $buId);
     $deletedCount = csnk_count_bu($conn, "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$notBlacklisted}", $buId);
 
-    // Blacklist rows are tenant-scoped too
-    $blacklistedCount = csnk_count_bu($conn, "SELECT COUNT(*) FROM blacklisted_applicants WHERE business_unit_id=? AND is_active = 1", $buId);
+    // Blacklist rows are tenant-scoped too - get business_unit_id from applicants table via JOIN
+    $blacklistedCount = csnk_count_bu($conn, "SELECT COUNT(*) FROM blacklisted_applicants ba JOIN applicants a ON ba.applicant_id = a.id WHERE a.business_unit_id=? AND ba.is_active = 1", $buId);
 }
 
 
@@ -492,6 +492,8 @@ if ($canViewReports && $conn instanceof mysqli) {
                                 aria-label="Approved applicants count"><?php echo (int) $approvedCount; ?></span>
                         </span>
                     </a>
+
+
 
                     <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>"
                         aria-current="<?php echo $currentPage === 'deleted' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
