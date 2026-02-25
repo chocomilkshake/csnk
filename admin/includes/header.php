@@ -426,36 +426,6 @@ if ($canViewReports && $conn instanceof mysqli) {
                         <i class="bi bi-slash-circle"></i><span class="label"><span class="text">Blacklisted</span></span>
                     </a>
                 </div>
-
-                <!-- SMC-Bahrain -->
-                <button class="sidebar-item sidebar-toggle" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#smcBahrainMenu"
-                        aria-expanded="false" aria-controls="smcBahrainMenu"
-                        data-bs-placement="right" title="SMC-Bahrain">
-                    <i class="bi bi-globe2"></i>
-                    <span class="label"><span class="text">SMC-Bahrain</span></span>
-                    <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
-                </button>
-                <div class="collapse sidebar-submenu" id="smcBahrainMenu">
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-people"></i><span class="label"><span class="text">List of Applicants</span></span>
-                    </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-clock-history"></i><span class="label"><span class="text">Pending</span></span>
-                    </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-hourglass-split"></i><span class="label"><span class="text">On Process</span></span>
-                    </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-check-circle"></i><span class="label"><span class="text">Approved</span></span>
-                    </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-trash"></i><span class="label"><span class="text">Deleted</span></span>
-                    </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-slash-circle"></i><span class="label"><span class="text">Blacklisted</span></span>
-                    </a>
-                </div>
             <?php endif; ?>
 
             <?php if ($canViewActivity): ?>
