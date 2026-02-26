@@ -58,7 +58,7 @@ if ($conn instanceof mysqli) {
         // First, check if user's direct business_unit_id in admin_users is SMC
         $directBuId = (int)($currentUser['business_unit_id'] ?? 0);
         $isDirectBuSmc = false;
-        
+
         if ($directBuId > 0) {
             $sqlCheckDirectBu = "
                 SELECT ag.code AS agency_code
@@ -76,7 +76,7 @@ if ($conn instanceof mysqli) {
                 $isDirectBuSmc = (!empty($directRow) && ($directRow['agency_code'] ?? '') === 'smc');
             }
         }
-        
+
         if ($isDirectBuSmc && $directBuId > 0) {
             // Use the direct business unit assignment
             $_SESSION['current_bu_id'] = $directBuId;
@@ -162,9 +162,11 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin      = ($currentRole === 'admin');
 $isEmployee   = ($currentRole === 'employee');
 
-/* For SMC admin side, show Monitoring/Reports to admins & super-admins */
+/* For SMC admin side:
+   - Monitoring (Activity Logs) -> admins + super-admins
+   - Reports -> admins + super-admins + employees  ✅ enabled for employees */
 $canViewActivity = ($isAdmin || $isSuperAdmin);
-$canViewReports  = ($isAdmin || $isSuperAdmin);
+$canViewReports  = ($isAdmin || $isSuperAdmin || $isEmployee);
 
 /* BU ID helper (ensure we pick the enforced one) */
 $buId = (int)($_SESSION['current_bu_id'] ?? 0);
@@ -296,6 +298,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
     <style>
         :root {
             --sidebar-width: 300px;
+            --sidebar-collapsed-width: 72px; /* added to ensure clean collapsed typography */
             --csnk-red: #c40000;
             --csnk-red-700: #991b1b;
             --csnk-gray-25: #f9fafb;
@@ -381,11 +384,13 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
 
-            <!-- SMC - Turkey Applicants -->
+            <!-- SMC INTERNATIONAL -->
             <div class="sidebar-section-label">
-                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC - International
+                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">
+                SMC - International
             </div>
 
+            <!-- Countries Dropdown -->
             <button
                 class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>"
                 type="button"
@@ -394,9 +399,9 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
                 aria-controls="<?php echo h($collapseApplicantsId); ?>"
                 data-bs-placement="right"
-                title="SMC - Turkey">
+                title="SMC Countries">
                 <i class="bi bi-geo-alt"></i>
-                <span class="label"><span class="text">SMC - Turkey</span></span>
+                <span class="label"><span class="text">SMC Countries</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
@@ -498,72 +503,72 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     <i class="bi bi-clipboard-data"></i>
                     <span class="label"><span class="text">Activity Logs</span></span>
                 </a>
-
-                <?php if ($canViewReports): ?>
-                    <div class="sidebar-section-label">Reports</div>
-                    <?php
-                    // Reports badge (DISTINCT applicants), BU-scoped
-                    $reportNotesCount = 0;
-                    if ($conn instanceof mysqli) {
-                        $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
-                        if ($stmt) {
-                            $stmt->bind_param('i', $buId);
-                            $stmt->execute();
-                            $res = $stmt->get_result();
-                            $row = $res ? $res->fetch_row() : [0];
-                            $reportNotesCount = (int)($row[0] ?? 0);
-                            $stmt->close();
-                        }
-                    }
-                    ?>
-                    <a href="../../../pages/reports.php"
-                       class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
-                       aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>"
-                       data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
-                        <i class="bi bi-journal-text" aria-hidden="true"></i>
-                        <span class="label">
-                            <span class="text">Reports</span>
-                        </span>
-                        <span class="side-badge" aria-live="polite">
-                            <span class="pill-count <?php echo ((int)($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
-                                  aria-label="Total reports count">
-                                <?php echo (int)($reportNotesCount ?? 0); ?>
-                            </span>
-                        </span>
-                    </a>
-                <?php endif; ?>
             <?php endif; ?>
 
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-section-label">Settings</div>
-
-                <!-- ACCOUNTS -->
-                <a href="../../../pages/accounts.php"
-                class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
-                data-bs-toggle="tooltip" data-bs-placement="right" title="Accounts">
-                    <i class="bi bi-person-badge"></i>
-                    <span class="label"><span class="text">Accounts</span></span>
+            <?php if ($canViewReports): ?>
+                <div class="sidebar-section-label">Reports</div>
+                <?php
+                // Reports badge (DISTINCT applicants), BU-scoped
+                $reportNotesCount = 0;
+                if ($conn instanceof mysqli) {
+                    $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $buId);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        $row = $res ? $res->fetch_row() : [0];
+                        $reportNotesCount = (int)($row[0] ?? 0);
+                        $stmt->close();
+                    }
+                }
+                ?>
+                <a href="../../../pages/reports.php"
+                   class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                   aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
+                    <span class="label">
+                        <span class="text">Reports</span>
+                    </span>
+                    <span class="side-badge" aria-live="polite">
+                        <span class="pill-count <?php echo ((int)($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
+                              aria-label="Total reports count">
+                            <?php echo (int)($reportNotesCount ?? 0); ?>
+                        </span>
+                    </span>
                 </a>
+            <?php endif; ?>
 
-                <!-- PROFILE -->
-                <a href="../../../pages/profile.php"
-                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
-                data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
-                    <i class="bi bi-person-circle"></i>
-                    <span class="label"><span class="text">Profile</span></span>
-                </a>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Settings</div>
 
-                <div class="sidebar-divider"></div>
+            <!-- ACCOUNTS -->
+            <a href="../../../pages/accounts.php"
+               class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Accounts">
+                <i class="bi bi-person-badge"></i>
+                <span class="label"><span class="text">Accounts</span></span>
+            </a>
 
-                <!-- LOGOUT -->
-                <a href="../../../pages/logout.php"
-                class="sidebar-item text-danger"
-                data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span class="label"><span class="text">Logout</span></span>
-                </a>
+            <!-- PROFILE -->
+            <a href="../../../pages/profile.php"
+               class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
+                <i class="bi bi-person-circle"></i>
+                <span class="label"><span class="text">Profile</span></span>
+            </a>
+
+            <div class="sidebar-divider"></div>
+
+            <!-- LOGOUT -->
+            <a href="../../../pages/logout.php"
+               class="sidebar-item text-danger"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="label"><span class="text">Logout</span></span>
+            </a>
         </nav>
     </aside>
 
