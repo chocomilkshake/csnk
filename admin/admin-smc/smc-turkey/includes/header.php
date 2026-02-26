@@ -373,7 +373,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
         <nav class="sidebar-menu" aria-label="Primary">
             <!-- Dashboard (SMC) -->
-            <a href="../../../pages/dashboard-smc.php"
+            <a href="../pages/dashboard-smc.php"
                class="sidebar-item <?php echo $currentPage === 'dashboard-smc' ? 'active' : ''; ?>"
                aria-current="<?php echo $currentPage === 'dashboard-smc' ? 'page' : 'false'; ?>"
                data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard (SMC)">
