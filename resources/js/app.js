@@ -557,7 +557,6 @@ function createApplicantCard(applicant) {
       <!-- Top photo -->
       <div class="ratio ratio-4x3 card-photo-wrap position-relative">
         <img class="card-photo" alt="${fullName}">
-        <div class="rate-badge">${escapeHtml(rateRange)}</div>
       </div>
 
       <!-- Body -->
@@ -587,17 +586,6 @@ function createApplicantCard(applicant) {
   // Photo
   const img = col.querySelector('.card-photo');
   setAvatar(img, applicant.photo_url || applicant.picture, applicant.photo_placeholder);
-
-  // Hide badge if no valid rate
-  const badge = col.querySelector('.rate-badge');
-  if (badge) {
-    const txt = (badge.textContent || '').trim();
-    if (!txt || txt === '—') {
-      badge.style.display = 'none';
-    } else {
-      badge.style.display = '';
-    }
-  }
 
   // View Profile button
   const viewBtn = col.querySelector('.view-profile-btn');
