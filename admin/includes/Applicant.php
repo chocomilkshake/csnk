@@ -45,6 +45,7 @@ class Applicant
         return $rows;
     }
 
+
     /**
      * Check if applicant belongs to the specified business unit.
      * @param int $applicantId
