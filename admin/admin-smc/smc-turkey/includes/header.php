@@ -368,7 +368,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
     <!-- Sidebar -->
     <aside class="sidebar" id="smcSidebar">
         <div class="sidebar-brand text-center">
-            <img src="../../../resources/img/csnklogo.png" alt="CSNK/SMC Logo" class="img-fluid d-block mx-auto rounded-2">
+            <img src="../resources/img/smcbrandname.png" alt="CSNK/SMC Logo" class="img-fluid d-block mx-auto rounded-2">
         </div>
 
         <nav class="sidebar-menu" aria-label="Primary">
