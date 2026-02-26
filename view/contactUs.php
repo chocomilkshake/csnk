@@ -33,7 +33,7 @@ $CONFIG = [
     'smtp_host'     => 'smtp.gmail.com',
     'smtp_port'     => 587,                        // 587 for TLS
     'smtp_user'     => 'csnkmanila@gmail.com',
-    'smtp_pass'     => 'hqyp ljaf kwyd fkzo',      // Gmail App Password (NOT normal password)
+    'smtp_pass'     => 'svmw uiwi vjvt hteu',          // Gmail App Password (16 chars, NO spaces)
     'smtp_encrypt'  => 'tls',                      // Overwritten below if PHPMailer is available
     'smtp_debug'    => 0,                          // 0=off; 2=verbose (logs to error_log)
     'enable_mail'   => true,                       // set false to skip email while testing
@@ -186,101 +186,193 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
                     $htmlBody =
-'<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CSNK Manpower Agency</title>
-</head>
-<body style="margin:0;padding:0;background:#ffebee;font-family:Arial,Helvetica,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffebee;padding:24px 0;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:94%;">
+                      $body = '
+                      <!DOCTYPE html>
+                      <html lang="en">
+                      <head>
+                      <meta charset="UTF-8">
+                      <meta name="x-apple-disable-message-reformatting">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>CSNK Manpower Agency</title>
+                      </head>
 
-          <!-- Logo row (two images side-by-side) -->
-          <tr>
-            <td align="center" style="padding:8px 0 16px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                <tr>
-                  <td style="padding:0 8px;">
-                    <img src="cid:whychoose_cid" alt="Why Choose" style="max-width:140px;height:auto;display:block;border:0;">
-                  </td>
-                  <td style="padding:0 8px;">
-                    <img src="cid:secondary_logo_cid" alt="CSNK" style="max-width:140px;height:auto;display:block;border:0;">
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+                      <body style="margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;">
 
-          <!-- Card -->
-          <tr>
-            <td style="background:#ffffff;border:1px solid #f2b9bc;border-radius:10px;overflow:hidden;">
-              <!-- Header band -->
-              <div style="background:linear-gradient(90deg,#c62828,#e53935);padding:14px 18px;">
-                <h1 style="margin:0;font-size:18px;color:#fff;font-weight:600;">New Contact Message</h1>
-                <div style="margin-top:4px;font-size:12px;color:#ffe9e9;">Received via the CSNK website</div>
-              </div>
+                        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                              style="padding:40px 0;background:#f2f4f7;">
+                          <tr>
+                            <td align="center">
 
-              <!-- Summary -->
-              <div style="padding:14px 18px;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  <tr>
-                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Name</td>
-                    <td style="padding:6px 0;color:#222;font-size:14px;font-weight:600;">' . $h($senderName) . '</td>
-                  </tr>
-                  <tr>
-                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Email</td>
-                    <td style="padding:6px 0;font-size:14px;">
-                      <a href="mailto:' . $h($senderEmail) . '" style="color:#1a73e8;text-decoration:none;">' . $h($senderEmail) . '</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Phone</td>
-                    <td style="padding:6px 0;color:#222;font-size:14px;">' . $h($senderPhone) . '</td>
-                  </tr>
-                  <tr>
-                    <td style="width:130px;padding:6px 0;color:#666;font-size:13px;">Topic</td>
-                    <td style="padding:6px 0;color:#222;font-size:14px;">
-                      <span style="display:inline-block;padding:4px 10px;border-radius:999px;color:#b00020;background:#fde7ea;border:1px solid #f8c9cf;font-size:12px;">' . $h($topicSafe) . '</span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
+                              <!-- CARD WRAPPER (glass effect + shadow) -->
+                              <table width="700" cellpadding="0" cellspacing="0" role="presentation"
+                                style="
+                                  width:700px;
+                                  max-width:95%;
+                                  background:rgba(255,255,255,0.88);
+                                  backdrop-filter:blur(14px);
+                                  border-radius:24px;
+                                  border:1px solid #e4e7eb;
+                                  box-shadow:0 8px 28px rgba(0,0,0,0.08);
+                                  overflow:hidden;
+                                ">
 
-              <!-- Divider -->
-              <div style="border-top:1px solid #f2b9bc;margin:0 18px 0;"></div>
+                                <!-- LOGOS -->
+                                <tr>
+                                  <td align="center" style="padding:20px 0 10px;">
+                                    <table cellspacing="0" cellpadding="0" role="presentation">
+                                      <tr>
+                                        <td style="padding:0 14px;">
+                                          <img src="cid:whychoose_cid"
+                                              style="max-width:150px;height:auto;display:block;">
+                                        </td>
+                                        <td style="padding:0 14px;">
+                                          <img src="cid:secondary_logo_cid"
+                                              style="max-width:150px;height:auto;display:block;">
+                                        </td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
 
-              <!-- Message -->
-              <div style="padding:12px 18px 16px;">
-                <div style="color:#444;font-size:14px;line-height:1.6;">
-                  <div style="color:#c62828;font-weight:600;margin-bottom:6px;">Message</div>
-                  <div style="white-space:pre-wrap;background:#fff6f6;border:1px solid #f2b9bc;border-radius:8px;padding:10px;color:#333;">' . nl2br($h($messageSafe)) . '</div>
-                </div>
-              </div>
+                                <!-- HEADER -->
+                                <tr>
+                                  <td style="
+                                    background:linear-gradient(135deg,#d21f3c,#e63c43,#ff5a63);
+                                    padding:26px 32px;
+                                    border-top-left-radius:24px;
+                                    border-top-right-radius:24px;
+                                  ">
+                                    <div style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">
+                                      🌐 New Contact Message
+                                    </div>
+                                    <div style="color:#ffecec;font-size:13px;margin-top:4px;">
+                                      Received via the CSNK Website
+                                    </div>
+                                  </td>
+                                </tr>
 
-              <!-- Footer -->
-              <div style="background:#fff5f5;padding:10px 18px;border-top:1px solid #f2b9bc;">
-                <div style="font-size:12px;color:#777;">This email was sent automatically from the CSNK website contact form.</div>
-              </div>
-            </td>
-          </tr>
+                                <!-- MAIN BODY -->
+                                <tr>
+                                  <td style="padding:26px 34px 10px;">
 
-          <!-- Legal -->
-          <tr>
-            <td style="text-align:center;padding:10px 6px;color:#999;font-size:11px;">
-              © ' . date('Y') . ' CSNK. All rights reserved.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>';
+                                    <!-- Detail Listing Box -->
+                                    <table width="100%" cellspacing="0" cellpadding="0" role="presentation"
+                                          style="
+                                            background:#ffffff;
+                                            border-radius:18px;
+                                            border:1px solid #e9ecef;
+                                            padding:20px 24px;
+                                            box-shadow:0 2px 10px rgba(0,0,0,0.04);
+                                          ">
+
+                                      <!-- NAME -->
+                                      <tr>
+                                        <td style="width:140px;padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
+                                          👤 Name
+                                        </td>
+                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">
+                                          '.$h($senderName).'
+                                        </td>
+                                      </tr>
+
+                                      <!-- EMAIL -->
+                                      <tr>
+                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
+                                          ✉ Email
+                                        </td>
+                                        <td style="padding:10px 0;">
+                                          <a href="mailto:'.$h($senderEmail).'"
+                                            style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">
+                                            '.$h($senderEmail).'
+                                          </a>
+                                        </td>
+                                      </tr>
+
+                                      <!-- PHONE -->
+                                      <tr>
+                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
+                                          📱 Phone
+                                        </td>
+                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">
+                                          '.$h($senderPhone).'
+                                        </td>
+                                      </tr>
+
+                                      <!-- TOPIC -->
+                                      <tr>
+                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
+                                          🏷 Topic
+                                        </td>
+                                        <td style="padding:10px 0;">
+                                          <span style="
+                                            display:inline-block;
+                                            padding:6px 14px;
+                                            background:#fff2f4;
+                                            border:1px solid #f7cfd4;
+                                            border-radius:999px;
+                                            color:#d21f3c;
+                                            font-size:13px;
+                                            font-weight:700;">
+                                            '.$h($topicSafe).'
+                                          </span>
+                                        </td>
+                                      </tr>
+
+                                    </table>
+
+                                  </td>
+                                </tr>
+
+                                <!-- MESSAGE SECTION -->
+                                <tr>
+                                  <td style="padding:6px 34px 30px;">
+
+                                    <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">
+                                      💬 Message
+                                    </div>
+
+                                    <div style="
+                                      background:#ffffff;
+                                      border-radius:16px;
+                                      padding:18px 22px;
+                                      border:1px solid #f0c7cb;
+                                      line-height:1.7;
+                                      font-size:15px;
+                                      color:#374151;
+                                      white-space:pre-wrap;
+                                      box-shadow:0 2px 8px rgba(0,0,0,0.05);
+                                    ">
+                                      '.nl2br($h($messageSafe)).'
+                                    </div>
+
+                                  </td>
+                                </tr>
+
+                                <!-- FOOTER -->
+                                <tr>
+                                  <td style="
+                                    background:#faf6f7;
+                                    padding:16px 26px;
+                                    border-top:1px solid #e5d1d4;
+                                    text-align:center;
+                                  ">
+                                    <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">
+                                      This email was sent automatically from the CSNK website contact form.
+                                    </div>
+                                    <div style="font-size:12px;color:#aaaaaa;">
+                                      © '.date("Y").' CSNK. All rights reserved.
+                                    </div>
+                                  </td>
+                                </tr>
+
+                              </table>
+
+                            </td>
+                          </tr>
+                        </table>
+
+                      </body>
+                      </html>';
 
                     // -------- Embed two logos (CID) --------
                     // #1 whychoose.png
