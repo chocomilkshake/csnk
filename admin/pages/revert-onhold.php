@@ -74,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!($conn instanceof mysqli)) {
             $errors[] = 'Database connection error.';
         } else {
-            // Verify applicant exists and is on_hold
-            $sqlCheck = "SELECT id, status, first_name, middle_name, last_name, suffix FROM applicants WHERE id = ? AND status = 'on_hold' AND deleted_at IS NULL LIMIT 1";
+            // Verify applicant exists and is on_hold (include business_unit_id)
+            $sqlCheck = "SELECT id, status, business_unit_id, first_name, middle_name, last_name, suffix FROM applicants WHERE id = ? AND status = 'on_hold' AND deleted_at IS NULL LIMIT 1";
             $stmtCheck = $conn->prepare($sqlCheck);
             $stmtCheck->bind_param("i", $applicantId);
             $stmtCheck->execute();
@@ -86,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$applicant) {
                 $errors[] = 'Applicant not found or is not on hold status.';
             } else {
+                $businessUnitId = $applicant['business_unit_id'] ?? null;
                 $conn->begin_transaction();
 
                 try {
@@ -100,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $stmtUpdate->close();
 
-                    // Insert status report
+                    // Insert status report (include business_unit_id)
                     $fullName = getFullName(
                         $applicant['first_name'] ?? '',
                         $applicant['middle_name'] ?? '',
@@ -109,9 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                     $reportText = "Reverted from On Hold to Pending. Reason: {$reason}. Description: {$description}";
                     
-                    $sqlReport = "INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id) VALUES (?, 'on_hold', 'pending', ?, ?)";
+                    $sqlReport = "INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, 'on_hold', 'pending', ?, ?)";
                     $stmtReport = $conn->prepare($sqlReport);
-                    $stmtReport->bind_param("isi", $applicantId, $reportText, $adminId);
+                    $stmtReport->bind_param("iissi", $applicantId, $businessUnitId, $reportText, $adminId);
                     $stmtReport->execute();
                     $stmtReport->close();
 
