@@ -908,12 +908,13 @@ class Applicant
                 throw new \RuntimeException('Failed to move candidate to on_process.');
             }
 
-            // 2) Insert status report line
+            // 2) Insert status report line (include business_unit_id)
+            $businessUnitId = $candidate['business_unit_id'] ?? null;
             $stmt2 = $this->db->prepare("
-                INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
-                VALUES (?, 'pending', 'on_process', ?, ?)
+                INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+                VALUES (?, ?, 'pending', 'on_process', ?, ?)
             ");
-            $stmt2->bind_param("isi", $replacementApplicantId, $reportText, $adminId);
+            $stmt2->bind_param("iissi", $replacementApplicantId, $businessUnitId, $reportText, $adminId);
             $stmt2->execute();
 
             // 3) Reassign client booking if available
