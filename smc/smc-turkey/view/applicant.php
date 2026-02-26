@@ -7,7 +7,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SMC Manpower Agency Co. – Kasambahay Applicants</title>
+  <title>SMC Manpower Agency Co.</title>
 
   <!-- ✅ FAVICONS -->
   <link rel="icon" type="image/png" href="/resources/img/smc.png" />
@@ -32,7 +32,7 @@
   <?php include __DIR__ . '/navbar.php'; ?>
 
   <main class="container py-4">
-    <div class="mb-3"><h1 class="h3 mb-0 text-navy">Kasambahay Applicants</h1></div>
+    <div class="mb-3"><h1 class="h3 mb-0 text-navy">Housemaids</h1></div>
 
     <!-- Search Bar -->
     <section class="search-wrap mb-4">
@@ -287,6 +287,13 @@
                 <div class="p-3 rounded-3 border-soft">
                   <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Employment Type</div>
                   <div class="fw-semibold" id="employmentValue">—</div>
+                </div>
+              </div>
+              <!-- Daily Rate -->
+              <div class="col-12 col-md-6">
+                <div class="p-3 rounded-3 border-soft">
+                  <div class="text-uppercase small fw-bold" style="letter-spacing:.5px;color:#1B355C;">Daily Rate</div>
+                  <div class="fw-semibold" id="dailyRateValue">—</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
@@ -567,8 +574,6 @@
   <!-- App scripts -->
   <script src="../resources/js/app.js"></script>
   <script src="../resources/js/applicant.js"></script>
-  <!-- Policy Modals Handler -->
-  <script src="../resources/js/policy-modals.js"></script>
 
   <?php include __DIR__ . '/footer.php'; ?>
 
