@@ -220,9 +220,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dataBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
 
     // Validate business_unit_id belongs to allowed BUs if user has restrictions
-    if (!empty($allowedBuIds) && !in_array($dataBuId, $allowedBuIds)) {
+    // Super admins can add applicants to ANY business unit, so skip this validation for them
+    if (!$isSuperAdmin && !empty($allowedBuIds) && !in_array($dataBuId, $allowedBuIds)) {
         $dataBuId = $currentBuId; // Fallback to user's BU if invalid
     }
+
 
     if (empty($errors)) {
         $data = [
