@@ -14,6 +14,20 @@ if (empty($_SESSION['current_bu_id'])) {
     exit;
 }
 
+/* Redirect SMC employees to SMC dashboard - they should use the SMC admin interface */
+$userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
+$userRole = isset($_SESSION['role']) ? strtolower($_SESSION['role']) : '';
+// Only redirect employees (not admins/super_admins) who have agency='smc'
+if ($userAgency === 'smc' && $userRole === 'employee') {
+    // Only redirect from main pages, not from SMC pages themselves
+    $currentScript = basename($_SERVER['PHP_SELF']);
+    $smcPages = ['dashboard-smc.php', 'login.php', 'logout.php'];
+    if (!in_array($currentScript, $smcPages)) {
+        header('Location: ../admin-smc/smc-turkey/pages/dashboard-smc.php');
+        exit;
+    }
+}
+
 $currentUser = $auth->getCurrentUser();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 
