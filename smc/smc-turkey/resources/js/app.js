@@ -657,7 +657,7 @@ function ensureModalFooterAndHire(applicant){
     footer.innerHTML = `
       <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
       <div class="d-flex gap-2">
-        <button type="button" class="btn btn-brand text-white" id="modalHireBtn">
+        <button type="button" class="btn btn-primary text-white" id="modalHireBtn">
           <i class="bi bi-calendar2-check me-1"></i> Hire Me
         </button>
       </div>
