@@ -162,9 +162,7 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-/* For SMC admin side:
-   - Monitoring (Activity Logs) -> admins + super-admins
-   - Reports -> admins + super-admins + employees  ✅ enabled for employees */
+/* For SMC admin side, show Monitoring/Reports to admins & super-admins */
 $canViewActivity = ($isAdmin || $isSuperAdmin);
 $canViewReports = ($isAdmin || $isSuperAdmin);
 
@@ -305,7 +303,6 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
     <style>
         :root {
             --sidebar-width: 300px;
-            --sidebar-collapsed-width: 72px; /* added to ensure clean collapsed typography */
             --csnk-red: #c40000;
             --csnk-red-700: #991b1b;
             --csnk-gray-25: #f9fafb;
@@ -558,7 +555,8 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
     <!-- Sidebar -->
     <aside class="sidebar" id="smcSidebar">
         <div class="sidebar-brand text-center">
-            <img src="../resources/img/smcbrandname.png" alt="CSNK/SMC Logo" class="img-fluid d-block mx-auto rounded-2">
+            <img src="../resources/img/smcbrandname.png" alt="CSNK/SMC Logo"
+                class="img-fluid d-block mx-auto rounded-2">
         </div>
 
         <nav class="sidebar-menu" aria-label="Primary">
@@ -571,10 +569,9 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
 
-            <!-- SMC INTERNATIONAL -->
+            <!-- SMC - Turkey Applicants -->
             <div class="sidebar-section-label">
-                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">
-                SMC - International
+                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC - International
             </div>
 
             <button class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>" type="button"
@@ -582,7 +579,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
                 aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
                 <i class="bi bi-geo-alt"></i>
-                <span class="label"><span class="text">SMC Countries</span></span>
+                <span class="label"><span class="text">SMC - Turkey</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
@@ -681,7 +678,6 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     <i class="bi bi-clipboard-data"></i>
                     <span class="label"><span class="text">Activity Logs</span></span>
                 </a>
-            <?php endif; ?>
 
                 <?php if ($canViewReports): ?>
                     <div class="sidebar-section-label">Reports</div>
@@ -726,8 +722,8 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Accounts">
-                <i class="bi bi-person-badge <span class="></i>
-                <label"><span class="text">Accounts</span></span>
+                <i class="bi bi-person-badge"></i>
+                <span class="label"><span class="text">Accounts</span></span>
             </a>
 
             <!-- PROFILE -->
@@ -740,6 +736,8 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             </a>
 
             <div class="sidebar-divider"></div>
+
+            <!-- LOGOUT -->
             <a href="../../../pages/logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Logout">
                 <i class="bi bi-box-arrow-right"></i>
