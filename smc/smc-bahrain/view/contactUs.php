@@ -21,7 +21,7 @@ use PHPMailer\PHPMailer\Exception;
 // --------------------------------------------------
 $CONFIG = [
     // ---- CHANGE THESE ----
-    'to_email'      => 'csnkmanila@gmail.com',     // Destination email
+    'to_email'      => 'smcphilippines.marketing@gmail.com',     // Destination email
     'to_name'       => 'CSNK Support',
     'from_email'    => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
     'from_name'     => 'CSNK Manpower Agency',
@@ -33,7 +33,7 @@ $CONFIG = [
     'smtp_host'     => 'smtp.gmail.com',
     'smtp_port'     => 587,                        // 587 for TLS
     'smtp_user'     => 'csnkmanila@gmail.com',
-    'smtp_pass'     => 'svmw uiwi vjvt hteu',          // Gmail App Password (16 chars, NO spaces)
+    'smtp_pass'     => 'hqyp ljaf kwyd fkzo',      // Gmail App Password (NOT normal password)
     'smtp_encrypt'  => 'tls',                      // Overwritten below if PHPMailer is available
     'smtp_debug'    => 0,                          // 0=off; 2=verbose (logs to error_log)
     'enable_mail'   => true,                       // set false to skip email while testing
@@ -184,195 +184,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $topicSafe   = $topic ?? '';
                     $messageSafe = $message ?? '';
 
-                    // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
+                    // Modern, clean HTML (NAVY + GOLD theme; no red/black)
                     $htmlBody =
-                      $body = '
-                      <!DOCTYPE html>
-                      <html lang="en">
-                      <head>
-                      <meta charset="UTF-8">
-                      <meta name="x-apple-disable-message-reformatting">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <title>CSNK Manpower Agency</title>
-                      </head>
+'<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSNK Contact Message</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f8ff;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f8ff;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:94%;">
 
-                      <body style="margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;">
+          <!-- Logo row (two images side-by-side) -->
+          <tr>
+            <td align="center" style="padding:8px 0 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                <tr>
+                  <td style="padding:0 8px;">
+                    <img src="cid:whychoose_cid" alt="Why Choose" style="max-width:140px;height:auto;display:block;border:0;">
+                  </td>
+                  <td style="padding:0 8px;">
+                    <img src="cid:secondary_logo_cid" alt="CSNK" style="max-width:140px;height:auto;display:block;border:0;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-                        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                              style="padding:40px 0;background:#f2f4f7;">
-                          <tr>
-                            <td align="center">
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #e6ecf5;border-radius:10px;overflow:hidden;">
+              <!-- Header band -->
+              <div style="background:linear-gradient(90deg,#1b355c,#0b1f3a);padding:14px 18px;">
+                <h1 style="margin:0;font-size:18px;color:#fff;font-weight:600;">New Contact Message</h1>
+                <div style="margin-top:4px;font-size:12px;color:#e6ecf5;">Received via the CSNK website</div>
+              </div>
 
-                              <!-- CARD WRAPPER (glass effect + shadow) -->
-                              <table width="700" cellpadding="0" cellspacing="0" role="presentation"
-                                style="
-                                  width:700px;
-                                  max-width:95%;
-                                  background:rgba(255,255,255,0.88);
-                                  backdrop-filter:blur(14px);
-                                  border-radius:24px;
-                                  border:1px solid #e4e7eb;
-                                  box-shadow:0 8px 28px rgba(0,0,0,0.08);
-                                  overflow:hidden;
-                                ">
+              <!-- Summary -->
+              <div style="padding:14px 18px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#667090;font-size:13px;">Name</td>
+                    <td style="padding:6px 0;color:#0e1a2b;font-size:14px;font-weight:600;">' . $h($senderName) . '</td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#667090;font-size:13px;">Email</td>
+                    <td style="padding:6px 0;font-size:14px;">
+                      <a href="mailto:' . $h($senderEmail) . '" style="color:#3152a3;text-decoration:none;">' . $h($senderEmail) . '</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#667090;font-size:13px;">Phone</td>
+                    <td style="padding:6px 0;color:#0e1a2b;font-size:14px;">' . $h($senderPhone) . '</td>
+                  </tr>
+                  <tr>
+                    <td style="width:130px;padding:6px 0;color:#667090;font-size:13px;">Topic</td>
+                    <td style="padding:6px 0;color:#0e1a2b;font-size:14px;">
+                      <span style="display:inline-block;padding:4px 10px;border-radius:999px;color:#1a2236;background:#fff7d6;border:1px solid #ffe69c;font-size:12px;">' . $h($topicSafe) . '</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
 
-                                <!-- LOGOS -->
-                                <tr>
-                                  <td align="center" style="padding:20px 0 10px;">
-                                    <table cellspacing="0" cellpadding="0" role="presentation">
-                                      <tr>
-                                        <td style="padding:0 14px;">
-                                          <img src="cid:whychoose_cid"
-                                              style="max-width:150px;height:auto;display:block;">
-                                        </td>
-                                        <td style="padding:0 14px;">
-                                          <img src="cid:secondary_logo_cid"
-                                              style="max-width:150px;height:auto;display:block;">
-                                        </td>
-                                      </tr>
-                                    </table>
-                                  </td>
-                                </tr>
+              <!-- Divider -->
+              <div style="border-top:1px solid #e6ecf5;margin:0 18px 0;"></div>
 
-                                <!-- HEADER -->
-                                <tr>
-                                  <td style="
-                                    background:linear-gradient(135deg,#d21f3c,#e63c43,#ff5a63);
-                                    padding:26px 32px;
-                                    border-top-left-radius:24px;
-                                    border-top-right-radius:24px;
-                                  ">
-                                    <div style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">
-                                      🌐 New Contact Message
-                                    </div>
-                                    <div style="color:#ffecec;font-size:13px;margin-top:4px;">
-                                      Received via the CSNK Website
-                                    </div>
-                                  </td>
-                                </tr>
+              <!-- Message -->
+              <div style="padding:12px 18px 16px;">
+                <div style="color:#32405a;font-size:14px;line-height:1.6;">
+                  <div style="color:#0b1f3a;font-weight:600;margin-bottom:6px;">Message</div>
+                  <div style="white-space:pre-wrap;background:#f9fbff;border:1px solid #e6ecf5;border-radius:8px;padding:10px;color:#1b2a41;">' . nl2br($h($messageSafe)) . '</div>
+                </div>
+              </div>
 
-                                <!-- MAIN BODY -->
-                                <tr>
-                                  <td style="padding:26px 34px 10px;">
+              <!-- Footer -->
+              <div style="background:#f9fbff;padding:10px 18px;border-top:1px solid #e6ecf5;">
+                <div style="font-size:12px;color:#7b879c;">This email was sent automatically from the CSNK website contact form.</div>
+              </div>
+            </td>
+          </tr>
 
-                                    <!-- Detail Listing Box -->
-                                    <table width="100%" cellspacing="0" cellpadding="0" role="presentation"
-                                          style="
-                                            background:#ffffff;
-                                            border-radius:18px;
-                                            border:1px solid #e9ecef;
-                                            padding:20px 24px;
-                                            box-shadow:0 2px 10px rgba(0,0,0,0.04);
-                                          ">
-
-                                      <!-- NAME -->
-                                      <tr>
-                                        <td style="width:140px;padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          👤 Name
-                                        </td>
-                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">
-                                          '.$h($senderName).'
-                                        </td>
-                                      </tr>
-
-                                      <!-- EMAIL -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          ✉ Email
-                                        </td>
-                                        <td style="padding:10px 0;">
-                                          <a href="mailto:'.$h($senderEmail).'"
-                                            style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">
-                                            '.$h($senderEmail).'
-                                          </a>
-                                        </td>
-                                      </tr>
-
-                                      <!-- PHONE -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          📱 Phone
-                                        </td>
-                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">
-                                          '.$h($senderPhone).'
-                                        </td>
-                                      </tr>
-
-                                      <!-- TOPIC -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          🏷 Topic
-                                        </td>
-                                        <td style="padding:10px 0;">
-                                          <span style="
-                                            display:inline-block;
-                                            padding:6px 14px;
-                                            background:#fff2f4;
-                                            border:1px solid #f7cfd4;
-                                            border-radius:999px;
-                                            color:#d21f3c;
-                                            font-size:13px;
-                                            font-weight:700;">
-                                            '.$h($topicSafe).'
-                                          </span>
-                                        </td>
-                                      </tr>
-
-                                    </table>
-
-                                  </td>
-                                </tr>
-
-                                <!-- MESSAGE SECTION -->
-                                <tr>
-                                  <td style="padding:6px 34px 30px;">
-
-                                    <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">
-                                      💬 Message
-                                    </div>
-
-                                    <div style="
-                                      background:#ffffff;
-                                      border-radius:16px;
-                                      padding:18px 22px;
-                                      border:1px solid #f0c7cb;
-                                      line-height:1.7;
-                                      font-size:15px;
-                                      color:#374151;
-                                      white-space:pre-wrap;
-                                      box-shadow:0 2px 8px rgba(0,0,0,0.05);
-                                    ">
-                                      '.nl2br($h($messageSafe)).'
-                                    </div>
-
-                                  </td>
-                                </tr>
-
-                                <!-- FOOTER -->
-                                <tr>
-                                  <td style="
-                                    background:#faf6f7;
-                                    padding:16px 26px;
-                                    border-top:1px solid #e5d1d4;
-                                    text-align:center;
-                                  ">
-                                    <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">
-                                      This email was sent automatically from the CSNK website contact form.
-                                    </div>
-                                    <div style="font-size:12px;color:#aaaaaa;">
-                                      © '.date("Y").' CSNK. All rights reserved.
-                                    </div>
-                                  </td>
-                                </tr>
-
-                              </table>
-
-                            </td>
-                          </tr>
-                        </table>
-
-                      </body>
-                      </html>';
+          <!-- Legal -->
+          <tr>
+            <td style="text-align:center;padding:10px 6px;color:#96a1b3;font-size:11px;">
+              © ' . date('Y') . ' CSNK. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>';
 
                     // -------- Embed two logos (CID) --------
                     // #1 whychoose.png
@@ -456,20 +364,24 @@ function invalidClass(array $errors, string $key): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CSNK Manpower Agency</title>
+  <link rel="icon" type="image/png" href="../resources/img/smc.png" />
+  <title>Contact Us</title>
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 
   <style>
     :root{
-      --accent-red: #D72638;      /* red hint */
-      --ink: #111111;             /* black hint */
-      --muted-ink: #6c757d;       /* Bootstrap gray-600 */
-      --bg: #ffffff;              /* white */
-      --border: #e9ecef;
-      --ring: rgba(215, 38, 56, .25); /* red focus ring */
+      /* ===== NAVY + GOLD THEME (no red, no black) ===== */
+      --smc-navy: #0B1F3A;           /* deep navy */
+      --smc-navy-2: #132A4A;         /* secondary navy */
+      --smc-navy-3: #1B355C;         /* accent navy */
+      --smc-gold: #FFD84D;           /* gold accent */
+      --ink: #16243B;                /* navy-ish text (not black) */
+      --muted-ink: #6c757d;          /* Bootstrap gray-600 */
+      --bg: #f5f8ff;                 /* soft blue background */
+      --border: #e6ecf5;             /* soft blue border */
+      --ring: rgba(255, 216, 77, .35); /* gold focus ring */
     }
     body {
       background: var(--bg);
@@ -479,34 +391,65 @@ function invalidClass(array $errors, string $key): string {
     .contact-card {
       border: 1px solid var(--border);
       border-radius: 14px;
-      box-shadow: 0 6px 28px rgba(17,17,17, .04);
+      box-shadow: 0 6px 28px rgba(11,31,58, .08);
       background: #fff;
     }
     .form-control, .form-select {
       border-radius: 10px;
       border-color: var(--border);
+      color: var(--ink);
     }
     .form-control:focus, .form-select:focus {
-      border-color: var(--accent-red);
+      border-color: var(--smc-gold);
       box-shadow: 0 0 0 .25rem var(--ring);
     }
     .form-check-input:checked {
-      background-color: var(--accent-red);
-      border-color: var(--accent-red);
+      background-color: var(--smc-navy);
+      border-color: var(--smc-navy);
     }
+    /* Accent button (navy gradient) */
     .btn-accent {
       --bs-btn-color: #fff;
-      --bs-btn-bg: var(--accent-red);
-      --bs-btn-border-color: var(--accent-red);
-      --bs-btn-hover-bg: #b81f2f;
-      --bs-btn-hover-border-color: #b81f2f;
-      --bs-btn-focus-shadow-rgb: 215, 38, 56;
+      --bs-btn-bg: var(--smc-navy);
+      --bs-btn-border-color: var(--smc-navy);
+      --bs-btn-hover-bg: #0d2a4e;
+      --bs-btn-hover-border-color: #0d2a4e;
+      --bs-btn-focus-shadow-rgb: 11, 31, 58;
+      border-radius: 999px;
+      font-weight: 700;
     }
-    .text-accent { color: var(--accent-red) !important; }
+    .text-accent { color: var(--smc-gold) !important; }
     .divider { height: 1px; background: var(--border); }
     .char-counter { font-size: .85rem; color: var(--muted-ink); }
-    .char-counter.warning { color: var(--accent-red); font-weight: 600; }
+    .char-counter.warning { color: var(--smc-navy); font-weight: 600; }
     .is-invalid ~ .invalid-feedback { display: block; }
+
+    /* Map/Contact card tweaks */
+    .badge-navy {
+      background: var(--smc-navy);
+      color:#fff;
+      border-radius: 999px;
+      padding: .35rem .75rem;
+      font-weight: 800;
+      letter-spacing:.2px;
+    }
+    .text-navy { color: var(--smc-navy) !important; }
+    .text-gold { color: var(--smc-gold) !important; }
+    .btn-navy{
+      background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
+      color:#fff; border:0; border-radius: 999px; padding:.65rem 1.1rem; font-weight:700;
+      box-shadow: 0 10px 22px rgba(11,31,58,.18);
+    }
+    .btn-navy:hover{ filter: brightness(1.03); color:#fff; }
+    .btn-outline-navy{
+      border-radius:999px;
+      border:2px solid var(--smc-navy);
+      color: var(--smc-navy);
+      padding:.6rem 1.05rem;
+      background: transparent;
+      font-weight:700;
+    }
+    .btn-outline-navy:hover{ background: var(--smc-navy); color:#fff; }
   </style>
 </head>
 <body>
@@ -519,7 +462,7 @@ function invalidClass(array $errors, string $key): string {
   <section class="container py-5 py-md-6">
     <div class="row align-items-center g-4">
       <div class="col-lg-6">
-        <h1 class="display-6 fw-bold mb-3">Contact <span class="text-accent">CSNK </span>Support</h1>
+        <h1 class="display-6 fw-bold mb-3">Contact <span class="text-accent">SMC </span>Support</h1>
         <p class="lead text-secondary mb-4">
           We’re here to help. Send us a message and we’ll get back to you shortly.
         </p>
@@ -534,7 +477,7 @@ function invalidClass(array $errors, string $key): string {
         </div>
 
         <?php if (!empty($errors['general'])): ?>
-          <div class="alert alert-danger mt-4" role="alert">
+          <div class="alert alert-warning mt-4" role="alert">
             <?= htmlspecialchars($errors['general'], ENT_QUOTES, 'UTF-8') ?>
           </div>
         <?php endif; ?>
@@ -701,7 +644,7 @@ function invalidClass(array $errors, string $key): string {
               <?= htmlspecialchars($CONFIG['to_email'], ENT_QUOTES, 'UTF-8') ?>
             </a>
             &nbsp;•&nbsp; Call us:
-            <a href="tel:+639000000000" class="link-secondary">+63 900 000 0000</a>
+            <a href="tel:+639000000000" class="link-secondary">0916 247 2721</a>
           </div>
         </div>
       </div>
@@ -709,10 +652,10 @@ function invalidClass(array $errors, string $key): string {
   </section>
 
   <!-- Contact / Map -->
-  <section id="contact" class="py-5 bg-light">
+  <section id="contact" class="py-5" style="background:#f0f4ff;">
     <div class="container">
       <div class="text-center mb-4">
-        <h2 class="fw-bold mb-1">Contact and Location</h2>
+        <h2 class="fw-bold mb-1 text-navy">Contact and Location</h2>
         <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
       </div>
 
@@ -735,15 +678,15 @@ function invalidClass(array $errors, string $key): string {
             <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
 
               <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="badge bg-danger rounded-pill px-3 py-2">CSNK Manpower Agency</span>
+                <span class="badge-navy rounded-pill px-3 py-2">SMC Manpower Agency Co.</span>
               </div>
 
-              <h5 class="fw-bold mb-3">Office Information</h5>
+              <h5 class="fw-bold mb-3 text-navy">Office Information</h5>
 
               <div class="d-flex gap-3 mb-3">
-                <div class="text-danger fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="text-gold fs-5"><i class="fa-solid fa-location-dot"></i></div>
                 <div>
-                  <div class="fw-semibold">Address</div>
+                  <div class="fw-semibold text-navy">Address</div>
                   <div class="text-muted small">
                     Ground Floor Unit 1 Eden Townhouse<br>
                     2001 Eden St. Cor Pedro Gil, Sta Ana<br>
@@ -753,37 +696,37 @@ function invalidClass(array $errors, string $key): string {
               </div>
 
               <div class="d-flex gap-3 mb-3">
-                <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div class="text-gold fs-5"><i class="fa-solid fa-phone"></i></div>
                 <div>
-                  <div class="fw-semibold">Phone</div>
-                  <div class="text-muted small">0945 657 0878</div>
+                  <div class="fw-semibold text-navy">Phone</div>
+                  <div class="text-muted small">0916 247 2721</div>
                 </div>
               </div>
 
               <div class="d-flex gap-3 mb-3">
-                <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div class="text-gold fs-5"><i class="fa-solid fa-envelope"></i></div>
                 <div>
-                  <div class="fw-semibold">Email</div>
-                  <div class="text-muted small">csnkmanila06@gmail.com</div>
+                  <div class="fw-semibold text-navy">Email</div>
+                  <div class="text-muted small">smcphilippines.marketing@gmail.com</div>
                 </div>
               </div>
 
               <div class="d-flex gap-3 mb-4">
-                <div class="text-danger fs-5"><i class="fa-solid fa-clock"></i></div>
+                <div class="text-gold fs-5"><i class="fa-solid fa-clock"></i></div>
                 <div>
-                  <div class="fw-semibold">Office Hours</div>
+                  <div class="fw-semibold text-navy">Office Hours</div>
                   <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
                 </div>
               </div>
 
               <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-danger rounded-pill px-4"
+                <a class="btn btn-navy rounded-pill px-4"
                    target="_blank" rel="noopener"
                    href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
                   <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
                 </a>
 
-                <a class="btn btn-outline-secondary rounded-pill px-4" href="#top">
+                <a class="btn btn-outline-navy rounded-pill px-4" href="#top">
                   <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
                 </a>
               </div>

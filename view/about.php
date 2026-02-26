@@ -442,7 +442,7 @@ $page = 'about';
                     women by connecting them with safe, legitimate, and rewarding employment opportunities. 
                     Through proper screening, guidance, and documentation, we ensure that every home receives 
                     trustworthy service, while every applicant receives a fair chance to build a better future."
-                data-img="../resources/img/overview.png" data-img-alt="Overview image">
+                data-img="../resources/img/overview2.png" data-img-alt="Overview image">
                 Overview
               </button>
 
