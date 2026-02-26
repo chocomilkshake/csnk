@@ -97,7 +97,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           // Reset CSRF & throttling and redirect
           $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
           $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-          header('Location: dashboard.php');
+          
+          // Redirect based on agency - SMC employees go to SMC dashboard
+          $userAgency = isset($user['agency']) ? strtolower($user['agency']) : '';
+          if ($userAgency === 'smc') {
+              header('Location: ../admin-smc/smc-turkey/pages/dashboard-smc.php');
+          } else {
+              header('Location: dashboard.php');
+          }
           exit();
         } else {
           // Failed login
