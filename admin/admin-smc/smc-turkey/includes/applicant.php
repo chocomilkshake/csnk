@@ -556,11 +556,20 @@ class Applicant
      * Get countries with applicant counts for SMC (excludes Philippines).
      * This is used for the country filter on the applicants list page.
      * 
-     * @param int|null $businessUnitId If provided, only count applicants for this BU
+     * @param int|null $buId BU scope - null for unscoped (super admin/employee)
+     * @param string $status Filter by status ('all' or specific status)
+     * @param string $q Search query (searches name, email, phone)
+     * @param bool $notDeleted Exclude deleted applicants (default true)
+     * @param bool $notBlacklisted Exclude blacklisted applicants (default true)
      * @return array Array of countries with counts: ['id', 'name', 'count']
      */
-    public function getCountriesWithCounts(?int $businessUnitId = null): array
-    {
+    public function getCountriesWithCounts(
+        ?int $buId = null,
+        string $status = 'all',
+        string $q = '',
+        bool $notDeleted = true,
+        bool $notBlacklisted = true
+    ): array {
         // Get all countries except Philippines (id=1) for SMC
         $sql = "
             SELECT 
@@ -569,7 +578,7 @@ class Applicant
                 c.iso2
             FROM countries c
             WHERE c.active = 1
-              AND c.id != 1  -- Exclude Philippines
+              AND c.id != 1
             ORDER BY c.name ASC
         ";
 
@@ -580,24 +589,43 @@ class Applicant
 
         $countries = $res->fetch_all(MYSQLI_ASSOC);
 
-        // Now get counts for each country
-        // We need to join with business_units to get country_id from applicants
+        // Build filtered count query with aligned WHERE clauses
         $countSql = "
             SELECT 
                 bu.country_id,
                 COUNT(a.id) AS applicant_count
             FROM applicants a
             JOIN business_units bu ON bu.id = a.business_unit_id
-            WHERE a.deleted_at IS NULL
-              AND NOT EXISTS (
-                  SELECT 1 FROM blacklisted_applicants b
-                  WHERE b.applicant_id = a.id AND b.is_active = 1
-              )
+            WHERE 1=1
         ";
 
-        // Add BU filter if provided (for scoped views)
-        if ($businessUnitId !== null && $businessUnitId > 0) {
-            $countSql .= " AND a.business_unit_id = " . (int) $businessUnitId;
+        // BU scope: (:buId IS NULL OR a.bu_id = :buId)
+        if ($buId !== null && $buId > 0) {
+            $countSql .= " AND a.business_unit_id = " . (int) $buId;
+        }
+
+        // Status filter: (:status = 'all' OR a.status = :status)
+        if ($status !== 'all') {
+            $statusEsc = $this->db->real_escape_string($status);
+            $countSql .= " AND a.status = '{$statusEsc}'";
+        }
+
+        // Visibility flags
+        if ($notDeleted) {
+            $countSql .= " AND a.deleted_at IS NULL";
+        }
+
+        if ($notBlacklisted) {
+            $countSql .= " AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+            )";
+        }
+
+        // Search query: (:q = '' OR a.name LIKE :q OR a.email LIKE :q OR a.phone LIKE :q)
+        if ($q !== '') {
+            $qEsc = '%' . $this->db->real_escape_string($q) . '%';
+            $countSql .= " AND (a.first_name LIKE '{$qEsc}' OR a.last_name LIKE '{$qEsc}' OR a.email LIKE '{$qEsc}' OR a.phone_number LIKE '{$qEsc}')";
         }
 
         $countSql .= " GROUP BY bu.country_id";
@@ -622,6 +650,162 @@ class Applicant
         }
 
         return $result;
+    }
+
+    /**
+     * Get applicants with comprehensive filtering + pagination.
+     * Uses aligned WHERE clauses with getCountriesWithCounts().
+     * 
+     * @param int|null $buId BU scope - null for unscoped (super admin/employee)
+     * @param int|null $countryId Filter by country ID (null for 'all')
+     * @param string $status Filter by status ('all' or specific status)
+     * @param string $q Search query (searches name, email, phone)
+     * @param bool $notDeleted Exclude deleted applicants (default true)
+     * @param bool $notBlacklisted Exclude blacklisted applicants (default true)
+     * @param int $page Page number (1-based)
+     * @param int $pageSize Number of results per page
+     * @return array Array of applicant records
+     */
+    public function getApplicants(
+        ?int $buId = null,
+        ?int $countryId = null,
+        string $status = 'all',
+        string $q = '',
+        bool $notDeleted = true,
+        bool $notBlacklisted = true,
+        int $page = 1,
+        int $pageSize = 25
+    ): array {
+        // Build WHERE clause with aligned logic
+        $where = "1=1";
+
+        // BU scope: (:buId IS NULL OR a.bu_id = :buId)
+        if ($buId !== null && $buId > 0) {
+            $where .= " AND a.business_unit_id = " . (int) $buId;
+        }
+
+        // Country filter: (:countryId IS NULL OR a.country_id = :countryId)
+        // Note: We filter by country_id via business_unit mapping
+        if ($countryId !== null && $countryId > 0) {
+            $where .= " AND bu.country_id = " . (int) $countryId;
+        }
+
+        // Status filter: (:status = 'all' OR a.status = :status)
+        if ($status !== 'all') {
+            $statusEsc = $this->db->real_escape_string($status);
+            $where .= " AND a.status = '{$statusEsc}'";
+        }
+
+        // Visibility flags
+        if ($notDeleted) {
+            $where .= " AND a.deleted_at IS NULL";
+        }
+
+        if ($notBlacklisted) {
+            $where .= " AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+            )";
+        }
+
+        // Search query: (:q = '' OR a.name LIKE :q OR a.email LIKE :q OR a.phone LIKE :q)
+        if ($q !== '') {
+            $qEsc = '%' . $this->db->real_escape_string($q) . '%';
+            $where .= " AND (a.first_name LIKE '{$qEsc}' OR a.last_name LIKE '{$qEsc}' OR a.email LIKE '{$qEsc}' OR a.phone_number LIKE '{$qEsc}')";
+        }
+
+        // Calculate offset for pagination
+        $offset = ($page - 1) * $pageSize;
+
+        // Build the full query with JOIN to get country info
+        $sql = "
+            SELECT 
+                a.*,
+                bu.country_id,
+                c.name AS country_name
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN countries c ON c.id = bu.country_id
+            WHERE {$where}
+            ORDER BY a.created_at DESC
+            LIMIT " . (int) $pageSize . " OFFSET " . (int) $offset . "
+        ";
+
+        $res = $this->db->query($sql);
+        if (!$res) {
+            error_log('getApplicants query failed: ' . $this->db->error);
+            return [];
+        }
+
+        return $res->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Get total count of applicants matching filters (for pagination).
+     * 
+     * @param int|null $buId BU scope
+     * @param int|null $countryId Filter by country ID
+     * @param string $status Filter by status
+     * @param string $q Search query
+     * @param bool $notDeleted Exclude deleted
+     * @param bool $notBlacklisted Exclude blacklisted
+     * @return int Total count
+     */
+    public function getApplicantsCount(
+        ?int $buId = null,
+        ?int $countryId = null,
+        string $status = 'all',
+        string $q = '',
+        bool $notDeleted = true,
+        bool $notBlacklisted = true
+    ): int {
+        // Build WHERE clause with aligned logic
+        $where = "1=1";
+
+        if ($buId !== null && $buId > 0) {
+            $where .= " AND a.business_unit_id = " . (int) $buId;
+        }
+
+        if ($countryId !== null && $countryId > 0) {
+            $where .= " AND bu.country_id = " . (int) $countryId;
+        }
+
+        if ($status !== 'all') {
+            $statusEsc = $this->db->real_escape_string($status);
+            $where .= " AND a.status = '{$statusEsc}'";
+        }
+
+        if ($notDeleted) {
+            $where .= " AND a.deleted_at IS NULL";
+        }
+
+        if ($notBlacklisted) {
+            $where .= " AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+            )";
+        }
+
+        if ($q !== '') {
+            $qEsc = '%' . $this->db->real_escape_string($q) . '%';
+            $where .= " AND (a.first_name LIKE '{$qEsc}' OR a.last_name LIKE '{$qEsc}' OR a.email LIKE '{$qEsc}' OR a.phone_number LIKE '{$qEsc}')";
+        }
+
+        $sql = "
+            SELECT COUNT(*) as total
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN countries c ON c.id = bu.country_id
+            WHERE {$where}
+        ";
+
+        $res = $this->db->query($sql);
+        if (!$res) {
+            return 0;
+        }
+
+        $row = $res->fetch_assoc();
+        return (int) ($row['total'] ?? 0);
     }
 
     /**
