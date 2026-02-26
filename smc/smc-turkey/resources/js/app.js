@@ -328,24 +328,6 @@ async function fetchApplicants(options = {}) {
     serverPerPage = Number(json.per_page || per_page);
     currentPage  = Number(json.page || page);
 
-    // Client-side page shuffle
-    try {
-      const rotateDisabled = urlParams.get('rotate') === '0';
-      if (!rotateDisabled && filteredApplicants.length > 1) {
-        const pageSeed = currentPage || 1;
-        const sessionKey = 'turkey_shuffle_seed_' + pageSeed;
-        let seed = parseInt(sessionStorage.getItem(sessionKey) || '0', 10);
-        if (seed === 0) {
-          seed = Math.floor(Math.random() * 1000000);
-          sessionStorage.setItem(sessionKey, String(seed));
-        }
-        filteredApplicants = seededShuffle(filteredApplicants, seed);
-        console.debug('[Advanced Randomization] Applied seeded shuffle for page', currentPage);
-      }
-    } catch (err) {
-      console.warn('Advanced randomization failed:', err);
-    }
-
     renderApplicants();
   } catch (err) {
     console.error('Error fetching applicants:', err);
