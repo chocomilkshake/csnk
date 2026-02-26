@@ -162,9 +162,9 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-/* For SMC admin side, show Monitoring/Reports to admins & super-admins */
-$canViewActivity = ($isAdmin || $isSuperAdmin);
-$canViewReports = ($isAdmin || $isSuperAdmin);
+/* For SMC admin side, show Monitoring/Reports to admins & super-admins, Reports also for employees */
+$canViewReports = ($isAdmin || $isSuperAdmin || $isEmployee); // ✅ employees can see Reports
+$canViewActivity = ($isAdmin || $isSuperAdmin); // Only admins & super-admins can see Activity Logs
 
 /* BU ID helper (ensure we pick the enforced one) */
 $buId = (int) ($_SESSION['current_bu_id'] ?? 0);
@@ -579,7 +579,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
                 aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
                 <i class="bi bi-geo-alt"></i>
-                <span class="label"><span class="text">SMC - Turkey</span></span>
+                <span class="label"><span class="text">SMC Tools</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
@@ -678,40 +678,43 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     <i class="bi bi-clipboard-data"></i>
                     <span class="label"><span class="text">Activity Logs</span></span>
                 </a>
+            <?php endif; ?>
 
-                <?php if ($canViewReports): ?>
-                    <div class="sidebar-section-label">Reports</div>
-                    <?php
-                    // Reports badge (DISTINCT applicants), BU-scoped
-                    $reportNotesCount = 0;
-                    if ($conn instanceof mysqli) {
-                        $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
-                        if ($stmt) {
-                            $stmt->bind_param('i', $buId);
-                            $stmt->execute();
-                            $res = $stmt->get_result();
-                            $row = $res ? $res->fetch_row() : [0];
-                            $reportNotesCount = (int) ($row[0] ?? 0);
-                            $stmt->close();
-                        }
-                    }
-                    ?>
-                    <a href="../../../pages/reports.php"
-                        class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
-                        aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                        data-bs-placement="right" title="Reports">
-                        <i class="bi bi-journal-text" aria-hidden="true"></i>
-                        <span class="label">
-                            <span class="text">Reports</span>
-                        </span>
-                        <span class="side-badge" aria-live="polite">
-                            <span class="pill-count <?php echo ((int) ($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
-                                aria-label="Total reports count">
-                                <?php echo (int) ($reportNotesCount ?? 0); ?>
-                            </span>
-                        </span>
-                    </a>
+            <?php if ($canViewReports): ?>
+                <?php if (!$canViewActivity): ?>
+                    <div class="sidebar-divider"></div>
                 <?php endif; ?>
+                <div class="sidebar-section-label">Reports</div>
+                <?php
+                // Reports badge (DISTINCT applicants), BU-scoped
+                $reportNotesCount = 0;
+                if ($conn instanceof mysqli) {
+                    $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $buId);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        $row = $res ? $res->fetch_row() : [0];
+                        $reportNotesCount = (int) ($row[0] ?? 0);
+                        $stmt->close();
+                    }
+                }
+                ?>
+                <a href="../../../pages/reports.php"
+                    class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                    aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+                    data-bs-placement="right" title="Reports">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
+                    <span class="label">
+                        <span class="text">Reports</span>
+                    </span>
+                    <span class="side-badge" aria-live="polite">
+                        <span class="pill-count <?php echo ((int) ($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
+                            aria-label="Total reports count">
+                            <?php echo (int) ($reportNotesCount ?? 0); ?>
+                        </span>
+                    </span>
+                </a>
             <?php endif; ?>
 
             <div class="sidebar-divider"></div>

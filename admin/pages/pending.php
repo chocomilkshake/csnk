@@ -69,16 +69,18 @@ if (isset($_GET['action']) && !$replaceRecord) {
             $updated = false;
             $fromStatus = 'pending';
 
-            // Get current status before updating
+            // Get current status and business_unit_id before updating
             $conn = $database->getConnection();
+            $businessUnitId = null;
             if ($conn instanceof mysqli) {
-                if ($stmtCheck = $conn->prepare("SELECT status FROM applicants WHERE id = ? LIMIT 1")) {
+                if ($stmtCheck = $conn->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1")) {
                     $stmtCheck->bind_param("i", $id);
                     $stmtCheck->execute();
                     $resCheck = $stmtCheck->get_result();
                     $currentApp = $resCheck ? $resCheck->fetch_assoc() : null;
                     if ($currentApp) {
                         $fromStatus = $currentApp['status'];
+                        $businessUnitId = $currentApp['business_unit_id'];
                     }
                     $stmtCheck->close();
                 }
@@ -100,13 +102,13 @@ if (isset($_GET['action']) && !$replaceRecord) {
                 }
             }
 
-            // Record status change in applicant_status_reports
+            // Record status change in applicant_status_reports (include business_unit_id)
             if ($updated && $conn instanceof mysqli && $fromStatus !== $to) {
                 $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
                 $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus)) . " to " . ucfirst(str_replace('_', ' ', $to));
                 
-                if ($stmtReport = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?)")) {
-                    $stmtReport->bind_param("isssi", $id, $fromStatus, $to, $reportText, $adminId);
+                if ($stmtReport = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)")) {
+                    $stmtReport->bind_param("iisssi", $id, $businessUnitId, $fromStatus, $to, $reportText, $adminId);
                     $stmtReport->execute();
                     $stmtReport->close();
                 }

@@ -155,6 +155,9 @@ try {
     // Exclude active-blacklisted applicants (server-side blacklist)
     $where[] = "id NOT IN (SELECT applicant_id FROM blacklisted_applicants WHERE is_active = 1)";
 
+    // CSNK Client Side: Only show applicants from CSNK (business_unit_id = 1 - Philippines)
+    $where[] = "business_unit_id = 1";
+
     $types = '';
     $values = [];
 

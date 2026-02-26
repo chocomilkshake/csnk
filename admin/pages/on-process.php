@@ -145,14 +145,16 @@ if (
     // 1) Fetch applicant ONCE (MySQLi)
     $fromStatus = null;
     $fullName = null;
+    $businessUnitId = null;
 
     try {
-        $stmt = $conn->prepare("SELECT status, first_name, middle_name, last_name, suffix FROM applicants WHERE id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT status, first_name, middle_name, last_name, suffix, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $res = $stmt->get_result();
         if ($row = $res->fetch_assoc()) {
             $fromStatus = (string)($row['status'] ?? '');
+            $businessUnitId = $row['business_unit_id'] ?? null;
             // getFullName() is your helper
             $fullName = getFullName(
                 $row['first_name'] ?? '',
@@ -179,13 +181,13 @@ if (
     try {
         $conn->begin_transaction();
 
-        // Insert into applicant_status_reports
+        // Insert into applicant_status_reports (include business_unit_id)
         $stmt1 = $conn->prepare("
-            INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        // types: i s s s i
-        $stmt1->bind_param("isssi", $id, $fromStatus, $to, $reportText, $adminId);
+        // types: i i s s s i
+        $stmt1->bind_param("iisssi", $id, $businessUnitId, $fromStatus, $to, $reportText, $adminId);
         $stmt1->execute();
         $stmt1->close();
 
