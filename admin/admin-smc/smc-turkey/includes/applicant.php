@@ -44,7 +44,7 @@ class Applicant
     {
         $where = [];
         $params = [];
-        $types  = '';
+        $types = '';
 
         $sql = "
             SELECT
@@ -88,7 +88,8 @@ class Applicant
 
         if (!empty($params)) {
             $stmt = $this->db->prepare($sql);
-            if (!$stmt) return [];
+            if (!$stmt)
+                return [];
             $this->bindByRef($stmt, $types, $params);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -120,14 +121,16 @@ class Applicant
     {
         // Resolve BU -> country_id
         $stmt = $this->db->prepare("SELECT country_id FROM business_units WHERE id = ? LIMIT 1");
-        if (!$stmt) return [];
+        if (!$stmt)
+            return [];
         $stmt->bind_param("i", $businessUnitId);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res ? $res->fetch_assoc() : null;
         $stmt->close();
-        if (!$row) return [];
-        $countryId = (int)$row['country_id'];
+        if (!$row)
+            return [];
+        $countryId = (int) $row['country_id'];
 
         $stmt2 = $this->db->prepare("
             SELECT id, code, label, is_required, active
@@ -136,7 +139,8 @@ class Applicant
               AND active = 1
             ORDER BY id ASC
         ");
-        if (!$stmt2) return [];
+        if (!$stmt2)
+            return [];
         $stmt2->bind_param("i", $countryId);
         $stmt2->execute();
         $res2 = $stmt2->get_result();
@@ -145,9 +149,9 @@ class Applicant
 
         // Normalize keys
         foreach ($rows as &$r) {
-            $r['id']    = isset($r['id']) ? (int)$r['id'] : null;
-            $r['label'] = (string)($r['label'] ?? $r['code'] ?? '');
-            $r['code']  = (string)($r['code'] ?? '');
+            $r['id'] = isset($r['id']) ? (int) $r['id'] : null;
+            $r['label'] = (string) ($r['label'] ?? $r['code'] ?? '');
+            $r['code'] = (string) ($r['code'] ?? '');
         }
         unset($r);
         return $rows;
@@ -165,13 +169,14 @@ class Applicant
             WHERE bu.id = ? AND dt.code = ? AND dt.active = 1
             LIMIT 1
         ");
-        if (!$stmt) return null;
+        if (!$stmt)
+            return null;
         $stmt->bind_param("is", $businessUnitId, $code);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res ? $res->fetch_assoc() : null;
         $stmt->close();
-        return $row ? (int)$row['id'] : null;
+        return $row ? (int) $row['id'] : null;
     }
 
     /* ============================================================
@@ -194,30 +199,30 @@ class Applicant
         }
 
         // Values
-        $first   = $data['first_name'] ?? null;
-        $middle  = $data['middle_name'] ?? null;
-        $last    = $data['last_name'] ?? null;
-        $suffix  = $data['suffix'] ?? null;
-        $phone   = $data['phone_number'] ?? null;
-        $alt     = $data['alt_phone_number'] ?? null;
-        $email   = $data['email'] ?? null;
-        $dob     = $data['date_of_birth'] ?? null;
-        $addr    = $data['address'] ?? null;
+        $first = $data['first_name'] ?? null;
+        $middle = $data['middle_name'] ?? null;
+        $last = $data['last_name'] ?? null;
+        $suffix = $data['suffix'] ?? null;
+        $phone = $data['phone_number'] ?? null;
+        $alt = $data['alt_phone_number'] ?? null;
+        $email = $data['email'] ?? null;
+        $dob = $data['date_of_birth'] ?? null;
+        $addr = $data['address'] ?? null;
 
-        $educA   = $data['educational_attainment'] ?? null; // JSON string
-        $workH   = $data['work_history'] ?? null;           // JSON string
-        $pref    = $data['preferred_location'] ?? null;     // JSON string
-        $langs   = $data['languages'] ?? null;              // JSON string
-        $skills  = $data['specialization_skills'] ?? null;  // JSON string
+        $educA = $data['educational_attainment'] ?? null; // JSON string
+        $workH = $data['work_history'] ?? null;           // JSON string
+        $pref = $data['preferred_location'] ?? null;     // JSON string
+        $langs = $data['languages'] ?? null;              // JSON string
+        $skills = $data['specialization_skills'] ?? null;  // JSON string
 
-        $pic     = $data['picture'] ?? null;
-        $status  = $data['status'] ?? 'pending';
-        $empTy   = $data['employment_type'] ?? null;
-        $eduLv   = $data['education_level'] ?? null;
-        $years   = isset($data['years_experience']) ? (int)$data['years_experience'] : 0;
-        $createdBy = isset($data['created_by']) ? (int)$data['created_by'] : null;
+        $pic = $data['picture'] ?? null;
+        $status = $data['status'] ?? 'pending';
+        $empTy = $data['employment_type'] ?? null;
+        $eduLv = $data['education_level'] ?? null;
+        $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
+        $createdBy = isset($data['created_by']) ? (int) $data['created_by'] : null;
 
-        $businessUnitId = isset($data['business_unit_id']) ? (int)$data['business_unit_id'] : null;
+        $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
 
         if ($businessUnitId === null) {
             // BU is mandatory in your schema (FK), refuse to create without it
@@ -307,7 +312,7 @@ class Applicant
             $stmt->close();
             return false;
         }
-        $newId = (int)$this->db->insert_id;
+        $newId = (int) $this->db->insert_id;
         $stmt->close();
         return $newId ?: false;
     }
@@ -328,15 +333,16 @@ class Applicant
                 WHERE id = ?";
 
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) return false;
+        if (!$stmt)
+            return false;
 
-        $video_url   = $videoData['video_url'] ?? null;
-        $provider    = $videoData['video_provider'] ?? null;
-        $vtype       = $videoData['video_type'] ?? 'iframe';
-        $vtitle      = $videoData['video_title'] ?? null;
-        $thumb       = $videoData['video_thumbnail_url'] ?? null;
-        $duration    = isset($videoData['video_duration_seconds']) && $videoData['video_duration_seconds'] !== null
-                        ? (int)$videoData['video_duration_seconds'] : null;
+        $video_url = $videoData['video_url'] ?? null;
+        $provider = $videoData['video_provider'] ?? null;
+        $vtype = $videoData['video_type'] ?? 'iframe';
+        $vtitle = $videoData['video_title'] ?? null;
+        $thumb = $videoData['video_thumbnail_url'] ?? null;
+        $duration = isset($videoData['video_duration_seconds']) && $videoData['video_duration_seconds'] !== null
+            ? (int) $videoData['video_duration_seconds'] : null;
 
         // Duration and id are ints; mysqli requires explicit type mapping
         // We'll cast duration to int or null and use 'ii' at the end.
@@ -360,13 +366,14 @@ class Applicant
     public function isApplicantInBusinessUnit(int $applicantId, int $businessUnitId): bool
     {
         $stmt = $this->db->prepare("SELECT 1 FROM applicants WHERE id = ? AND business_unit_id = ? LIMIT 1");
-        if (!$stmt) return false;
+        if (!$stmt)
+            return false;
         $stmt->bind_param("ii", $applicantId, $businessUnitId);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result ? $result->fetch_assoc() : null;
         $stmt->close();
-        return (bool)$row;
+        return (bool) $row;
     }
 
     /**
@@ -376,11 +383,13 @@ class Applicant
     {
         if ($businessUnitId !== null) {
             $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? AND business_unit_id = ? LIMIT 1");
-            if (!$stmt) return null;
+            if (!$stmt)
+                return null;
             $stmt->bind_param("ii", $id, $businessUnitId);
         } else {
             $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
-            if (!$stmt) return null;
+            if (!$stmt)
+                return null;
             $stmt->bind_param("i", $id);
         }
         $stmt->execute();
@@ -453,7 +462,8 @@ class Applicant
                   AND business_unit_id = ?
                 ORDER BY uploaded_at ASC, id ASC";
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) return [];
+        if (!$stmt)
+            return [];
         $stmt->bind_param("ii", $applicantId, $businessUnitId);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -478,7 +488,8 @@ class Applicant
                     (applicant_id, business_unit_id, document_type_id, document_type, file_path)
                 VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) return false;
+        if (!$stmt)
+            return false;
 
         // document_type_id is nullable: use 'i' and pass null via bind_param by converting to PHP null.
         if ($documentTypeId !== null) {
@@ -500,7 +511,8 @@ class Applicant
         // Delete only if the doc row is in this BU
         $sql = "DELETE FROM applicant_documents WHERE id = ? AND business_unit_id = ?";
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) return false;
+        if (!$stmt)
+            return false;
         $stmt->bind_param("ii", $documentId, $businessUnitId);
         return $stmt->execute();
     }
@@ -512,7 +524,8 @@ class Applicant
     {
         $sql = "DELETE FROM applicant_documents WHERE applicant_id = ? AND business_unit_id = ? AND document_type = ?";
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) return false;
+        if (!$stmt)
+            return false;
         $stmt->bind_param("iis", $applicantId, $businessUnitId, $documentTypeCode);
         return $stmt->execute();
     }
@@ -533,5 +546,118 @@ class Applicant
             $refs[] = &$values[$k];
         }
         call_user_func_array([$stmt, 'bind_param'], $refs);
+    }
+
+    /* ============================================================
+     * COUNTRY FILTERING (for SMC international applicants)
+     * ============================================================ */
+
+    /**
+     * Get countries with applicant counts for SMC (excludes Philippines).
+     * This is used for the country filter on the applicants list page.
+     * 
+     * @param int|null $businessUnitId If provided, only count applicants for this BU
+     * @return array Array of countries with counts: ['id', 'name', 'count']
+     */
+    public function getCountriesWithCounts(?int $businessUnitId = null): array
+    {
+        // Get all countries except Philippines (id=1) for SMC
+        $sql = "
+            SELECT 
+                c.id,
+                c.name AS country_name,
+                c.iso2
+            FROM countries c
+            WHERE c.active = 1
+              AND c.id != 1  -- Exclude Philippines
+            ORDER BY c.name ASC
+        ";
+
+        $res = $this->db->query($sql);
+        if (!$res) {
+            return [];
+        }
+
+        $countries = $res->fetch_all(MYSQLI_ASSOC);
+
+        // Now get counts for each country
+        // We need to join with business_units to get country_id from applicants
+        $countSql = "
+            SELECT 
+                bu.country_id,
+                COUNT(a.id) AS applicant_count
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            WHERE a.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM blacklisted_applicants b
+                  WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ";
+
+        // Add BU filter if provided (for scoped views)
+        if ($businessUnitId !== null && $businessUnitId > 0) {
+            $countSql .= " AND a.business_unit_id = " . (int) $businessUnitId;
+        }
+
+        $countSql .= " GROUP BY bu.country_id";
+
+        $countRes = $this->db->query($countSql);
+        $counts = [];
+        if ($countRes) {
+            while ($row = $countRes->fetch_assoc()) {
+                $counts[(int) $row['country_id']] = (int) $row['applicant_count'];
+            }
+        }
+
+        // Merge counts into countries
+        $result = [];
+        foreach ($countries as $c) {
+            $result[] = [
+                'id' => (int) $c['id'],
+                'name' => $c['country_name'],
+                'iso2' => $c['iso2'],
+                'count' => $counts[$c['id']] ?? 0
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get all business units with their country info for SMC (excluding Philippines).
+     * This is used to map country_id to business_unit_id for filtering.
+     * 
+     * @return array Array of BUs: ['id', 'country_id', 'country_name', 'code', 'name']
+     */
+    public function getBusinessUnitsByCountry(?int $countryId = null): array
+    {
+        $sql = "
+            SELECT 
+                bu.id AS business_unit_id,
+                bu.code,
+                bu.name AS bu_name,
+                c.id AS country_id,
+                c.name AS country_name,
+                c.iso2
+            FROM business_units bu
+            JOIN countries c ON c.id = bu.country_id
+            WHERE bu.active = 1
+              AND c.active = 1
+              AND c.id != 1  -- Exclude Philippines (for SMC)
+        ";
+
+        if ($countryId !== null && $countryId > 0) {
+            $sql .= " AND c.id = " . (int) $countryId;
+        }
+
+        $sql .= " ORDER BY c.name ASC, bu.code ASC";
+
+        $res = $this->db->query($sql);
+        if (!$res) {
+            return [];
+        }
+
+        return $res->fetch_all(MYSQLI_ASSOC);
     }
 }

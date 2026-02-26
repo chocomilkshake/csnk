@@ -16,22 +16,27 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $applicant = new Applicant($database);
 
 // BU scope (SMC-Turkey only)
-$currentBuId = (int)($_SESSION['current_bu_id'] ?? 0);
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
 
 // ---------- Namespaced session keys to avoid conflicts with CSNK ----------
-$SESSION_KEY_Q      = 'smc_tr_applicants_q';
+$SESSION_KEY_Q = 'smc_tr_applicants_q';
 $SESSION_KEY_STATUS = 'smc_tr_applicants_status';
+$SESSION_KEY_COUNTRY = 'smc_tr_applicants_country';
 
-// ---------- Search & Status memory ----------
+// ---------- Search & Status & Country memory ----------
 $allowedStatuses = ['all', 'pending', 'on_process', 'approved'];
 
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
     unset($_SESSION[$SESSION_KEY_Q]);
-    // Preserve current status on clear
+    // Preserve current status and country on clear
     $preserveParams = [];
     $statusFromSession = $_SESSION[$SESSION_KEY_STATUS] ?? 'all';
+    $countryFromSession = $_SESSION[$SESSION_KEY_COUNTRY] ?? 'all';
     if (in_array($statusFromSession, $allowedStatuses, true) && $statusFromSession !== 'all') {
         $preserveParams['status'] = $statusFromSession;
+    }
+    if ($countryFromSession !== 'all') {
+        $preserveParams['country'] = $countryFromSession;
     }
     $qs = !empty($preserveParams) ? ('?' . http_build_query($preserveParams)) : '';
     redirect('applicants.php' . $qs);
@@ -41,34 +46,48 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 // Handle search query memory
 $q = '';
 if (isset($_GET['q'])) {
-    $q = trim((string)$_GET['q']);
-    if (mb_strlen($q) > 100) $q = mb_substr($q, 0, 100);
+    $q = trim((string) $_GET['q']);
+    if (mb_strlen($q) > 100)
+        $q = mb_substr($q, 0, 100);
     $_SESSION[$SESSION_KEY_Q] = $q;
 } elseif (!empty($_SESSION[$SESSION_KEY_Q])) {
-    $q = (string)$_SESSION[$SESSION_KEY_Q];
+    $q = (string) $_SESSION[$SESSION_KEY_Q];
 }
 
 // Handle status memory
 $status = 'all';
 if (isset($_GET['status'])) {
-    $statusCandidate = strtolower(trim((string)$_GET['status']));
+    $statusCandidate = strtolower(trim((string) $_GET['status']));
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
     $_SESSION[$SESSION_KEY_STATUS] = $status;
 } elseif (!empty($_SESSION[$SESSION_KEY_STATUS])) {
-    $statusCandidate = strtolower((string)$_SESSION[$SESSION_KEY_STATUS]);
+    $statusCandidate = strtolower((string) $_SESSION[$SESSION_KEY_STATUS]);
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
+}
+
+// Handle country memory (new)
+$country = 'all';
+if (isset($_GET['country'])) {
+    $countryCandidate = trim((string) $_GET['country']);
+    // Allow 'all' or numeric country IDs
+    if ($countryCandidate === 'all' || is_numeric($countryCandidate)) {
+        $country = $countryCandidate;
+        $_SESSION[$SESSION_KEY_COUNTRY] = $country;
+    }
+} elseif (!empty($_SESSION[$SESSION_KEY_COUNTRY])) {
+    $country = (string) $_SESSION[$SESSION_KEY_COUNTRY];
 }
 
 // ---------- Delete (BU-safe) ----------
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+    $id = (int) $_GET['id'];
 
     // BU-safety: ensure the applicant belongs to current BU before delete
     $row = null;
     if (method_exists($applicant, 'getById')) {
         $row = $applicant->getById($id);
     }
-    if (!$row || (int)($row['business_unit_id'] ?? 0) !== $currentBuId) {
+    if (!$row || (int) ($row['business_unit_id'] ?? 0) !== $currentBuId) {
         if (function_exists('setFlashMessage')) {
             setFlashMessage('error', 'You are not allowed to delete this applicant.');
         }
@@ -83,20 +102,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                 );
                 $label = $fullName ?: ("ID {$id}");
                 $auth->logActivity(
-                    (int)$_SESSION['admin_id'],
+                    (int) $_SESSION['admin_id'],
                     'Delete Applicant',
                     "Deleted applicant {$label}"
                 );
             }
-            if (function_exists('setFlashMessage')) setFlashMessage('success', 'Applicant deleted successfully.');
+            if (function_exists('setFlashMessage'))
+                setFlashMessage('success', 'Applicant deleted successfully.');
         } else {
-            if (function_exists('setFlashMessage')) setFlashMessage('error', 'Failed to delete applicant.');
+            if (function_exists('setFlashMessage'))
+                setFlashMessage('error', 'Failed to delete applicant.');
         }
     }
 
     $params = [];
-    if ($q !== '') $params['q'] = $q;
-    if ($status !== 'all') $params['status'] = $status;
+    if ($q !== '')
+        $params['q'] = $q;
+    if ($status !== 'all')
+        $params['status'] = $status;
     $qs = !empty($params) ? ('?' . http_build_query($params)) : '';
     redirect('applicants.php' . $qs);
     exit;
@@ -113,7 +136,8 @@ $applicants = $allInBu;
 // ---------- Helpers ----------
 function renderPreferredLocation(?string $json, int $maxLen = 30): string
 {
-    if (empty($json)) return 'N/A';
+    if (empty($json))
+        return 'N/A';
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
@@ -121,24 +145,27 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         return $fallback !== '' ? $fallback : 'N/A';
     }
     $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
-    if (empty($cities)) return 'N/A';
+    if (empty($cities))
+        return 'N/A';
     $full = implode(', ', $cities);
-    if (mb_strlen($full) > $maxLen) return $cities[0];
+    if (mb_strlen($full) > $maxLen)
+        return $cities[0];
     return $full;
 }
 
 function filterApplicantsByQuery(array $rows, string $query): array
 {
-    if ($query === '') return $rows;
+    if ($query === '')
+        return $rows;
     $needle = mb_strtolower($query);
     return array_values(array_filter($rows, function (array $app) use ($needle) {
-        $first  = (string)($app['first_name'] ?? '');
-        $middle = (string)($app['middle_name'] ?? '');
-        $last   = (string)($app['last_name'] ?? '');
-        $suffix = (string)($app['suffix'] ?? '');
-        $email  = (string)($app['email'] ?? '');
-        $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = renderPreferredLocation($app['preferred_location'] ?? null, 999);
+        $first = (string) ($app['first_name'] ?? '');
+        $middle = (string) ($app['middle_name'] ?? '');
+        $last = (string) ($app['last_name'] ?? '');
+        $suffix = (string) ($app['suffix'] ?? '');
+        $email = (string) ($app['email'] ?? '');
+        $phone = (string) ($app['phone_number'] ?? '');
+        $loc = renderPreferredLocation($app['preferred_location'] ?? null, 999);
 
         $fullName1 = trim($first . ' ' . $last);
         $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
@@ -146,9 +173,17 @@ function filterApplicantsByQuery(array $rows, string $query): array
         $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
 
         $haystack = mb_strtolower(implode(' | ', [
-            $first, $middle, $last, $suffix,
-            $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone, $loc
+            $first,
+            $middle,
+            $last,
+            $suffix,
+            $fullName1,
+            $fullName2,
+            $fullName3,
+            $fullName4,
+            $email,
+            $phone,
+            $loc
         ]));
 
         return mb_strpos($haystack, $needle) !== false;
@@ -157,73 +192,226 @@ function filterApplicantsByQuery(array $rows, string $query): array
 
 function filterApplicantsByStatus(array $rows, string $status): array
 {
-    if ($status === 'all') return $rows;
-    return array_values(array_filter($rows, fn(array $app) =>
+    if ($status === 'all')
+        return $rows;
+    return array_values(array_filter(
+        $rows,
+        fn(array $app) =>
         isset($app['status']) && $app['status'] === $status
+    ));
+}
+
+/**
+ * Helper: Filter by country via business_unit_id lookup.
+ * Uses the getBusinessUnitsByCountry() method to map country_id to business_unit_ids.
+ */
+function filterApplicantsByCountry(array $rows, string $countryId, $applicant): array
+{
+    if ($countryId === 'all')
+        return $rows;
+
+    $countryIdInt = (int) $countryId;
+    if ($countryIdInt <= 0)
+        return $rows;
+
+    // Get all BUs for this country (for SMC, excludes Philippines)
+    $busForCountry = $applicant->getBusinessUnitsByCountry($countryIdInt);
+
+    // Extract just the business_unit_ids
+    $allowedBuIds = array_column($busForCountry, 'business_unit_id');
+
+    if (empty($allowedBuIds))
+        return [];
+
+    return array_values(array_filter(
+        $rows,
+        fn(array $app) =>
+        isset($app['business_unit_id']) && in_array((int) $app['business_unit_id'], $allowedBuIds, true)
     ));
 }
 
 // Status counts (for button badges) – computed from full BU set
 $counts = [
-    'all'        => count($allInBu),
-    'pending'    => 0,
+    'all' => count($allInBu),
+    'pending' => 0,
     'on_process' => 0,
-    'approved'   => 0,
+    'approved' => 0,
 ];
 foreach ($allInBu as $r) {
-    $st = (string)($r['status'] ?? '');
-    if (isset($counts[$st])) $counts[$st]++;
+    $st = (string) ($r['status'] ?? '');
+    if (isset($counts[$st]))
+        $counts[$st]++;
 }
 
-// Apply filters (status then search)
-if ($status !== 'all') $applicants = filterApplicantsByStatus($applicants, $status);
-if ($q !== '')        $applicants = filterApplicantsByQuery($applicants, $q);
+// Apply filters (country -> status -> search)
+if ($country !== 'all')
+    $applicants = filterApplicantsByCountry($applicants, $country, $applicant);
+if ($status !== 'all')
+    $applicants = filterApplicantsByStatus($applicants, $status);
+if ($q !== '')
+    $applicants = filterApplicantsByQuery($applicants, $q);
 
 // Preserve params for links
 $paramsForLinks = [];
-if ($q !== '')         $paramsForLinks['q'] = $q;
-if ($status !== 'all') $paramsForLinks['status'] = $status;
-$preserveQS               = !empty($paramsForLinks) ? ('&'  . http_build_query($paramsForLinks)) : '';
-$preserveQSWithQuestion   = !empty($paramsForLinks) ? ('?'  . http_build_query($paramsForLinks)) : '';
+if ($q !== '')
+    $paramsForLinks['q'] = $q;
+if ($status !== 'all')
+    $paramsForLinks['status'] = $status;
+if ($country !== 'all')
+    $paramsForLinks['country'] = $country;
+$preserveQS = !empty($paramsForLinks) ? ('&' . http_build_query($paramsForLinks)) : '';
+$preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($paramsForLinks)) : '';
 
 // Export URL (shared includes path from SMC pages)
 $exportParams = [];
-if ($q !== '')         $exportParams['q'] = $q;
-if ($status !== 'all') $exportParams['status'] = $status;
+if ($q !== '')
+    $exportParams['q'] = $q;
+if ($status !== 'all')
+    $exportParams['status'] = $status;
+if ($country !== 'all')
+    $exportParams['country'] = $country;
 $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' . http_build_query($exportParams)) : '');
+
+// ---------- Get countries for filter buttons ----------
+$countriesWithCounts = $applicant->getCountriesWithCounts($currentBuId);
 ?>
 <!-- ===== Page-local CSS for compact CSNK-like layout ===== -->
 <style>
     .status-group {
-        display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb;
-        border-radius: 1rem; background: rgba(255,255,255,.85);
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, .85);
         backdrop-filter: saturate(140%) blur(2px);
-        box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.10);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 3px rgba(0, 0, 0, .10);
     }
+
     .status-btn {
-        display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem;
-        border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none;
-        border: 1px solid #cbd5e1; color: #334155; background: #fff;
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .45rem .9rem;
+        border-radius: .75rem;
+        font-size: .875rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        background: #fff;
         transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
     }
+
     .status-btn:hover {
-        transform: translateY(-2px); background: #f8fafc; border-color: #94a3b8;
-        box-shadow: 0 6px 12px rgba(15,23,42,.06);
+        transform: translateY(-2px);
+        background: #f8fafc;
+        border-color: #94a3b8;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, .06);
     }
-    .status-btn:focus { outline: 3px solid rgba(99,102,241,.35); outline-offset: 2px; }
+
+    .status-btn:focus {
+        outline: 3px solid rgba(99, 102, 241, .35);
+        outline-offset: 2px;
+    }
+
     .status-btn--active {
-        color: #fff; border-color: #4f46e5; background: linear-gradient(180deg,#6366f1 0%,#4f46e5 100%);
-        box-shadow: 0 8px 18px rgba(79,70,229,.25);
+        color: #fff;
+        border-color: #4f46e5;
+        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+        box-shadow: 0 8px 18px rgba(79, 70, 229, .25);
     }
-    .status-btn--active:hover { background: linear-gradient(180deg,#5457ee 0%,#463fd3 100%); border-color: #463fd3; }
-    .status-icon { font-size: .95em; line-height: 1; opacity: .9; }
+
+    .status-btn--active:hover {
+        background: linear-gradient(180deg, #5457ee 0%, #463fd3 100%);
+        border-color: #463fd3;
+    }
+
+    .status-icon {
+        font-size: .95em;
+        line-height: 1;
+        opacity: .9;
+    }
+
     .badge-pill {
-        display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 .4rem;
-        border-radius:999px;font-weight:700;font-size:.75rem;line-height:1;background:#eef2ff;color:#4338ca;border:1px solid rgba(0,0,0,.04)
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 20px;
+        padding: 0 .4rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: .75rem;
+        line-height: 1;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid rgba(0, 0, 0, .04)
     }
+
+    /* Country filter button styles */
+    .country-group {
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, .85);
+        backdrop-filter: saturate(140%) blur(2px);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 3px rgba(0, 0, 0, .10);
+    }
+
+    .country-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .35rem .75rem;
+        border-radius: .75rem;
+        font-size: .8rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        background: #fff;
+        transition: all .15s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    }
+
+    .country-btn:hover {
+        transform: translateY(-1px);
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+
+    .country-btn--active {
+        color: #fff;
+        border-color: #059669;
+        background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 10px rgba(5, 150, 105, .25);
+    }
+
+    .country-btn--active:hover {
+        background: linear-gradient(180deg, #0ea56e 0%, #047857 100%);
+    }
+
+    .filter-section {
+        margin-bottom: .75rem;
+    }
+
+    .filter-label {
+        font-size: .75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-bottom: .25rem;
+    }
+
     /* Keep the header controls compact to avoid big white space above the table */
-    .page-header-row { row-gap: .5rem; }
+    .page-header-row {
+        row-gap: .5rem;
+    }
 </style>
 
 <!-- ===== Header (title + status filters + actions) ===== -->
@@ -234,24 +422,57 @@ $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ?
             <?php
             // render status buttons with count badges (CSNK-like)
             $qParam = $_SESSION[$SESSION_KEY_Q] ?? '';
-            $renderBtn = function(string $label, string $value, string $currentStatus, string $q, string $icon, int $count) {
+            $renderBtn = function (string $label, string $value, string $currentStatus, string $q, string $icon, int $count) {
                 $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
                 $href = 'applicants.php?status=' . urlencode($value);
-                if ($q !== '') $href .= '&q=' . urlencode($q);
+                if ($q !== '')
+                    $href .= '&q=' . urlencode($q);
                 $classes = 'status-btn' . ($isActive ? ' status-btn--active' : '');
                 $iconHtml = $icon !== '' ? '<i class="status-icon ' . h($icon) . '"></i>' : '';
-                $countHtml = '<span class="badge-pill ms-1">' . (int)$count . '</span>';
+                $countHtml = '<span class="badge-pill ms-1">' . (int) $count . '</span>';
                 return '<a href="' . h($href) . '" class="' . $classes . '">' .
-                       $iconHtml . '<span>' . h($label) . '</span>' . $countHtml . '</a>';
+                    $iconHtml . '<span>' . h($label) . '</span>' . $countHtml . '</a>';
             };
             echo '<div class="status-group">';
-            echo $renderBtn('All',        'all',        $status, $qParam, 'bi bi-list-ul',         $counts['all']);
-            echo $renderBtn('Pending',    'pending',    $status, $qParam, 'bi bi-hourglass-split', $counts['pending']);
-            echo $renderBtn('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat',    $counts['on_process']);
-            echo $renderBtn('Hired',      'approved',   $status, $qParam, 'bi bi-check2-circle',   $counts['approved']);
+            echo $renderBtn('All', 'all', $status, $qParam, 'bi bi-list-ul', $counts['all']);
+            echo $renderBtn('Pending', 'pending', $status, $qParam, 'bi bi-hourglass-split', $counts['pending']);
+            echo $renderBtn('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat', $counts['on_process']);
+            echo $renderBtn('Hired', 'approved', $status, $qParam, 'bi bi-check2-circle', $counts['approved']);
             echo '</div>';
             ?>
         </div>
+
+        <!-- Country Filter Section -->
+        <?php if (!empty($countriesWithCounts)): ?>
+            <div class="col-12 mt-2">
+                <div class="filter-label">Filter by Country</div>
+                <div class="country-group">
+                    <?php
+                    $renderCountryBtn = function (string $label, string $countryId, string $currentCountry, string $q, string $status, int $count) {
+                        $isActive = ($countryId === $currentCountry) || ($countryId === 'all' && $currentCountry === 'all');
+                        $href = 'applicants.php?country=' . urlencode($countryId);
+                        if ($q !== '')
+                            $href .= '&q=' . urlencode($q);
+                        if ($status !== 'all')
+                            $href .= '&status=' . urlencode($status);
+                        $classes = 'country-btn' . ($isActive ? ' country-btn--active' : '');
+                        $countHtml = $count > 0 ? '<span class="badge-pill ms-1">' . (int) $count . '</span>' : '';
+                        return '<a href="' . h($href) . '" class="' . $classes . '">' .
+                            '<span>' . h($label) . '</span>' . $countHtml . '</a>';
+                    };
+                    // All countries button (shows total in current BU regardless of country)
+                    echo $renderCountryBtn('All', 'all', $country, $q, $status, $counts['all']);
+                    // Individual country buttons (from getCountriesWithCounts: id, name, count)
+                    foreach ($countriesWithCounts as $c) {
+                        $countryName = h($c['name']);
+                        $countryId = (int) $c['id'];
+                        $count = (int) $c['count'];
+                        echo $renderCountryBtn($countryName, (string) $countryId, $country, $q, $status, $count);
+                    }
+                    ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="col-auto">
             <div class="d-flex align-items-center gap-2">
@@ -268,18 +489,19 @@ $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ?
     <!-- ===== Search (right-aligned, like CSNK) ===== -->
     <div class="row mb-2">
         <div class="col-12 d-flex justify-content-end">
-            <form method="get" action="applicants.php" class="d-flex" role="search" style="max-width: 460px; width: 100%;">
+            <form method="get" action="applicants.php" class="d-flex" role="search"
+                style="max-width: 460px; width: 100%;">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Search applicants..."
-                           value="<?php echo h($q); ?>" autocomplete="off">
+                        value="<?php echo h($q); ?>" autocomplete="off">
                     <input type="hidden" name="status" value="<?php echo h($status); ?>">
                     <button class="btn btn-outline-secondary" type="submit" title="Search">
                         <i class="bi bi-search"></i>
                     </button>
                     <?php if ($q !== ''): ?>
                         <a class="btn btn-outline-secondary"
-                           href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>"
-                           title="Clear search">
+                            href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>"
+                            title="Clear search">
                             <i class="bi bi-x-lg"></i>
                         </a>
                     <?php endif; ?>
@@ -306,83 +528,86 @@ $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ?
                         </tr>
                     </thead>
                     <tbody>
-                    <?php if (empty($applicants)): ?>
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                                <?php if ($q === ''): ?>
-                                    No applicants found. Click "Add New Applicant" to get started.
-                                <?php else: ?>
-                                    No results for "<strong><?php echo h($q); ?></strong>".
-                                    <a href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>" class="ms-2">Clear search</a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($applicants as $app): ?>
-                            <?php
-                            $currentStatus = (string)($app['status'] ?? '');
-                            $params = [];
-                            if ($q !== '')         $params['q'] = $q;
-                            if ($status !== 'all') $params['status'] = $status;
-                            $tail  = !empty($params) ? ('&' . http_build_query($params)) : '';
-
-                            $viewUrl = 'view-applicant.php?id=' . (int)$app['id'] . $tail;
-                            $editUrl = 'edit-applicant.php?id=' . (int)$app['id'] . $tail;
-                            $delUrl  = 'applicants.php?action=delete&id=' . (int)$app['id'] . $tail;
-
-                            $statusColors = [
-                                'pending'    => 'warning',
-                                'on_process' => 'info',
-                                'approved'   => 'success',
-                                'deleted'    => 'secondary'
-                            ];
-                            $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
-                            ?>
+                        <?php if (empty($applicants)): ?>
                             <tr>
-                                <td>
-                                    <?php if (!empty($app['picture'])): ?>
-                                        <img src="<?php echo h(getFileUrl($app['picture'])); ?>"
-                                             alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    <?php if ($q === ''): ?>
+                                        No applicants found. Click "Add New Applicant" to get started.
                                     <?php else: ?>
-                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                             style="width: 50px; height: 50px;">
-                                            <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
-                                        </div>
+                                        No results for "<strong><?php echo h($q); ?></strong>".
+                                        <a href="applicants.php?clear=1<?php echo $status !== 'all' ? ('&status=' . urlencode($status)) : ''; ?>"
+                                            class="ms-2">Clear search</a>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
-                                </td>
-                                <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-                                <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-                                <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php echo $badgeColor; ?>">
-                                        <?php echo h(ucfirst(str_replace('_', ' ', $currentStatus))); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo h(formatDate($app['created_at'])); ?></td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <?php if ($currentStatus === 'pending'): ?>
-                                            <a href="<?php echo h($delUrl); ?>"
-                                               class="btn btn-sm btn-danger delete-btn" title="Delete"
-                                               onclick="return confirm('Are you sure you want to delete this applicant?');">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        <?php else: ?>
+                            <?php foreach ($applicants as $app): ?>
+                                <?php
+                                $currentStatus = (string) ($app['status'] ?? '');
+                                $params = [];
+                                if ($q !== '')
+                                    $params['q'] = $q;
+                                if ($status !== 'all')
+                                    $params['status'] = $status;
+                                $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
+
+                                $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
+                                $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
+                                $delUrl = 'applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
+
+                                $statusColors = [
+                                    'pending' => 'warning',
+                                    'on_process' => 'info',
+                                    'approved' => 'success',
+                                    'deleted' => 'secondary'
+                                ];
+                                $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
+                                ?>
+                                <tr>
+                                    <td>
+                                        <?php if (!empty($app['picture'])): ?>
+                                            <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded"
+                                                width="50" height="50" style="object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                                style="width: 50px; height: 50px;">
+                                                <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
+                                    </td>
+                                    <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                                    <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                                    <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+                                    <td>
+                                        <span class="badge bg-<?php echo $badgeColor; ?>">
+                                            <?php echo h(ucfirst(str_replace('_', ' ', $currentStatus))); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo h(formatDate($app['created_at'])); ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <?php if ($currentStatus === 'pending'): ?>
+                                                <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger delete-btn"
+                                                    title="Delete"
+                                                    onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
