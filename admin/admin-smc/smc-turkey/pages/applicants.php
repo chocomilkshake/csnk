@@ -5,8 +5,8 @@ $pageTitle = 'List of Applicants (SMC - Turkey)';
 // SMC header (auth + SMC access + BU guard + opens .content-wrapper)
 require_once __DIR__ . '/../includes/header.php';
 
-// Shared model
-require_once dirname(__DIR__, 3) . '/includes/Applicant.php';
+// Shared model - Use SMC-specific Applicant model
+require_once __DIR__ . '/../includes/applicant.php';
 
 // Ensure session is active (for storing last search & status)
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -17,6 +17,44 @@ $applicant = new Applicant($database);
 
 // BU scope (SMC-Turkey only)
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+// Determine if user is super admin (for viewing all SMC applicants)
+$isSuperAdmin = ($currentRole === 'super_admin');
+$isEmployee = ($currentRole === 'employee');
+
+// ---------- CENTRALIZED FILTERS ----------
+// Computed once and passed consistently to both counts and list
+$country = $_GET['country'] ?? 'all';
+$status = $_GET['status'] ?? 'all';
+$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+// BU scope: super admin/employee = unscoped (null), admin = scoped to current BU
+$buScope = ($isSuperAdmin || $isEmployee) ? null : $currentBuId;
+
+// Country ID: null for 'all', otherwise cast to int
+$countryId = ($country !== 'all') ? (int) $country : null;
+
+// Visibility flags (consistent across both queries)
+$notDeleted = true;
+$notBlacklisted = true;
+
+// Pack into $filters array
+$filters = [
+    'buId' => $buScope,
+    'countryId' => $countryId,
+    'status' => $status,
+    'q' => $q,
+    'notDeleted' => $notDeleted,
+    'notBlacklisted' => $notBlacklisted
+];
+
+// ---------- DEBUG: Log inputs flowing into both methods ----------
+// TODO: Remove this after verification
+error_log('===== APPLICANTS PAGE DEBUG =====');
+error_log('$_GET: ' . json_encode($_GET));
+error_log('$filters: ' . json_encode($filters));
+error_log('==================================');
+// ------------------------------------------
 
 // ---------- Namespaced session keys to avoid conflicts with CSNK ----------
 $SESSION_KEY_Q = 'smc_tr_applicants_q';
@@ -43,8 +81,7 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
     exit;
 }
 
-// Handle search query memory
-$q = '';
+// Handle search query memory (sync with centralized filter)
 if (isset($_GET['q'])) {
     $q = trim((string) $_GET['q']);
     if (mb_strlen($q) > 100)
@@ -54,8 +91,7 @@ if (isset($_GET['q'])) {
     $q = (string) $_SESSION[$SESSION_KEY_Q];
 }
 
-// Handle status memory
-$status = 'all';
+// Handle status memory (sync with centralized filter)
 if (isset($_GET['status'])) {
     $statusCandidate = strtolower(trim((string) $_GET['status']));
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
@@ -65,8 +101,7 @@ if (isset($_GET['status'])) {
     $status = in_array($statusCandidate, $allowedStatuses, true) ? $statusCandidate : 'all';
 }
 
-// Handle country memory (new)
-$country = 'all';
+// Handle country memory (sync with centralized filter)
 if (isset($_GET['country'])) {
     $countryCandidate = trim((string) $_GET['country']);
     // Allow 'all' or numeric country IDs
@@ -78,18 +113,36 @@ if (isset($_GET['country'])) {
     $country = (string) $_SESSION[$SESSION_KEY_COUNTRY];
 }
 
+// Update filters with final values (after session memory)
+$filters = [
+    'buId' => $buScope,
+    'countryId' => ($country !== 'all') ? (int) $country : null,
+    'status' => $status,
+    'q' => $q,
+    'notDeleted' => $notDeleted,
+    'notBlacklisted' => $notBlacklisted
+];
+
 // ---------- Delete (BU-safe) ----------
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int) $_GET['id'];
 
     // BU-safety: ensure the applicant belongs to current BU before delete
+    // For employees: can only delete applicants in their own BU
+    // For admins/super_admins: can delete any applicant
     $row = null;
     if (method_exists($applicant, 'getById')) {
         $row = $applicant->getById($id);
     }
-    if (!$row || (int) ($row['business_unit_id'] ?? 0) !== $currentBuId) {
+    $applicantBuId = (int) ($row['business_unit_id'] ?? 0);
+    $isOwnBu = ($applicantBuId === $currentBuId);
+
+    // Check if user has permission to delete
+    $canDelete = ($isSuperAdmin || $isAdmin) || ($isEmployee && $isOwnBu);
+
+    if (!$row || !$canDelete) {
         if (function_exists('setFlashMessage')) {
-            setFlashMessage('error', 'You are not allowed to delete this applicant.');
+            setFlashMessage('error', 'You do not have access to delete this applicant from another country.');
         }
     } else {
         if ($applicant->softDelete($id)) {
@@ -125,13 +178,112 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     exit;
 }
 
-// ---------- Load applicants (BU-scoped for SMC) ----------
-$allInBu = [];
-if ($currentBuId > 0) {
-    // getAll(null, $buId) → active/non-deleted across statuses for this BU
-    $allInBu = $applicant->getAll(null, $currentBuId) ?? [];
+// ---------- GET COUNTRY COUNTS (using centralized filters) ----------
+// Note: We do NOT pass countryId to getCountriesWithCounts - we want totals across ALL countries
+// but under the same BU/status/q/visibility scope
+$countriesWithCounts = $applicant->getCountriesWithCounts(
+    $filters['buId'],
+    $filters['status'],
+    $filters['q'],
+    $filters['notDeleted'],
+    $filters['notBlacklisted']
+);
+
+// Calculate status counts from countries with counts (for badges)
+$counts = [
+    'all' => 0,
+    'pending' => 0,
+    'on_process' => 0,
+    'approved' => 0
+];
+
+// Sum all country counts for 'all'
+foreach ($countriesWithCounts as $c) {
+    $counts['all'] += (int) $c['count'];
 }
-$applicants = $allInBu;
+
+// Get counts per status for each country
+foreach ($countriesWithCounts as &$c) {
+    $countryIdForCount = (int) $c['id'];
+
+    // Get count per status for this country
+    $pendingCounts = $applicant->getCountriesWithCounts(
+        $filters['buId'],
+        'pending',
+        $filters['q'],
+        $filters['notDeleted'],
+        $filters['notBlacklisted']
+    );
+    foreach ($pendingCounts as $pc) {
+        if ((int) $pc['id'] === $countryIdForCount) {
+            $c['pending'] = (int) $pc['count'];
+            break;
+        }
+    }
+
+    $onProcessCounts = $applicant->getCountriesWithCounts(
+        $filters['buId'],
+        'on_process',
+        $filters['q'],
+        $filters['notDeleted'],
+        $filters['notBlacklisted']
+    );
+    foreach ($onProcessCounts as $opc) {
+        if ((int) $opc['id'] === $countryIdForCount) {
+            $c['on_process'] = (int) $opc['count'];
+            break;
+        }
+    }
+
+    $approvedCounts = $applicant->getCountriesWithCounts(
+        $filters['buId'],
+        'approved',
+        $filters['q'],
+        $filters['notDeleted'],
+        $filters['notBlacklisted']
+    );
+    foreach ($approvedCounts as $ac) {
+        if ((int) $ac['id'] === $countryIdForCount) {
+            $c['approved'] = (int) $ac['count'];
+            break;
+        }
+    }
+
+    // Add to total status counts
+    $counts['pending'] += (int) ($c['pending'] ?? 0);
+    $counts['on_process'] += (int) ($c['on_process'] ?? 0);
+    $counts['approved'] += (int) ($c['approved'] ?? 0);
+}
+unset($c);
+
+// ---------- GET APPLICANTS LIST (using centralized filters) ----------
+// Pagination parameters
+$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$pageSize = 25;
+
+$applicants = $applicant->getApplicants(
+    $filters['buId'],
+    $filters['countryId'],  // null for 'all', otherwise specific country
+    $filters['status'],
+    $filters['q'],
+    $filters['notDeleted'],
+    $filters['notBlacklisted'],
+    $page,
+    $pageSize
+);
+
+// Get total count for pagination
+$totalApplicants = $applicant->getApplicantsCount(
+    $filters['buId'],
+    $filters['countryId'],
+    $filters['status'],
+    $filters['q'],
+    $filters['notDeleted'],
+    $filters['notBlacklisted']
+);
+
+$totalPages = ceil($totalApplicants / $pageSize);
+
 
 // ---------- Helpers ----------
 function renderPreferredLocation(?string $json, int $maxLen = 30): string
@@ -153,104 +305,6 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     return $full;
 }
 
-function filterApplicantsByQuery(array $rows, string $query): array
-{
-    if ($query === '')
-        return $rows;
-    $needle = mb_strtolower($query);
-    return array_values(array_filter($rows, function (array $app) use ($needle) {
-        $first = (string) ($app['first_name'] ?? '');
-        $middle = (string) ($app['middle_name'] ?? '');
-        $last = (string) ($app['last_name'] ?? '');
-        $suffix = (string) ($app['suffix'] ?? '');
-        $email = (string) ($app['email'] ?? '');
-        $phone = (string) ($app['phone_number'] ?? '');
-        $loc = renderPreferredLocation($app['preferred_location'] ?? null, 999);
-
-        $fullName1 = trim($first . ' ' . $last);
-        $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
-        $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
-        $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
-
-        $haystack = mb_strtolower(implode(' | ', [
-            $first,
-            $middle,
-            $last,
-            $suffix,
-            $fullName1,
-            $fullName2,
-            $fullName3,
-            $fullName4,
-            $email,
-            $phone,
-            $loc
-        ]));
-
-        return mb_strpos($haystack, $needle) !== false;
-    }));
-}
-
-function filterApplicantsByStatus(array $rows, string $status): array
-{
-    if ($status === 'all')
-        return $rows;
-    return array_values(array_filter(
-        $rows,
-        fn(array $app) =>
-        isset($app['status']) && $app['status'] === $status
-    ));
-}
-
-/**
- * Helper: Filter by country via business_unit_id lookup.
- * Uses the getBusinessUnitsByCountry() method to map country_id to business_unit_ids.
- */
-function filterApplicantsByCountry(array $rows, string $countryId, $applicant): array
-{
-    if ($countryId === 'all')
-        return $rows;
-
-    $countryIdInt = (int) $countryId;
-    if ($countryIdInt <= 0)
-        return $rows;
-
-    // Get all BUs for this country (for SMC, excludes Philippines)
-    $busForCountry = $applicant->getBusinessUnitsByCountry($countryIdInt);
-
-    // Extract just the business_unit_ids
-    $allowedBuIds = array_column($busForCountry, 'business_unit_id');
-
-    if (empty($allowedBuIds))
-        return [];
-
-    return array_values(array_filter(
-        $rows,
-        fn(array $app) =>
-        isset($app['business_unit_id']) && in_array((int) $app['business_unit_id'], $allowedBuIds, true)
-    ));
-}
-
-// Status counts (for button badges) – computed from full BU set
-$counts = [
-    'all' => count($allInBu),
-    'pending' => 0,
-    'on_process' => 0,
-    'approved' => 0,
-];
-foreach ($allInBu as $r) {
-    $st = (string) ($r['status'] ?? '');
-    if (isset($counts[$st]))
-        $counts[$st]++;
-}
-
-// Apply filters (country -> status -> search)
-if ($country !== 'all')
-    $applicants = filterApplicantsByCountry($applicants, $country, $applicant);
-if ($status !== 'all')
-    $applicants = filterApplicantsByStatus($applicants, $status);
-if ($q !== '')
-    $applicants = filterApplicantsByQuery($applicants, $q);
-
 // Preserve params for links
 $paramsForLinks = [];
 if ($q !== '')
@@ -271,9 +325,6 @@ if ($status !== 'all')
 if ($country !== 'all')
     $exportParams['country'] = $country;
 $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ? ('?' . http_build_query($exportParams)) : '');
-
-// ---------- Get countries for filter buttons ----------
-$countriesWithCounts = $applicant->getCountriesWithCounts($currentBuId);
 ?>
 <!-- ===== Page-local CSS for compact CSNK-like layout ===== -->
 <style>
@@ -556,6 +607,10 @@ $countriesWithCounts = $applicant->getCountriesWithCounts($currentBuId);
                                 $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
                                 $delUrl = 'applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
 
+                                // Check if employee can edit this applicant (only own BU)
+                                $appBuId = (int) ($app['business_unit_id'] ?? 0);
+                                $canEdit = ($isSuperAdmin || $isAdmin) || ($isEmployee && $appBuId === $currentBuId);
+
                                 $statusColors = [
                                     'pending' => 'warning',
                                     'on_process' => 'info',
@@ -593,9 +648,16 @@ $countriesWithCounts = $applicant->getCountriesWithCounts($currentBuId);
                                             <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
+                                            <?php if ($canEdit): ?>
+                                                <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <a href="#" class="btn btn-sm btn-secondary" title="Edit"
+                                                    onclick="alert('You do not have access to edit applicants from another country.'); return false;">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
                                             <?php if ($currentStatus === 'pending'): ?>
                                                 <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger delete-btn"
                                                     title="Delete"
