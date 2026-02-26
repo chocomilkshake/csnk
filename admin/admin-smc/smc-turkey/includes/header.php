@@ -534,28 +534,36 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <?php endif; ?>
             <?php endif; ?>
 
-            <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label">Settings</div>
-            <a href="../../../pages/accounts.php"
-               class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
-               aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
-               data-bs-toggle="tooltip" data-bs-placement="right" title="Accounts">
-                <i class="bi bi-person-badge <span class=""></i>
-               label"><span class="text">Accounts</span></span>
-            </a>
-            <a href="../../../pages/profile.php"
-               class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
-               aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
-               data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
-                <i class="bi bi-person-circle"></i>
-                <span class="label"><span class="text">Profile</span></span>
-            </a>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section-label">Settings</div>
 
-            <div class="sidebar-divider"></div>
-            <a href="../../../pages/logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span class="label"><span class="text">Logout</span></span>
-            </a>
+                <!-- ACCOUNTS -->
+                <a href="../../../pages/accounts.php"
+                class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
+                aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
+                data-bs-toggle="tooltip" data-bs-placement="right" title="Accounts">
+                    <i class="bi bi-person-badge"></i>
+                    <span class="label"><span class="text">Accounts</span></span>
+                </a>
+
+                <!-- PROFILE -->
+                <a href="../../../pages/profile.php"
+                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
+                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
+                data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="label"><span class="text">Profile</span></span>
+                </a>
+
+                <div class="sidebar-divider"></div>
+
+                <!-- LOGOUT -->
+                <a href="../../../pages/logout.php"
+                class="sidebar-item text-danger"
+                data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="label"><span class="text">Logout</span></span>
+                </a>
         </nav>
     </aside>
 
