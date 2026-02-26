@@ -163,8 +163,9 @@ $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
 /* For SMC admin side, show Monitoring/Reports to admins & super-admins */
-$canViewActivity = ($isAdmin || $isSuperAdmin);
 $canViewReports = ($isAdmin || $isSuperAdmin);
+$canViewActivity = ($isAdmin || $isSuperAdmin);
+$canViewReports  = ($isAdmin || $isSuperAdmin || $isEmployee); // ✅ employees can see Reports
 
 /* BU ID helper (ensure we pick the enforced one) */
 $buId = (int) ($_SESSION['current_bu_id'] ?? 0);
