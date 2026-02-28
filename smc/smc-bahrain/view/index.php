@@ -1006,7 +1006,37 @@
           window.removeEventListener('scroll', onScroll);
         }
       };
-      window.addE/strong> توثيق مُتحقق منه ودعم شامل",
+      window.addEventListener('scroll', onScroll);
+      onScroll();
+    })();
+  </script>
+
+  <!-- 🔁 Simple i18n (EN ⇄ AR) -->
+  <script>
+    // Arabic translations for every [data-i18n] key on this page.
+    // EN is taken from the DOM at load and restored when toggling back.
+    const I18N_AR = {
+      "hero.ribbon": "برنامج البحرين • مراعاة معايير مجلس التعاون الخليجي",
+      "hero.title": "الشخص المناسب للوظيفة المناسبة — <span class=\"text-gold\">توظيف جاهز للبحرين</span>",
+      "hero.lead": "شركة إس إم سي لتوظيف العمالة الفلبينية مرخّصة من POEA/DMW تحت الترخيص <strong>DMW-062-LB-03232023-R</strong> لتجنيد وتوظيف ومعالجة طلبات القوى العاملة للجهات الأجنبية المعتمدة، بما في ذلك أصحاب العمل في <strong>البحرين</strong>.",
+      "hero.bullet1_title": "توظيف احترافي",
+      "hero.bullet1_desc": "مواءمة أخلاقية وتوظيف مسؤول لعملاء البحرين",
+      "hero.bullet2_title": "دعم مُلمّ بمعايير الخليج",
+      "hero.bullet2_desc": "إرشاد من الفرز حتى السفر مع مراعاة الأعراف الخليجية",
+      "hero.btn_learn": "اعرف المزيد",
+      "hero.btn_applicants": "عرض المتقدمين",
+
+      "trust.bahrain_focused": "تركيز على البحرين",
+      "trust.dmw": "ترخيص DMW",
+      "trust.compliance": "الالتزام أولاً",
+      "trust.culture": "الثقافة والتواصل",
+      "trust.ethical": "توظيف أخلاقي",
+      "trust.timelines": "جداول زمنية واضحة",
+
+      "prog.badge": "برنامج البحرين",
+      "prog.title": "لأصحاب العمل في البحرين",
+      "prog.desc": "تخصّص هذه الصفحة الدولية لـ <strong>البحرين</strong>. نقوم بإيفاد <strong>العمالة الفلبينية الماهرة</strong> إلى الأسر وأصحاب العمل في البحرين عبر عملية آمنة ومتوافقة مع القوانين، تشمل الفرز والوثائق والتوقعات الواضحة.",
+      "prog.li1": "<strong>الامتثال والسلامة:</strong> توثيق مُتحقق منه ودعم شامل",
       "prog.li2": "<strong>الثقافة والتواصل:</strong> توجيه متوافق مع الأعراف البحرينية",
       "prog.li3": "<strong>توظيف مسؤول:</strong> شروط واضحة وتوظيف أخلاقي",
       "prog.btn_applicants": "عرض المتقدمين",
