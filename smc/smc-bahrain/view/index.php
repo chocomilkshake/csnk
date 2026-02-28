@@ -597,7 +597,19 @@
             </div>
           </div>
         </div>
-        <div class="col
+        <div class="col-md-4">
+          <div class="feature-tile h-100">
+            <div class="d-flex gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-scale-balanced"></i></div>
+              <div>
+                <h6 class="fw-bold text-navy mb-1" data-i18n="comp.c2_t">Lawful, Transparent Terms</h6>
+                <div class="small text-muted" data-i18n="comp.c2_d">Clarity on responsibilities, compensation, and timelines</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+    >Empowering Your Career Journey</h5>
               <p class="text-muted small mb-0" data-i18n="why.card2_d">We provide resources and clear guidance. Our goal is not just to find a job, but to support long‑term growth.</p>
             </div>
           </div>
