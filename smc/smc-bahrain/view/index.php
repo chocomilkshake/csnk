@@ -972,7 +972,44 @@
   </section>
 
   <!-- ✅ Reusable Footer -->
-  <?php include __DIR__ 
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
+
+  <!-- Counters Animation -->
+  <script>
+    (function(){
+      const counters = document.querySelectorAll('.counter-number');
+      const animate = (el) => {
+        const target = +el.getAttribute('data-count');
+        const duration = 1200;
+        const start = performance.now();
+        const step = (now) => {
+          const p = Math.min((now - start) / duration, 1);
+          const val = Math.floor(p * target);
+          el.textContent = val.toLocaleString();
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      };
+      let triggered = false;
+      const onScroll = () => {
+        if (triggered) return;
+        const rect = counters[0]?.getBoundingClientRect();
+        if (!rect) return;
+        if (rect.top < window.innerHeight) {
+          counters.forEach(animate);
+          triggered = true;
+          window.removeEventListener('scroll', onScroll);
+        }
+      };
+      window.addE/strong> توثيق مُتحقق منه ودعم شامل",
+      "prog.li2": "<strong>الثقافة والتواصل:</strong> توجيه متوافق مع الأعراف البحرينية",
+      "prog.li3": "<strong>توظيف مسؤول:</strong> شروط واضحة وتوظيف أخلاقي",
+      "prog.btn_applicants": "عرض المتقدمين",
       "prog.btn_contact": "اتصل بنا",
       "prog.screen_title": "ماذا
       "process.s4_d": "إجراءات DMW/POEA، الفحوصات الطبية، التصاريح، وثائق صاحب العمل",
