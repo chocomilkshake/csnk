@@ -851,7 +851,26 @@ $page = 'about';
 
       if (lang === 'ar') {
         html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl');
-        body.classList.add('rtl'about') || 'en';
+        body.classList.add('rtl');
+        i18nNodes.forEach(n => {
+          const key = n.getAttribute('data-i18n');
+          const val = I18N_AR[key];
+          if (typeof val === 'string') n.innerHTML = val;
+        });
+        toggle.setAttribute('aria-pressed', 'true'); toggle.setAttribute('title', 'Return to English');
+        label.textContent = 'EN';
+      } else {
+        html.setAttribute('lang', 'en'); html.setAttribute('dir', 'ltr');
+        body.classList.remove('rtl');
+        i18nNodes.forEach(n => { n.innerHTML = n.dataset.en; });
+        toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('title', 'Translate to Arabic');
+        label.textContent = 'AR';
+      }
+      localStorage.setItem('lang_about', lang);
+    };
+
+    // Init language from storage (separate key for about page)
+    const saved = localStorage.getItem('lang_about') || 'en';
     setLang(saved);
 
     // Toggle handler
