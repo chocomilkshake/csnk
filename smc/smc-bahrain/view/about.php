@@ -548,7 +548,38 @@ $page = 'about';
                 <img src="../resources/img/smc3.jpg" alt="Training photo 3">
               </a>
               <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3"
-               925548&set=pb.61577766467864.-2207520000&type=3"
+                 class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
+                <img src="../resources/img/smc4.jpg" alt="Training photo 4">
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="carousel-item">
+            <div class="gallery-grid">
+              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000"
+                 class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
+                <img src="../resources/img/smc5.jpg" alt="Training photo 5">
+              </a>
+              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000"
+                 class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
+                <img src="../resources/img/smc6.jpg" alt="Training photo 6">
+              </a>
+              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000"
+                 class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
+                <img src="../resources/img/smc7.jpg" alt="Training photo 7">
+              </a>
+              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000"
+                 class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
+                <img src="../resources/img/smc8.jpg" alt="Training photo 8">
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="carousel-item">
+            <div class="gallery-grid">
+              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3"
                  class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
                 <img src="../resources/img/smc9.jpg" alt="Training photo 9">
               </a>
