@@ -614,16 +614,6 @@
     </div>
   </section>
 
-  <!-- Contact / Map -->
-  <section id="contact" class="py-5 bg-soft-navy">
-    <div class="container">
-      <div class="text-center mb-4">
-        <h2 class="fw-bold mb-1 text-navy">Contact and Location</h2>
-        <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
-      </div>
-
-      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="row g-0">
 
 
 
