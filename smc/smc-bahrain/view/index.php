@@ -609,7 +609,62 @@
           </div>
         </div>
         <div class="col-md-4">
-    >Empowering Your Career Journey</h5>
+          <div class="feature-tile h-100">
+            <div class="d-flex gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-hand-holding-heart"></i></div>
+              <div>
+                <h6 class="fw-bold text-navy mb-1" data-i18n="comp.c3_t">Worker Welfare</h6>
+                <div class="small text-muted" data-i18n="comp.c3_d">Respectful, safe placements with support channels</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="small text-muted mt-3 mb-0" data-i18n="comp.note">
+        We follow ethical recruitment practices aligned with relevant regulations in Bahrain and the Philippines.
+      </p>
+    </div>
+  </section>
+
+  <!-- WHY CHOOSE SMC -->
+  <section id="about" class="py-5 bg-soft-navy">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="text-uppercase text-muted fw-semibold small" data-i18n="why.badge">Why Choose</span>
+        <div class="my-2">
+          <img src="../resources/img/smc.png" alt="SMC Manpower Agency Co." class="img-fluid" style="height:60px;">
+        </div>
+        <div class="row">
+          <div class="col-lg-8 col-md-10 mx-auto">
+            <p class="text-muted mb-0" data-i18n="why.desc">
+              We are committed to worker well‑being and client satisfaction through clear guidance,
+              organized processes, and respectful service. SMC recognizes the global demand for
+              talent and provides <strong>Bahrain‑ready, personalized recruitment</strong> so that
+              employers are well‑served and Filipino workers are responsibly supported overseas.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="mb-3"><i class="fa-solid fa-award fa-3x text-gold"></i></div>
+              <h2 class="fw-bold text-navy mb-1">15</h2>
+              <div class="text-uppercase text-muted fw-semibold small mb-3" data-i18n="why.years">Years of Experience</div>
+              <h5 class="fw-semibold mb-2 text-navy" data-i18n="why.card1_t">Efficient Longevity Service</h5>
+              <p class="text-muted small mb-0" data-i18n="why.card1_d">Dependable, long‑lasting service built on consistency, streamlined processes, and quality support at every stage.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="mb-3"><i class="fa-solid fa-chart-line fa-3x text-gold"></i></div>
+              <h2 class="fw-bold text-navy mb-1" data-i18n="why.card2_h">Career Development</h2>
+              <div class="text-uppercase text-muted fw-semibold small mb-3" data-i18n="why.card2_tag">Proven Growth Record</div>
+              <h5 class="fw-semibold mb-2 text-navy" data-i18n="why.card2_t">Empowering Your Career Journey</h5>
               <p class="text-muted small mb-0" data-i18n="why.card2_d">We provide resources and clear guidance. Our goal is not just to find a job, but to support long‑term growth.</p>
             </div>
           </div>
