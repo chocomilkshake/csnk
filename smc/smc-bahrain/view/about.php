@@ -729,7 +729,21 @@ $page = 'about';
   <!-- Page‑local: Training Gallery lightbox & keys -->
   <script>
     (function () {
-      const modalEl = document.get
+      const modalEl = document.getElementById('galleryModal');
+      const modalImg = document.getElementById('galleryModalImg');
+      const gallerySection = document.getElementById('training-gallery');
+      if (!modalEl || !modalImg || !gallerySection) return;
+
+      // Open modal with clicked image
+      gallerySection.querySelectorAll('.gallery-item').forEach(item => {
+        item.addEventListener('click', function (e) {
+          e.preventDefault();
+          const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
+          if (!full) return;
+          modalImg.src = full;
+          const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+          m.show();
+        });
       });
 
       // Optional: arrow keys go to next/prev slide when modal is open
