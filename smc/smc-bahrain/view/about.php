@@ -729,7 +729,7 @@ $page = 'about';
   <!-- Page‑local: Training Gallery lightbox & keys -->
   <script>
     (function () {
-      const modalEl = document.getElementsByTagName
+      const modalEl = document.get
       });
 
       // Optional: arrow keys go to next/prev slide when modal is open
