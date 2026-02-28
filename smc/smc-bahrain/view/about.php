@@ -583,7 +583,35 @@ $page = 'about';
                  class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
                 <img src="../resources/img/smc9.jpg" alt="Training photo 9">
               </a>
-              <a href="https://www.facebooktarget="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3"
+                 class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
+                <img src="../resources/img/smc10.jpg" alt="Training photo 10">
+              </a>
+              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3"
+                 class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
+                <img src="../resources/img/smc11.jpg" alt="Training photo 11">
+              </a>
+              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000"
+                 class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
+                <img src="../resources/img/smc12.jpg" alt="Training photo 12">
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Mobile arrows -->
+        <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        </button>
+        <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        </button>
+
+        <!-- Dots -->
+        <div class="carousel-indicators gallery-dots mt-4">
+          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
           <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
         </div>
       </div>
