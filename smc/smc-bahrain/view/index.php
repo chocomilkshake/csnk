@@ -659,29 +659,7 @@
                 </div>
               </div>
 
-              <div class="d-flex gap-3 mb-3">
-                <div class="text-gold fs-5"><i class="fa-solid fa-phone"></i></div>
-                <div>
-                  <div class="fw-semibold text-navy">Phone</div>
-                  <div class="text-muted small">0939 342 7412</div>
-                </div>
-              </div>
 
-              <div class="d-flex gap-3 mb-3">
-                <div class="text-gold fs-5"><i class="fa-solid fa-envelope"></i></div>
-                <div>
-                  <div class="fw-semibold text-navy">Email</div>
-                  <div class="text-muted small">smcphilippines.marketing@gmail.com</div>
-                </div>
-              </div>
-
-              <div class="d-flex gap-3 mb-4">
-                <div class="text-gold fs-5"><i class="fa-solid fa-clock"></i></div>
-                <div>
-                  <div class="fw-semibold text-navy">Office Hours</div>
-                  <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
-                </div>
-              </div>
 
 
 
