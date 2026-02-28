@@ -707,7 +707,31 @@ $page = 'about';
         if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
         if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; }
       }
-      function swap(btn)
+      function swap(btn) {
+        setActive(btn);
+        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
+        setTimeout(() => {
+          applyFrom(btn);
+          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
+        }, 150);
+      }
+      pills.forEach(btn => {
+        btn.addEventListener('click', () => swap(btn));
+        btn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
+        });
+      });
+      const init = container.querySelector('.btn.active') || pills[0];
+      if (init) applyFrom(init);
+    })();
+  </script>
+
+  <!-- Page‑local: Training Gallery lightbox & keys -->
+  <script>
+    (function () {
+      const modalEl = document.getElementsByTagName
+      });
+
       // Optional: arrow keys go to next/prev slide when modal is open
       document.addEventListener('keydown', function (e) {
         const isOpen = modalEl.classList.contains('show');
