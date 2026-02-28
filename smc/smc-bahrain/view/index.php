@@ -583,7 +583,26 @@
       <div class="text-center mb-4">
         <span class="badge-soft" data-i18n="comp.badge">Standards</span>
         <h2 class="fw-bold text-navy mt-2" data-i18n="comp.title">Compliance & Ethical Hiring</h2>
-        <p cla
+        <p class="text-muted mb-0" data-i18n="comp.subtitle">We prioritize safety, dignity, and lawful processes for all parties.</p>
+      </div>
+      <div class="row g-3 g-md-4">
+        <div class="col-md-4">
+          <div class="feature-tile h-100">
+            <div class="d-flex gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <h6 class="fw-bold text-navy mb-1" data-i18n="comp.c1_t">Verified Documentation</h6>
+                <div class="small text-muted" data-i18n="comp.c1_d">IDs, clearances, contracts, and fit‑to‑work checks</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col
+              <p class="text-muted small mb-0" data-i18n="why.card2_d">We provide resources and clear guidance. Our goal is not just to find a job, but to support long‑term growth.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 col-md-12">
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-shield-halved fa-3x text-gold"></i></div>
