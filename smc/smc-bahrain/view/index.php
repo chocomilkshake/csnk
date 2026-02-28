@@ -708,7 +708,257 @@
           </div>
         </div>
 
-        <dorkers for Bahrain.
+        <div class="col-md-4">
+          <div class="p-4 border-soft bg-white h-100 rounded-4 shadow-soft">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="icon-hex"><i class="fa-solid fa-briefcase"></i></div>
+              <div>
+                <div class="fw-bold text-navy">B. Santos</div>
+                <div class="small text-muted" data-i18n="test.t2_role">Hired Worker — HSW</div>
+              </div>
+            </div>
+            <p class="mb-0 text-muted" data-i18n="test.t2">“The orientation helped me understand what to expect in Bahrain. The agency guided me from documents to departure.”</p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="p-4 border-soft bg-white h-100 rounded-4 shadow-soft">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="icon-hex"><i class="fa-solid fa-hotel"></i></div>
+              <div>
+                <div class="fw-bold text-navy" data-i18n="test.t3_name">Hospitality Client</div>
+                <div class="small text-muted" data-i18n="test.t3_role">Bahrain</div>
+              </div>
+            </div>
+            <p class="mb-0 text-muted" data-i18n="test.t3">“Qualified candidates and timely updates. Professional experience end‑to‑end.”</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-5 bg-white">
+    <div class="container">
+      <div class="text-center mb-4">
+        <span class="badge-soft" data-i18n="faq.badge">FAQ</span>
+        <h2 class="fw-bold text-navy mt-2" data-i18n="faq.title">Frequently Asked Questions</h2>
+        <p class="text-muted mb-0" data-i18n="faq.subtitle">Fast answers for Bahrain employers and applicants.</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="accordion" id="faqEmployers">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fe1">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fe1c" aria-expanded="true" aria-controls="fe1c" data-i18n="faq.e.q1">
+                  How long does hiring usually take?
+                </button>
+              </h2>
+              <div id="fe1c" class="accordion-collapse collapse show" aria-labelledby="fe1" data-bs-parent="#faqEmployers">
+                <div class="accordion-body" data-i18n="faq.e.a1">
+                  It depends on role, documentation readiness, and interview availability. We outline timelines after we receive your job requisition and required documents.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fe2">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe2c" aria-expanded="false" aria-controls="fe2c" data-i18n="faq.e.q2">
+                  What employer documents are needed?
+                </button>
+              </h2>
+              <div id="fe2c" class="accordion-collapse collapse" aria-labelledby="fe2" data-bs-parent="#faqEmployers">
+                <div class="accordion-body" data-i18n="faq.e.a2">
+                  Typically, company or household identification, contract details, and role descriptions. We provide a checklist tailored to Bahrain requirements.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fe3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe3c" aria-expanded="false" aria-controls="fe3c" data-i18n="faq.e.q3">
+                  How do you match candidates?
+                </button>
+              </h2>
+              <div id="fe3c" class="accordion-collapse collapse" aria-labelledby="fe3" data-bs-parent="#faqEmployers">
+                <div class="accordion-body" data-i18n="faq.e.a3">
+                  By role fit, experience, references, and interview performance. We present shortlisted profiles and coordinate your interviews.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="accordion" id="faqApplicants">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fa1">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fa1c" aria-expanded="true" aria-controls="fa1c" data-i18n="faq.a.q1">
+                  What documents do applicants prepare?
+                </button>
+              </h2>
+              <div id="fa1c" class="accordion-collapse collapse show" aria-labelledby="fa1" data-bs-parent="#faqApplicants">
+                <div class="accordion-body" data-i18n="faq.a.a1">
+                  Government IDs, resume, references, clearances, fit‑to‑work medical, and other requirements. We give a guided checklist and updates.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fa2">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fa2c" aria-expanded="false" aria-controls="fa2c" data-i18n="faq.a.q2">
+                  Are there fees for workers?
+                </button>
+              </h2>
+              <div id="fa2c" class="accordion-collapse collapse" aria-labelledby="fa2" data-bs-parent="#faqApplicants">
+                <div class="accordion-body" data-i18n="faq.a.a2">
+                  We follow ethical recruitment practices and provide clear guidance on lawful, applicable costs. No illegal fees.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="fa3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fa3c" aria-expanded="false" aria-controls="fa3c" data-i18n="faq.a.q3">
+                  Can I apply if I have no overseas experience?
+                </button>
+              </h2>
+              <div id="fa3c" class="accordion-collapse collapse" aria-labelledby="fa3" data-bs-parent="#faqApplicants">
+                <div class="accordion-body" data-i18n="faq.a.a3">
+                  Yes. We assess your skills and trainability. Relevant local experience and clear references help your application.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- METRICS / COUNTERS -->
+  <section class="py-5 bg-white">
+    <div class="container">
+      <div class="row g-4 text-center">
+        <div class="col-6 col-md-3">
+          <div class="counter-number" data-count="15">0</div>
+          <div class="counter-label" data-i18n="metrics.yos">Years of Service</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="counter-number" data-count="100">0</div>
+          <div class="counter-label" data-i18n="metrics.compliance">% Compliance Focus</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="counter-number" data-count="500">0</div>
+          <div class="counter-label" data-i18n="metrics.screened">+ Screened Candidates</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="counter-number" data-count="24">0</div>
+          <div class="counter-label" data-i18n="metrics.response">Hrs Response Window</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Map -->
+  <section id="contact" class="py-5 bg-soft-navy">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-1 text-navy" data-i18n="contact.title">Contact and Location</h2>
+        <p class="text-muted mb-0" data-i18n="contact.subtitle">Visit our office or reach us using the details below</p>
+      </div>
+
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="row g-0">
+
+          <!-- Map -->
+          <div class="col-lg-7">
+            <iframe
+              style="width:100%; height:100%; min-height:420px; border:0;"
+              src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen>
+            </iframe>
+          </div>
+
+          <!-- Info -->
+          <div class="col-lg-5 bg-white">
+            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
+
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge-navy rounded-pill px-3 py-2">SMC Manpower Agency Co.</span>
+              </div>
+
+              <h5 class="fw-bold mb-3 text-navy" data-i18n="contact.office_info">Office Information</h5>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy" data-i18n="contact.address_label">Address</div>
+                  <div class="text-muted small" data-i18n="contact.address">
+                    Unit 1 Eden Townhomes<br>
+                    2001 Eden Street corner Pedro Gil Street, Sta. Ana<br>
+                    Manila, 1009 Barangay 866, City of Manila,<br>
+                    NCR, Sixth District
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy" data-i18n="contact.phone_label">Phone</div>
+                  <div class="text-muted small">0939 342 7412</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy" data-i18n="contact.email_label">Email</div>
+                  <div class="text-muted small">smcphilippines.marketing@gmail.com</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-4">
+                <div class="text-gold fs-5"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy" data-i18n="contact.hours_label">Office Hours</div>
+                  <div class="text-muted small" data-i18n="contact.hours">Mon to Sat, 8:00 AM to 5:00 PM</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-navy rounded-pill px-4"
+                   target="_blank" rel="noopener"
+                   href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                  <i class="fa-solid fa-location-arrow me-2 flip-rtl"></i><span data-i18n="contact.directions">Get Directions</span>
+                </a>
+
+                <a class="btn btn-outline-navy rounded-pill px-4" href="#home">
+                  <i class="fa-solid fa-arrow-up me-2"></i><span data-i18n="contact.back_top">Back to Top</span>
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA: Hire Now! -->
+  <section class="py-4 py-md-5">
+    <div class="container">
+      <div class="cta-hire">
+        <div class="cta-row">
+          <p class="cta-title" data-i18n="final.cta">
+            Hire reliable, properly screened Filipino Skilled Workers for Bahrain.
           </p>
 
           <div class="cta-actions">
