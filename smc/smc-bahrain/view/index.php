@@ -625,41 +625,6 @@
       <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="row g-0">
 
-          <!-- Map -->
-          <div class="col-lg-7">
-            <iframe
-              style="width:100%; height:100%; min-height:420px; border:0;"
-              src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              allowfullscreen>
-            </iframe>
-          </div>
-
-          <!-- Info -->
-          <div class="col-lg-5 bg-white">
-            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
-
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="badge-navy rounded-pill px-3 py-2">SMC Manpower Agency Co.</span>
-              </div>
-
-              <h5 class="fw-bold mb-3 text-navy">Office Information</h5>
-
-              <div class="d-flex gap-3 mb-3">
-                <div class="text-gold fs-5"><i class="fa-solid fa-location-dot"></i></div>
-                <div>
-                  <div class="fw-semibold text-navy">Address</div>
-                  <div class="text-muted small">
-                    Unit 1 Eden Townhomes
-                    2001 Eden Street corner Pedro Gil Street Sta. Ana
-                    Manila., 1009 Barangay 866, City of Manila,
-                    NCR, Sixth District
-                  </div>
-                </div>
-              </div>
-
-
 
 
 
