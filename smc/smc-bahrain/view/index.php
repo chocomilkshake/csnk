@@ -7,7 +7,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SMC Manpower Agency Co.</title>
+  <title>SMC Manpower Agency Co. — Bahrain Program</title>
 
   <!-- ✅ FAVICONS (keep both if unsure about your root path) -->
   <link rel="icon" type="image/png" href="/resources/img/smc.png" />
@@ -30,24 +30,31 @@
       --smc-navy-3: #1B355C;      /* Accent navy */
       --smc-gold: #FFD84D;        /* Gold accent */
       --smc-gold-2: #F4C542;      /* Warm gold */
-      --ink: #0E1A2B;             /* Primary body text (navy-ish, not black) */
-      --muted: #6c757d;           /* Muted text (gray) */
+      --ink: #0E1A2B;             /* Primary body text */
+      --muted: #6c757d;           /* Muted text */
       --card: #ffffff;
       --border: #e9ecef;
       --shadow: 0 12px 28px rgba(7, 18, 38, .16);
       --radius-outer: 1.25rem;
       --radius-inner: 1rem;
+
+      /* ======== BAHRAIN ACCENT ======== */
+      --bh-red: #CE1126;      /* Bahrain flag red */
+      --bh-red-2: #B10F20;    /* Darker Bahrain red */
     }
 
-    body { color: var(--ink); }
+    body { color: var(--ink); background: #f5f7fb; }
 
     /* ======== REUSABLE UTILITIES ======== */
     .text-navy { color: var(--smc-navy) !important; }
     .text-navy-2 { color: var(--smc-navy-2) !important; }
     .text-gold { color: var(--smc-gold) !important; }
+    .text-bh-red { color: var(--bh-red) !important; }
     .bg-navy { background: var(--smc-navy) !important; color:#fff; }
     .bg-navy-2 { background: var(--smc-navy-2) !important; color:#fff; }
     .bg-soft-navy { background: #f3f6fb !important; }
+    .border-soft { border: 1px solid rgba(11,31,58,.12); border-radius: var(--radius-inner); }
+
     .badge-navy {
       background: var(--smc-navy);
       color:#fff;
@@ -69,6 +76,16 @@
       border-radius: 999px;
       padding:.45rem .8rem;
       font-weight:700;
+    }
+    .badge-bahrain{
+      background: linear-gradient(90deg, var(--bh-red), var(--bh-red-2));
+      color:#fff;
+      border-radius:999px;
+      padding:.45rem .9rem;
+      font-weight:800;
+      letter-spacing:.2px;
+      box-shadow:0 6px 16px rgba(206,17,38,.28);
+      display:inline-flex; align-items:center; gap:.5rem;
     }
 
     .btn-navy{
@@ -106,14 +123,25 @@
     }
     .btn-outline-navy:hover{ background: var(--smc-navy); color:#fff; }
 
-    /* ======== HERO (Navy + Gold Accents) ======== */
+    .btn-bh{
+      --a: var(--bh-red);
+      --b: var(--bh-red-2);
+      background: linear-gradient(90deg, var(--a), var(--b));
+      color:#fff; border:0; border-radius:999px; padding:.85rem 1.35rem; font-weight:800;
+      box-shadow: 0 10px 22px rgba(206,17,38,.3);
+    }
+    .btn-bh:hover{ filter: brightness(1.03); color:#fff; }
+
+    .flag-dot{ width:.58rem; height:.58rem; background: var(--bh-red); border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(206,17,38,.12); }
+
+    /* ======== HERO (Navy + Gold + Bahrain Accent) ======== */
     .hero-wrap{
       border-radius: var(--radius-outer);
       color:#fff;
       padding: clamp(1.25rem, 2.8vw, 2rem);
       background:
         radial-gradient(900px 320px at 5% 0%, rgba(255, 216, 77, 0.18), rgba(0,0,0,0) 70%),
-        radial-gradient(900px 420px at 95% 50%, rgba(255, 216, 77, 0.12), rgba(0,0,0,0) 60%),
+        radial-gradient(900px 340px at 97% 30%, rgba(206,17,38,.18), rgba(0,0,0,0) 60%),
         linear-gradient(120deg, var(--smc-navy) 30%, var(--smc-navy-2) 70%, #1d3a67 100%);
       box-shadow: var(--shadow);
       overflow: hidden;
@@ -127,20 +155,26 @@
       z-index:0;
     }
     .hero-content{ position:relative; z-index:1; }
-
     .hero-bullet i{ color: var(--smc-gold) !important; }
+    .hero-ribbon{
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:#fff; color: var(--bh-red); font-weight:800; border-radius:999px;
+      padding:.4rem .8rem; box-shadow:0 8px 20px rgba(255,255,255,.08), 0 10px 20px rgba(206,17,38,.18) inset;
+    }
+    .hero-ribbon .spark{ color: var(--smc-gold-2); }
 
-    /* ======== TURKEY PROGRAM CARD ======== */
-    .turkey-card{
+    /* ======== BAHRAIN PROGRAM CARD ======== */
+    .program-card{
       border-radius: var(--radius-outer);
       overflow: hidden;
       box-shadow: var(--shadow);
       border:0;
       background:#fff;
     }
-    .turkey-left{
+    .program-left{
       background:
-        radial-gradient(900px 320px at 10% -20%, rgba(255,216,77,.18), rgba(255,216,77,0) 60%),
+        radial-gradient(900px 320px at 10% -20%, rgba(255,216,77,.16), rgba(255,216,77,0) 60%),
+        radial-gradient(900px 320px at 95% 120%, rgba(206,17,38,.16), rgba(206,17,38,0) 60%),
         linear-gradient(110deg, var(--smc-navy) 0%, var(--smc-navy-2) 100%);
       color:#fff;
     }
@@ -158,7 +192,7 @@
     .why-header img{ height:60px; }
     .why-card i{ color: var(--smc-gold); }
 
-    /* ======== CTA (Navy/Gold) ======== */
+    /* ======== CTA (Soft Panel) ======== */
     .cta-hire {
       background:
         radial-gradient(820px 260px at 8% 5%, rgba(255,216,77,.13), rgba(255,216,77,0) 60%),
@@ -174,22 +208,19 @@
     .cta-actions { display:flex; justify-content:flex-start; }
     @media (min-width:768px){ .cta-actions { justify-content:flex-end; } }
     .cta-btn {
-      --grad-a: var(--smc-navy-3);
-      --grad-b: var(--smc-navy);
+      --grad-a: var(--bh-red);
+      --grad-b: var(--bh-red-2);
       background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
       color:#fff; border:0; border-radius:999px; padding:.9rem 1.6rem; font-weight:800; letter-spacing:.2px;
       text-decoration:none; display:inline-flex; align-items:center; gap:.6rem;
-      box-shadow:0 12px 26px rgba(11,31,58,.28);
+      box-shadow:0 12px 26px rgba(206,17,38,.28);
       transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
       position:relative; isolation:isolate; white-space:nowrap;
     }
-    .cta-btn:hover,.cta-btn:focus{ transform: translateY(-1px); box-shadow:0 16px 34px rgba(11,31,58,.34); filter:brightness(1.03); color:#fff; }
+    .cta-btn:hover,.cta-btn:focus{ transform: translateY(-1px); box-shadow:0 16px 34px rgba(206,17,38,.34); filter:brightness(1.03); color:#fff; }
     .cta-btn::after{ content:"✦ ✦ ✦"; font-size:.85rem; color:var(--smc-gold-2); position:absolute; right:-2rem; top:50%; transform:translateY(-50%); opacity:.95; pointer-events:none; }
     @media (max-width:575.98px){ .cta-btn::after{ right:-1.6rem; font-size:.8rem; } }
     @media (prefers-reduced-motion: reduce){ .cta-btn { transition:none !important; } }
-
-    /* ======== BORDERS + CARDS ======== */
-    .border-soft { border: 1px solid rgba(11,31,58,.12); border-radius: var(--radius-inner); }
   </style>
 </head>
 <body class="bg-soft-navy">
@@ -207,67 +238,80 @@
       <div class="hero-wrap">
         <div class="row align-items-center gy-4 hero-content">
           <div class="col-lg-6">
-            <h1 class="display-6 fw-bold mb-3">Right Person for the Right Job, Right Employment for the Right Man</h1>
+            <div class="hero-ribbon mb-3" aria-label="Bahrain Program">
+              <span class="flag-dot" aria-hidden="true"></span>
+              <span>BAHRAIN PROGRAM</span>
+              <span class="spark">✦</span>
+              <span role="img" aria-label="Bahrain Flag">🇧🇭</span>
+            </div>
+
+            <h1 class="display-6 fw-bold mb-3">
+              Right Person for the Right Job — Bahrain‑Ready Placements
+            </h1>
             <p class="lead mb-4">
-              SMC Manpower Agency Philippines Company, is duly authorized and licensed by POEA under license no. DMW-062-LB-03232023-R to recruit, hire and process manpower for its accredited foreign principals.
+              SMC Manpower Agency Philippines Company is duly authorized and licensed by POEA under license no.
+              <strong>DMW-062-LB-03232023-R</strong> to recruit, hire, and process manpower for its accredited foreign
+              principals, including employers in <strong>Bahrain</strong>.
             </p>
 
             <div class="d-flex gap-3 mb-2 hero-bullet">
               <i class="fa-solid fa-circle-check fa-lg mt-1"></i>
               <div>
                 <div class="fw-semibold">Professional Recruitment</div>
-                <div class="small opacity-75">Expert matching and responsible placement</div>
+                <div class="small opacity-75">Ethical matching and responsible placement for Bahrain‑based clients</div>
               </div>
             </div>
 
             <div class="d-flex gap-3 mb-4 hero-bullet">
               <i class="fa-solid fa-globe fa-lg mt-1"></i>
               <div>
-                <div class="fw-semibold">Network &amp; Support</div>
-                <div class="small opacity-75">Guidance from screening to deployment</div>
+                <div class="fw-semibold">GCC‑Aware Support</div>
+                <div class="small opacity-75">Guidance from screening to deployment with GCC norms in mind</div>
               </div>
             </div>
 
             <a href="#about" class="btn btn-gold btn-lg fw-semibold">Learn More</a>
+            <a href="./applicant.php" class="btn btn-bh btn-lg fw-semibold ms-2">View Applicants</a>
           </div>
 
           <div class="col-lg-6">
             <img class="img-fluid rounded-4 shadow"
                  src="../resources/img/hero.jpeg"
-                 alt="Office">
+                 alt="SMC Bahrain Program — Office and Recruitment">
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 🇹🇷 TURKEY PROGRAM (Directly under HERO) -->
-  <section id="turkey" class="py-4">
+  <!-- 🇧🇭 BAHRAIN PROGRAM (Directly under HERO) -->
+  <section id="bahrain" class="py-4">
     <div class="container">
-      <div class="card turkey-card">
+      <div class="card program-card">
         <div class="row g-0 align-items-stretch">
-          <div class="col-md-6 turkey-left">
+          <div class="col-md-6 program-left">
             <div class="h-100 p-4 p-lg-5 d-flex flex-column justify-content-center">
-              <span class="badge-gold">Turkey Program</span>
-              <h2 class="fw-bold mt-3 mb-2">For Turkish Employers</h2>
+              <span class="badge-bahrain"><i class="fa-solid fa-flag"></i> Bahrain Program</span>
+              <h2 class="fw-bold mt-3 mb-2">For Bahraini Employers</h2>
               <p class="mb-4" style="opacity:.95;">
-                This website is the international version of SMC for <strong>Turkey</strong>. We deploy
-                <strong>Filipino Skilled Workers </strong> to Turkish households through a safe, compliant, and
-                well‑guided process with proper screening, documentation, and cultural orientation.
+                This international landing page is dedicated to <strong>Bahrain</strong>. We deploy
+                <strong>Filipino Skilled Workers</strong> to Bahraini households and employers through a safe,
+                compliant, and well‑guided process with proper screening, documentation, and clear expectations
+                for both employer and worker.
               </p>
 
               <ul class="list-unstyled m-0">
                 <li class="d-flex gap-3 mb-2">
                   <i class="fa-solid fa-shield-halved fs-5 text-gold"></i>
-                  <span><strong>Compliance &amp; Safety:</strong> Verified documents and step‑by‑step support</span>
+                  <span><strong>Compliance & Safety:</strong> Verified documents and step‑by‑step support</span>
                 </li>
                 <li class="d-flex gap-3 mb-2">
                   <i class="fa-solid fa-language fs-5 text-gold"></i>
-                  <span><strong>Language &amp; Culture:</strong> Orientation for Turkish household norms</span>
+                  <span><strong>Culture & Communication:</strong> Orientation to Bahrain norms and household expectations</span>
                 </li>
                 <li class="d-flex gap-3">
                   <i class="fa-solid fa-handshake-angle fs-5 text-gold"></i>
-                  <span><strong>Responsible Placement:</strong> Clear expectations for both employer and worker</span>
+                  <span><strong>Responsible Placement:</strong> Transparent terms and ethical recruitment</span>
                 </li>
               </ul>
 
@@ -288,19 +332,19 @@
               <div class="row g-3">
                 <div class="col-sm-6">
                   <div class="p-3 rounded-3 border-soft">
-                    <div class="fw-semibold text-navy">Experience &amp; Skills</div>
+                    <div class="fw-semibold text-navy">Experience & Skills</div>
                     <div class="small text-muted">Childcare, cleaning, laundry, cooking</div>
                   </div>
                 </div>
                 <div class="col-sm-6">
                   <div class="p-3 rounded-3 border-soft">
-                    <div class="fw-semibold text-navy">Background &amp; References</div>
+                    <div class="fw-semibold text-navy">Background & References</div>
                     <div class="small text-muted">Work history and contactable refs</div>
                   </div>
                 </div>
                 <div class="col-sm-6">
                   <div class="p-3 rounded-3 border-soft">
-                    <div class="fw-semibold text-navy">Health &amp; Fitness</div>
+                    <div class="fw-semibold text-navy">Health & Fitness</div>
                     <div class="small text-muted">Fit‑to‑work compliance</div>
                   </div>
                 </div>
@@ -313,7 +357,7 @@
               </div>
 
               <div class="mt-4 small text-muted">
-                Note: Deployment is subject to documentation, employer verification, and country regulations.
+                Note: Deployment is subject to documentation, employer verification, and applicable country regulations.
               </div>
             </div>
           </div>
@@ -352,14 +396,14 @@
                     <div class="col-md-6">
                       <img src="../resources/img/recruitment.png"
                            class="w-100"
-                           alt="SMC Slide 1"
+                           alt="SMC Bahrain — Trusted Recruitment"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">SMC Manpower Agency Co.</span>
                         <h3 class="fw-bold mt-3 mb-2 text-navy">Trusted Recruitment Agency</h3>
-                        <p class="text-muted mb-4">Excellence in Supplying Trusted and Skilled Household Service Professionals</p>
+                        <p class="text-muted mb-4">Excellence in supplying trusted and skilled Household Service Professionals for Bahrain employers.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-circle-check text-gold fs-4"></i>
@@ -392,20 +436,20 @@
                     <div class="col-md-6">
                       <img src="../resources/img/selection.png"
                            class="w-100"
-                           alt="SMC Slide 2"
+                           alt="SMC Bahrain — Meticulous Selection"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">Professional and Thorough</span>
                         <h3 class="fw-bold mt-3 mb-2 text-navy">Meticulous Selection Process</h3>
-                        <p class="text-muted mb-4">SMC consistently brings in the most qualified individuals to strengthen our team’s performance.</p>
+                        <p class="text-muted mb-4">We consistently present qualified candidates ready for Bahrain‑based roles.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-file-circle-check text-gold fs-4"></i>
                           <div>
                             <div class="fw-semibold text-navy">Requirements Support</div>
-                            <div class="small text-muted">Checklists, Updates, and Assistance</div>
+                            <div class="small text-muted">Checklists, updates, and assistance</div>
                           </div>
                         </div>
 
@@ -432,14 +476,14 @@
                     <div class="col-md-6">
                       <img src="../resources/img/verified.png"
                            class="w-100"
-                           alt="SMC Slide 3"
+                           alt="SMC Bahrain — Verified and Secure"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">Safety and Compliance</span>
                         <h3 class="fw-bold mt-3 mb-2 text-navy">Verified and Secure</h3>
-                        <p class="text-muted mb-4">We prioritize screening, verification, and proper documentation.</p>
+                        <p class="text-muted mb-4">We prioritize screening, verification, and proper documentation for Bahrain placements.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-shield-halved text-gold fs-4"></i>
@@ -472,14 +516,14 @@
                     <div class="col-md-6">
                       <img src="../resources/img/guide.png"
                            class="w-100"
-                           alt="SMC Slide 4"
+                           alt="SMC Bahrain — Guided Process"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">Trusted Assistance</span>
                         <h3 class="fw-bold mt-3 mb-2 text-navy">Guided Step by Step</h3>
-                        <p class="text-muted mb-4">We assist applicants in every stage, from requirements to deployment.</p>
+                        <p class="text-muted mb-4">We assist applicants at every stage—from requirements to deployment.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-handshake text-gold fs-4"></i>
@@ -510,14 +554,14 @@
                     <div class="col-md-6">
                       <img src="../resources/img/abroad.png"
                            class="w-100"
-                           alt="SMC Slide 6"
+                           alt="SMC Bahrain — Work Abroad Ready"
                            style="height:340px; object-fit:cover;">
                     </div>
                     <div class="col-md-6 bg-white">
                       <div class="p-4 p-lg-5 h-100 d-flex flex-column justify-content-center">
                         <span class="badge-soft align-self-start">Global Opportunities</span>
-                        <h3 class="fw-bold mt-3 mb-2 text-navy">Work Abroad Ready</h3>
-                        <p class="text-muted mb-4">We offer efficient travel document processing, ensuring hassle-free application.</p>
+                        <h3 class="fw-bold mt-3 mb-2 text-navy">Work Abroad Ready — Bahrain</h3>
+                        <p class="text-muted mb-4">Efficient documentation guidance to make applications smooth and clear.</p>
 
                         <div class="d-flex gap-3 mb-3">
                           <i class="fa-solid fa-globe text-gold fs-4"></i>
@@ -559,10 +603,11 @@
         <div class="row">
           <div class="col-lg-8 col-md-10 mx-auto">
             <p class="text-muted mb-0">
-              Our commitment to employee well-being includes competitive compensation, comprehensive benefits, 
-              and a supportive work culture that fosters collaboration and innovation SMC recognizes the global 
-              need for employment and believes its first and foremost responsibility is to provide our clients 
-              with word-class, personalized service and to provide, Filipinos the opportunity to work overseas.
+              We are committed to worker well‑being and client satisfaction through competitive compensation support,
+              comprehensive guidance, and a service culture built on clarity and respect. SMC recognizes the global
+              demand for talent and provides <strong>Bahrain‑ready, personalized recruitment</strong> so employers are
+              well‑served and Filipino workers are responsibly supported overseas.
+            </p>
           </div>
         </div>
       </div>
@@ -576,9 +621,9 @@
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-award fa-3x text-gold"></i></div>
               <h2 class="fw-bold text-navy mb-1">15</h2>
-              <div class="text-uppercase text-muted fw-semibold small mb-3">YEARS OF EXPERIENCE</div>
+              <div class="text-uppercase text-muted fw-semibold small mb-3">Years of Experience</div>
               <h5 class="fw-semibold mb-2 text-navy">Efficient Longevity Service</h5>
-              <p class="text-muted small mb-0">A commitment to dependable, long‑lasting service built on consistency, streamlined processes, and the ability to deliver quality support at every stage.</p>
+              <p class="text-muted small mb-0">Dependable, long‑lasting service built on consistency, streamlined processes, and quality support at every stage.</p>
             </div>
           </div>
         </div>
@@ -591,7 +636,7 @@
               <h2 class="fw-bold text-navy mb-1">Career Development</h2>
               <div class="text-uppercase text-muted fw-semibold small mb-3">Proven Growth Record</div>
               <h5 class="fw-semibold mb-2 text-navy">Empowering Your Career Journey</h5>
-              <p class="text-muted small mb-0">We provide various resources like skill enhancement programs. Our goal is not just to find you a job, but to support your long-term career growth.</p>
+              <p class="text-muted small mb-0">We provide resources and clear guidance. Our goal is not just to find a job, but to support long‑term growth.</p>
             </div>
           </div>
         </div>
@@ -602,9 +647,9 @@
             <div class="card-body text-center p-4">
               <div class="mb-3"><i class="fa-solid fa-shield-halved fa-3x text-gold"></i></div>
               <h2 class="fw-bold text-navy mb-1">100%</h2>
-              <div class="text-uppercase text-muted fw-semibold small mb-3">Top-Tier Services</div>
+              <div class="text-uppercase text-muted fw-semibold small mb-3">Top‑Tier Services</div>
               <h5 class="fw-semibold mb-2 text-navy">Industry‑Wide Opportunities</h5>
-              <p class="text-muted small mb-0">High-quality career pathways across various industries. Our services include job placement, career counseling, and skill development programs.</p>
+              <p class="text-muted small mb-0">High‑quality pathways across various industries with job placement, counseling, and skills development programs.</p>
             </div>
           </div>
         </div>
@@ -614,9 +659,94 @@
     </div>
   </section>
 
+  <!-- Contact / Map -->
+  <section id="contact" class="py-5 bg-soft-navy">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-1 text-navy">Contact and Location</h2>
+        <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
+      </div>
 
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="row g-0">
 
+          <!-- Map -->
+          <div class="col-lg-7">
+            <iframe
+              style="width:100%; height:100%; min-height:420px; border:0;"
+              src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen>
+            </iframe>
+          </div>
 
+          <!-- Info -->
+          <div class="col-lg-5 bg-white">
+            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
+
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge-navy rounded-pill px-3 py-2">SMC Manpower Agency Co.</span>
+              </div>
+
+              <h5 class="fw-bold mb-3 text-navy">Office Information</h5>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy">Address</div>
+                  <div class="text-muted small">
+                    Unit 1 Eden Townhomes
+                    2001 Eden Street corner Pedro Gil Street Sta. Ana
+                    Manila., 1009 Barangay 866, City of Manila,
+                    NCR, Sixth District
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy">Phone</div>
+                  <div class="text-muted small">0939 342 7412</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-gold fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy">Email</div>
+                  <div class="text-muted small">smcphilippines.marketing@gmail.com</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-4">
+                <div class="text-gold fs-5"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                  <div class="fw-semibold text-navy">Office Hours</div>
+                  <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-navy rounded-pill px-4"
+                   target="_blank" rel="noopener"
+                   href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                  <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
+                </a>
+
+                <a class="btn btn-outline-navy rounded-pill px-4" href="#home">
+                  <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- FINAL CTA: Hire Now! -->
   <section class="py-4 py-md-5">
@@ -624,7 +754,7 @@
       <div class="cta-hire">
         <div class="cta-row">
           <p class="cta-title">
-            Hire reliable, properly screened Filipino Skilled Workers.
+            Hire reliable, properly screened Filipino Skilled Workers for Bahrain.
           </p>
 
           <div class="cta-actions">
