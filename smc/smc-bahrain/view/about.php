@@ -814,7 +814,40 @@ $page = 'about';
       "time.title": "قصتنا بإيجاز",
       "time.m1": "تأسيس إدارة مجموعة شركات SMC",
       "time.m2": "تأسيس شركة إس إم سي للتوظيف",
-      "time.m3": "تأكيد ترخيص DMW ر
+      "time.m3": "تأكيد ترخيص DMW رقم DMW-062-LB-03232023-R",
+
+      "quality.title": "سياسة الجودة",
+      "quality.q1": "متطلبات وجداول زمنية واضحة",
+      "quality.q2": "توثيق وفرز مُتحقق منه",
+      "quality.q3": "تواصل شفاف وتحديثات",
+      "quality.q4": "تحسين مستمر وتغذية راجعة",
+
+      "ethics.title": "مدونة الأخلاقيات",
+      "ethics.e1": "الاحترام والكرامة لكل المرشحين",
+      "ethics.e2": "شروط عادلة وقانونية—بدون رسوم غير قانونية",
+      "ethics.e3": "خصوصية البيانات وسريتها",
+      "ethics.e4": "عدم التسامح مع أي سلوك مسيء",
+
+      "metrics.yos": "سنوات الخدمة",
+      "metrics.compliance": "% تركيز على الامتثال",
+      "metrics.screened": "+ مرشحون مُفرزون",
+      "metrics.response": "ساعات للاستجابة",
+
+      "gallery.title": "المعرض",
+
+      "final.cta": "وظّف عمالة فلبينية ماهرة ومُفرزة بعناية.",
+      "final.btn": "وظّف الآن!"
+    };
+
+    // Store EN defaults for [data-i18n] nodes
+    const i18nNodes = Array.from(document.querySelectorAll('[data-i18n]'));
+    i18nNodes.forEach(n => { n.dataset.en = n.innerHTML; });
+
+    const setLang = (lang) => {
+      const html = document.documentElement;
+      const body = document.body;
+      const toggle = document.getElementById('langToggle');
+      const label = document.getElementById('langToggleLabel');
 
       if (lang === 'ar') {
         html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl');
