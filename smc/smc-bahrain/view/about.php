@@ -618,6 +618,46 @@ $page = 'about';
     </div>
 
     <!-- Lightbox Modal -->
+    <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-black border-0">
+          <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="p-2 p-sm-3">
+            <img id="galleryModalImg" src="" alt="Training photo" class="img-fluid w-100 rounded-3">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA: Hire Now! -->
+  <section class="py-4 py-md-5">
+    <div class="container">
+      <div class="p-3 p-md-4 cta-wrap">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem" data-i18n="final.cta">
+            Hire reliable, properly screened Filipino Skilled Workers.
+          </p>
+          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
+            <span data-i18n="final.btn">Hire Now!</span> <i class="fa-solid fa-arrow-right ms-1 flip-rtl"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== -->
+  <!-- Page Content Ends     -->
+  <!-- ===================== -->
+
+  <!-- ✅ Reusable Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Counters Animation -->
+  <script>
     (function(){
 
   <!-- Page‑local: Hero pill swapper -->
