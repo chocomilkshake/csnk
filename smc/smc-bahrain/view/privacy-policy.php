@@ -48,7 +48,7 @@ html,body { background:#f5f7fb; color:var(--ink); }
 /* CONTENT WRAPPER */
 .policy-card {
   background:#fff;
-  border-top-left-radius with prospective employers, including Bahrain‑based employers</li>
+  border-ra with prospective employers, including Bahrain‑based employers</li>
       <li>Improving our recruitment workflow and service quality</li>
       <li>Responding to inquiries and support requests</li>
       <li>Maintaining security, verification, and fraud prevention</li>
