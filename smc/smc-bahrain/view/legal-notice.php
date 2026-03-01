@@ -91,7 +91,28 @@ $page = 'legal';
       </p>
 
       <h2><i class="fa-solid fa-briefcase"></i> 10. Employment Services Disclaimer</h2>
-      <p>e-circle-check"></i> 13. Contact Information</h2>
+      <p>
+        CSNK / SMC acts solely as a manpower recruitment and placement agency. We facilitate connections between candidates and employers, including Bahrain‑based employers. We do NOT guarantee:
+      </p>
+      <ul>
+        <li>Employment approval or visa issuance</li>
+        <li>Employer decisions, selection, or hiring timelines</li>
+        <li>Salary, benefits, or contract terms set by employers</li>
+        <li>Employment conduct, workplace conditions, or safety</li>
+        <li>Any agreements or disputes between employer and worker</li>
+      </ul>
+
+      <h2><i class="fa-solid fa-shield-halved"></i> 11. Data Protection</h2>
+      <p>
+        We comply with applicable data privacy laws. Information is processed securely and only for authorized recruitment purposes. See our Privacy Policy for details.
+      </p>
+
+      <h2><i class="fa-solid fa-copyright"></i> 12. Intellectual Property Rights</h2>
+      <p>
+        All website content—including text, graphics, images, and software—is the property of CSNK / SMC Manpower Agency or its licensors. Unauthorized use is strictly prohibited.
+      </p>
+
+      <h2><i class="fa-solid fa-envelope-circle-check"></i> 13. Contact Information</h2>
       <p>If you have questions about this Legal Notice, contact us:</p>
       <ul class="contact-list">
         <li><strong>Email:</strong> <a href="mailto:csnkmanila06@gmail.com">csnkmanila06@gmail.com</a></li>
