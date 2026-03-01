@@ -523,7 +523,45 @@ function invalidClass(array $errors, string $key): string {
       submitBtn.disabled = true;
     });
 
-    // Show succe_label": "الهاتف",
+    // Show success toast
+    <?php if ($success): ?>
+    (function(){
+      const toastEl = document.getElementById('successToast');
+      if (toastEl) new bootstrap.Toast(toastEl).show();
+    })();
+    <?php endif; ?>
+
+    // -------------------------------
+    // Simple i18n (EN ⇄ AR)
+    // -------------------------------
+    const I18N_AR = {
+      "hero.title": "تواصل مع دعم <span class='text-accent'>إس إم سي</span>",
+      "hero.sub": "نحن هنا للمساعدة. أرسل رسالتك وسنعاود الرد قريبًا.",
+      "trust.bh": "تركيز على البحرين",
+      "trust.dmw": "ترخيص DMW",
+      "trust.compliance": "الالتزام أولاً",
+      "trust.ethical": "توظيف أخلاقي",
+      "trust.fast": "استجابة خلال 24 ساعة",
+
+      "form.first": "الاسم الأول",
+      "form.last": "اسم العائلة",
+      "form.email": "البريد الإلكتروني",
+      "form.phone": "الهاتف (اختياري، دولي)",
+      "form.topic": "الموضوع",
+      "form.message": "الرسالة",
+      "form.consent": "أوافق على",
+      "form.privacy": "سياسة الخصوصية",
+      "form.submit": "إرسال الرسالة",
+      "form.sending": "جاري الإرسال…",
+
+      "contact.pref": "تفضّل البريد الإلكتروني؟",
+      "contact.call": "اتصل بنا:",
+      "contact.whatsapp": "واتساب:",
+
+      "office.title": "معلومات المكتب",
+      "office.addr_label": "العنوان",
+      "office.addr": "وحدة 1 إدين تاون هومز<br>2001 شارع إدين زاوية شارع بيدرو جيل، سانا آنا<br>بارانغاي 866، مدينة مانيلا، NCR، المنطقة السادسة",
+      "office.phone_label": "الهاتف",
       "office.hours_label": "ساعات العمل",
       "office.hours": "من الإثنين إلى السبت، 8:00 ص إلى 5:00 م",
       "office.dir": "الحصول على الاتجاهات",
