@@ -7,7 +7,7 @@ $page = 'about';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>About — SMC Manpower Agency Co. | Trusted Recruitment</title>
+  <title>SMC Manpower Agency Co.</title>
 
   <!-- SEO -->
   <meta name="description" content="Learn about SMC Manpower Agency Co. — DMW-licensed, compliance-first, and ethically driven recruitment connecting Bahrain-ready and global employers with skilled Filipino talent.">
