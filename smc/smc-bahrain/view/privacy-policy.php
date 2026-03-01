@@ -71,7 +71,34 @@ h2 i { color:var(--bh-red); }
 .last-updated {
   color:var(--muted);
   font-style:italic;
-}/navbar.php'; ?>
+}
+
+ul li { margin-bottom:.5rem; }
+
+/* Highlight box */
+.notice-box {
+  background:#fffbe8;
+  border-left:4px solid var(--gold);
+  padding:1rem 1.2rem;
+  border-radius:.8rem;
+  margin-bottom:1.5rem;
+}
+
+/* Contact box */
+.contact-box {
+  background:#fff;
+  border-left:5px solid var(--bh-red);
+  padding:1.1rem 1.2rem;
+  border-radius:1rem;
+  box-shadow:0 12px 28px rgba(11,31,58,.08);
+}
+</style>
+
+</head>
+<body>
+
+<!-- NAVBAR -->
+<?php include __DIR__ . '/navbar.php'; ?>
 
 <!-- HEADER -->
 <section class="page-header">
