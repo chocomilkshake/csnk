@@ -33,7 +33,25 @@ $page = 'legal';
     .legal-card {
       background: var(--card-bg);
       border-radius: var(--radius);
-      box-shadow: v
+      box-shadow: var(--shadow);
+      padding: 2rem 2.3rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-soft);
+    }
+
+    h2 {
+      color: var(--bh-red);
+      font-size: 1.4rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 {
+      letter-spacing: -.3px;
+    }
+
+    ul li {
       margin-bottom: .4rem;
     }
 
