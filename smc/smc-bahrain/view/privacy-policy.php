@@ -23,7 +23,23 @@ $page = 'privacy';
       We use cookies to understand user preferences and improve browsing experience.  
       Users may disable cookies in browser settings, but doing so may affect site functionality.
     </p>
-lope-circle-check"></i>10. Contact Us</h2>
+
+    <!-- SECTION 8 -->
+    <h2><i class="fa-solid fa-external-link-alt"></i>8. Third‑Party Links</h2>
+    <p>
+      Some pages may link to external websites. SMC is not responsible for the privacy practices of third‑party sites.  
+      Users are encouraged to review the privacy policies of external websites before submitting information.
+    </p>
+
+    <!-- SECTION 9 -->
+    <h2><i class="fa-solid fa-child"></i>9. Minors</h2>
+    <p>
+      Our recruitment services are intended for individuals aged 18 and above.  
+      SMC does not knowingly collect information from minors. If such information is discovered, it will be managed responsibly.
+    </p>
+
+    <!-- SECTION 10 -->
+    <h2><i class="fa-solid fa-envelope-circle-check"></i>10. Contact Us</h2>
     <p>If you have questions about this Privacy Policy, you may contact us through:</p>
 
     <div class="contact-box">
