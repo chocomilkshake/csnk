@@ -90,7 +90,25 @@ $page = 'legal';
         This Legal Notice is governed by the laws of the Republic of the Philippines. Users agree to the exclusive jurisdiction of Philippine courts.
       </p>
 
-      <h2>'/footer.php'; ?>
+      <h2><i class="fa-solid fa-briefcase"></i> 10. Employment Services Disclaimer</h2>
+      <p>e-circle-check"></i> 13. Contact Information</h2>
+      <p>If you have questions about this Legal Notice, contact us:</p>
+      <ul class="contact-list">
+        <li><strong>Email:</strong> <a href="mailto:csnkmanila06@gmail.com">csnkmanila06@gmail.com</a></li>
+        <li><strong>Phone:</strong> 0945 657 0878</li>
+        <li><strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta. Ana, Manila</li>
+      </ul>
+
+      <div class="cta-legal mt-4">
+        <strong>Need assistance?</strong><br>
+        Our Bahrain Program support team is ready to help with compliance, documentation, or employment inquiries.
+      </div>
+
+    </div><!-- /legal-card -->
+  </main>
+
+  <!-- FOOTER -->
+  <?php include __DIR__ . '/footer.php'; ?>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
