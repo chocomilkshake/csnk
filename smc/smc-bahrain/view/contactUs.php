@@ -464,6 +464,35 @@ function invalidClass(array $errors, string $key): string {
                   <div class="invalid-feedback"><?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
 
+                <div class="d-flex justify-content-end mt-1">
+                  <span id="charCount" class="char-counter" aria-live="polite">0 / <?= (int)$CONFIG['max_message'] ?></span>
+                </div>
+              </div>
+
+              <!-- Honeypot (hidden) -->
+              <div class="visually-hidden" aria-hidden="true">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="form-check">
+                    <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1" id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
+                    <label class="form-check-label" for="consent">
+                      <span data-i18n="form.consent">I agree to the</span>
+                      <a href="./privacy-policy.php" target="_blank" rel="noopener" class="link-secondary" data-i18n="form.privacy">Privacy Policy</a>.
+                    </label>
+                    <div class="invalid-feedback"><?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
+                  </div>
+                  <button id="submitBtn" class="btn btn-accent px-4" type="submit">
+                    <span class="submit-text" data-i18n="form.submit">Send message</span>
+                    <span class="submit-loading d-none">
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      <span data-i18n="form.sending">Sending…</span>
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </form>
