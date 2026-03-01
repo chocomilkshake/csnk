@@ -437,7 +437,31 @@ function invalidClass(array $errors, string $key): string {
                     name="phone"
                     class="form-control <?= invalidClass($errors, 'phone') ?>"
                     placeholder="+973XXXXXXXX"
-                    au<option value="" ' . ($current===''?'selected':'') . ' disabled>Choose a topic…</option>';
+                    autocomplete="tel"
+                    inputmode="tel"
+                    pattern="^\+?\d{7,15}$"
+                    maxlength="16"
+                    value="<?= old('phone') ?>"
+                    oninput="this.value=this.value.replace(/[^+\d]/g,'').slice(0,16)"
+                  />
+                  <label for="phone" data-i18n="form.phone">Phone (optional, int’l)</label>
+                  <div class="invalid-feedback"><?= htmlspecialchars($errors['phone'] ?? 'Please enter a valid international phone.', ENT_QUOTES, 'UTF-8') ?></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
+                    <?php
+                      $topics = [
+                        'Bahrain Employer Inquiry',
+                        'Bahrain Applicant',
+                        'Documents & Compliance',
+                        'Partnerships',
+                        'General Inquiry'
+                      ];
+                      $current = old('topic');
+                      echo '<option value="" ' . ($current===''?'selected':'') . ' disabled>Choose a topic…</option>';
                       foreach ($topics as $t) {
                         $sel = ($current === $t) ? 'selected' : '';
                         echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
