@@ -18,6 +18,36 @@ $page = 'legal';
 
   <!-- Styles -->
   <style>
+    :root {
+      --navy: #0B1F3A;
+      --navy-ink: #16243B;
+      --gold: #FFD84D;
+      --bh-red: #CE1126;
+      --soft-bg: #f4f6fb;
+      --card-bg: #ffffff;
+      --border-soft: #e4e7ee;
+      --radius: 1.2rem;
+      --shadow: 0 8px 20px rgba(11,31,58,0.10);
+      --shadow-lg: 0 16px 36px rgba(11,31,58,0.12);
+    }
+
+    body {
+      background: var(--soft-bg);
+      color: var(--navy-ink);
+      font-size: 1rem;
+    }
+
+    /* Page Title Section */
+    .page-header {
+      padding: 4rem 1rem;
+      background: linear-gradient(120deg, var(--navy) 30%, #112a4a 100%);
+      color: #fff;
+      text-align: center;
+      border-bottom-left-radius: 2rem;
+      border-bottom-right-radius: 2rem;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 2.5rem;
+    }
 
     .page-header h1 {
       font-weight: 800;
