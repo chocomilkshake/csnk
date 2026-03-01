@@ -493,7 +493,34 @@ function invalidClass(array $errors, string $key): string {
                     <div class="fw-semibold text-navy">Email</div>
                     <div class="text-muted small">smcphilippines.marketing@gmail.com</div>
                   </div>
-                </div>www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
+                </div>
+
+                <div class="d-flex gap-3 mb-4">
+                  <div class="text-gold fs-5"><i class="fa-solid fa-clock"></i></div>
+                  <div>
+                    <div class="fw-semibold text-navy" data-i18n="office.hours_label">Office Hours</div>
+                    <div class="text-muted small" data-i18n="office.hours">Mon to Sat, 8:00 AM to 5:00 PM</div>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-navy rounded-pill px-4"
+                     target="_blank" rel="noopener"
+                     href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                    <i class="fa-solid fa-location-arrow me-2 flip-rtl"></i><span data-i18n="office.dir">Get Directions</span>
+                  </a>
+
+                  <a class="btn btn-outline-navy rounded-pill px-4" href="#top">
+                    <i class="fa-solid fa-arrow-up me-2"></i><span data-i18n="office.top">Back to Top</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <iframe
+                style="width:100%; height:100%; min-height:300px; border:0;"
+                src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
                 allowfullscreen>
