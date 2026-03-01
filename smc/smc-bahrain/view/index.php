@@ -7,7 +7,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SMC Manpower Agency Co. — Bahrain Program | Trusted Recruitment</title>
+  <title>SMC Manpower Agency Co.</title>
 
   <!-- SEO -->
   <meta name="description" content="SMC Manpower Agency Co. — DMW-licensed Philippine recruitment agency providing Bahrain-ready, compliant, and ethical placement of Filipino skilled workers.">
