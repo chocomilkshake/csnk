@@ -15,7 +15,43 @@ $page = 'privacy';
 
 <style>
 :root {
-  --navy
+  --navy: #0B1F3A;
+  --navy-2: #132A4A;
+  --gold: #FFD84D;
+  --bh-red: #CE1126;
+  --ink: #1b2637;
+  --muted: #6e7b8b;
+  --border: #e1e6ef;
+  --radius: 
+    <!-- SECTION 4 -->
+    <h2><i class="fa-solid fa-share-nodes"></i>4. Sharing & Disclosure</h2>
+    <p>SMC does not sell or rent personal information. Information may be shared only when relevant to recruitment or lawful processing:</p>
+
+    <ul>
+      <li><strong>Prospective Employers:</strong> Applicant files may be shared with hiring principals for evaluation.</li>
+      <li><strong>Service Providers:</strong> IT, security, or verification vendors supporting our system or processes.</li>
+      <li><strong>Administrative Processes:</strong> Required submissions for processing documentation.</li>
+      <li><strong>Compliance:</strong> Disclosures required by competent authorities.</li>
+      <li><strong>Business Continuity:</strong> If system migration or organizational changes occur.</li>
+    </ul>
+
+    <!-- SECTION 5 -->
+    <h2><i class="fa-solid fa-lock"></i>5. Information Security</h2>
+    <p>
+      SMC implements reasonable safeguards to protect your data. Measures may include secured storage, controlled access, encrypted communication, and system monitoring.
+      However, no digital or electronic method guarantees absolute protection.
+    </p>
+
+    <!-- SECTION 6 -->
+    <h2><i class="fa-solid fa-user-check"></i>6. Your Privacy Choices</h2>
+    <p>You may request the following, where applicable and reasonable:</p>
+    <ul>
+      <li>To access personal information you have submitted</li>
+      <li>To correct or update inaccurate information</li>
+      <li>To request deletion of your information (subject to retention requirements)</li>
+      <li>To withdraw consent for optional communications</li>
+      <li>To inquire about how your information is processed</li>
+    </ul>
 
     <!-- SECTION 7 -->
     <h2><i class="fa-solid fa-cookie-bite"></i>7. Cookies & Tracking</h2>
