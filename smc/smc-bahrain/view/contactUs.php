@@ -411,7 +411,39 @@ function invalidClass(array $errors, string $key): string {
 
   <!-- Trust Strip -->
   <section class="py-3">
-    <div class="container trus$errors, 'firstName') ?>"
+    <div class="container trust-strip text-center">
+      <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
+        <div class="item"><i class="fa-solid fa-flag text-navy"></i> <span data-i18n="trust.bh">Bahrain‑Focused</span></div>
+        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW Licensed</span></div>
+        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span data-i18n="trust.compliance">Compliance‑First</span></div>
+        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical Recruitment</span></div>
+        <div class="item"><i class="fa-solid fa-clock text-navy"></i> <span data-i18n="trust.fast">24h Response</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form + Sidebar -->
+  <section class="container pb-5">
+    <div class="row align-items-start g-4">
+      <div class="col-lg-7">
+        <div class="contact-card p-4 p-md-5">
+          <?php if (!empty($errors['general'])): ?>
+            <div class="alert alert-warning" role="alert">
+              <?= htmlspecialchars($errors['general'], ENT_QUOTES, 'UTF-8') ?>
+            </div>
+          <?php endif; ?>
+
+          <form id="contactForm" method="post" action="" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    class="form-control <?= invalidClass($errors, 'firstName') ?>"
                     placeholder="First name"
                     required
                     maxlength="80"
