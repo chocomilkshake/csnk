@@ -22,7 +22,39 @@ $page = 'privacy';
   --ink: #1b2637;
   --muted: #6e7b8b;
   --border: #e1e6ef;
-  --radius: 
+  --radius: 1.2rem;
+  --shadow: 0 10px 24px rgba(11,31,58,.10);
+  --shadow-lg: 0 18px 40px rgba(11,31,58,.12);
+}
+
+html,body { background:#f5f7fb; color:var(--ink); }
+
+/* HEADER BANNER */
+.page-header {
+  padding: clamp(2rem,5vw,3.6rem) 0;
+  background:
+    radial-gradient(900px 320px at 10% 0%, rgba(255,216,77,.14), rgba(255,216,77,0) 60%),
+    radial-gradient(900px 320px at 95% 100%, rgba(206,17,38,.12), rgba(206,17,38,0) 60%),
+    linear-gradient(120deg, var(--navy) 20%, var(--navy-2) 80%);
+  color:#fff;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  box-shadow: var(--shadow-lg);
+  margin-bottom:2.5rem;
+}
+.page-header h1 { font-weight:800; letter-spacing:-.3px; }
+.page-header p { opacity:.9; }
+
+/* CONTENT WRAPPER */
+.policy-card {
+  background:#fff;
+  border-top-left-radius with prospective employers, including Bahrain‑based employers</li>
+      <li>Improving our recruitment workflow and service quality</li>
+      <li>Responding to inquiries and support requests</li>
+      <li>Maintaining security, verification, and fraud prevention</li>
+      <li>Complying with applicable administrative and recruitment requirements</li>
+    </ul>
+
     <!-- SECTION 4 -->
     <h2><i class="fa-solid fa-share-nodes"></i>4. Sharing & Disclosure</h2>
     <p>SMC does not sell or rent personal information. Information may be shared only when relevant to recruitment or lawful processing:</p>
