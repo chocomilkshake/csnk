@@ -32,7 +32,34 @@ $page = 'legal';
     /* Legal Content Card */
     .legal-card {
       background: var(--card-bg);
-      border
+      border-radius: var(--radius);
+      box-shadow: v
+      margin-bottom: .4rem;
+    }
+
+    /* Icon headings */
+    .icon-heading i {
+      color: var(--bh-red);
+      margin-right: .6rem;
+    }
+
+    /* Last updated */
+    .last-updated {
+      font-style: italic;
+      color: #6b7485;
+      margin-bottom: 1.5rem;
+    }
+
+    /* CTA Box */
+    .cta-legal {
+      background: #fff;
+      padding: 1.4rem 1.6rem;
+      border-radius: var(--radius);
+      border-left: 5px solid var(--bh-red);
+      box-shadow: var(--shadow);
+      margin-top: 2rem;
+    }
+
     .cta-legal strong {
       color: var(--navy);
     }
