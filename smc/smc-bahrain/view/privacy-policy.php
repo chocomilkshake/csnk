@@ -1,164 +1,232 @@
 <?php
 session_start();
+$page = 'privacy';
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SMC Manpower Agency Co.</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <style>
-    :root {
-      --accent-red: #D72638;
-      --ink: #111111;
-      --muted-ink: #6c757d;
-    }
-    body {
-      background: #f8f9fa;
-      color: var(--ink);
-    }
-    .content-section {
-      background: white;
-      border-radius: 8px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    h1 {
-      color: var(--accent-red);
-      margin-bottom: 1rem;
-    }
-    h2 {
-      color: var(--accent-red);
-      font-size: 1.5rem;
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-    }
-    .last-updated {
-      color: var(--muted-ink);
-      font-style: italic;
-      margin-bottom: 2rem;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — SMC Manpower Agency Philippines Company</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-2: #132A4A;
+  --gold: #FFD84D;
+  --bh-red: #CE1126;
+  --ink: #1b2637;
+  --muted: #6e7b8b;
+  --border: #e1e6ef;
+  --radius: 1.2rem;
+  --shadow: 0 10px 24px rgba(11,31,58,.10);
+  --shadow-lg: 0 18px 40px rgba(11,31,58,.12);
+}
+
+html,body { background:#f5f7fb; color:var(--ink); }
+
+/* HEADER BANNER */
+.page-header {
+  padding: clamp(2rem,5vw,3.6rem) 0;
+  background:
+    radial-gradient(900px 320px at 10% 0%, rgba(255,216,77,.14), rgba(255,216,77,0) 60%),
+    radial-gradient(900px 320px at 95% 100%, rgba(206,17,38,.12), rgba(206,17,38,0) 60%),
+    linear-gradient(120deg, var(--navy) 20%, var(--navy-2) 80%);
+  color:#fff;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  box-shadow: var(--shadow-lg);
+  margin-bottom:2.5rem;
+}
+.page-header h1 { font-weight:800; letter-spacing:-.3px; }
+.page-header p { opacity:.9; }
+
+/* CONTENT WRAPPER */
+.policy-card {
+  background:#fff;
+  border-radius: var(--radius);
+  border:1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: clamp(1.3rem,2.2vw,2.2rem);
+  margin-bottom:2rem;
+}
+
+h2 {
+  font-size:1.3rem;
+  font-weight:800;
+  color:var(--bh-red);
+  margin-top:2rem;
+  margin-bottom:1rem;
+  display:flex;
+  gap:.55rem;
+  align-items:center;
+}
+
+h2 i { color:var(--bh-red); }
+
+.last-updated {
+  color:var(--muted);
+  font-style:italic;
+}
+
+ul li { margin-bottom:.5rem; }
+
+/* Highlight box */
+.notice-box {
+  background:#fffbe8;
+  border-left:4px solid var(--gold);
+  padding:1rem 1.2rem;
+  border-radius:.8rem;
+  margin-bottom:1.5rem;
+}
+
+/* Contact box */
+.contact-box {
+  background:#fff;
+  border-left:5px solid var(--bh-red);
+  padding:1.1rem 1.2rem;
+  border-radius:1rem;
+  box-shadow:0 12px 28px rgba(11,31,58,.08);
+}
+</style>
+
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <?php $page = 'privacy'; include __DIR__ . '/navbar.php'; ?>
-  </header>
 
-  <!-- Main Content -->
-  <main class="container py-5">
-    <div class="content-section">
-      <h1>Privacy Policy</h1>
-      <p class="last-updated">Last Updated: February 2026</p>
+<!-- NAVBAR -->
+<?php include __DIR__ . '/navbar.php'; ?>
 
-      <h2>1. Introduction</h2>
-      <p>
-        CSNK Manpower Agency ("Company," "we," "us," or "our") is committed to protecting your privacy. 
-        This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you 
-        visit our website and use our services.
-      </p>
+<!-- HEADER -->
+<section class="page-header">
+  <div class="container">
+    <h1 class="display-6 mb-2">Privacy Policy</h1>
+    <p class="mb-0">SMC Manpower Agency Philippines Company — Bahrain Program</p>
+  </div>
+</section>
 
-      <h2>2. Information We Collect</h2>
-      <p>We may collect information about you in a variety of ways. The information we may collect on our site includes:</p>
-      <ul>
-        <li><strong>Personal Information:</strong> Name, email address, phone number, mailing address, and other contact details.</li>
-        <li><strong>Application Data:</strong> Employment history, qualifications, work experience, and applicant documents.</li>
-        <li><strong>Technical Information:</strong> IP address, browser type, operating system, pages visited, and time spent on pages.</li>
-        <li><strong>Cookies:</strong> We use cookies to enhance your experience and understand site usage patterns.</li>
-      </ul>
+<!-- MAIN CONTENT -->
+<main class="container pb-5">
+  <div class="policy-card">
 
-      <h2>3. Use of Your Information</h2>
-      <p>We use the information we collect for the following purposes:</p>
-      <ul>
-        <li>Processing your job applications and communications</li>
-        <li>Providing our manpower services and connecting you with employment opportunities</li>
-        <li>Responding to your inquiries and customer support requests</li>
-        <li>Sending you updates, newsletters, and promotional materials (with your consent)</li>
-        <li>Improving our website and services based on user feedback and analytics</li>
-        <li>Protecting against fraud, abuse, and unauthorized access</li>
-        <li>Complying with legal obligations and industry regulations</li>
-      </ul>
+    <p class="last-updated">Last Updated: February 2026</p>
 
-      <h2>4. Disclosure of Your Information</h2>
-      <p>We do not sell or rent your personal information to third parties. However, we may share your information:</p>
-      <ul>
-        <li><strong>With Service Providers:</strong> Third-party vendors who assist us in operating our website and conducting our business.</li>
-        <li><strong>With Potential Employers:</strong> Your application data may be shared with prospective employers as part of our placement services.</li>
-        <li><strong>For Legal Compliance:</strong> When required by law, court order, or government authority.</li>
-        <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or asset sale, your information may be transferred.</li>
-      </ul>
-
-      <h2>5. Security of Your Information</h2>
-      <p>
-        We implement comprehensive security measures to protect your personal information. These include:
-      </p>
-      <ul>
-        <li>Secure Socket Layer (SSL) encryption for data in transit</li>
-        <li>Password protection and secure authentication mechanisms</li>
-        <li>Regular security audits and vulnerability assessments</li>
-        <li>Limited access to personal information to authorized personnel only</li>
-      </ul>
-      <p>
-        However, no method of transmission over the internet or electronic storage is completely secure. 
-        We cannot guarantee absolute security of your information.
-      </p>
-
-      <h2>6. Your Privacy Rights</h2>
-      <p>Depending on your location, you may have the following rights:</p>
-      <ul>
-        <li><strong>Right to Access:</strong> You have the right to request a copy of personal information we hold about you.</li>
-        <li><strong>Right to Rectification:</strong> You can request corrections to inaccurate or incomplete information.</li>
-        <li><strong>Right to Erasure:</strong> You may request deletion of your personal information (subject to legal requirements).</li>
-        <li><strong>Right to Data Portability:</strong> You can request your information in a portable format.</li>
-        <li><strong>Right to Withdraw Consent:</strong> You may withdraw consent for marketing communications at any time.</li>
-      </ul>
-
-      <h2>7. Cookies and Tracking Technologies</h2>
-      <p>
-        We use cookies to store user preferences and understand website usage patterns. Most browsers allow you 
-        to control cookies through settings. Please note that disabling cookies may limit the functionality of our website.
-      </p>
-
-      <h2>8. Third-Party Links</h2>
-      <p>
-        Our website may contain links to third-party websites. We are not responsible for the privacy practices 
-        of external sites. We encourage you to review their privacy policies before providing personal information.
-      </p>
-
-      <h2>9. Children's Privacy</h2>
-      <p>
-        Our services are not intended for children under the age of 18. We do not knowingly collect personal 
-        information from children. If we become aware of such collection, we will take immediate steps to delete the information.
-      </p>
-
-      <h2>10. Contact Us</h2>
-      <p>
-        If you have questions about this Privacy Policy or our privacy practices, please contact us at:
-      </p>
-      <ul>
-        <li><strong>Email:</strong> <a href="mailto:csnkmanila06@gmail.com">csnkmanila06@gmail.com</a></li>
-        <li><strong>Phone:</strong> 0945 657 0878</li>
-        <li><strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta Ana, Barangay 866, City of Manila, NCR, Sixth District</li>
-      </ul>
-
-      <h2>11. Policy Changes</h2>
-      <p>
-        We reserve the right to update this Privacy Policy at any time. Changes will be effective immediately upon posting. 
-        Your continued use of our website constitutes acceptance of the updated Privacy Policy.
-      </p>
+    <div class="notice-box">
+      <strong>Our Commitment to Privacy:</strong>  
+      SMC Manpower Agency Philippines Company is committed to the ethical and responsible handling of personal information for recruitment‑related purposes, particularly for international placement including Bahrain.
     </div>
-  </main>
 
-  <!-- Footer -->
-  <footer>
-    <?php include __DIR__ . '/footer.php'; ?>
-  </footer>
+    <!-- SECTION 1 -->
+    <h2><i class="fa-solid fa-shield-halved"></i>1. Introduction</h2>
+    <p>
+      This Privacy Policy explains how SMC Manpower Agency Philippines Company (“SMC,” “we,” “our,” or “the agency”) collects, uses, stores, shares, and protects personal information submitted through our website and recruitment channels.  
+      We value transparency and ensure that information is handled securely and only for legitimate recruitment or administrative purposes.
+    </p>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SECTION 2 -->
+    <h2><i class="fa-solid fa-database"></i>2. Information We Collect</h2>
+    <p>Depending on your interaction with SMC, we may collect:</p>
+
+    <ul>
+      <li><strong>Personal Identification:</strong> Full name, mobile number, email address, home address.</li>
+      <li><strong>Recruitment-Related Information:</strong> Resume/CV, work experience, skills, employment history, references, training records.</li>
+      <li><strong>Documentary Requirements:</strong> IDs, certificates, medical results (where applicable), and documents voluntarily submitted as part of your application.</li>
+      <li><strong>Technical & Usage Data:</strong> Device type, browser type, IP address, site navigation behavior.</li>
+      <li><strong>Cookies:</strong> Small text files used to enhance user experience and analyze usage patterns.</li>
+    </ul>
+
+    <!-- SECTION 3 -->
+    <h2><i class="fa-solid fa-gears"></i>3. How We Use Your Information</h2>
+    <p>Your information may be used for the following:</p>
+
+    <ul>
+      <li>Evaluating and processing your job application</li>
+      <li>Communicating updates, interview schedules, and document requirements</li>
+      <li>Coordinating with prospective employers, including Bahrain‑based employers</li>
+      <li>Improving our recruitment workflow and service quality</li>
+      <li>Responding to inquiries and support requests</li>
+      <li>Maintaining security, verification, and fraud prevention</li>
+      <li>Complying with applicable administrative and recruitment requirements</li>
+    </ul>
+
+    <!-- SECTION 4 -->
+    <h2><i class="fa-solid fa-share-nodes"></i>4. Sharing & Disclosure</h2>
+    <p>SMC does not sell or rent personal information. Information may be shared only when relevant to recruitment or lawful processing:</p>
+
+    <ul>
+      <li><strong>Prospective Employers:</strong> Applicant files may be shared with hiring principals for evaluation.</li>
+      <li><strong>Service Providers:</strong> IT, security, or verification vendors supporting our system or processes.</li>
+      <li><strong>Administrative Processes:</strong> Required submissions for processing documentation.</li>
+      <li><strong>Compliance:</strong> Disclosures required by competent authorities.</li>
+      <li><strong>Business Continuity:</strong> If system migration or organizational changes occur.</li>
+    </ul>
+
+    <!-- SECTION 5 -->
+    <h2><i class="fa-solid fa-lock"></i>5. Information Security</h2>
+    <p>
+      SMC implements reasonable safeguards to protect your data. Measures may include secured storage, controlled access, encrypted communication, and system monitoring.
+      However, no digital or electronic method guarantees absolute protection.
+    </p>
+
+    <!-- SECTION 6 -->
+    <h2><i class="fa-solid fa-user-check"></i>6. Your Privacy Choices</h2>
+    <p>You may request the following, where applicable and reasonable:</p>
+    <ul>
+      <li>To access personal information you have submitted</li>
+      <li>To correct or update inaccurate information</li>
+      <li>To request deletion of your information (subject to retention requirements)</li>
+      <li>To withdraw consent for optional communications</li>
+      <li>To inquire about how your information is processed</li>
+    </ul>
+
+    <!-- SECTION 7 -->
+    <h2><i class="fa-solid fa-cookie-bite"></i>7. Cookies & Tracking</h2>
+    <p>
+      We use cookies to understand user preferences and improve browsing experience.  
+      Users may disable cookies in browser settings, but doing so may affect site functionality.
+    </p>
+
+    <!-- SECTION 8 -->
+    <h2><i class="fa-solid fa-external-link-alt"></i>8. Third‑Party Links</h2>
+    <p>
+      Some pages may link to external websites. SMC is not responsible for the privacy practices of third‑party sites.  
+      Users are encouraged to review the privacy policies of external websites before submitting information.
+    </p>
+
+    <!-- SECTION 9 -->
+    <h2><i class="fa-solid fa-child"></i>9. Minors</h2>
+    <p>
+      Our recruitment services are intended for individuals aged 18 and above.  
+      SMC does not knowingly collect information from minors. If such information is discovered, it will be managed responsibly.
+    </p>
+
+    <!-- SECTION 10 -->
+    <h2><i class="fa-solid fa-envelope-circle-check"></i>10. Contact Us</h2>
+    <p>If you have questions about this Privacy Policy, you may contact us through:</p>
+
+    <div class="contact-box">
+      <strong>Email:</strong> mailto:smcphilippines.marketing@gmail.comsmcphilippines.marketing@gmail.com<br>
+      <strong>Phone:</strong> tel:+6393934274120939 342 7412<br>
+      <strong>Address:</strong> Unit 1 Eden Townhomes, 2001 Eden Street corner Pedro Gil Street, Sta. Ana, Manila, NCR, Sixth District
+    </div>
+
+    <!-- SECTION 11 -->
+    <h2><i class="fa-solid fa-pen-to-square"></i>11. Updates to This Policy</h2>
+    <p>
+      SMC may update this Privacy Policy to reflect changes in processes or technology.  
+      Updates take effect once posted. Continued use of the website means you accept the updated policy.
+    </p>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<?php include __DIR__ . '/footer.php'; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
