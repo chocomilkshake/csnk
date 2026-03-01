@@ -9,9 +9,26 @@ $page = 'privacy';
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Privacy Policy — SMC Manpower Agency Philippines Company</title>
 
-<!-- Bootstrap -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <!-- SEO -->
+  <meta name="description" content="Legal Notice for SMC Manpower Agency Philippines Company. Compliance-first, ethical overseas recruitment and placement for Bahrain employers and Filipino workers. Transparent terms, data handling, and responsibilities." />
+  <meta name="theme-color" content="#0B1F3A" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Legal Notice — SMC Manpower Agency Philippines Company (Bahrain Program)" />
+  <meta property="og:description" content="Compliance-first, ethical overseas recruitment for Bahrain. Read our Legal Notice and terms for using this site." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="../resources/img/hero.jpeg" />
+
+  <!-- ✅ FAVICONS (root + fallback for /view/) -->
+  <link rel="icon" type="image/png" href="/resources/img/smc.png" />
+  <link rel="apple-touch-icon" href="/resources/img/smc.png" />
+  <link rel="icon" type="image/png" href="../resources/img/smc.png" />
+  <link rel="apple-touch-icon" href="../resources/img/smc.png" />
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
 
 <style>
 :root {
