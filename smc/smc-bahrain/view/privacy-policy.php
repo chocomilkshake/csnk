@@ -7,7 +7,7 @@ $page = 'privacy';
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Privacy Policy — SMC Manpower Agency Philippines Company</title>
+  <title>SMC Manpower Agency Co.</title>
 
   <!-- SEO -->
   <meta name="description" content="Legal Notice for SMC Manpower Agency Philippines Company. Compliance-first, ethical overseas recruitment and placement for Bahrain employers and Filipino workers. Transparent terms, data handling, and responsibilities." />
