@@ -60,6 +60,32 @@ $page = 'legal';
   <main class="container pb-5">
     <div class="legal-card">
 
+      <p class="last-updated">Last Updated: February 2026</p>
+
+      <h2 class="icon-heading"><i class="fa-solid fa-building-shield"></i>1. Website Operator</h2>
+      <p>
+        <strong>Company Name:</strong> CSNK / SMC Manpower Agency Philippines Company<br>
+        <strong>Address:</strong> Ground Floor Unit 1 Eden Townhouse, 2001 Eden St. Cor Pedro Gil, Sta. Ana, Barangay 866, City of Manila, NCR, Sixth District<br>
+        <strong>Email:</strong> csnkmanila06@gmail.com<br>
+        <strong>Phone:</strong> 0945 657 0878
+      </p>
+
+      <h2><i class="fa-solid fa-user-shield"></i> 2. Terms of Use</h2>
+      <p>
+        By accessing this website, you agree to comply with all terms, conditions, and policies presented herein. If you do not agree with these terms, please discontinue use of the website.
+      </p>
+
+      <h2><i class="fa-solid fa-file-signature"></i> 3. Use License</h2>
+      <p>We grant temporary permission to view and download materials for personal, non-commercial use. Under this license, you may NOT:</p>
+      <ul>
+        <li>Modify or reproduce any materials</li>
+        <li>Use content for commercial or public display</li>
+        <li>Reverse-engineer or tamper with any website components</li>
+        <li>Remove copyrights or proprietary labels</li>
+        <li>Mirror or duplicate content on another server</li>
+        <li>Use automated tools, bots, or scrapers without authorization</li>
+      </ul>
+
       <h2><i class="fa-solid fa-circle-exclamation"></i> 4. Disclaimer</h2>
       <p>
         All materials are provided “as is.” CSNK / SMC Manpower Agency makes no warranties regarding accuracy, completeness, or reliability of any information displayed on the website.
