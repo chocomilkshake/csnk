@@ -515,7 +515,36 @@ function invalidClass(array $errors, string $key): string {
         <div class="toast-body">
           <span class="text-accent fw-semibold" data-i18n="toast.thanks">Thanks!</span> <span data-i18n="toast.sent">Your message has been sent.</span>
         </div>
-        <button type="bubmitBtn?.querySelector('.submit-text');
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler (if you use it elsewhere) -->
+  <script src="../resources/js/policy-modals.js"></script>
+
+  <script>
+    // Character counter (emoji-safe)
+    const messageEl = document.getElementById('message');
+    const counterEl = document.getElementById('charCount');
+    const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
+    function updateCounter(){
+      const len = [...(messageEl.value || '')].length;
+      counterEl.textContent = `${len} / ${limit}`;
+      const threshold = Math.floor(limit * 0.9);
+      counterEl.classList.toggle('warning', len >= threshold);
+    }
+    if (messageEl) {
+      messageEl.addEventListener('input', updateCounter);
+      updateCounter();
+    }
+
+    // Submit loading
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = submitBtn?.querySelector('.submit-text');
     const submitLoading = submitBtn?.querySelector('.submit-loading');
     form?.addEventListener('submit', () => {
       submitText?.classList.add('d-none');
