@@ -48,7 +48,38 @@ html,body { background:#f5f7fb; color:var(--ink); }
 /* CONTENT WRAPPER */
 .policy-card {
   background:#fff;
-  border-ra with prospective employers, including Bahrain‑based employers</li>
+  border-radius: var(--radius);
+  border:1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: clamp(1.3rem,2.2vw,2.2rem);
+  margin-bott
+    <!-- SECTION 1 -->
+    <h2><i class="fa-solid fa-shield-halved"></i>1. Introduction</h2>
+    <p>
+      This Privacy Policy explains how SMC Manpower Agency Philippines Company (“SMC,” “we,” “our,” or “the agency”) collects, uses, stores, shares, and protects personal information submitted through our website and recruitment channels.  
+      We value transparency and ensure that information is handled securely and only for legitimate recruitment or administrative purposes.
+    </p>
+
+    <!-- SECTION 2 -->
+    <h2><i class="fa-solid fa-database"></i>2. Information We Collect</h2>
+    <p>Depending on your interaction with SMC, we may collect:</p>
+
+    <ul>
+      <li><strong>Personal Identification:</strong> Full name, mobile number, email address, home address.</li>
+      <li><strong>Recruitment-Related Information:</strong> Resume/CV, work experience, skills, employment history, references, training records.</li>
+      <li><strong>Documentary Requirements:</strong> IDs, certificates, medical results (where applicable), and documents voluntarily submitted as part of your application.</li>
+      <li><strong>Technical & Usage Data:</strong> Device type, browser type, IP address, site navigation behavior.</li>
+      <li><strong>Cookies:</strong> Small text files used to enhance user experience and analyze usage patterns.</li>
+    </ul>
+
+    <!-- SECTION 3 -->
+    <h2><i class="fa-solid fa-gears"></i>3. How We Use Your Information</h2>
+    <p>Your information may be used for the following:</p>
+
+    <ul>
+      <li>Evaluating and processing your job application</li>
+      <li>Communicating updates, interview schedules, and document requirements</li>
+      <li>Coordinating with prospective employers, including Bahrain‑based employers</li>
       <li>Improving our recruitment workflow and service quality</li>
       <li>Responding to inquiries and support requests</li>
       <li>Maintaining security, verification, and fraud prevention</li>
