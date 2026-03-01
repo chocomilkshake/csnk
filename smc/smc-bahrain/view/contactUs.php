@@ -409,7 +409,36 @@ function invalidClass(array $errors, string $key): string {
 
 
 
-  <!-- Trust Str
+  <!-- Trust Strip -->
+  <section class="py-3">
+    <div class="container trus$errors, 'firstName') ?>"
+                    placeholder="First name"
+                    required
+                    maxlength="80"
+                    autocomplete="given-name"
+                    value="<?= old('firstName') ?>"
+                  />
+                  <label for="firstName" data-i18n="form.first">First name</label>
+                  <div class="invalid-feedback"><?= htmlspecialchars($errors['firstName'] ?? 'Please enter your first name.', ENT_QUOTES, 'UTF-8') ?></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    class="form-control <?= invalidClass($errors, 'lastName') ?>"
+                    placeholder="Last name"
+                    required
+                    maxlength="80"
+                    autocomplete="family-name"
+                    value="<?= old('lastName') ?>"
+                  />
+                  <label for="lastName" data-i18n="form.last">Last name</label>
+                  <div class="invalid-feedback"><?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?></div>
+                </div>
+              </div>
 
               <div class="col-12">
                 <div class="form-floating">
