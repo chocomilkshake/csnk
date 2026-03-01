@@ -52,7 +52,46 @@ html,body { background:#f5f7fb; color:var(--ink); }
   border:1px solid var(--border);
   box-shadow: var(--shadow);
   padding: clamp(1.3rem,2.2vw,2.2rem);
-  margin-bott
+  margin-bottom:2rem;
+}
+
+h2 {
+  font-size:1.3rem;
+  font-weight:800;
+  color:var(--bh-red);
+  margin-top:2rem;
+  margin-bottom:1rem;
+  display:flex;
+  gap:.55rem;
+  align-items:center;
+}
+
+h2 i { color:var(--bh-red); }
+
+.last-updated {
+  color:var(--muted);
+  font-style:italic;
+}/navbar.php'; ?>
+
+<!-- HEADER -->
+<section class="page-header">
+  <div class="container">
+    <h1 class="display-6 mb-2">Privacy Policy</h1>
+    <p class="mb-0">SMC Manpower Agency Philippines Company — Bahrain Program</p>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<main class="container pb-5">
+  <div class="policy-card">
+
+    <p class="last-updated">Last Updated: February 2026</p>
+
+    <div class="notice-box">
+      <strong>Our Commitment to Privacy:</strong>  
+      SMC Manpower Agency Philippines Company is committed to the ethical and responsible handling of personal information for recruitment‑related purposes, particularly for international placement including Bahrain.
+    </div>
+
     <!-- SECTION 1 -->
     <h2><i class="fa-solid fa-shield-halved"></i>1. Introduction</h2>
     <p>
