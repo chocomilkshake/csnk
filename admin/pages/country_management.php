@@ -175,7 +175,7 @@ if (isset($_GET['add_bu_for'])) {
         }
     }
     // The actual checkbox is pre-checked in the form via GET detection.
-}
+}   
 }
 ?>
 
