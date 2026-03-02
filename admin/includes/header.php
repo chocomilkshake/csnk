@@ -542,7 +542,7 @@ if ($canViewReports && $conn instanceof mysqli && $csnkBuId > 0) {
                 <?php if ($showRegionPlaceholders && $canSeeSMC): ?>
                     <div class="sidebar-divider"></div>
                     <div class="sidebar-section-label">
-                        <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International
+                        <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC Manpower Agency Co.
                     </div>
 
                     <!-- SMC-Turkey dropdown with counts (links to SMC admin interface) -->
@@ -551,7 +551,7 @@ if ($canViewReports && $conn instanceof mysqli && $csnkBuId > 0) {
                             aria-expanded="false" aria-controls="smcTurkeyMenu"
                             data-bs-placement="right" title="SMC-Turkey">
                         <i class="bi bi-globe2"></i>
-                        <span class="label"><span class="text">SMC-Turkey</span></span>
+                        <span class="label"><span class="text">SMC International</span></span>
                         <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
                     </button>
                     <div class="collapse sidebar-submenu" id="smcTurkeyMenu">
