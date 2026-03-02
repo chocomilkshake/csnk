@@ -214,24 +214,25 @@ class Applicant
 
         // Business Unit (Country) - NEW
         $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
+        $countryId = isset($data['country_id']) ? (int) $data['country_id'] : null;
 
         if ($dailyRate === null) {
             // Use NULL explicitly in SQL for true NULL
-            // Include business_unit_id in the insert
+            // Include business_unit_id and country_id in the insert
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create NULL rate): ' . $this->db->error);
                 return false;
             }
-            // 18 strings + 3 ints (years_experience, created_by, business_unit_id)
+            // 18 strings + 4 ints (years_experience, created_by, business_unit_id, country_id)
             $stmt->bind_param(
-                "ssssssssssssssssssiii",
+                "ssssssssssssssssssiiii",
                 $first,
                 $middle,
                 $last,
@@ -252,26 +253,27 @@ class Applicant
                 $eduLv,
                 $years,
                 $createdBy,
-                $businessUnitId
+                $businessUnitId,
+                $countryId
             );
         } else {
             // daily_rate bound as double (d)
-            // Include business_unit_id in the insert
+            // Include business_unit_id and country_id in the insert
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create with rate): ' . $this->db->error);
                 return false;
             }
-            // 12th param is daily_rate (double), then the rest + business_unit_id
-            // Types: 18 strings + 1 double + 3 ints => "sssssssssss" + "d" + "ssssss" + "iii"
+            // 12th param is daily_rate (double), then the rest + business_unit_id + country_id
+            // Types: 18 strings + 1 double + 4 ints => "sssssssssss" + "d" + "ssssss" + "iiii"
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "iii",
+                "sssssssssss" . "d" . "sssssss" . "iiii",
                 $first,
                 $middle,
                 $last,
@@ -293,7 +295,8 @@ class Applicant
                 $eduLv,
                 $years,
                 $createdBy,
-                $businessUnitId
+                $businessUnitId,
+                $countryId
             );
         }
 
@@ -343,24 +346,27 @@ class Applicant
         $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== ''
             ? (int) $data['business_unit_id']
             : null;
+        $countryId = isset($data['country_id']) && $data['country_id'] !== ''
+            ? (int) $data['country_id']
+            : null;
 
         if ($dailyRate === null) {
             // daily_rate to NULL
-            // Include business_unit_id in the update
+            // Include business_unit_id and country_id in the update
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = NULL, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (update NULL rate): ' . $this->db->error);
                 return false;
             }
-            // 18 strings + 2 ints (years, business_unit_id) + 1 int (id)
+            // 18 strings + 3 ints (years, business_unit_id, country_id) + 1 int (id)
             $stmt->bind_param(
-                "ssssssssssssssssssiii",
+                "ssssssssssssssssssiiii",
                 $first,
                 $middle,
                 $last,
@@ -381,26 +387,27 @@ class Applicant
                 $eduLv,
                 $years,
                 $businessUnitId,
+                $countryId,
                 $id
             );
         } else {
             // daily_rate bound as double
-            // Include business_unit_id in the update
+            // Include business_unit_id and country_id in the update
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = ?, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (update with rate): ' . $this->db->error);
                 return false;
             }
-            // Order before id: 11 strings, 1 double, 6 strings, 2 ints (years, business_unit_id) → then id
-            // Types: "sssssssssss" + "d" + "ssssss" + "ii" + "i"
+            // Order before id: 11 strings, 1 double, 7 strings, 3 ints (years, business_unit_id, country_id) → then id
+            // Types: "sssssssssss" + "d" + "sssssss" + "iiii"
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "iii",
+                "sssssssssss" . "d" . "sssssss" . "iiii",
                 $first,
                 $middle,
                 $last,
@@ -422,6 +429,7 @@ class Applicant
                 $eduLv,
                 $years,
                 $businessUnitId,
+                $countryId,
                 $id
             );
         }
