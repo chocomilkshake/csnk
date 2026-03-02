@@ -738,6 +738,15 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <span class="label"><span class="text">Profile</span></span>
             </a>
 
+            <!-- COUNTRY MANAGEMENT -->
+            <a href="../../../pages/country_management.php"
+                class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+                data-bs-placement="right" title="Country Management">
+                <i class="bi bi-globe"></i>
+                <span class="label"><span class="text">Country Management</span></span>
+            </a>
+
             <div class="sidebar-divider"></div>
 
             <!-- LOGOUT -->
