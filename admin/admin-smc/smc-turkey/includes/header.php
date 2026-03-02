@@ -24,130 +24,12 @@ $currentUser = $auth->getCurrentUser();
 $conn = $database->getConnection();
 
 /* =========================================================================
-   ENFORCE SMC BUSINESS UNIT FOR THIS SMC (Turkey) ADMIN AREA
-   -------------------------------------------------------------------------
-   - If $_SESSION['current_bu_id'] is empty or not SMC, auto-switch to the
-     first SMC BU assigned to the user (via admin_user_business_units).
-   - If none is assigned, block with 403 (no access to SMC).
-   - This guarantees all counts below are SMC-tenant accurate.
+   NOTE: BU ENFORCEMENT REMOVED (as requested)
+   - No switching/forcing of business_unit_id here.
+   - All counts and feeds below are agency-scoped to SMC (agencies.code = 'smc').
    ========================================================================= */
-$buId = (int) ($_SESSION['current_bu_id'] ?? 0);
 
-if ($conn instanceof mysqli) {
-    $isCurrentBuSmc = false;
-
-    if ($buId > 0) {
-        $sqlCheckBu = "
-            SELECT ag.code AS agency_code
-              FROM business_units bu
-              JOIN agencies ag ON ag.id = bu.agency_id
-             WHERE bu.id = ?
-             LIMIT 1
-        ";
-        if ($stmt = $conn->prepare($sqlCheckBu)) {
-            $stmt->bind_param('i', $buId);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $row = $res ? $res->fetch_assoc() : null;
-            $stmt->close();
-            $isCurrentBuSmc = (!empty($row) && ($row['agency_code'] ?? '') === 'smc');
-        }
-    }
-
-    if (!$isCurrentBuSmc) {
-        // First, check if user's direct business_unit_id in admin_users is SMC
-        $directBuId = (int) ($currentUser['business_unit_id'] ?? 0);
-        $isDirectBuSmc = false;
-
-        if ($directBuId > 0) {
-            $sqlCheckDirectBu = "
-                SELECT ag.code AS agency_code
-                  FROM business_units bu
-                  JOIN agencies ag ON ag.id = bu.agency_id
-                 WHERE bu.id = ?
-                 LIMIT 1
-            ";
-            if ($stmt = $conn->prepare($sqlCheckDirectBu)) {
-                $stmt->bind_param('i', $directBuId);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $directRow = $res ? $res->fetch_assoc() : null;
-                $stmt->close();
-                $isDirectBuSmc = (!empty($directRow) && ($directRow['agency_code'] ?? '') === 'smc');
-            }
-        }
-
-        if ($isDirectBuSmc && $directBuId > 0) {
-            // Use the direct business unit assignment
-            $_SESSION['current_bu_id'] = $directBuId;
-            $buId = $directBuId;
-        } else {
-            // Check admin_user_business_units table for SMC BU assignment
-            $sqlFindSmcBu = "
-                SELECT bu.id
-                  FROM admin_user_business_units ubu
-                  JOIN business_units bu ON bu.id = ubu.business_unit_id
-                  JOIN agencies ag       ON ag.id = bu.agency_id
-                 WHERE ubu.admin_user_id = ?
-                   AND ag.code = 'smc'
-                 ORDER BY bu.id ASC
-                 LIMIT 1
-            ";
-            if ($stmt = $conn->prepare($sqlFindSmcBu)) {
-                $adminId = (int) ($currentUser['id'] ?? 0);
-                $stmt->bind_param('i', $adminId);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $row = $res ? $res->fetch_assoc() : null;
-                $stmt->close();
-
-                if (!empty($row['id'])) {
-                    $_SESSION['current_bu_id'] = (int) $row['id'];
-                    $buId = (int) $row['id'];
-                } else {
-                    // Fallback: Find the first active SMC business unit if no assignment exists
-                    $sqlFindAnySmcBu = "
-                        SELECT bu.id
-                          FROM business_units bu
-                          JOIN agencies ag ON ag.id = bu.agency_id
-                         WHERE ag.code = 'smc'
-                           AND bu.active = 1
-                         ORDER BY bu.id ASC
-                         LIMIT 1
-                    ";
-                    if ($stmt = $conn->prepare($sqlFindAnySmcBu)) {
-                        $stmt->execute();
-                        $res = $stmt->get_result();
-                        $smcRow = $res ? $res->fetch_assoc() : null;
-                        $stmt->close();
-
-                        if (!empty($smcRow['id'])) {
-                            $_SESSION['current_bu_id'] = (int) $smcRow['id'];
-                            $buId = (int) $smcRow['id'];
-                        } else {
-                            http_response_code(403);
-                            exit('Forbidden: No SMC business unit available.');
-                        }
-                    } else {
-                        http_response_code(403);
-                        exit('Forbidden: You do not have access to any SMC business unit.');
-                    }
-                }
-            } else {
-                http_response_code(500);
-                exit('Server error: Unable to validate SMC business unit.');
-            }
-        }
-    }
-}
-
-/* ---------- Require a selected Business Unit (tenant) after enforcement ---------- */
-if (empty($_SESSION['current_bu_id'])) {
-    header('Location: ' . '../../../pages/login.php');
-    exit;
-}
-
-/* ---------- Enforce SMC access via Auth helper (belt & suspenders) ---------- */
+/* ---------- Enforce SMC access via Auth helper ---------- */
 $canSeeSMC = $auth->canSeeSMC();
 if (!$canSeeSMC) {
     http_response_code(403);
@@ -162,12 +44,9 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-/* For SMC admin side, show Monitoring/Reports to admins & super-admins, Reports also for employees */
-$canViewReports = ($isAdmin || $isSuperAdmin || $isEmployee); // ✅ employees can see Reports
-$canViewActivity = ($isAdmin || $isSuperAdmin); // Only admins & super-admins can see Activity Logs
-
-/* BU ID helper (ensure we pick the enforced one) */
-$buId = (int) ($_SESSION['current_bu_id'] ?? 0);
+/* Show Monitoring to admins & super-admins; Reports also for employees */
+$canViewReports = ($isAdmin || $isSuperAdmin || $isEmployee);
+$canViewActivity = ($isAdmin || $isSuperAdmin);
 
 /* ---------- Helpers ---------- */
 if (!function_exists('h')) {
@@ -177,21 +56,23 @@ if (!function_exists('h')) {
     }
 }
 
-/** Prepared count helper, scoped to BU */
-function smc_count_bu(mysqli $conn, string $sql, int $buId): int
+/** Count helper (portable; no get_result) */
+function db_count_simple(mysqli $conn, string $sql): int
 {
     $stmt = $conn->prepare($sql);
-    if (!$stmt)
+    if (!$stmt) return 0;
+    $ok = $stmt->execute();
+    if (!$ok) {
+        $stmt->close();
         return 0;
-    $stmt->bind_param('i', $buId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $row = $res ? $res->fetch_row() : [0];
+    }
+    $stmt->bind_result($cnt);
+    $found = $stmt->fetch();
     $stmt->close();
-    return (int) ($row[0] ?? 0);
+    return (int) ($found ? $cnt : 0);
 }
 
-/* ---------- Sidebar counts (SMC, BU-scoped) ---------- */
+/* ---------- Sidebar counts (Agency: SMC) ---------- */
 $totalApplicants = $pendingCount = $onProcessCount = $approvedCount = $onHoldCount = $deletedCount = 0;
 $blacklistedCount = 0;
 
@@ -199,52 +80,82 @@ if ($conn instanceof mysqli) {
     /* Exclude actively blacklisted applicants from main tabs */
     $notBlacklisted = " AND NOT EXISTS (
         SELECT 1 FROM blacklisted_applicants b
-        WHERE b.applicant_id = applicants.id AND b.is_active = 1
+        WHERE b.applicant_id = a.id AND b.is_active = 1
     )";
 
-    $totalApplicants = smc_count_bu(
+    $totalApplicants = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.deleted_at IS NULL{$notBlacklisted}"
     );
-    $pendingCount = smc_count_bu(
+    $pendingCount = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='pending' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.status = 'pending'
+            AND a.deleted_at IS NULL{$notBlacklisted}"
     );
-    $onProcessCount = smc_count_bu(
+    $onProcessCount = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_process' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.status = 'on_process'
+            AND a.deleted_at IS NULL{$notBlacklisted}"
     );
-    $approvedCount = smc_count_bu(
+    $approvedCount = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.status = 'approved'
+            AND a.deleted_at IS NULL{$notBlacklisted}"
     );
-    $onHoldCount = smc_count_bu(
+    $onHoldCount = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_hold' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.status = 'on_hold'
+            AND a.deleted_at IS NULL{$notBlacklisted}"
     );
-    $deletedCount = smc_count_bu(
+    $deletedCount = db_count_simple(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*)
+           FROM applicants a
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND a.deleted_at IS NOT NULL{$notBlacklisted}"
     );
 
-    /* Active blacklisted applicants are tenant-scoped via JOIN */
-    $blacklistedCount = smc_count_bu(
+    /* Active blacklisted applicants (SMC Agency) */
+    $blacklistedCount = db_count_simple(
         $conn,
         "SELECT COUNT(*)
            FROM blacklisted_applicants ba
            JOIN applicants a ON ba.applicant_id = a.id
-          WHERE a.business_unit_id=? AND ba.is_active = 1",
-        $buId
+           JOIN business_units bu ON bu.id = a.business_unit_id
+           JOIN agencies ag ON ag.id = bu.agency_id
+          WHERE ag.code = 'smc'
+            AND ba.is_active = 1"
     );
 }
 
-/* ---------- Recent bookings for bell dropdown (SMC on-process) ---------- */
+/* ---------- Recent bookings for bell dropdown (Agency: SMC; On-Process) ---------- */
 $recentBookings = [];
 if ($conn instanceof mysqli) {
     $sqlBookings = "
@@ -259,16 +170,45 @@ if ($conn instanceof mysqli) {
           JOIN applicants AS a
             ON a.id = cb.applicant_id
            AND a.business_unit_id = cb.business_unit_id
-         WHERE cb.business_unit_id = ?
+          JOIN business_units bu ON bu.id = cb.business_unit_id
+          JOIN agencies ag ON ag.id = bu.agency_id
+         WHERE ag.code = 'smc'
            AND a.status = 'on_process'
          ORDER BY cb.created_at DESC
          LIMIT 5
     ";
     if ($stmt = $conn->prepare($sqlBookings)) {
-        $stmt->bind_param('i', $buId);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $recentBookings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $ok = $stmt->execute();
+        if ($ok) {
+            $stmt->bind_result(
+                $cbId,
+                $cbApplicantId,
+                $cbCreatedAt,
+                $cbClientFirst,
+                $cbClientLast,
+                $cbAppointmentType,
+                $aFirst,
+                $aMiddle,
+                $aLast,
+                $aSuffix,
+                $aStatus
+            );
+            while ($stmt->fetch()) {
+                $recentBookings[] = [
+                    'id'               => $cbId,
+                    'applicant_id'     => $cbApplicantId,
+                    'created_at'       => $cbCreatedAt,
+                    'client_first_name'=> $cbClientFirst,
+                    'client_last_name' => $cbClientLast,
+                    'appointment_type' => $cbAppointmentType,
+                    'first_name'       => $aFirst,
+                    'middle_name'      => $aMiddle,
+                    'last_name'        => $aLast,
+                    'suffix'           => $aSuffix,
+                    'status'           => $aStatus,
+                ];
+            }
+        }
         $stmt->close();
     }
 }
@@ -297,7 +237,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
     <!-- Bootstrap CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
-        crossorigin="anonymous">
+          crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <style>
@@ -357,7 +297,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
         .card {
             border: none;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--csnk-shadow-sm);
         }
 
         .sidebar-brand {
@@ -474,7 +414,6 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             letter-spacing: .2px;
             border: 1px solid rgba(0, 0, 0, .08);
             box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset, 0 1px 0 rgba(0, 0, 0, .05);
-            font-variant-numeric: tabular-nums;
         }
 
         .sidebar-item:hover .pill-count {
@@ -484,42 +423,6 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
         .pill-count.is-zero {
             background: #e9eef5;
             color: #6b7280;
-            border-color: rgba(0, 0, 0, .05);
-        }
-
-        .sidebar-item.active .pill-count {
-            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--csnk-ring), 0 1px 0 rgba(255, 255, 255, .35) inset, 0 1px 0 rgba(0, 0, 0, .05);
-        }
-
-        body.sidebar-collapsed .sidebar {
-            width: var(--sidebar-collapsed-width);
-        }
-
-        body.sidebar-collapsed .main-content {
-            margin-left: var(--sidebar-collapsed-width);
-        }
-
-        body.sidebar-collapsed .sidebar-item .text,
-        body.sidebar-collapsed .sidebar-section-label,
-        body.sidebar-collapsed .side-badge {
-            display: none !important;
-        }
-
-        body.sidebar-collapsed .sidebar-brand img {
-            max-width: 42px;
-        }
-
-        body.sidebar-collapsed .sidebar-submenu {
-            display: none !important;
-        }
-
-        .sidebar .collapse {
-            overflow: visible;
-        }
-
-        .sidebar .collapse.show {
-            display: block;
-            visibility: visible;
         }
 
         .sidebar-divider {
@@ -556,270 +459,117 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
     <aside class="sidebar" id="smcSidebar">
         <div class="sidebar-brand text-center">
             <img src="../resources/img/smcbrandname.png" alt="CSNK/SMC Logo"
-                class="img-fluid d-block mx-auto rounded-2">
+                 class="img-fluid d-block mx-auto rounded-2">
         </div>
 
         <nav class="sidebar-menu" aria-label="Primary">
             <!-- Dashboard (SMC) -->
             <a href="../pages/dashboard-smc.php"
-                class="sidebar-item <?php echo $currentPage === 'dashboard-smc' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'dashboard-smc' ? 'page' : 'false'; ?>"
-                data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard (SMC)">
+               class="sidebar-item <?php echo $currentPage === 'dashboard-smc' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'dashboard-smc' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard (SMC)">
                 <i class="bi bi-speedometer2"></i>
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
 
-            <?php if ($isAdmin || $isSuperAdmin): ?>
-                <!-- CSNK-Philippines dropdown (for admin/super admin access) -->
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-section-label">
-                    <img src="../../../../resources/img/csnk-iconz.png" alt="CSNK" class="region-icon">CSNK Philippines
-                </div>
-
-                <?php
-                // Get CSNK counts for admin/super admin
-                $csnkTotalApplicants = $csnkPendingCount = $csnkOnProcessCount = $csnkApprovedCount = $csnkOnHoldCount = $csnkDeletedCount = 0;
-                $csnkBlacklistedCount = 0;
-                $csnkBuId = 0;
-
-                if ($conn instanceof mysqli) {
-                    // Find CSNK Philippines BU
-                    $sqlFindCsnkBu = "
-                        SELECT bu.id
-                          FROM business_units bu
-                          JOIN agencies ag ON ag.id = bu.agency_id
-                         WHERE ag.code = 'csnk' AND bu.code = 'CSNK-PH'
-                         LIMIT 1
-                    ";
-                    if ($stmt = $conn->prepare($sqlFindCsnkBu)) {
-                        $stmt->execute();
-                        $res = $stmt->get_result();
-                        $row = $res ? $res->fetch_assoc() : null;
-                        $stmt->close();
-                        if (!empty($row['id'])) {
-                            $csnkBuId = (int) $row['id'];
-                        }
-                    }
-
-                    if ($csnkBuId > 0) {
-                        $notBlacklisted = " AND NOT EXISTS (
-                            SELECT 1 FROM blacklisted_applicants b
-                            WHERE b.applicant_id = applicants.id AND b.is_active = 1
-                        )";
-
-                        $csnkTotalApplicants = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkPendingCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='pending' AND deleted_at IS NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkOnProcessCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_process' AND deleted_at IS NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkApprovedCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkOnHoldCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_hold' AND deleted_at IS NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkDeletedCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$notBlacklisted}",
-                            $csnkBuId
-                        );
-                        $csnkBlacklistedCount = smc_count_bu(
-                            $conn,
-                            "SELECT COUNT(*)
-                               FROM blacklisted_applicants ba
-                               JOIN applicants a ON ba.applicant_id = a.id
-                              WHERE a.business_unit_id=? AND ba.is_active = 1",
-                            $csnkBuId
-                        );
-                    }
-                }
-
-                $csnkCollapseApplicantsId = 'csnkPhilippinesMenu';
-                ?>
-
-                <button class="sidebar-item sidebar-toggle" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#<?php echo h($csnkCollapseApplicantsId); ?>"
-                    aria-expanded="false" aria-controls="<?php echo h($csnkCollapseApplicantsId); ?>" 
-                    data-bs-placement="right" title="CSNK-Philippines">
-                    <i class="bi bi-geo-alt"></i>
-                    <span class="label"><span class="text">CSNK-Philippines</span></span>
-                    <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
-                </button>
-
-                <div class="collapse sidebar-submenu" id="<?php echo h($csnkCollapseApplicantsId); ?>">
-                    <a href="../../../pages/applicants.php" class="sidebar-item">
-                        <i class="bi bi-people"></i>
-                        <span class="label"><span class="text">List of Applicants</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkTotalApplicants === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Total applicants count"><?php echo (int) $csnkTotalApplicants; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/pending.php" class="sidebar-item">
-                        <i class="bi bi-clock-history"></i>
-                        <span class="label"><span class="text">Pending</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkPendingCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Pending applicants count"><?php echo (int) $csnkPendingCount; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/on-process.php" class="sidebar-item">
-                        <i class="bi bi-hourglass-split"></i>
-                        <span class="label"><span class="text">On Process</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkOnProcessCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="On process applicants count"><?php echo (int) $csnkOnProcessCount; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/approved.php" class="sidebar-item">
-                        <i class="bi bi-check-circle"></i>
-                        <span class="label"><span class="text">Approved</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkApprovedCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Approved applicants count"><?php echo (int) $csnkApprovedCount; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/on-hold.php" class="sidebar-item">
-                        <i class="bi bi-pause-circle"></i>
-                        <span class="label"><span class="text">On Hold</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkOnHoldCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="On hold applicants count"><?php echo (int) $csnkOnHoldCount; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/deleted.php" class="sidebar-item">
-                        <i class="bi bi-trash"></i>
-                        <span class="label"><span class="text">Deleted</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkDeletedCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Deleted applicants count"><?php echo (int) $csnkDeletedCount; ?></span>
-                        </span>
-                    </a>
-
-                    <a href="../../../pages/blacklisted.php" class="sidebar-item">
-                        <i class="bi bi-slash-circle"></i>
-                        <span class="label"><span class="text">Blacklisted</span></span>
-                        <span class="side-badge">
-                            <span class="pill-count <?php echo $csnkBlacklistedCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Blacklisted applicants count"><?php echo (int) $csnkBlacklistedCount; ?></span>
-                        </span>
-                    </a>
-                </div>
-            <?php endif; ?>
-
-            <!-- SMC - Turkey Applicants -->
+            <!-- SMC - International Applicants -->
             <div class="sidebar-section-label">
                 <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC - International
             </div>
 
             <button class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>" type="button"
-                data-bs-toggle="collapse" data-bs-target="#<?php echo h($collapseApplicantsId); ?>"
-                aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
-                aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
+                    data-bs-toggle="collapse" data-bs-target="#<?php echo h($collapseApplicantsId); ?>"
+                    aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
+                    aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
                 <i class="bi bi-geo-alt"></i>
                 <span class="label"><span class="text">SMC International</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
             <div class="collapse <?php echo $isApplicantsActive ? 'show' : ''; ?> sidebar-submenu"
-                id="<?php echo h($collapseApplicantsId); ?>">
+                 id="<?php echo h($collapseApplicantsId); ?>">
                 <a href="applicants.php"
-                    class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'applicants' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="List of Applicants">
+                   class="sidebar-item <?php echo $currentPage === 'applicants' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'applicants' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="List of Applicants">
                     <i class="bi bi-people"></i>
                     <span class="label"><span class="text">List of Applicants</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $totalApplicants === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="Total applicants count"><?php echo (int) $totalApplicants; ?></span>
+                              aria-label="Total applicants count"><?php echo (int) $totalApplicants; ?></span>
                     </span>
                 </a>
 
-                <a href="pending.php" class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'pending' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                    data-bs-placement="right" title="Pending Applicants">
+                <a href="pending.php"
+                   class="sidebar-item <?php echo $currentPage === 'pending' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'pending' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Pending Applicants">
                     <i class="bi bi-clock-history"></i>
                     <span class="label"><span class="text">Pending</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $pendingCount === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="Pending applicants count"><?php echo (int) $pendingCount; ?></span>
+                              aria-label="Pending applicants count"><?php echo (int) $pendingCount; ?></span>
                     </span>
                 </a>
 
                 <a href="on-process.php"
-                    class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'on-process' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="On Process Applicants">
+                   class="sidebar-item <?php echo $currentPage === 'on-process' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'on-process' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="On Process Applicants">
                     <i class="bi bi-hourglass-split"></i>
                     <span class="label"><span class="text">On Process</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $onProcessCount === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="On process applicants count"><?php echo (int) $onProcessCount; ?></span>
+                              aria-label="On process applicants count"><?php echo (int) $onProcessCount; ?></span>
                     </span>
                 </a>
 
-                <a href="approved.php" class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'approved' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Approved Applicants">
+                <a href="approved.php"
+                   class="sidebar-item <?php echo $currentPage === 'approved' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'approved' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Approved Applicants">
                     <i class="bi bi-check-circle"></i>
                     <span class="label"><span class="text">Approved</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $approvedCount === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="Approved applicants count"><?php echo (int) $approvedCount; ?></span>
+                              aria-label="Approved applicants count"><?php echo (int) $approvedCount; ?></span>
                     </span>
                 </a>
 
-                <a href="on-hold.php" class="sidebar-item <?php echo $currentPage === 'on-hold' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'on-hold' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                    data-bs-placement="right" title="On Hold Applicants">
+                <a href="on-hold.php"
+                   class="sidebar-item <?php echo $currentPage === 'on-hold' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'on-hold' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="On Hold Applicants">
                     <i class="bi bi-pause-circle"></i>
                     <span class="label"><span class="text">On Hold</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $onHoldCount === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="On hold applicants count"><?php echo (int) $onHoldCount; ?></span>
+                              aria-label="On hold applicants count"><?php echo (int) $onHoldCount; ?></span>
                     </span>
                 </a>
 
-                <a href="deleted.php" class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'deleted' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                    data-bs-placement="right" title="Deleted Applicants">
+                <a href="deleted.php"
+                   class="sidebar-item <?php echo $currentPage === 'deleted' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'deleted' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Deleted Applicants">
                     <i class="bi bi-trash"></i>
                     <span class="label"><span class="text">Deleted</span></span>
                     <span class="side-badge">
                         <span class="pill-count <?php echo $deletedCount === 0 ? 'is-zero' : ''; ?>"
-                            aria-label="Deleted applicants count"><?php echo (int) $deletedCount; ?></span>
+                              aria-label="Deleted applicants count"><?php echo (int) $deletedCount; ?></span>
                     </span>
                 </a>
 
                 <?php if ($isAdmin || $isSuperAdmin): ?>
                     <a href="blacklisted.php"
-                        class="sidebar-item <?php echo $currentPage === 'blacklisted' ? 'active' : ''; ?>"
-                        aria-current="<?php echo $currentPage === 'blacklisted' ? 'page' : 'false'; ?>"
-                        data-bs-toggle="tooltip" data-bs-placement="right" title="Blacklisted Applicants">
+                       class="sidebar-item <?php echo $currentPage === 'blacklisted' ? 'active' : ''; ?>"
+                       aria-current="<?php echo $currentPage === 'blacklisted' ? 'page' : 'false'; ?>"
+                       data-bs-toggle="tooltip" data-bs-placement="right" title="Blacklisted Applicants">
                         <i class="bi bi-slash-circle"></i>
                         <span class="label"><span class="text">Blacklisted</span></span>
                         <span class="side-badge">
                             <span class="pill-count <?php echo $blacklistedCount === 0 ? 'is-zero' : ''; ?>"
-                                aria-label="Blacklisted applicants count"><?php echo (int) $blacklistedCount; ?></span>
+                                  aria-label="Blacklisted applicants count"><?php echo (int) $blacklistedCount; ?></span>
                         </span>
                     </a>
                 <?php endif; ?>
@@ -829,9 +579,9 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <div class="sidebar-divider"></div>
                 <div class="sidebar-section-label">Monitoring</div>
                 <a href="../../../pages/activity-logs.php"
-                    class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Activity Logs">
+                   class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Activity Logs">
                     <i class="bi bi-clipboard-data"></i>
                     <span class="label"><span class="text">Activity Logs</span></span>
                 </a>
@@ -843,31 +593,39 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <?php endif; ?>
                 <div class="sidebar-section-label">Reports</div>
                 <?php
-                // Reports badge (DISTINCT applicants), BU-scoped
+                // Reports badge: DISTINCT applicants with notes, SMC-agency scoped
                 $reportNotesCount = 0;
                 if ($conn instanceof mysqli) {
-                    $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
-                    if ($stmt) {
-                        $stmt->bind_param('i', $buId);
-                        $stmt->execute();
-                        $res = $stmt->get_result();
-                        $row = $res ? $res->fetch_row() : [0];
-                        $reportNotesCount = (int) ($row[0] ?? 0);
+                    $sqlRep = "
+                        SELECT COUNT(DISTINCT ar.applicant_id)
+                          FROM applicant_reports ar
+                          JOIN business_units bu ON bu.id = ar.business_unit_id
+                          JOIN agencies ag ON ag.id = bu.agency_id
+                         WHERE ag.code = 'smc'
+                    ";
+                    if ($stmt = $conn->prepare($sqlRep)) {
+                        $ok = $stmt->execute();
+                        if ($ok) {
+                            $stmt->bind_result($repCnt);
+                            if ($stmt->fetch()) {
+                                $reportNotesCount = (int) $repCnt;
+                            }
+                        }
                         $stmt->close();
                     }
                 }
                 ?>
                 <a href="../../../pages/reports.php"
-                    class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
-                    aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                    data-bs-placement="right" title="Reports">
+                   class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                   aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
                     <span class="label">
                         <span class="text">Reports</span>
                     </span>
                     <span class="side-badge" aria-live="polite">
                         <span class="pill-count <?php echo ((int) ($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
-                            aria-label="Total reports count">
+                              aria-label="Total reports count">
                             <?php echo (int) ($reportNotesCount ?? 0); ?>
                         </span>
                     </span>
@@ -879,27 +637,27 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
             <!-- ACCOUNTS -->
             <a href="../../../pages/accounts.php"
-                class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                data-bs-placement="right" title="Accounts">
+               class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Accounts">
                 <i class="bi bi-person-badge"></i>
                 <span class="label"><span class="text">Accounts</span></span>
             </a>
 
             <!-- PROFILE -->
             <a href="../../../pages/profile.php"
-                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                data-bs-placement="right" title="Profile">
+               class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
                 <i class="bi bi-person-circle"></i>
                 <span class="label"><span class="text">Profile</span></span>
             </a>
 
             <!-- COUNTRY MANAGEMENT -->
             <a href="../../../pages/country_management.php"
-                class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                data-bs-placement="right" title="Country Management">
+               class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
                 <i class="bi bi-globe"></i>
                 <span class="label"><span class="text">Country Management</span></span>
             </a>
@@ -908,7 +666,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
             <!-- LOGOUT -->
             <a href="../../../pages/logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip"
-                data-bs-placement="right" title="Logout">
+               data-bs-placement="right" title="Logout">
                 <i class="bi bi-box-arrow-right"></i>
                 <span class="label"><span class="text">Logout</span></span>
             </a>
@@ -920,7 +678,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
         <nav class="navbar-top d-flex justify-content-between align-items-center">
             <div class="nav-left">
                 <button id="btnSidebarToggle" class="btn btn-light btn-sm border me-1" type="button"
-                    title="Toggle sidebar">
+                        title="Toggle sidebar">
                     <i class="bi bi-layout-sidebar-inset"></i>
                 </button>
                 <h5 class="mb-0 fw-semibold"><?php echo h($pageTitle ?? 'Dashboard'); ?></h5>
@@ -930,14 +688,14 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <?php if (!empty($recentBookings) && ($isAdmin || $isSuperAdmin)): ?>
                     <div class="dropdown">
                         <button class="btn btn-link text-decoration-none position-relative" type="button" id="bookingBell"
-                            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Recent client bookings">
+                                data-bs-toggle="dropdown" aria-expanded="false" aria-label="Recent client bookings">
                             <i class="bi bi-bell fs-5"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                 <?php echo count($recentBookings); ?>
                             </span>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bookingBell"
-                            style="min-width: 320px;">
+                             style="min-width: 320px;">
                             <h6 class="dropdown-header">Latest Client Bookings</h6>
                             <?php foreach ($recentBookings as $booking): ?>
                                 <?php
@@ -968,10 +726,10 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     <strong><?php echo h($currentUser['full_name'] ?? ''); ?></strong></span>
                 <?php if (!empty($currentUser['avatar'])): ?>
                     <img src="<?php echo h(getFileUrl($currentUser['avatar'])); ?>" alt="Avatar" class="rounded-circle"
-                        width="40" height="40">
+                         width="40" height="40">
                 <?php else: ?>
                     <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                        style="width: 40px; height: 40px;">
+                         style="width: 40px; height: 40px;">
                         <?php echo strtoupper(substr($currentUser['full_name'] ?? 'U', 0, 1)); ?>
                     </div>
                 <?php endif; ?>
@@ -996,65 +754,69 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             }
             ?>
             <!-- Page content continues from here ... (footer will close the tags) -->
+        </div>
+    </div>
 
-            <!-- Bootstrap Bundle (JS for dropdown/collapse/tooltip) -->
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-                crossorigin="anonymous"></script>
+    <!-- Bootstrap Bundle (JS for dropdown/collapse/tooltip) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            crossorigin="anonymous"></script>
 
-            <script>
-                /* Sidebar toggle with persisted state */
-                (function () {
-                    const btn = document.getElementById('btnSidebarToggle');
-                    const storageKey = 'smc_sidebar_collapsed';
+    <script>
+        /* Sidebar toggle with persisted state */
+        (function () {
+            const btn = document.getElementById('btnSidebarToggle');
+            const storageKey = 'smc_sidebar_collapsed';
 
-                    function applyState(collapsed) {
-                        if (window.innerWidth <= 992) {
-                            document.body.classList.toggle('sidebar-hidden', collapsed);
-                            document.body.classList.remove('sidebar-collapsed');
-                        } else {
-                            document.body.classList.toggle('sidebar-collapsed', collapsed);
-                            document.body.classList.remove('sidebar-hidden');
+            function applyState(collapsed) {
+                if (window.innerWidth <= 992) {
+                    document.body.classList.toggle('sidebar-hidden', collapsed);
+                    document.body.classList.remove('sidebar-collapsed');
+                } else {
+                    document.body.classList.toggle('sidebar-collapsed', collapsed);
+                    document.body.classList.remove('sidebar-hidden');
+                }
+            }
+
+            const initiallyCollapsed = localStorage.getItem(storageKey) === '1';
+            applyState(initiallyCollapsed);
+
+            let t;
+            window.addEventListener('resize', () => {
+                clearTimeout(t);
+                t = setTimeout(() => applyState(localStorage.getItem(storageKey) === '1'), 120);
+            });
+
+            btn?.addEventListener('click', () => {
+                const current = localStorage.getItem(storageKey) === '1';
+                const next = !current;
+                localStorage.setItem(storageKey, next ? '1' : '0');
+                applyState(next);
+            });
+
+            // Initialize tooltips
+            document.addEventListener('DOMContentLoaded', () => {
+                if (window.bootstrap && bootstrap.Tooltip) {
+                    const tipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+                }
+
+                // Sidebar collapse: keep submenu open when clicked (do not toggle closed)
+                document.querySelectorAll('.sidebar-toggle[data-bs-toggle="collapse"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const targetId = btn.getAttribute('data-bs-target');
+                        if (!targetId) return;
+                        const target = document.querySelector(targetId);
+                        if (!target || !window.bootstrap?.Collapse) return;
+                        if (target.classList.contains('show')) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            const collapse = bootstrap.Collapse.getInstance(target);
+                            if (collapse) collapse.show();
                         }
-                    }
-
-                    const initiallyCollapsed = localStorage.getItem(storageKey) === '1';
-                    applyState(initiallyCollapsed);
-
-                    let t;
-                    window.addEventListener('resize', () => {
-                        clearTimeout(t);
-                        t = setTimeout(() => applyState(localStorage.getItem(storageKey) === '1'), 120);
-                    });
-
-                    btn?.addEventListener('click', () => {
-                        const current = localStorage.getItem(storageKey) === '1';
-                        const next = !current;
-                        localStorage.setItem(storageKey, next ? '1' : '0');
-                        applyState(next);
-                    });
-
-                    // Initialize tooltips
-                    document.addEventListener('DOMContentLoaded', () => {
-                        if (window.bootstrap && bootstrap.Tooltip) {
-                            const tipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                            tipTriggerList.forEach(el => new bootstrap.Tooltip(el));
-                        }
-
-                        // Sidebar collapse: keep submenu open when clicked (do not toggle closed)
-                        document.querySelectorAll('.sidebar-toggle[data-bs-toggle="collapse"]').forEach(btn => {
-                            btn.addEventListener('click', (e) => {
-                                const targetId = btn.getAttribute('data-bs-target');
-                                if (!targetId) return;
-                                const target = document.querySelector(targetId);
-                                if (!target || !window.bootstrap?.Collapse) return;
-                                if (target.classList.contains('show')) {
-                                    e.preventDefault();
-                                    e.stopImmediatePropagation();
-                                    const collapse = bootstrap.Collapse.getInstance(target);
-                                    if (collapse) collapse.show();
-                                }
-                            }, true);
-                        });
-                    });
-                })();
-            </script>
+                    }, true);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
