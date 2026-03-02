@@ -2,6 +2,32 @@
 $pageTitle = 'Country Management';
 require_once '../includes/header.php';
 
+// quick migration: ensure countries.id is an AUTO_INCREMENT primary key
+// (fixes issue where new inserts were given id=0 due to missing schema settings)
+$schema = $conn->query("SHOW CREATE TABLE countries");
+if ($schema) {
+    $row = $schema->fetch_assoc();
+    if (strpos($row['Create Table'], 'AUTO_INCREMENT') === false) {
+        // add primary key if not defined, then modify column
+        $conn->query("ALTER TABLE countries ADD PRIMARY KEY (id)");
+        $conn->query("ALTER TABLE countries MODIFY id smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT");
+    }
+    // also correct any existing row that has id=0 by assigning next available value
+    $fix = $conn->query("SELECT COUNT(*) AS cnt FROM countries WHERE id = 0");
+    if ($fix) {
+        $cnt = (int)$fix->fetch_assoc()['cnt'];
+        if ($cnt > 0) {
+            // determine next id
+            $next = (int)$conn->query("SELECT IFNULL(MAX(id),0)+1 AS nxt FROM countries")->fetch_assoc()['nxt'];
+            // update rows one by one
+            while ($cnt--) {
+                $conn->query("UPDATE countries SET id={$next} WHERE id = 0 LIMIT 1");
+                $next++;
+            }
+        }
+    }
+}
+
 // RBAC: Only admins or super admins can manage countries
 if (!$isAdmin && !$isSuperAdmin) {
     setFlashMessage('error', 'You do not have permission to access this page.');
