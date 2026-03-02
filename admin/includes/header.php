@@ -482,12 +482,23 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <i class="bi bi-person-badge"></i>
                 <span class="label"><span class="text">Accounts</span></span>
             </a>
+
+            <!-- PROFILE -->
             <a href="profile.php"
                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
                data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
                 <i class="bi bi-person-circle"></i>
                 <span class="label"><span class="text">Profile</span></span>
+            </a>
+
+            <!-- COUNTRY MANAGEMENT -->
+            <a href="country_management.php"
+               class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+               aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+               data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                <i class="bi bi-globe"></i>
+                <span class="label"><span class="text">Country Management</span></span>
             </a>
 
             <div class="sidebar-divider"></div>
