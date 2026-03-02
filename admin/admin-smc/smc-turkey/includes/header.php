@@ -569,6 +569,163 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
 
+            <?php if ($isAdmin || $isSuperAdmin): ?>
+                <!-- CSNK-Philippines dropdown (for admin/super admin access) -->
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section-label">
+                    <img src="../../../../resources/img/csnk-iconz.png" alt="CSNK" class="region-icon">CSNK Philippines
+                </div>
+
+                <?php
+                // Get CSNK counts for admin/super admin
+                $csnkTotalApplicants = $csnkPendingCount = $csnkOnProcessCount = $csnkApprovedCount = $csnkOnHoldCount = $csnkDeletedCount = 0;
+                $csnkBlacklistedCount = 0;
+                $csnkBuId = 0;
+
+                if ($conn instanceof mysqli) {
+                    // Find CSNK Philippines BU
+                    $sqlFindCsnkBu = "
+                        SELECT bu.id
+                          FROM business_units bu
+                          JOIN agencies ag ON ag.id = bu.agency_id
+                         WHERE ag.code = 'csnk' AND bu.code = 'CSNK-PH'
+                         LIMIT 1
+                    ";
+                    if ($stmt = $conn->prepare($sqlFindCsnkBu)) {
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        $row = $res ? $res->fetch_assoc() : null;
+                        $stmt->close();
+                        if (!empty($row['id'])) {
+                            $csnkBuId = (int) $row['id'];
+                        }
+                    }
+
+                    if ($csnkBuId > 0) {
+                        $notBlacklisted = " AND NOT EXISTS (
+                            SELECT 1 FROM blacklisted_applicants b
+                            WHERE b.applicant_id = applicants.id AND b.is_active = 1
+                        )";
+
+                        $csnkTotalApplicants = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkPendingCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='pending' AND deleted_at IS NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkOnProcessCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_process' AND deleted_at IS NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkApprovedCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkOnHoldCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_hold' AND deleted_at IS NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkDeletedCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$notBlacklisted}",
+                            $csnkBuId
+                        );
+                        $csnkBlacklistedCount = smc_count_bu(
+                            $conn,
+                            "SELECT COUNT(*)
+                               FROM blacklisted_applicants ba
+                               JOIN applicants a ON ba.applicant_id = a.id
+                              WHERE a.business_unit_id=? AND ba.is_active = 1",
+                            $csnkBuId
+                        );
+                    }
+                }
+
+                $csnkCollapseApplicantsId = 'csnkPhilippinesMenu';
+                ?>
+
+                <button class="sidebar-item sidebar-toggle" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#<?php echo h($csnkCollapseApplicantsId); ?>"
+                    aria-expanded="false" aria-controls="<?php echo h($csnkCollapseApplicantsId); ?>" 
+                    data-bs-placement="right" title="CSNK-Philippines">
+                    <i class="bi bi-geo-alt"></i>
+                    <span class="label"><span class="text">CSNK-Philippines</span></span>
+                    <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
+                </button>
+
+                <div class="collapse sidebar-submenu" id="<?php echo h($csnkCollapseApplicantsId); ?>">
+                    <a href="../../../pages/applicants.php" class="sidebar-item">
+                        <i class="bi bi-people"></i>
+                        <span class="label"><span class="text">List of Applicants</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkTotalApplicants === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="Total applicants count"><?php echo (int) $csnkTotalApplicants; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/pending.php" class="sidebar-item">
+                        <i class="bi bi-clock-history"></i>
+                        <span class="label"><span class="text">Pending</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkPendingCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="Pending applicants count"><?php echo (int) $csnkPendingCount; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/on-process.php" class="sidebar-item">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span class="label"><span class="text">On Process</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkOnProcessCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="On process applicants count"><?php echo (int) $csnkOnProcessCount; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/approved.php" class="sidebar-item">
+                        <i class="bi bi-check-circle"></i>
+                        <span class="label"><span class="text">Approved</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkApprovedCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="Approved applicants count"><?php echo (int) $csnkApprovedCount; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/on-hold.php" class="sidebar-item">
+                        <i class="bi bi-pause-circle"></i>
+                        <span class="label"><span class="text">On Hold</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkOnHoldCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="On hold applicants count"><?php echo (int) $csnkOnHoldCount; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/deleted.php" class="sidebar-item">
+                        <i class="bi bi-trash"></i>
+                        <span class="label"><span class="text">Deleted</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkDeletedCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="Deleted applicants count"><?php echo (int) $csnkDeletedCount; ?></span>
+                        </span>
+                    </a>
+
+                    <a href="../../../pages/blacklisted.php" class="sidebar-item">
+                        <i class="bi bi-slash-circle"></i>
+                        <span class="label"><span class="text">Blacklisted</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $csnkBlacklistedCount === 0 ? 'is-zero' : ''; ?>"
+                                aria-label="Blacklisted applicants count"><?php echo (int) $csnkBlacklistedCount; ?></span>
+                        </span>
+                    </a>
+                </div>
+            <?php endif; ?>
+
             <!-- SMC - Turkey Applicants -->
             <div class="sidebar-section-label">
                 <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC - International
@@ -579,7 +736,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
                 aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
                 <i class="bi bi-geo-alt"></i>
-                <span class="label"><span class="text">SMC Tools</span></span>
+                <span class="label"><span class="text">SMC International</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
