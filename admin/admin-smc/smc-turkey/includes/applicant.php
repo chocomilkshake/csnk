@@ -223,6 +223,7 @@ class Applicant
         $createdBy = isset($data['created_by']) ? (int) $data['created_by'] : null;
 
         $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
+        $countryId = isset($data['country_id']) ? (int) $data['country_id'] : null;
 
         if ($businessUnitId === null) {
             // BU is mandatory in your schema (FK), refuse to create without it
@@ -234,8 +235,8 @@ class Applicant
                         first_name, middle_name, last_name, suffix,
                         phone_number, alt_phone_number, email, date_of_birth, address,
                         educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                        picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
@@ -243,7 +244,7 @@ class Applicant
                 return false;
             }
             $stmt->bind_param(
-                "ssssssssssssssssssiii",
+                "ssssssssssssssssssiiii",
                 $first,
                 $middle,
                 $last,
@@ -264,15 +265,16 @@ class Applicant
                 $eduLv,
                 $years,
                 $createdBy,
-                $businessUnitId
+                $businessUnitId,
+                $countryId
             );
         } else {
             $sql = "INSERT INTO applicants (
                         first_name, middle_name, last_name, suffix,
                         phone_number, alt_phone_number, email, date_of_birth, address,
                         educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                        picture, status, employment_type, education_level, years_experience, created_by, business_unit_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
@@ -280,7 +282,7 @@ class Applicant
                 return false;
             }
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "iii",
+                "sssssssssss" . "d" . "sssssss" . "iiii",
                 $first,
                 $middle,
                 $last,
@@ -302,7 +304,8 @@ class Applicant
                 $eduLv,
                 $years,
                 $createdBy,
-                $businessUnitId
+                $businessUnitId,
+                $countryId
             );
         }
 
