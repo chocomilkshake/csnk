@@ -134,6 +134,82 @@ if ($canSeeCSNK && $conn instanceof mysqli) {
     );
 }
 
+/* ---------- SMC Counts for sidebar ---------- */
+/* Only compute SMC counts if user is allowed to see SMC section */
+$smcTotalApplicants = $smcPendingCount = $smcOnProcessCount = $smcApprovedCount = $smcDeletedCount = $smcOnHoldCount = 0;
+$smcBlacklistedCount = 0;
+
+if ($canSeeSMC && $conn instanceof mysqli) {
+    /* Get SMC business unit ID for SMC counts */
+    $smcBuId = 0;
+    $sqlSmcBu = "
+        SELECT bu.id
+          FROM business_units bu
+          JOIN agencies ag ON ag.id = bu.agency_id
+         WHERE ag.code = 'smc'
+           AND bu.active = 1
+         ORDER BY bu.id ASC
+         LIMIT 1
+    ";
+    if ($stmt = $conn->prepare($sqlSmcBu)) {
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        $smcBuId = (int)($row['id'] ?? 0);
+    }
+
+    if ($smcBuId > 0) {
+        /* Exclude actively blacklisted applicants */
+        $smcNotBlacklisted = " AND NOT EXISTS (
+            SELECT 1 FROM blacklisted_applicants b
+            WHERE b.applicant_id = applicants.id AND b.is_active = 1
+        )";
+
+        $smcTotalApplicants = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+        $smcPendingCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='pending' AND deleted_at IS NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+        $smcOnProcessCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_process' AND deleted_at IS NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+        $smcApprovedCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+        $smcOnHoldCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_hold' AND deleted_at IS NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+        $smcDeletedCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$smcNotBlacklisted}",
+            $smcBuId
+        );
+
+        /* Active blacklisted applicants are tenant-scoped via JOIN */
+        $smcBlacklistedCount = csnk_count_bu(
+            $conn,
+            "SELECT COUNT(*) 
+               FROM blacklisted_applicants ba
+               JOIN applicants a ON ba.applicant_id = a.id
+              WHERE a.business_unit_id=? 
+                AND ba.is_active = 1",
+            $smcBuId
+        );
+    }
+}
+
 /* ---------- Recent bookings for bell dropdown (CSNK on-process only) ---------- */
 $recentBookings = [];
 if ($conn instanceof mysqli && $canSeeCSNK) {
@@ -408,7 +484,7 @@ if ($canViewReports && $conn instanceof mysqli) {
             <?php if ($showRegionPlaceholders && $canSeeSMC): ?>
                 <div class="sidebar-divider"></div>
                 <div class="sidebar-section-label">
-                    <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC International
+                    <img src="../../resources/img/smc.png" alt="SMC" class="region-icon">SMC Manpower Agency Co.
                 </div>
 
                 <!-- SMC-Turkey -->
@@ -417,28 +493,61 @@ if ($canViewReports && $conn instanceof mysqli) {
                         aria-expanded="false" aria-controls="smcTurkeyMenu"
                         data-bs-placement="right" title="SMC-Turkey">
                     <i class="bi bi-globe2"></i>
-                    <span class="label"><span class="text">SMC-Turkey</span></span>
+                    <span class="label"><span class="text">SMC International</span></span>
                     <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
                 </button>
                 <div class="collapse sidebar-submenu" id="smcTurkeyMenu">
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
+                    <a href="../admin-smc/smc-turkey/pages/applicants.php" class="sidebar-item">
                         <i class="bi bi-people"></i><span class="label"><span class="text">List of Applicants</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcTotalApplicants === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC total applicants count"><?php echo (int)$smcTotalApplicants; ?></span>
+                        </span>
                     </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
+                    <a href="../admin-smc/smc-turkey/pages/pending.php" class="sidebar-item">
                         <i class="bi bi-clock-history"></i><span class="label"><span class="text">Pending</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcPendingCount === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC pending applicants count"><?php echo (int)$smcPendingCount; ?></span>
+                        </span>
                     </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
+                    <a href="../admin-smc/smc-turkey/pages/on-process.php" class="sidebar-item">
                         <i class="bi bi-hourglass-split"></i><span class="label"><span class="text">On Process</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcOnProcessCount === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC on process applicants count"><?php echo (int)$smcOnProcessCount; ?></span>
+                        </span>
                     </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
+                    <a href="../admin-smc/smc-turkey/pages/approved.php" class="sidebar-item">
                         <i class="bi bi-check-circle"></i><span class="label"><span class="text">Approved</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcApprovedCount === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC approved applicants count"><?php echo (int)$smcApprovedCount; ?></span>
+                        </span>
                     </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
+                    <a href="../admin-smc/smc-turkey/pages/on-hold.php" class="sidebar-item">
+                        <i class="bi bi-pause-circle"></i><span class="label"><span class="text">On Hold</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcOnHoldCount === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC on hold applicants count"><?php echo (int)$smcOnHoldCount; ?></span>
+                        </span>
+                    </a>
+                    <a href="../admin-smc/smc-turkey/pages/deleted.php" class="sidebar-item">
                         <i class="bi bi-trash"></i><span class="label"><span class="text">Deleted</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo $smcDeletedCount === 0 ? 'is-zero' : ''; ?>"
+                                  aria-label="SMC deleted applicants count"><?php echo (int)$smcDeletedCount; ?></span>
+                        </span>
                     </a>
-                    <a href="#" class="sidebar-item disabled" tabindex="-1" aria-disabled="true">
-                        <i class="bi bi-slash-circle"></i><span class="label"><span class="text">Blacklisted</span></span>
-                    </a>
+                    <?php if ($isAdmin || $isSuperAdmin): ?>
+                        <a href="../admin-smc/smc-turkey/pages/blacklisted.php" class="sidebar-item">
+                            <i class="bi bi-slash-circle"></i><span class="label"><span class="text">Blacklisted</span></span>
+                            <span class="side-badge">
+                                <span class="pill-count <?php echo $smcBlacklistedCount === 0 ? 'is-zero' : ''; ?>"
+                                      aria-label="SMC blacklisted applicants count"><?php echo (int)$smcBlacklistedCount; ?></span>
+                            </span>
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
