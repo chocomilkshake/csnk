@@ -618,7 +618,7 @@ CREATE TABLE `client_bookings` (
 --
 
 CREATE TABLE `countries` (
-  `id` smallint(5) UNSIGNED NOT NULL,
+  `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT,
   `iso2` char(2) NOT NULL,
   `iso3` char(3) NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -627,8 +627,9 @@ CREATE TABLE `countries` (
   `currency_code` char(3) NOT NULL,
   `locale` varchar(10) NOT NULL,
   `date_format` varchar(20) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=6;
 
 --
 -- Dumping data for table `countries`
