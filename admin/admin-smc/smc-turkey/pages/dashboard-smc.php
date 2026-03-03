@@ -225,6 +225,18 @@ function dash_if_blank($val): string {
 
   <!-- On Process -->
   <div class="stat-card">
+    <div class="p-5">
+      <div class="flex items-center justify-between">
+        <h6 class="title uppercase">ON PROCESS</h6>
+        <i class="bi bi-hourglass-split text-3xl icon-faint"></i>
+      </div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['on_process'] ?? '')); ?></div>
+      <div class="mt-4">
+        <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Actively handled</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Deleted -->
   <div class="stat-card">
     </div>
