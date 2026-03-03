@@ -446,7 +446,28 @@ function flag_emoji_from_iso2(?string $iso2): string {
                         <?php
                         $flag = flag_emoji_from_iso2($c['iso2'] ?? '');
                         $isActive = (int)($c['active'] ?? 0) === 1;
-    -subtle text-success border-success-subtle border px-3">Active</span>
+                        $canDelete = ((int)$c['bu_count'] === 0);
+                        ?>
+                        <tr data-name="<?php echo strtolower(h($c['name'])); ?>" data-iso2="<?php echo strtolower(h($c['iso2'])); ?>">
+                            <td class="ps-3 text-muted mono small"><?php echo (int)$c['id']; ?></td>
+                            <td>
+                                <strong><?php echo $flag ? $flag . ' ' : ''; echo h($c['name']); ?></strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary border"><?php echo h($c['iso2']); ?></span>
+                                <span class="badge bg-info-subtle text-info border"><?php echo h($c['iso3']); ?></span>
+                            </td>
+                            <td><code><?php echo h($c['phone_country_code']); ?></code></td>
+                            <td><?php echo h($c['currency_code']); ?></td>
+                            <td><small class="text-muted"><?php echo h($c['locale']); ?></small></td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill <?php echo $c['bu_count'] > 0 ? 'bg-primary' : 'bg-light text-dark border'; ?>">
+                                    <?php echo (int)$c['bu_count']; ?>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <?php if ($isActive): ?>
+                                    <span class="badge bg-success-subtle text-success border-success-subtle border px-3">Active</span>
                                 <?php else: ?>
                                     <span class="badge bg-danger-subtle text-danger border-danger-subtle border px-3">Inactive</span>
                                 <?php endif; ?>
