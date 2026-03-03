@@ -571,7 +571,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
 
             <!-- SMC - Turkey Applicants -->
             <div class="sidebar-section-label">
-                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC - International
+                <img src="../../../../resources/img/smc.png" alt="SMC" class="region-icon">SMC Manpower Agency Co.
             </div>
 
             <button class="sidebar-item sidebar-toggle <?php echo $isApplicantsActive ? 'active' : ''; ?>" type="button"
@@ -579,7 +579,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                 aria-expanded="<?php echo $isApplicantsActive ? 'true' : 'false'; ?>"
                 aria-controls="<?php echo h($collapseApplicantsId); ?>" data-bs-placement="right" title="SMC - Turkey">
                 <i class="bi bi-geo-alt"></i>
-                <span class="label"><span class="text">SMC Tools</span></span>
+                <span class="label"><span class="text">SMC International</span></span>
                 <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
             </button>
 
