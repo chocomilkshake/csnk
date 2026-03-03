@@ -260,6 +260,33 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
         <div class="card-header bg-white border-bottom-0 pt-3">
             <h6 class="mb-0"><?php echo $editCountry ? 'Edit Country' : 'Add New Country'; ?></h6>
         </div>
+        <div class="card-body">uired>
+                        <datalist id="" maxlength="3"
+                               placeholder="PHL" value="<?php echo h($editCountry['iso3'] ?? ''); ?>" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Default Timezone</label>
+                        <input type="text" name="default_tz" id="default_tz" class="form-control"
+                               placeholder="Asia/Manila" value="<?php echo h($editCountry['default_tz'] ?? ''); ?>">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Phone Code</label>
+                        <input type="text" name="phone_country_code" id="phone_country_code" class="form-control"
+                               placeholder="+63" value="<?php echo h($editCountry['phone_country_code'] ?? ''); ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <l
+                            <input class="form-check-input" type="checkbox" name="active" id="activeSwitch"
+                                   <?php echo (!isset($editCountry) || ($editCountry['active'] ?? 1)) ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="activeSwitch">Country is Active</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Linked BU (optional) -->
                 <div class="row">
                     <div class="col-12 d-flex align-items-center justify-content-between">
                         <h6 class="mb-2">Linked Business Unit (optional)</h6>
