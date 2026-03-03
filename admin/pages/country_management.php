@@ -273,6 +273,23 @@ function flag_emoji_from_iso2(?string $iso2): string {
         <h4 class="mb-0">Country Management</h4>
         <p class="text-muted small">Manage global countries and their regional settings.</p>
     </div>
+    <div class="col-auto d-flex align-items-center gap-2">
+        <input id="tblFilter" type="search" class="form-control form-control-sm" placeholder="Search countries...">
+        <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#countryFormSection">
+            <i class="bi bi-plus-lg me-1"></i> Add New Country
+        </button>
+    </div>
+</div>
+
+<?php if (!empty($errors)): ?>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <?php foreach ($errors as $err): ?>
+                <li><?php echo h($err); ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
 
 <!-- Add/Edit Form Section -->
 <div class="collapse <?php echo ($editCountry || !empty($errors)) ? 'show' : ''; ?> mb-4" id="countryFormSection">
