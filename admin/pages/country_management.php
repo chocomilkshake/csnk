@@ -11,7 +11,7 @@ if (!$isAdmin && !$isSuperAdmin) {
 }
 
 /* ============================================================================
-   Schema guard: ensure countries.id is AUTO_INCREMENT primary key (and fix id=0)
+   Schema guard: ensure countries.id is AUTO_INCREMENT primary key (+ fix id=0)
 ============================================================================ */
 if ($conn instanceof mysqli) {
     // Ensure PK exists on id
@@ -96,10 +96,13 @@ if (isset($_GET['action'], $_GET['id'])) {
 }
 
 /* ============================================================================
-   Add/Edit submit (BU creation optional; BU fields always enabled & suggested)
+   Add/Edit submit
+   - Business Unit creation is AUTO (hidden) for ADD only:
+     Agency ID=0, BU Code=SMC-{ISO2}, BU Name=SMC {Country Name}, Active=1
+     If BU code exists already, skip creating duplicate silently.
 ============================================================================ */
 $errors = [];
-$reopenModal = ''; // 'add' or 'edit'; used to reopen modal on validation error
+$reopenModal = ''; // 'add' or 'edit' (to reopen on error)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
     $id                 = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $iso2               = ensure_upper($_POST['iso2'] ?? '', 2);
@@ -112,13 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
     $date_format        = trim((string)($_POST['date_format'] ?? 'Y-m-d'));
     $active             = isset($_POST['active']) ? 1 : 0;
 
-    // BU inputs (always enabled; creation optional if any BU field is present)
+    // Hidden BU inputs (kept for forward compatibility; may be empty)
     $bu_agency_id = (int)($_POST['bu_agency_id'] ?? 0);
     $bu_code      = trim((string)($_POST['bu_code'] ?? ''));
     $bu_name      = trim((string)($_POST['bu_name'] ?? ''));
     $bu_active    = isset($_POST['bu_active']) ? 1 : 0;
-
-    $creatingBU = ($bu_code !== '' || $bu_name !== '' || $bu_agency_id > 0);
 
     // Validation
     if (strlen($iso2) !== 2) $errors[] = "ISO2 must be exactly 2 characters.";
@@ -138,16 +139,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
     $chk->close();
     if ($dups > 0) $errors[] = "Another country with the same ISO2, ISO3 or Name already exists.";
 
-    if ($creatingBU) {
-        if ($bu_code === '') $errors[] = "BU Code is required when creating a Business Unit.";
-        if ($bu_name === '') $errors[] = "BU Name is required when creating a Business Unit.";
-    }
-
     if (empty($errors)) {
         $ok = false;
         $countryId = $id;
 
         if ($id > 0) {
+            // UPDATE
             $sql = "UPDATE countries
                        SET iso2=?, iso3=?, name=?, default_tz=?, phone_country_code=?, currency_code=?, locale=?, date_format=?, active=?
                      WHERE id=?";
@@ -159,6 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
             else $errors[] = "Database error (update): " . $conn->error;
             $stmt->close();
         } else {
+            // INSERT
             $sql = "INSERT INTO countries (iso2, iso3, name, default_tz, phone_country_code, currency_code, locale, date_format, active)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
@@ -168,32 +166,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
             if ($stmt->execute()) { $ok = true; $countryId = $conn->insert_id; }
             else $errors[] = "Database error (insert): " . $conn->error;
             $stmt->close();
-        }
 
-        // Optional BU creation
-        if ($ok && $creatingBU) {
-            $chk = $conn->prepare("SELECT COUNT(*) FROM business_units WHERE code = ?");
-            $chk->bind_param('s', $bu_code);
-            $chk->execute();
-            $exists = (int)($chk->get_result()->fetch_row()[0] ?? 0);
-            $chk->close();
+            // AUTO-CREATE BU (hidden logic) — only on ADD
+            if ($ok) {
+                // Build defaults if not provided (hidden fields)
+                if ($bu_agency_id <= 0) $bu_agency_id = 0;
+                if ($bu_active !== 0 && $bu_active !== 1) $bu_active = 1;
+                if ($bu_code === '') $bu_code = 'SMC-' . $iso2;
+                if ($bu_name === '') $bu_name = 'SMC ' . $name;
 
-            if ($exists > 0) {
-                $errors[] = "A Business Unit with code '{$bu_code}' already exists.";
-            } else {
-                $sqlBU = "INSERT INTO business_units (agency_id, country_id, code, name, active, created_at, updated_at)
-                          VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
-                $stmtBU = $conn->prepare($sqlBU);
-                $stmtBU->bind_param('iissi', $bu_agency_id, $countryId, $bu_code, $bu_name, $bu_active);
-                if (!$stmtBU->execute()) {
-                    $errors[] = "Failed to create Business Unit: " . $conn->error;
+                // Avoid duplicate BU code
+                $chk = $conn->prepare("SELECT COUNT(*) FROM business_units WHERE code = ?");
+                $chk->bind_param('s', $bu_code);
+                $chk->execute();
+                $exists = (int)($chk->get_result()->fetch_row()[0] ?? 0);
+                $chk->close();
+
+                if ($exists === 0) {
+                    $sqlBU = "INSERT INTO business_units (agency_id, country_id, code, name, active, created_at, updated_at)
+                              VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+                    $stmtBU = $conn->prepare($sqlBU);
+                    $stmtBU->bind_param('iissi', $bu_agency_id, $countryId, $bu_code, $bu_name, $bu_active);
+                    if (!$stmtBU->execute()) {
+                        // Non-fatal: keep country saved even if BU creation fails silently
+                        // You may uncomment the next line if you want to show error:
+                        // $errors[] = "Country saved, but failed to create Business Unit: " . $conn->error;
+                    }
+                    $stmtBU->close();
                 }
-                $stmtBU->close();
             }
         }
 
-        if (empty($errors)) {
-            setFlashMessage('success', $creatingBU ? 'Country & Business Unit saved successfully.' : 'Country saved successfully.');
+        if (empty($errors) && $ok) {
+            setFlashMessage('success', ($id > 0) ? 'Country saved successfully.' : 'Country and default Business Unit created.');
             redirect('country_management.php');
         }
     }
@@ -224,15 +229,21 @@ if ($res) {
 }
 ?>
 <style>
-/* --- Minimal, modern form & table look --- */
+/* ======== Modern, readable, friendly UI for admins ======== */
 :root{
-  --ring: rgba(29,78,216,.15);
+  --ring: rgba(37,99,235,.14);
+  --ink: #0f172a;
+  --muted: #64748b;
+  --soft: #f8fafc;
 }
 .card { border: none; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+.form-control, .form-select { border-radius:.6rem; }
 .form-control:focus, .form-select:focus { box-shadow: 0 0 0 .25rem var(--ring); border-color:#93c5fd; }
 .input-icon { position: relative; }
-.input-icon > .bi { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#64748b; }
+.input-icon > .bi { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:var(--muted); }
 .input-icon > input { padding-left: 2.25rem; }
+.form-label { font-weight:700; color:var(--ink); }
+.small-hint { color:var(--muted); }
 .badge-soft { border:1px solid rgba(0,0,0,.06); }
 .badge-iso2 { background:#f1f5f9; color:#0f172a; }
 .badge-iso3 { background:#e0f2fe; color:#075985; }
@@ -240,7 +251,11 @@ if ($res) {
 .country-flag { font-size: 1.15rem; margin-right:.35rem; }
 .btn-action { min-width: 36px; border-radius: 10rem; }
 .table td, .table th { vertical-align: middle; }
-.small-hint { color:#64748b; }
+.bg-soft { background: var(--soft); }
+.modal-header { border-bottom:1px solid #eef2f7; }
+.modal-footer { border-top:1px solid #eef2f7; }
+.modal-title { font-weight:800; letter-spacing:.2px; }
+hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e2e8f0, #eef2f7); }
 </style>
 
 <div class="row mb-4">
@@ -309,12 +324,10 @@ if ($res) {
                 <span class="badge rounded-pill <?php echo $c['bu_count']>0 ? 'text-bg-primary' : 'text-bg-light'; ?>"><?php echo (int)$c['bu_count']; ?></span>
               </td>
               <td class="text-center">
-                <a
-                  href="country_management.php?action=toggle_active&id=<?php echo (int)$c['id']; ?>"
-                  class="text-decoration-none"
-                  onclick="return confirm('Toggle status for <?php echo h($c['name']); ?>?');"
-                  title="Click to <?php echo $isActive ? 'Deactivate' : 'Activate'; ?>"
-                >
+                <a href="country_management.php?action=toggle_active&id=<?php echo (int)$c['id']; ?>"
+                   class="text-decoration-none"
+                   onclick="return confirm('Toggle status for <?php echo h($c['name']); ?>?');"
+                   title="Click to <?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
                   <?php if ($isActive): ?>
                     <span class="badge bg-success-subtle text-success border-success-subtle border px-3">Active</span>
                   <?php else: ?>
@@ -359,12 +372,10 @@ if ($res) {
                     <a href="country_management.php?action=delete&id=<?php echo (int)$c['id']; ?>"
                        class="btn btn-danger btn-sm btn-action"
                        onclick="return confirm('Permanently delete <?php echo h($c['name']); ?>? This cannot be undone.');"
-                       title="Delete"
-                    ><i class="bi bi-trash"></i></a>
+                       title="Delete"><i class="bi bi-trash"></i></a>
                   <?php else: ?>
-                    <button type="button" class="btn btn-danger btn-sm btn-action" disabled title="Cannot delete while BUs are linked">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    <button type="button" class="btn btn-danger btn-sm btn-action" disabled
+                            title="Cannot delete while BUs are linked"><i class="bi bi-trash"></i></button>
                   <?php endif; ?>
                 </div>
               </td>
@@ -379,76 +390,91 @@ if ($res) {
 <?php require_once '../includes/footer.php'; ?>
 
 <!-- ============================================================================
-     ADD MODAL
+     ADD MODAL — simplified, modern, and friendly
+     (BU creation is hidden & automatic)
 ============================================================================ -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-soft">
         <h6 class="modal-title" id="addModalLabel">Add New Country</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form id="countryFormAdd" action="country_management.php" method="POST" autocomplete="off" novalidate>
+
+      <form id="countryFormAdd" action="country_management.php" method="POST">
         <input type="hidden" name="id" value="0">
+        <!-- Hidden BU fields (auto-managed) -->
+        <input type="hidden" name="bu_agency_id" id="add_bu_agency_id" value="0">
+        <input type="hidden" name="bu_code" id="add_bu_code" value="">
+        <input type="hidden" name="bu_name" id="add_bu_name" value="">
+        <input type="hidden" name="bu_active" id="add_bu_active" value="1">
+
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-5">
-              <label class="form-label small fw-bold">Country Name <span class="text-danger">*</span></label>
+              <label class="form-label">Country Name <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-flag"></i>
-                <input list="countryListAdd" name="name" class="form-control" placeholder="e.g. Philippines" required>
+                <input list="countryListAdd" name="name" class="form-control form-control-lg"
+                       placeholder="Type or choose a country…" required>
                 <datalist id="countryListAdd"></datalist>
               </div>
-              <div class="small-hint mt-1">Pick from the list to auto-fill ISO, Phone, Currency, Timezone, and Locale.</div>
+              <div class="small-hint mt-2">Choosing from the list fills the rest for you.</div>
             </div>
+
             <div class="col-md-2">
-              <label class="form-label small fw-bold">ISO2 <span class="text-danger">*</span></label>
+              <label class="form-label">ISO2 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso2" class="form-control" maxlength="2" placeholder="PH" required>
+                <input type="text" name="iso2" class="form-control form-control-lg" maxlength="2" placeholder="PH" required>
               </div>
             </div>
+
             <div class="col-md-2">
-              <label class="form-label small fw-bold">ISO3 <span class="text-danger">*</span></label>
+              <label class="form-label">ISO3 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso3" class="form-control" maxlength="3" placeholder="PHL" required>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">Default Timezone</label>
-              <div class="input-icon">
-                <i class="bi bi-clock-history"></i>
-                <input type="text" name="default_tz" class="form-control" placeholder="Asia/Manila">
+                <input type="text" name="iso3" class="form-control form-control-lg" maxlength="3" placeholder="PHL" required>
               </div>
             </div>
 
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Phone Code</label>
+              <label class="form-label">Default Timezone</label>
+              <div class="input-icon">
+                <i class="bi bi-clock-history"></i>
+                <input type="text" name="default_tz" class="form-control form-control-lg" placeholder="Asia/Manila">
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Phone Code</label>
               <div class="input-icon">
                 <i class="bi bi-telephone"></i>
-                <input type="text" name="phone_country_code" class="form-control" placeholder="+63">
+                <input type="text" name="phone_country_code" class="form-control form-control-lg" placeholder="+63">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Currency Code</label>
+              <label class="form-label">Currency Code</label>
               <div class="input-icon">
                 <i class="bi bi-cash-coin"></i>
-                <input type="text" name="currency_code" class="form-control" maxlength="3" placeholder="PHP">
+                <input type="text" name="currency_code" class="form-control form-control-lg" maxlength="3" placeholder="PHP">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Locale</label>
+              <label class="form-label">Locale</label>
               <div class="input-icon">
                 <i class="bi bi-translate"></i>
-                <input type="text" name="locale" class="form-control" placeholder="en_PH">
+                <input type="text" name="locale" class="form-control form-control-lg" placeholder="en_PH">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Date Format</label>
+              <label class="form-label">Date Format</label>
               <div class="input-icon">
                 <i class="bi bi-calendar3"></i>
-                <input type="text" name="date_format" class="form-control" value="Y-m-d">
+                <input type="text" name="date_format" class="form-control form-control-lg" value="Y-m-d">
               </div>
             </div>
 
@@ -460,43 +486,13 @@ if ($res) {
             </div>
           </div>
 
-          <hr class="my-4">
+          <hr class="hr-soft my-3">
 
-          <!-- Business Unit section (clear, non-technical wording + suggestions) -->
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="mb-0">Create a Business Unit <span class="text-muted small">(optional)</span></h6>
-            <span class="badge rounded-pill text-bg-light">Auto-suggested from country</span>
-          </div>
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">Agency ID</label>
-              <div class="input-icon">
-                <i class="bi bi-building"></i>
-                <input type="number" min="0" name="bu_agency_id" class="form-control" value="0" placeholder="0">
-              </div>
-              <div class="small-hint mt-1">Leave 0 if you don't use agencies.</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">BU Code</label>
-              <div class="input-icon">
-                <i class="bi bi-tag"></i>
-                <input type="text" name="bu_code" class="form-control" placeholder="e.g. SMC-PH">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-bold">BU Name</label>
-              <div class="input-icon">
-                <i class="bi bi-card-heading"></i>
-                <input type="text" name="bu_name" class="form-control" placeholder="e.g. SMC Philippines">
-              </div>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small fw-bold d-block">BU Active</label>
-              <div class="form-check form-switch mt-2">
-                <input class="form-check-input" type="checkbox" name="bu_active" id="buActiveAdd" checked>
-                <label class="form-check-label" for="buActiveAdd">Active</label>
-              </div>
-            </div>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-lightning-charge text-warning"></i>
+            <small class="text-muted">
+              A default Business Unit will be created automatically (e.g., <span class="mono">SMC-PH</span> / <span class="mono">SMC Philippines</span>). You don’t need to set anything here.
+            </small>
           </div>
         </div>
 
@@ -517,7 +513,7 @@ if ($res) {
 <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-soft">
         <h6 class="modal-title" id="viewModalLabel">Country Details</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -542,75 +538,88 @@ if ($res) {
 </div>
 
 <!-- ============================================================================
-     EDIT MODAL
+     EDIT MODAL (no BU UI here; only country fields)
 ============================================================================ -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-soft">
         <h6 class="modal-title" id="editModalLabel">Edit Country</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form id="countryFormEdit" action="country_management.php" method="POST" autocomplete="off" novalidate>
+
+      <form id="countryFormEdit" action="country_management.php" method="POST">
         <input type="hidden" name="id" id="e_id">
+        <!-- For EDIT, do not auto-create new BU. Keep hidden fields empty by default. -->
+        <input type="hidden" name="bu_agency_id" id="e_bu_agency_id" value="">
+        <input type="hidden" name="bu_code" id="e_bu_code" value="">
+        <input type="hidden" name="bu_name" id="e_bu_name" value="">
+        <input type="hidden" name="bu_active" id="e_bu_active" value="">
+
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-5">
-              <label class="form-label small fw-bold">Country Name <span class="text-danger">*</span></label>
+              <label class="form-label">Country Name <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-flag"></i>
-                <input list="countryListEdit" name="name" id="e_name" class="form-control" required>
+                <input list="countryListEdit" name="name" id="e_name" class="form-control form-control-lg" required>
                 <datalist id="countryListEdit"></datalist>
               </div>
             </div>
+
             <div class="col-md-2">
-              <label class="form-label small fw-bold">ISO2 <span class="text-danger">*</span></label>
+              <label class="form-label">ISO2 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso2" id="e_iso2" class="form-control" maxlength="2" required>
+                <input type="text" name="iso2" id="e_iso2" class="form-control form-control-lg" maxlength="2" required>
               </div>
             </div>
+
             <div class="col-md-2">
-              <label class="form-label small fw-bold">ISO3 <span class="text-danger">*</span></label>
+              <label class="form-label">ISO3 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso3" id="e_iso3" class="form-control" maxlength="3" required>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">Default Timezone</label>
-              <div class="input-icon">
-                <i class="bi bi-clock-history"></i>
-                <input type="text" name="default_tz" id="e_tz" class="form-control">
+                <input type="text" name="iso3" id="e_iso3" class="form-control form-control-lg" maxlength="3" required>
               </div>
             </div>
 
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Phone Code</label>
+              <label class="form-label">Default Timezone</label>
+              <div class="input-icon">
+                <i class="bi bi-clock-history"></i>
+                <input type="text" name="default_tz" id="e_tz" class="form-control form-control-lg">
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Phone Code</label>
               <div class="input-icon">
                 <i class="bi bi-telephone"></i>
-                <input type="text" name="phone_country_code" id="e_phone" class="form-control">
+                <input type="text" name="phone_country_code" id="e_phone" class="form-control form-control-lg">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Currency Code</label>
+              <label class="form-label">Currency Code</label>
               <div class="input-icon">
                 <i class="bi bi-cash-coin"></i>
-                <input type="text" name="currency_code" id="e_currency" class="form-control" maxlength="3">
+                <input type="text" name="currency_code" id="e_currency" class="form-control form-control-lg" maxlength="3">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Locale</label>
+              <label class="form-label">Locale</label>
               <div class="input-icon">
                 <i class="bi bi-translate"></i>
-                <input type="text" name="locale" id="e_locale" class="form-control">
+                <input type="text" name="locale" id="e_locale" class="form-control form-control-lg">
               </div>
             </div>
+
             <div class="col-md-3">
-              <label class="form-label small fw-bold">Date Format</label>
+              <label class="form-label">Date Format</label>
               <div class="input-icon">
                 <i class="bi bi-calendar3"></i>
-                <input type="text" name="date_format" id="e_datefmt" class="form-control">
+                <input type="text" name="date_format" id="e_datefmt" class="form-control form-control-lg">
               </div>
             </div>
 
@@ -618,44 +627,6 @@ if ($res) {
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="active" id="e_active">
                 <label class="form-check-label" for="e_active">Country is Active</label>
-              </div>
-            </div>
-          </div>
-
-          <hr class="my-4">
-
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="mb-0">Create a Business Unit <span class="text-muted small">(optional)</span></h6>
-            <span class="badge rounded-pill text-bg-light">Auto-suggested from country</span>
-          </div>
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">Agency ID</label>
-              <div class="input-icon">
-                <i class="bi bi-building"></i>
-                <input type="number" min="0" name="bu_agency_id" id="e_bu_agency_id" class="form-control" value="0">
-              </div>
-              <div class="small-hint mt-1">Leave 0 if you don't use agencies.</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">BU Code</label>
-              <div class="input-icon">
-                <i class="bi bi-tag"></i>
-                <input type="text" name="bu_code" id="e_bu_code" class="form-control" placeholder="e.g. SMC-PH">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-bold">BU Name</label>
-              <div class="input-icon">
-                <i class="bi bi-card-heading"></i>
-                <input type="text" name="bu_name" id="e_bu_name" class="form-control" placeholder="e.g. SMC Philippines">
-              </div>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small fw-bold d-block">BU Active</label>
-              <div class="form-check form-switch mt-2">
-                <input class="form-check-input" type="checkbox" name="bu_active" id="e_bu_active" checked>
-                <label class="form-check-label" for="e_bu_active">Active</label>
               </div>
             </div>
           </div>
@@ -676,7 +647,7 @@ if ($res) {
      SMART AUTOFILL & UI BEHAVIOR
 ============================================================================ -->
 <script>
-/* --- Minimal reference dataset. Extend freely as needed. --- */
+/* --- Reference dataset (extend as you like) --- */
 const COUNTRY_REF = [
   {name:'Bahrain',iso2:'BH',iso3:'BHR',phone:'+973',currency:'BHD',tz:'Asia/Bahrain',locale:'ar_BH'},
   {name:'Cambodia',iso2:'KH',iso3:'KHM',phone:'+855',currency:'KHR',tz:'Asia/Phnom_Penh',locale:'km_KH'},
@@ -690,7 +661,6 @@ const COUNTRY_REF = [
   {name:'Vietnam',iso2:'VN',iso3:'VNM',phone:'+84',currency:'VND',tz:'Asia/Ho_Chi_Minh',locale:'vi_VN'},
 ];
 
-/* ---------- DOM helpers ---------- */
 const $  = (sel, root=document) => root.querySelector(sel);
 
 /* ---------- Populate datalists ---------- */
@@ -705,10 +675,13 @@ function populateDatalist(datalistEl) {
 populateDatalist(document.getElementById('countryListAdd'));
 populateDatalist(document.getElementById('countryListEdit'));
 
-/* ---------- Smart autofill binding ---------- */
+/* ---------- Helpers ---------- */
 function deriveLocale(code){ return code ? ('en_' + code) : ''; }
+function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
 
-function bindSmart(form) {
+/* ---------- Smart autofill binding (Add) ---------- */
+(function bindAdd(){
+  const form   = document.getElementById('countryFormAdd');
   if (!form) return;
   const name   = form.querySelector('[name="name"]');
   const iso2   = form.querySelector('[name="iso2"]');
@@ -718,29 +691,25 @@ function bindSmart(form) {
   const tz     = form.querySelector('[name="default_tz"]');
   const locale = form.querySelector('[name="locale"]');
   const datef  = form.querySelector('[name="date_format"]');
-  const buCode = form.querySelector('[name="bu_code"]');
-  const buName = form.querySelector('[name="bu_name"]');
-  const agency = form.querySelector('[name="bu_agency_id"]');
 
-  // Force uppercase
-  function up(e){ e.target.value = (e.target.value||'').toUpperCase(); }
+  // Hidden BU fields (auto-managed)
+  const buCode = document.getElementById('add_bu_code');
+  const buName = document.getElementById('add_bu_name');
+  const buAgency = document.getElementById('add_bu_agency_id');
+  const buActive = document.getElementById('add_bu_active');
+
+  const up = (e)=> toUpper(e.target);
   iso2?.addEventListener('input', up);
   iso3?.addEventListener('input', up);
   curr?.addEventListener('input', up);
 
-  // Fill BU suggestions
   function suggestBU() {
     const code = (iso2?.value || '').toUpperCase();
     const nm   = (name?.value || '').trim();
-    if (agency && !agency.value) agency.value = '0';
-    if (buCode && (!buCode.value || buCode.dataset.autofill === '1')) {
-      buCode.value = code ? `SMC-${code}` : '';
-      buCode.dataset.autofill = '1';
-    }
-    if (buName && (!buName.value || buName.dataset.autofill === '1')) {
-      buName.value = nm ? `SMC ${nm}` : '';
-      buName.dataset.autofill = '1';
-    }
+    if (buAgency && !buAgency.value) buAgency.value = '0';
+    if (buActive && !buActive.value) buActive.value = '1';
+    if (buCode) buCode.value = code ? `SMC-${code}` : '';
+    if (buName) buName.value = nm ? `SMC ${nm}` : '';
   }
 
   function fillFromMatch(m) {
@@ -759,47 +728,85 @@ function bindSmart(form) {
     const v = (name.value||'').trim().toLowerCase();
     const m = COUNTRY_REF.find(c => c.name.toLowerCase() === v);
     fillFromMatch(m);
-    suggestBU();
   });
   iso2?.addEventListener('blur', () => {
     const code = (iso2.value||'').toUpperCase();
     const m = COUNTRY_REF.find(c => c.iso2 === code);
-    if (m) {
-      if (name && !name.value) name.value = m.name;
-      fillFromMatch(m);
-    }
-    suggestBU();
+    if (m && name && !name.value) name.value = m.name;
+    fillFromMatch(m);
   });
   name?.addEventListener('input', suggestBU);
   iso2?.addEventListener('input', suggestBU);
 
-  // Quick validation gate
   form.addEventListener('submit', (e) => {
     if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); }
     if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); }
-    // Normalize caps
-    if (iso2) iso2.value = (iso2.value||'').toUpperCase();
-    if (iso3) iso3.value = (iso3.value||'').toUpperCase();
-    if (curr) curr.value = (curr.value||'').toUpperCase();
+    toUpper(iso2); toUpper(iso3); toUpper(curr);
+    suggestBU(); // final sync for hidden BU fields
   });
-}
-bindSmart(document.getElementById('countryFormAdd'));
-bindSmart(document.getElementById('countryFormEdit'));
+})();
+
+/* ---------- Smart autofill binding (Edit) ---------- */
+(function bindEdit(){
+  const form   = document.getElementById('countryFormEdit');
+  if (!form) return;
+  const name   = form.querySelector('[name="name"]');
+  const iso2   = form.querySelector('[name="iso2"]');
+  const iso3   = form.querySelector('[name="iso3"]');
+  const phone  = form.querySelector('[name="phone_country_code"]');
+  const curr   = form.querySelector('[name="currency_code"]');
+  const tz     = form.querySelector('[name="default_tz"]');
+  const locale = form.querySelector('[name="locale"]');
+  const datef  = form.querySelector('[name="date_format"]');
+  const up = (e)=> toUpper(e.target);
+  iso2?.addEventListener('input', up);
+  iso3?.addEventListener('input', up);
+  curr?.addEventListener('input', up);
+
+  function fillFromMatch(m) {
+    if (!m) return;
+    if (iso2 && !iso2.value) iso2.value = m.iso2;
+    if (iso3 && !iso3.value) iso3.value = m.iso3;
+    if (phone && !phone.value) phone.value = m.phone;
+    if (curr && !curr.value) curr.value = m.currency;
+    if (tz && !tz.value) tz.value = m.tz;
+    if (locale && !locale.value) locale.value = m.locale || ('en_' + m.iso2);
+    if (datef && !datef.value) datef.value = 'Y-m-d';
+  }
+
+  name?.addEventListener('change', () => {
+    const v = (name.value||'').trim().toLowerCase();
+    const m = COUNTRY_REF.find(c => c.name.toLowerCase() === v);
+    fillFromMatch(m);
+  });
+  iso2?.addEventListener('blur', () => {
+    const code = (iso2.value||'').toUpperCase();
+    const m = COUNTRY_REF.find(c => c.iso2 === code);
+    if (m && name && !name.value) name.value = m.name;
+    fillFromMatch(m);
+  });
+
+  form.addEventListener('submit', (e) => {
+    if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); }
+    if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); }
+    toUpper(iso2); toUpper(iso3); toUpper(curr);
+  });
+})();
 
 /* ---------- View modal population ---------- */
 const viewModal = document.getElementById('viewModal');
 viewModal?.addEventListener('show.bs.modal', (ev) => {
   const b = ev.relatedTarget;
   const d = (a)=>b.getAttribute(a)||'';
-  $('#v_name').textContent     = d('data-name');
-  $('#v_iso2').textContent     = d('data-iso2');
-  $('#v_iso3').textContent     = d('data-iso3');
-  $('#v_tz').textContent       = d('data-tz');
-  $('#v_phone').textContent    = d('data-phone');
-  $('#v_currency').textContent = d('data-currency');
-  $('#v_locale').textContent   = d('data-locale');
-  $('#v_datefmt').textContent  = d('data-datefmt') || 'Y-m-d';
-  $('#v_status').textContent   = d('data-active')==='1' ? 'Active' : 'Inactive';
+  document.getElementById('v_name').textContent     = d('data-name');
+  document.getElementById('v_iso2').textContent     = d('data-iso2');
+  document.getElementById('v_iso3').textContent     = d('data-iso3');
+  document.getElementById('v_tz').textContent       = d('data-tz');
+  document.getElementById('v_phone').textContent    = d('data-phone');
+  document.getElementById('v_currency').textContent = d('data-currency');
+  document.getElementById('v_locale').textContent   = d('data-locale');
+  document.getElementById('v_datefmt').textContent  = d('data-datefmt') || 'Y-m-d';
+  document.getElementById('v_status').textContent   = d('data-active')==='1' ? 'Active' : 'Inactive';
 });
 
 /* ---------- Edit modal population ---------- */
@@ -807,24 +814,23 @@ const editModal = document.getElementById('editModal');
 editModal?.addEventListener('show.bs.modal', (ev) => {
   const b = ev.relatedTarget;
   const d = (a)=>b.getAttribute(a)||'';
-  $('#e_id').value       = d('data-id');
-  $('#e_name').value     = d('data-name');
-  $('#e_iso2').value     = d('data-iso2');
-  $('#e_iso3').value     = d('data-iso3');
-  $('#e_tz').value       = d('data-tz');
-  $('#e_phone').value    = d('data-phone');
-  $('#e_currency').value = d('data-currency');
-  $('#e_locale').value   = d('data-locale');
-  $('#e_datefmt').value  = d('data-datefmt') || 'Y-m-d';
-  $('#e_active').checked = (d('data-active')==='1');
 
-  // Default BU suggestions if empty
-  const iso2 = (d('data-iso2')||'').toUpperCase();
-  const nm   = d('data-name') || '';
-  const codeEl = $('#e_bu_code'), nameEl = $('#e_bu_name'), agEl = $('#e_bu_agency_id');
-  if (agEl && !agEl.value) agEl.value = '0';
-  if (codeEl && !codeEl.value) { codeEl.value = iso2 ? `SMC-${iso2}` : ''; codeEl.dataset.autofill='1'; }
-  if (nameEl && !nameEl.value) { nameEl.value = nm ? `SMC ${nm}` : ''; nameEl.dataset.autofill='1'; }
+  document.getElementById('e_id').value       = d('data-id');
+  document.getElementById('e_name').value     = d('data-name');
+  document.getElementById('e_iso2').value     = d('data-iso2');
+  document.getElementById('e_iso3').value     = d('data-iso3');
+  document.getElementById('e_tz').value       = d('data-tz');
+  document.getElementById('e_phone').value    = d('data-phone');
+  document.getElementById('e_currency').value = d('data-currency');
+  document.getElementById('e_locale').value   = d('data-locale');
+  document.getElementById('e_datefmt').value  = d('data-datefmt') || 'Y-m-d';
+  document.getElementById('e_active').checked = (d('data-active')==='1');
+
+  // Keep hidden BU fields empty on edit (prevent auto BU creation)
+  document.getElementById('e_bu_agency_id').value = '';
+  document.getElementById('e_bu_code').value = '';
+  document.getElementById('e_bu_name').value = '';
+  document.getElementById('e_bu_active').value = '';
 });
 
 /* ---------- Table quick filter ---------- */
@@ -861,12 +867,11 @@ tblFilter?.addEventListener('input', () => {
       modal.show();
       const f = document.getElementById('countryFormEdit');
       if (!f) return;
+      const map = { id:'e_id', name:'e_name', iso2:'e_iso2', iso3:'e_iso3', default_tz:'e_tz',
+                    phone_country_code:'e_phone', currency_code:'e_currency', locale:'e_locale',
+                    date_format:'e_datefmt', active:'e_active' };
       Object.entries(data).forEach(([k,v])=>{
-        const idMap = { id:'e_id', name:'e_name', iso2:'e_iso2', iso3:'e_iso3', default_tz:'e_tz',
-                        phone_country_code:'e_phone', currency_code:'e_currency', locale:'e_locale',
-                        date_format:'e_datefmt', bu_agency_id:'e_bu_agency_id', bu_code:'e_bu_code',
-                        bu_name:'e_bu_name', bu_active:'e_bu_active', active:'e_active' };
-        const sel = idMap[k] ? `#${idMap[k]}` : `[name="${k}"]`;
+        const sel = map[k] ? `#${map[k]}` : `[name="${k}"]`;
         const el = document.querySelector(sel);
         if (!el) return;
         if (el.type === 'checkbox') el.checked = (v==1);
@@ -878,4 +883,4 @@ tblFilter?.addEventListener('input', () => {
   else window.addEventListener('load', open);
 })();
 <?php endif; ?>
-</script>
+</script>    
