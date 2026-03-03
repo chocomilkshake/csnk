@@ -86,12 +86,24 @@ class Applicant
      * - Excludes deleted by default.
      * - Use getAllForPublic() for client-facing lists.
      * - NEW: Optionally filter by business_unit_id
+     * - NEW: Optionally filter by agency (csnk/smc)
      */
-    public function getAll($status = null, ?int $businessUnitId = null): array
+    public function getAll($status = null, ?int $businessUnitId = null, ?string $agency = null): array
     {
         $where = [];
         $types = '';
         $params = [];
+
+        // Agency filtering: If agency is specified, filter by business units belonging to that agency
+        if ($agency !== null && in_array($agency, ['csnk', 'smc'], true)) {
+            $where[] = " EXISTS (
+                SELECT 1 FROM business_units bu 
+                JOIN agencies a ON a.id = bu.agency_id 
+                WHERE bu.id = applicants.business_unit_id AND a.code = ?
+            ) ";
+            $types .= "s";
+            $params[] = $agency;
+        }
 
         if ($businessUnitId !== null && $businessUnitId > 0) {
             $where[] = "applicants.business_unit_id = ?";
