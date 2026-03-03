@@ -289,7 +289,25 @@ function dash_if_blank($val): string {
               <tr>
                 <td>
                   <div class="d-flex align-items-center">
-                    <?php if (!emp
+                    <?php if (!empty($applicantData['picture'])): ?>
+                      <img src="<?php echo safe(getFileUrl($applicantData['picture'])); ?>" alt="Profile"
+                           class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">
+                    <?php else: ?>
+                      <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                           style="width: 40px; height: 40px;">
+                        <?php echo strtoupper(substr($applicantData['first_name'] ?? '', 0, 1)); ?>
+                      </div>
+                    <?php endif; ?>
+                    <strong>
+                      <?php echo safe(getFullName(
+                        $applicantData['first_name'] ?? '',
+                        $applicantData['middle_name'] ?? '',
+                        $applicantData['last_name'] ?? '',
+                        $applicantData['suffix'] ?? ''
+                      )); ?>
+                    </strong>
+                  </div>
+                </td>
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
       </div>
