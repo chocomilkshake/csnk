@@ -494,7 +494,40 @@ function dash_if_blank($val): string {
                       <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
                            style="width: 36px; height: 36px;">
                         <i class="bi bi-person-x text-danger"></i>
-                      <
+                      </div>
+                      <div>
+                        <div class="fw-semibold">
+                          <a href="<?php echo safe($viewUrl); ?>" class="text-decoration-none">
+                            <?php echo safe($appName); ?>
+                          </a>
+                        </div>
+                        <div class="text-muted small">ID: <?php echo (int)($bl['applicant_id'] ?? 0); ?></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-danger-subtle">
+                      <?php echo safe($bl['reason'] ?? ''); ?>
+                    </span>
+                  </td>
+                  <td><div class="fw-semibold small"><?php echo safe($createdBy); ?></div></td>
+                  <td>
+                    <div class="text-truncate" style="max-width: 280px;"
+                         title="<?php echo safe($bl['issue'] ?? ''); ?>">
+                      <?php echo !empty($bl['issue']) ? safe($bl['issue']) : '<span class="text-muted">—</span>'; ?>
+                    </div>
+                  </td>
+                  <td><span class="small text-muted"><?php echo safe($when); ?></span></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+<?php endif; ?>
+
 <script>
   // Refresh every 60s to mirror original UX
   setInterval(function(){ location.reload(); }, 60000);
