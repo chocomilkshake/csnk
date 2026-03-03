@@ -20,6 +20,7 @@ $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
 
 // Determine if user is super admin (for viewing all SMC applicants)
 $isSuperAdmin = ($currentRole === 'super_admin');
+$isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
 // ---------- CENTRALIZED FILTERS ----------
@@ -127,22 +128,53 @@ $filters = [
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int) $_GET['id'];
 
-    // BU-safety: ensure the applicant belongs to current BU before delete
-    // For employees: can only delete applicants in their own BU
-    // For admins/super_admins: can delete any applicant
+    // Get the applicant first to check details
     $row = null;
     if (method_exists($applicant, 'getById')) {
         $row = $applicant->getById($id);
     }
-    $applicantBuId = (int) ($row['business_unit_id'] ?? 0);
-    $isOwnBu = ($applicantBuId === $currentBuId);
 
-    // Check if user has permission to delete
-    $canDelete = ($isSuperAdmin || $isAdmin) || ($isEmployee && $isOwnBu);
-
-    if (!$row || !$canDelete) {
+    if (!$row) {
         if (function_exists('setFlashMessage')) {
-            setFlashMessage('error', 'You do not have access to delete this applicant from another country.');
+            setFlashMessage('error', 'Applicant not found.');
+        }
+        $params = [];
+        if ($q !== '')
+            $params['q'] = $q;
+        if ($status !== 'all')
+            $params['status'] = $status;
+        $qs = !empty($params) ? ('?' . http_build_query($params)) : '';
+        redirect('applicants.php' . $qs);
+        exit;
+    }
+
+    $applicantBuId = (int) ($row['business_unit_id'] ?? 0);
+    $applicantStatus = (string) ($row['status'] ?? '');
+
+    // Check delete permissions:
+    // - super_admin/admin: can delete any applicant
+    // - employee: 
+    //   - If agency is 'smc', can delete any SMC applicant (regardless of BU) if status is pending
+    //   - If agency is 'csnk' or other, can only delete applicants in their own BU
+    $canDelete = false;
+
+    if ($isSuperAdmin || $isAdmin) {
+        $canDelete = true;
+    } elseif ($isEmployee) {
+        $userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : null;
+
+        if ($userAgency === 'smc') {
+            // SMC employee can delete ALL SMC applicants if status is pending
+            $canDelete = ($applicantStatus === 'pending');
+        } else {
+            // CSNK or other agency employee can only delete their own BU applicants
+            $canDelete = ($applicantBuId === $currentBuId && $applicantStatus === 'pending');
+        }
+    }
+
+    if (!$canDelete) {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'You do not have access to delete this applicant.');
         }
     } else {
         if ($applicant->softDelete($id)) {
@@ -607,9 +639,24 @@ $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ?
                                 $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
                                 $delUrl = 'applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
 
-                                // Check if employee can edit this applicant (only own BU)
+                                // Get applicant's BU ID
                                 $appBuId = (int) ($app['business_unit_id'] ?? 0);
-                                $canEdit = ($isSuperAdmin || $isAdmin) || ($isEmployee && $appBuId === $currentBuId);
+
+                                // Check if employee can edit/delete this applicant
+                                // For super_admin/admin: can edit/delete all
+                                // For employee: Since this is the SMC page, allow all employees full access to all SMC applicants
+                                // The assumption is that employees accessing this page are SMC employees
+                                $canEdit = false;
+                                $canDelete = false;
+
+                                if ($isSuperAdmin || $isAdmin) {
+                                    $canEdit = true;
+                                    $canDelete = true;
+                                } elseif ($isEmployee) {
+                                    // All employees on this SMC page can edit all SMC applicants
+                                    $canEdit = true;
+                                    $canDelete = ($currentStatus === 'pending');
+                                }
 
                                 $statusColors = [
                                     'pending' => 'warning',
@@ -658,7 +705,7 @@ $exportUrl = '../../../includes/excel_applicants.php' . (!empty($exportParams) ?
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            <?php if ($currentStatus === 'pending'): ?>
+                                            <?php if ($canDelete): ?>
                                                 <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger delete-btn"
                                                     title="Delete"
                                                     onclick="return confirm('Are you sure you want to delete this applicant?');">
