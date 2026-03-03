@@ -366,7 +366,19 @@ function flag_emoji_from_iso2(?string $iso2): string {
                     <div class="col-12 d-flex align-items-center justify-content-between">
                         <h6 class="mb-2">Linked Business Unit (optional)</h6>
                         <div class="form-check form-switch">
-                            <?phpass="form-control" placeholder="e.g. 1"
+                            <?php
+                            $prefillBu = isset($_GET['add_bu_for']) || isset($_POST['create_linked_bu']);
+                            ?>
+                            <input class="form-check-input" type="checkbox" name="create_linked_bu" id="createLinkedBuSwitch"
+                                   <?php echo $prefillBu ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="createLinkedBuSwitch">Create a new BU for this country</label>
+                        </div>
+                    </div>
+
+                    <fieldset id="buFieldset" class="row g-3" <?php echo $prefillBu ? '' : 'disabled'; ?>>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Agency ID</label>
+                            <input type="number" min="0" name="bu_agency_id" id="bu_agency_id" class="form-control" placeholder="e.g. 1"
                                    value="<?php echo h($_POST['bu_agency_id'] ?? ''); ?>">
                             <div class="form-text">Leave 0 if you don't use agencies.</div>
                         </div>
