@@ -337,7 +337,18 @@ function dash_if_blank($val): string {
       </div>
       <div class="soft-divider"></div>
       <div class="p-5 pt-4">
-        <div class="d-flex justify-co
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <span class="text-muted">Staff (Admin &amp; Employee)</span>
+          <strong><?php echo dash_if_blank((string)$adminCount); ?></strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <span class="text-mu
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-2xl shadow-sm border">
+      <div class="px-5 pt-5 pb-3">
+        <h5 class="mb-0 fw-semibold">Quick Actions</h5>
       </div>
       <div class="sow-100">
           <i class="bi bi-person-plus me-2"></i>Add New Account
