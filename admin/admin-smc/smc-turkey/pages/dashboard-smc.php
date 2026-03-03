@@ -468,7 +468,30 @@ function dash_if_blank($val): string {
           <table class="table table-hover align-middle mb-0">
             <thead class="bg-white">
               <tr>
-                <th style="walign-items-center justify-content-center me-2"
+                <th style="width: 28%;">Applicant</th>
+                <th style="width: 20%;">Reason</th>
+                <th style="width: 18%;">Logged By</th>
+                <th>Issue</th>
+                <th style="width: 18%;">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($blacklistedApplicants as $bl): ?>
+                <?php
+                  $appName   = getFullName(
+                    $bl['first_name'] ?? '',
+                    $bl['middle_name'] ?? '',
+                    $bl['last_name'] ?? '',
+                    $bl['suffix'] ?? ''
+                  );
+                  $createdBy = ($bl['created_by_name'] ?? '') ?: (($bl['created_by_username'] ?? '') ?: 'System');
+                  $when      = formatDateTime($bl['created_at'] ?? '');
+                  $viewUrl   = 'view-applicant.php?id=' . (int)($bl['applicant_id'] ?? 0);
+                ?>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
                            style="width: 36px; height: 36px;">
                         <i class="bi bi-person-x text-danger"></i>
                       <
