@@ -401,7 +401,16 @@ function flag_emoji_from_iso2(?string $iso2): string {
                                 <input class="form-check-input" type="checkbox" name="bu_active" id="buActiveSwitch"
                                     <?php echo (!isset($_POST['bu_active']) || isset($_POST['bu_active'])) ? 'checked' : ''; ?>>
                                 <label class="form-check-label" for="buActiveSwitch">Active</label>
-                            <
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-2">
+                    <button type="submit" name="save_country" class="btn btn-success px-4">
+                        <i class="bi bi-check-lg me-1"></i> Save Country
+                    </button>
+                    <?php if ($editCountry): ?>
                         <a href="country_management.php" class="btn btn-outline-secondary">Cancel</a>
                     <?php else: ?>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#countryFormSection">Cancel</button>
