@@ -181,7 +181,7 @@ function dash_if_blank($val): string {
   }
   .soft-divider { height:1px; background:#eef2f7; }
   .table-hover tbody tr:hover { background-color: rgba(0,0,0,.035); }
-  <div class="badge bg-primary-sub"></div>
+  .badge.bg-primary-sub
                     <?php if (!emp
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
