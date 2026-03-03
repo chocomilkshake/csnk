@@ -235,7 +235,18 @@ $preserveQSWithQuestion = !empty($preserveQS) ? ('?' . ltrim($preserveQS, '&')) 
                             <?php foreach ($applicants as $app): ?>
                                 <?php
                                 $appBuId = (int) ($app['business_unit_id'] ?? 0);
-                                $canEdit = ($isSuperAdmin || $isAdmin) || ($isEmployee && $appBuId === $currentBuId);
+
+                                // Check if employee can edit this applicant
+                                // For super_admin/admin: can edit all
+                                // For employee: Since this is the SMC page, allow all employees full access to all SMC applicants
+                                $canEdit = false;
+
+                                if ($isSuperAdmin || $isAdmin) {
+                                    $canEdit = true;
+                                } elseif ($isEmployee) {
+                                    // All employees on this SMC page can edit all SMC applicants
+                                    $canEdit = true;
+                                }
                                 ?>
                                 <tr>
                                     <td>
