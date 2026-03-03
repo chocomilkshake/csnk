@@ -251,6 +251,16 @@ function dash_if_blank($val): string {
     </div>
   </div>
 </div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <!-- ===================== Recent Applicants (SMC) ===================== -->
+  <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border">
+    <div class="px-5 pt-5 pb-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h5 class="mb-0 fw-semibold">Recent Applicants</h5>
+          <small class="text-muted">Latest profiles created in the system.</small>
+        </div>
       </div>
     </div>
             <tr>
