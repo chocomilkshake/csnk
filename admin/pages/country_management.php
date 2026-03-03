@@ -254,6 +254,26 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
 /* =========================================================================================
    7) Small helpers for UI
 ========================================================================================= */
+function flag_emoji_from_iso2(?string $iso2): string {
+    $iso2 = strtoupper(trim((string)$iso2));
+    if (strlen($iso2) !== 2) return '';
+    $codePoints = [];
+    for ($i=0; $i<2; $i++) {
+        $codePoints[] = 0x1F1E6 + (ord($iso2[$i]) - ord('A'));
+    }
+    return mb_convert_encoding('&#' . $codePoints[0] . ';', 'UTF-8', 'HTML-ENTITIES')
+         . mb_convert_encoding('&#' . $codePoints[1] . ';', 'UTF-8', 'HTML-ENTITIES');
+}
+?>
+<!-- =========================================
+     PAGE: Country Management
+========================================= -->
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="mb-0">Country Management</h4>
+        <p class="text-muted small">Manage global countries and their regional settings.</p>
+    </div>
+
 <!-- Add/Edit Form Section -->
 <div class="collapse <?php echo ($editCountry || !empty($errors)) ? 'show' : ''; ?> mb-4" id="countryFormSection">
     <div class="card border-0 shadow-sm">
