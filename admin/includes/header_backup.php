@@ -591,9 +591,10 @@ if ($canViewReports && $conn instanceof mysqli) {
                                 aria-label="Approved applicants count">
                                 <?php echo (int) $approvedCount; ?>
                             </span>
-                        </span>
                     </a>
 
+                    <!-- Restored " </span>
+                   On Hold" menu -->
                     <a href="on-hold.php" class="sidebar-item <?php echo $currentPage === 'on-hold' ? 'active' : ''; ?>"
                         aria-current="<?php echo $currentPage === 'on-hold' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                         data-bs-placement="right" title="On Hold Applicants">
@@ -647,9 +648,9 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <!-- SMC-Turkey -->
                 <button class="sidebar-item sidebar-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#smcTurkeyMenu" aria-expanded="false" aria-controls="smcTurkeyMenu"
-                    data-bs-placement="right" title="SMC">
+                    data-bs-placement="right" title="SMC-Turkey">
                     <i class="bi bi-globe2"></i>
-                    <span class="label"><span class="text">SMC-International</span></span>
+                    <span class="label"><span class="text">SMC-Turkey</span></span>
                     <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
                 </button>
                 <div class="collapse sidebar-submenu" id="smcTurkeyMenu">
