@@ -560,7 +560,47 @@ const COUNTRY_REF = [
   {name:'Netherlands',iso2:'NL',iso3:'NLD',phone:'+31',currency:'EUR',tz:'Europe/Amsterdam',locale:'nl_NL'},
   {name:'New Zealand',iso2:'NZ',iso3:'NZL',phone:'+64',currency:'NZD',tz:'Pacific/Auckland',locale:'en_NZ'},
   {name:'Oman',iso2:'OM',iso3:'OMN',phone:'+968',currency:'OMR',tz:'Asia/Muscat',locale:'ar_OM'},
+  {name:'Pakistan',iso2:'PK',iso3:'PAK',phone:'+92',currency:'PKR',tz:'Asia/Karachi',locale:'ur_PK'},
+  {name:'Philippines',iso2:'PH',iso3:'PHL',phone:'+63',currency:'PHP',tz:'Asia/Manila',locale:'en_PH'},
+  {name:'Poland',iso2:'PL',iso3:'POL',phone:'+48',currency:'PLN',tz:'Europe/Warsaw',locale:'pl_PL'},
+  {name:'Portugal',iso2:'PT',iso3:'PRT',phone:'+351',currency:'EUR',tz:'Europe/Lisbon',locale:'pt_PT'},
+  {name:'Qatar',iso2:'QA',iso3:'QAT',phone:'+974',currency:'QAR',tz:'Asia/Qatar',locale:'ar_QA'},
+  {name:'Romania',iso2:'RO',iso3:'ROU',phone:'+40',currency:'RON',tz:'Europe/Bucharest',locale:'ro_RO'},
+  {name:'Russia',iso2:'RU',iso3:'RUS',phone:'+7',currency:'RUB',tz:'Europe/Moscow',locale:'ru_RU'},
+  {name:'Saudi Arabia',iso2:'SA',iso3:'SAU',phone:'+966',currency:'SAR',tz:'Asia/Riyadh',locale:'ar_SA'},
+  {name:'Singapore',iso2:'SG',iso3:'SGP',phone:'+65',currency:'SGD',tz:'Asia/Singapore',locale:'en_SG'},
+  {name:'South Africa',iso2:'ZA',iso3:'ZAF',phone:'+27',currency:'ZAR',tz:'Africa/Johannesburg',locale:'en_ZA'},
+  {name:'South Korea',iso2:'KR',iso3:'KOR',phone:'+82',currency:'KRW',tz:'Asia/Seoul',locale:'ko_KR'},
+  {name:'Spain',iso2:'ES',iso3:'ESP',phone:'+34',currency:'EUR',tz:'Europe/Madrid',locale:'es_ES'},
+  {name:'Sri Lanka',iso2:'LK',iso3:'LKA',phone:'+94',currency:'LKR',tz:'Asia/Colombo',locale:'si_LK'},
+  {name:'Sweden',iso2:'SE',iso3:'SWE',phone:'+46',currency:'SEK',tz:'Europe/Stockholm',locale:'sv_SE'},
+  {name:'Switzerland',iso2:'CH',iso3:'CHE',phone:'+41',currency:'CHF',tz:'Europe/Zurich',locale:'de_CH'},
+  {name:'Taiwan',iso2:'TW',iso3:'TWN',phone:'+886',currency:'TWD',tz:'Asia/Taipei',locale:'zh_TW'},
+  {name:'Thailand',iso2:'TH',iso3:'THA',phone:'+66',currency:'THB',tz:'Asia/Bangkok',locale:'th_TH'},
+  {name:'Turkey',iso2:'TR',iso3:'TUR',phone:'+90',currency:'TRY',tz:'Europe/Istanbul',locale:'tr_TR'},
+  {name:'United Arab Emirates',iso2:'AE',iso3:'ARE',phone:'+971',currency:'AED',tz:'Asia/Dubai',locale:'ar_AE'},
+  {name:'United Kingdom',iso2:'GB',iso3:'GBR',phone:'+44',currency:'GBP',tz:'Europe/London',locale:'en_GB'},
+  {name:'United States',iso2:'US',iso3:'USA',phone:'+1',currency:'USD',tz:'America/New_York',locale:'en_US'},
+  {name:'Vietnam',iso2:'VN',iso3:'VNM',phone:'+84',currency:'VND',tz:'Asia/Ho_Chi_Minh',locale:'vi_VN'},
+];
 
+(function () {
+  const $ = (sel) => document.querySelector(sel);
+  const nameInput = $('#countryName');
+  const iso2Input = $('#iso2');
+  const iso3Input = $('#iso3');
+  const tzInput = $('#default_tz');
+  const phoneInput = $('#phone_country_code');
+  const currInput = $('#currency_code');
+  const locInput = $('#locale');
+  const dateFmt = $('#date_format');
+  const buSwitch = $('#createLinkedBuSwitch');
+  const buFieldset = $('#buFieldset');
+  const datalist = document.getElementById('countryList');
+  const tblFilter = document.getElementById('tblFilter');
+  const table = document.getElementById('countriesTable');
+
+  // Populate datalist
   COUNTRY_REF.map(c => c.name).sort().forEach(n => {
     const opt = document.createElement('option');
     opt.value = n;
