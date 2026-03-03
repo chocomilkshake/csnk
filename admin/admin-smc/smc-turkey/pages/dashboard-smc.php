@@ -181,7 +181,26 @@ function dash_if_blank($val): string {
   }
   .soft-divider { height:1px; background:#eef2f7; }
   .table-hover tbody tr:hover { background-color: rgba(0,0,0,.035); }
-  .badge.bg-primary-sub
+  .badge.bg-primary-subtle {
+    background-color: rgba(13,110,253,.08) !important;
+    color: #0d6efd !important;
+    border: 1px solid rgba(13,110,253,.18) !important;
+  }
+  .badge.bg-danger-subtle {
+    background-color: rgba(220,53,69,.08) !important;
+    color: #dc3545 !important;
+    border: 1px solid rgba(220,53,69,.18) !important;
+  }
+  </div>
+
+  <!-- Pending -->
+              <?php
+                $statusColors = ['pending'=>'warning','on_process'=>'info','approved'=>'success'];
+                $badgeColor   = $statusColors[$applicantData['status']] ?? 'secondary';
+              ?>
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
                     <?php if (!emp
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
