@@ -391,7 +391,25 @@ function dash_if_blank($val): string {
         <table class="table table-hover align-middle mb-0">
           <thead class="bg-white">
             <tr>
-            
+              <th style="width: 28%;">User</th>
+              <th style="width: 16%;">Role</th>
+              <th style="width: 18%;">Action</th>
+              <th>Description</th>
+              <th style="width: 18%;">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($recentActivities as $log): ?>
+              <?php
+                $displayName = $log['full_name'] ?: ($log['username'] ?? '');
+                if ($displayName === '') continue;
+                $roleLabel   = $log['role'] ?? '';
+              ?>
+              <tr>
+                <td>
+                  <div class="fw-semibold"><?php echo safe($displayName); ?></div>
+                  <div class="text-muted small"><?php echo safe($log['username'] ?? ''); ?></div>
+
 <!-- ===================== Blacklisted Applicants (Role-gated) ===================== -->
 <?php if ($canSeeAdminUX): ?>
   <div class="mt-4 bg-white rounded-2xl shadow-sm border">
