@@ -170,7 +170,17 @@ function dash_if_blank($val): string {
     background: radial-gradient(1200px 320px at -20% -20%, rgba(243,217,139,.35) 0%, #0b1d3a 45%, #0a1220 100%);
     color: #f7f7f8;
   }
-  .stat-card .title { letter-spacing: .06e
+  .stat-card .title { letter-spacing: .06em; opacity: .85; }
+  .stat-card .icon-faint { color: #d4af37; opacity: .9; }
+  .stat-card .big { font-weight: 800; font-size: 2.25rem; line-height: 1.1; }
+  .stat-chip {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.45rem .85rem; border-radius: 999px;
+    background: rgba(212,175,55,.08); color: #f3d98b;
+    border:1px solid rgba(212,175,55,.28);
+  }
+  .soft-divider { height:1px; background:#eef2f7; }
+  .table-hover tbody tr:hover { background-color: rgba(0,0,0,.035); }
   <div class="badge bg-primary-sub"></div>
                     <?php if (!emp
           <i class="bi bi-person-plus me-2"></i>Add New Account
