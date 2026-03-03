@@ -37,6 +37,17 @@ $isSuperAdmin    = ($currentRole === 'super_admin');
 $isAdmin         = ($currentRole === 'admin');
 $isEmployee      = ($currentRole === 'employee');
 
+/* ===== RBAC HARD-BLOCK: Country Management is only for Admin / Super Admin ===== */
+if ($currentPage === 'country_management' && !($isAdmin || $isSuperAdmin)) {
+    // Block access for employees (CSNK or SMC) and any non-admin roles
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage('error', 'You do not have permission to access Country Management.');
+    }
+    header('Location: dashboard.php');
+    exit;
+}
+/* ============================================================================== */
+
 /* Allow Activity section for admin/super_admin/employee (restored from old) */
 $canViewActivity = ($isAdmin || $isSuperAdmin || $isEmployee);
 
@@ -475,6 +486,8 @@ if ($canViewReports && $conn instanceof mysqli) {
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
+
+            <!-- Accounts -->
             <a href="accounts.php"
                class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>"
@@ -482,6 +495,8 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <i class="bi bi-person-badge"></i>
                 <span class="label"><span class="text">Accounts</span></span>
             </a>
+
+            <!-- Profile -->
             <a href="profile.php"
                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>"
@@ -489,6 +504,18 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <i class="bi bi-person-circle"></i>
                 <span class="label"><span class="text">Profile</span></span>
             </a>
+
+            <?php if ($isAdmin || $isSuperAdmin): ?>
+                <!-- ===== NEW: Country Management (Admins only) ===== -->
+                <a href="country_management.php"
+                   class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                   aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                    <i class="bi bi-flag"></i>
+                    <span class="label"><span class="text">Country Management</span></span>
+                </a>
+                <!-- ================================================ -->
+            <?php endif; ?>
 
             <div class="sidebar-divider"></div>
             <a href="logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
