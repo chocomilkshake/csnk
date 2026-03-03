@@ -239,6 +239,15 @@ function dash_if_blank($val): string {
 
   <!-- Deleted -->
   <div class="stat-card">
+    <div class="p-5">
+      <div class="flex items-center justify-between">
+        <h6 class="title uppercase">DELETED</h6>
+        <i class="bi bi-trash text-3xl icon-faint"></i>
+      </div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['deleted'] ?? '')); ?></div>
+      <div class="mt-4">
+        <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Soft removed</span>
+      </div>
     </div>
   </div>
 </div>
