@@ -357,7 +357,15 @@ function dash_if_blank($val): string {
       <div class="px-5 pt-5 pb-3">
         <h5 class="mb-0 fw-semibold">Quick Actions</h5>
       </div>
-      <div class="sow-100">
+      <div class="soft-divider"></div>
+      <div class="p-5 pt-4">
+        <a href="add-applicant.php" class="btn btn-primary w-100 mb-2">
+          <i class="bi bi-plus-circle me-2"></i>Add New Applicant
+        </a>
+        <a href="applicants.php" class="btn btn-outline-primary w-100 mb-2">
+          <i class="bi bi-people me-2"></i>View All Applicants
+        </a>
+        <a href="accounts.php" class="btn btn-outline-secondary w-100">
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
       </div>
