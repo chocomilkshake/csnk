@@ -312,7 +312,16 @@ function dash_if_blank($val): string {
                   <?php echo safe($applicantData['phone_number'] ?? '—'); ?>
                 </td>
                 <td>
-                  <span class="badge bg-<?php ec
+                  <span class="badge bg-<?php echo $badgeColor; ?>">
+                    <?php echo safe(ucfirst(str_replace('_', ' ', $applicantData['status'] ?? ''))); ?>
+                  </span>
+                </td>
+                <td class="text-muted">
+                
+    <div class="bg-white rounded-2xl shadow-sm border">
+      <div class="px-5 pt-5 pb-3">
+        <h5 class="mb-0 fw-semibold">Quick Stats</h5>
+      </div>
       <div class="soft-divider"></div>
       <div class="p-5 pt-4">
         <div class="d-flex justify-co
