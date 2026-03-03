@@ -40,7 +40,8 @@ if ($conn instanceof mysqli) {
         $stmt->close();
         if (!empty($row['id'])) {
             $smcBuId = (int) $row['id'];
-            $_SESSION['current_bu_id'] = $smcBuId;
+            // Store SMC BU ID in separate session variable to avoid overwriting CSNK BU
+            $_SESSION['smc_bu_id'] = $smcBuId;
         }
     }
 }
