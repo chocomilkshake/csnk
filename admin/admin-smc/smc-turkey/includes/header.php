@@ -671,7 +671,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             <?php if ($canViewActivity): ?>
                 <div class="sidebar-divider"></div>
                 <div class="sidebar-section-label">Monitoring</div>
-                <a href="../../../pages/activity-logs.php"
+                <a href="#"
                     class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
                     aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
                     data-bs-toggle="tooltip" data-bs-placement="right" title="Activity Logs">
@@ -700,7 +700,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     }
                 }
                 ?>
-                <a href="../../../pages/reports.php"
+                <a href="#"
                     class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
                     aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                     data-bs-placement="right" title="Reports">
@@ -721,7 +721,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             <div class="sidebar-section-label">Settings</div>
 
             <!-- ACCOUNTS -->
-            <a href="../../../pages/accounts.php"
+            <a href="#"
                 class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Accounts">
@@ -730,7 +730,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             </a>
 
             <!-- PROFILE -->
-            <a href="../../../pages/profile.php"
+            <a href="#"
                 class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Profile">
