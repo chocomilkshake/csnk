@@ -609,7 +609,34 @@ const COUNTRY_REF = [
 
   // Uppercase enforcement for codes
   function forceUpper(e) {
-    e.target.value = e.target.
+    e.target.value = e.target.value.toUpperCase();
+  }
+  iso2Input?.addEventListener('input', forceUpper);
+  iso3Input?.addEventListener('input', forceUpper);
+  currInput?.addEventListener('input', forceUpper);
+
+  // Enable/disable BU fieldset by switch
+  function toggleBU() {
+    const on = buSwitch.checked;
+    buFieldset.disabled = !on;
+    buFieldset.style.opacity = on ? '1' : '0.6';
+  }
+  buSwitch?.addEventListener('change', toggleBU);
+  toggleBU();
+
+  // Try to derive locale when not provided
+  function deriveLocale(iso2, name) {
+    if (!iso2) return '';
+    // default to 'en_XX' to be safe
+    const defaultLocale = 'en_' + iso2;
+    const ref = COUNTRY_REF.find(c => c.iso2 === iso2);
+    return ref?.locale || defaultLocale;
+  }
+
+  // Smart autofill: on name choose
+  function tryAutofillFromName() {
+    const val = (nameInput.value || '').trim().toLowerCase();
+    if (!val) return;
     const match = COUNTRY_REF.find(c => c.name.toLowerCase() === val);
     if (!match) return;
 
