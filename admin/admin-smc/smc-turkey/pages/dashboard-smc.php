@@ -317,7 +317,20 @@ function dash_if_blank($val): string {
                   </span>
                 </td>
                 <td class="text-muted">
-                
+                  <?php echo safe(formatDate($applicantData['created_at'] ?? '')); ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Right Column ===================== -->
+  <div class="flex flex-col gap-4">
+    <!-- Quick Stats Card -->
     <div class="bg-white rounded-2xl shadow-sm border">
       <div class="px-5 pt-5 pb-3">
         <h5 class="mb-0 fw-semibold">Quick Stats</h5>
