@@ -191,6 +191,22 @@ function dash_if_blank($val): string {
     color: #dc3545 !important;
     border: 1px solid rgba(220,53,69,.18) !important;
   }
+</style>
+
+<!-- ======= STATS GRID (live SMC counts) ======= -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+  <!-- Total Applicants -->
+  <div class="stat-card">
+    <div class="p-5">
+      <div class="flex items-center justify-between">
+        <h6 class="title uppercase">TOTAL APPLICANTS</h6>
+        <i class="bi bi-people text-3xl icon-faint"></i>
+      </div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['total'] ?? '')); ?></div>
+      <div class="mt-4">
+        <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Active pool</span>
+      </div>
+    </div>
   </div>
 
   <!-- Pending -->
