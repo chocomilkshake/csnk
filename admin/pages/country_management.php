@@ -482,7 +482,37 @@ function flag_emoji_from_iso2(?string $iso2): string {
                                        onclick="return confirm('<?php echo $isActive ? 'Deactivate this country?' : 'Activate this country?'; ?>');"
                                        title="<?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
                                         <i class="bi <?php echo $isActive ? 'bi-x-circle' : 'bi-check-circle'; ?>"></i>
+                                    </a>
+                                    <?php if ($canDelete): ?>
+                                        <a href="country_management.php?action=delete&id=<?php echo (int)$c['id']; ?>"
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Permanently delete this country? This cannot be undone.');"
+                                           title="Delete (no BUs linked)">
+                                            <i class="bi bi-trash3"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="country_management.php?action=edit&id=<?php echo (int)$c['id']; ?>&add_bu_for=<?php echo (int)$c['id']; ?>"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Create a Business Unit for this country">
+                                        <i class="bi bi-building-add"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
+<?php require_once '../includes/footer.php'; ?>
+
+<!-- =========================================================
+     SMART AUTOFILL (client-side only, no extra files needed)
+     - Datalist with country names
+     - Autofills ISO2, ISO3, phone, currency, tz, locale
+========================================================= -->
 <script>
 /** Minimal reference set. Extend as needed. */
 const COUNTRY_REF = [
