@@ -210,6 +210,33 @@ function dash_if_blank($val): string {
   </div>
 
   <!-- Pending -->
+  <div class="stat-card">
+    <div class="p-5">
+      <div class="flex items-center justify-between">
+        <h6 class="title uppercase">PENDING</h6>
+        <i class="bi bi-clock-history text-3xl icon-faint"></i>
+      </div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['pending'] ?? '')); ?></div>
+      <div class="mt-4">
+        <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Awaiting review</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- On Process -->
+  <div class="stat-card">
+  <!-- Deleted -->
+  <div class="stat-card">
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">No applicants yet</td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($recentApplicants as $applicantData): ?>
               <?php
                 $statusColors = ['pending'=>'warning','on_process'=>'info','approved'=>'success'];
                 $badgeColor   = $statusColors[$applicantData['status']] ?? 'secondary';
