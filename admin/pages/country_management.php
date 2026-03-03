@@ -646,4 +646,57 @@ const COUNTRY_REF = [
     currInput.value = match.currency || '';
     tzInput.value = match.tz || '';
     if (!locInput.value) locInput.value = deriveLocale(match.iso2, match.name);
-    if (!dateFmt.value) date
+    if (!dateFmt.value) dateFmt.value = 'Y-m-d';
+  }
+  nameInput?.addEventListener('change', tryAutofillFromName);
+  nameInput?.addEventListener('input', (e) => {
+    // only autofill when matches an entry (user chosen from datalist)
+    tryAutofillFromName();
+  });
+
+  // Also, if ISO2 is typed and matches, backfill other fields
+  iso2Input?.addEventListener('blur', () => {
+    const code = (iso2Input.value || '').toUpperCase();
+    const match = COUNTRY_REF.find(c => c.iso2 === code);
+    if (!match) return;
+    if (!nameInput.value) nameInput.value = match.name;
+    if (!iso3Input.value) iso3Input.value = match.iso3;
+    if (!phoneInput.value) phoneInput.value = match.phone;
+    if (!currInput.value) currInput.value = match.currency;
+    if (!tzInput.value) tzInput.value = match.tz;
+    if (!locInput.value) locInput.value = deriveLocale(match.iso2, match.name);
+    if (!dateFmt.value) dateFmt.value = 'Y-m-d';
+  });
+
+  // Simple client-side filter for table
+  tblFilter?.addEventListener('input', () => {
+    const q = (tblFilter.value || '').trim().toLowerCase();
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(tr => {
+      const n = tr.getAttribute('data-name') || '';
+      const iso2 = tr.getAttribute('data-iso2') || '';
+      tr.style.display = (n.includes(q) || iso2.includes(q)) ? '' : 'none';
+    });
+  });
+
+  // Form validation nudge
+  document.getElementById('countryForm')?.addEventListener('submit', (e) => {
+    if (iso2Input.value.length !== 2) {
+      alert('ISO2 must be 2 characters.');
+      e.preventDefault();
+      iso2Input.focus();
+      return;
+    }
+    if (iso3Input.value.length !== 3) {
+      alert('ISO3 must be 3 characters.');
+      e.preventDefault();
+      iso3Input.focus();
+      return;
+    }
+    // force uppercase properly
+    iso2Input.value = iso2Input.value.toUpperCase();
+    iso3Input.value = iso3Input.value.toUpperCase();
+    currInput.value = (currInput.value || '').toUpperCase();
+  });
+})();
+</script>
