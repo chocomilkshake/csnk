@@ -372,6 +372,22 @@ function dash_if_blank($val): string {
     </div>
   </div>
 </div>
+
+<!-- ===================== Recent Activity (Role-gated) ===================== -->
+<?php if (!empty($recentActivities) && $canSeeAdminUX): ?>
+  <div class="mt-4 bg-white rounded-2xl shadow-sm border">
+    <div class="px-5 py-4 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0 fw-semibold">Recent Activity</h5>
+        <small class="text-muted">Latest actions by admins and employees across the system.</small>
+      </div>
+      <a href="activity-logs.php" class="btn btn-sm btn-outline-secondary">
+        View all logs
+      </a>
+    </div>
+    <div class="soft-divider"></div>
+    <div class="p-0">
+      <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="bg-white">
             <tr>
