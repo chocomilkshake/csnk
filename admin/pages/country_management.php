@@ -297,7 +297,19 @@ function flag_emoji_from_iso2(?string $iso2): string {
         <div class="card-header bg-white border-bottom-0 pt-3">
             <h6 class="mb-0"><?php echo $editCountry ? 'Edit Country' : 'Add New Country'; ?></h6>
         </div>
-        <div class="card-body">uired>
+        <div class="card-body">
+            <form action="country_management.php" method="POST" id="countryForm" novalidate>
+                <?php if ($editCountry): ?>
+                    <input type="hidden" name="id" value="<?php echo (int)$editCountry['id']; ?>">
+                <?php endif; ?>
+
+                <!-- Smart Country picker -->
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Country Name <span class="text-danger">*</span></label>
+                        <input list="countryList" name="name" id="countryName" class="form-control"
+                               placeholder="e.g. Philippines"
+                               value="<?php echo h($editCountry['name'] ?? ''); ?>" required>
                         <datalist id="" maxlength="3"
                                placeholder="PHL" value="<?php echo h($editCountry['iso3'] ?? ''); ?>" required>
                     </div>
