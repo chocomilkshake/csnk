@@ -230,15 +230,23 @@ $smcConn = $conn;
 $shouldCalculateSMC = ($isAdmin || $isSuperAdmin || $userAgency === 'smc');
 
 if ($shouldCalculateSMC && $conn instanceof mysqli) {
-    // Find SMC BU for counts - use current BU if it's SMC, otherwise find first SMC BU
-    $sqlFindSMCBu = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1 ORDER BY bu.id ASC LIMIT 1";
-    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $smcRow = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-        if (!empty($smcRow['id'])) {
-            $smcBuId = (int) $smcRow['id'];
+    // Use previously stored SMC BU ID from session (set when visiting SMC pages)
+    // This prevents SMC pages from overwriting the main CSNK BU session
+    if (!empty($_SESSION['smc_bu_id'])) {
+        $smcBuId = (int) $_SESSION['smc_bu_id'];
+    } else {
+        // Fallback: Find SMC BU if not already stored in session
+        $sqlFindSMCBu = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1 ORDER BY bu.id ASC LIMIT 1";
+        if ($stmt = $conn->prepare($sqlFindSMCBu)) {
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $smcRow = $res ? $res->fetch_assoc() : null;
+            $stmt->close();
+            if (!empty($smcRow['id'])) {
+                $smcBuId = (int) $smcRow['id'];
+                // Store for future use
+                $_SESSION['smc_bu_id'] = $smcBuId;
+            }
         }
     }
 
