@@ -409,6 +409,33 @@ function dash_if_blank($val): string {
                 <td>
                   <div class="fw-semibold"><?php echo safe($displayName); ?></div>
                   <div class="text-muted small"><?php echo safe($log['username'] ?? ''); ?></div>
+                </td>
+                <td>
+                  <?php if ($roleLabel !== ''): ?>
+                    <span class="badge bg-light text-dark text-capitalize">
+                      <?php echo safe(str_replace('_', ' ', $roleLabel)); ?>
+                    </span>
+                  <?php else: ?>
+                    <span class="text-muted">—</span>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <?php echo safe($log['action'] ?? ''); ?>
+                  </span>
+                </td>
+                <td class="text-truncate" style="max-width: 420px;">
+                  <?php echo safe($log['description'] ?? '—'); ?>
+                </td>
+                <td><span class="text-muted"><?php echo safe(formatDateTime($log['created_at'] ?? '')); ?></span></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
 
 <!-- ===================== Blacklisted Applicants (Role-gated) ===================== -->
 <?php if ($canSeeAdminUX): ?>
