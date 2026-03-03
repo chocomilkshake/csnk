@@ -442,6 +442,23 @@ function dash_if_blank($val): string {
   <div class="mt-4 bg-white rounded-2xl shadow-sm border">
     <div class="px-5 py-4 d-flex justify-content-between align-items-center">
       <div>
+        <h5 class="mb-0 fw-semibold">
+          <i class="bi bi-slash-circle me-2 text-danger"></i>Blacklisted Applicants
+        </h5>
+        <small class="text-muted">Applicants who have violated company or client policies.</small>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <span class="badge bg-primary-subtle text-primary px-3 py-2">
+          <i class="bi bi-exclamation-triangle me-1"></i><?php echo dash_if_blank((string)$blacklistedCount); ?> Total
+        </span>
+        <a href="blacklisted.php" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-arrow-right me-1"></i>View All
+        </a>
+      </div>
+    </div>
+    <div class="soft-divider"></div>
+    <div class="p-0">
+      <?php if (empty($blacklistedApplicants)): ?>
         <div class="text-center py-5">
           <i class="bi bi-check-circle" style="font-size: 3rem; color:#198754;"></i>
           <p class="text-muted mt-3 mb-0">No blacklisted applicants at this time.</p>
