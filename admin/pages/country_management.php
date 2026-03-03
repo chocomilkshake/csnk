@@ -335,7 +335,23 @@ function flag_emoji_from_iso2(?string $iso2): string {
                                placeholder="+63" value="<?php echo h($editCountry['phone_country_code'] ?? ''); ?>">
                     </div>
                     <div class="col-md-3">
-                        <l
+                        <label class="form-label small fw-bold">Currency Code</label>
+                        <input type="text" name="currency_code" id="currency_code" class="form-control" maxlength="3"
+                               placeholder="PHP" value="<?php echo h($editCountry['currency_code'] ?? ''); ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Locale</label>
+                        <input type="text" name="locale" id="locale" class="form-control"
+                               placeholder="en_PH" value="<?php echo h($editCountry['locale'] ?? ''); ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Date Format</label>
+                        <input type="text" name="date_format" id="date_format" class="form-control"
+                               placeholder="Y-m-d" value="<?php echo h($editCountry['date_format'] ?? 'Y-m-d'); ?>">
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="active" id="activeSwitch"
                                    <?php echo (!isset($editCountry) || ($editCountry['active'] ?? 1)) ? 'checked' : ''; ?>>
                             <label class="form-check-label" for="activeSwitch">Country is Active</label>
