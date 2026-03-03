@@ -534,7 +534,34 @@ const COUNTRY_REF = [
   {name:'China',iso2:'CN',iso3:'CHN',phone:'+86',currency:'CNY',tz:'Asia/Shanghai',locale:'zh_CN'},
   {name:'Czechia',iso2:'CZ',iso3:'CZE',phone:'+420',currency:'CZK',tz:'Europe/Prague',locale:'cs_CZ'},
   {name:'Denmark',iso2:'DK',iso3:'DNK',phone:'+45',currency:'DKK',tz:'Europe/Copenhagen',locale:'da_DK'},
-  {name:'Egyptch(n => {
+  {name:'Egypt',iso2:'EG',iso3:'EGY',phone:'+20',currency:'EGP',tz:'Africa/Cairo',locale:'ar_EG'},
+  {name:'France',iso2:'FR',iso3:'FRA',phone:'+33',currency:'EUR',tz:'Europe/Paris',locale:'fr_FR'},
+  {name:'Germany',iso2:'DE',iso3:'DEU',phone:'+49',currency:'EUR',tz:'Europe/Berlin',locale:'de_DE'},
+  {name:'Greece',iso2:'GR',iso3:'GRC',phone:'+30',currency:'EUR',tz:'Europe/Athens',locale:'el_GR'},
+  {name:'Hong Kong',iso2:'HK',iso3:'HKG',phone:'+852',currency:'HKD',tz:'Asia/Hong_Kong',locale:'zh_HK'},
+  {name:'India',iso2:'IN',iso3:'IND',phone:'+91',currency:'INR',tz:'Asia/Kolkata',locale:'en_IN'},
+  {name:'Indonesia',iso2:'ID',iso3:'IDN',phone:'+62',currency:'IDR',tz:'Asia/Jakarta',locale:'id_ID'},
+  {name:'Iran',iso2:'IR',iso3:'IRN',phone:'+98',currency:'IRR',tz:'Asia/Tehran',locale:'fa_IR'},
+  {name:'Iraq',iso2:'IQ',iso3:'IRQ',phone:'+964',currency:'IQD',tz:'Asia/Baghdad',locale:'ar_IQ'},
+  {name:'Ireland',iso2:'IE',iso3:'IRL',phone:'+353',currency:'EUR',tz:'Europe/Dublin',locale:'en_IE'},
+  {name:'Israel',iso2:'IL',iso3:'ISR',phone:'+972',currency:'ILS',tz:'Asia/Jerusalem',locale:'he_IL'},
+  {name:'Italy',iso2:'IT',iso3:'ITA',phone:'+39',currency:'EUR',tz:'Europe/Rome',locale:'it_IT'},
+  {name:'Japan',iso2:'JP',iso3:'JPN',phone:'+81',currency:'JPY',tz:'Asia/Tokyo',locale:'ja_JP'},
+  {name:'Jordan',iso2:'JO',iso3:'JOR',phone:'+962',currency:'JOD',tz:'Asia/Amman',locale:'ar_JO'},
+  {name:'Kenya',iso2:'KE',iso3:'KEN',phone:'+254',currency:'KES',tz:'Africa/Nairobi',locale:'en_KE'},
+  {name:'Kuwait',iso2:'KW',iso3:'KWT',phone:'+965',currency:'KWD',tz:'Asia/Kuwait',locale:'ar_KW'},
+  {name:'Laos',iso2:'LA',iso3:'LAO',phone:'+856',currency:'LAK',tz:'Asia/Vientiane',locale:'lo_LA'},
+  {name:'Lebanon',iso2:'LB',iso3:'LBN',phone:'+961',currency:'LBP',tz:'Asia/Beirut',locale:'ar_LB'},
+  {name:'Malaysia',iso2:'MY',iso3:'MYS',phone:'+60',currency:'MYR',tz:'Asia/Kuala_Lumpur',locale:'ms_MY'},
+  {name:'Mexico',iso2:'MX',iso3:'MEX',phone:'+52',currency:'MXN',tz:'America/Mexico_City',locale:'es_MX'},
+  {name:'Morocco',iso2:'MA',iso3:'MAR',phone:'+212',currency:'MAD',tz:'Africa/Casablanca',locale:'ar_MA'},
+  {name:'Myanmar',iso2:'MM',iso3:'MMR',phone:'+95',currency:'MMK',tz:'Asia/Yangon',locale:'my_MM'},
+  {name:'Nepal',iso2:'NP',iso3:'NPL',phone:'+977',currency:'NPR',tz:'Asia/Kathmandu',locale:'ne_NP'},
+  {name:'Netherlands',iso2:'NL',iso3:'NLD',phone:'+31',currency:'EUR',tz:'Europe/Amsterdam',locale:'nl_NL'},
+  {name:'New Zealand',iso2:'NZ',iso3:'NZL',phone:'+64',currency:'NZD',tz:'Pacific/Auckland',locale:'en_NZ'},
+  {name:'Oman',iso2:'OM',iso3:'OMN',phone:'+968',currency:'OMR',tz:'Asia/Muscat',locale:'ar_OM'},
+
+  COUNTRY_REF.map(c => c.name).sort().forEach(n => {
     const opt = document.createElement('option');
     opt.value = n;
     datalist.appendChild(opt);
