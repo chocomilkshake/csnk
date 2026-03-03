@@ -342,7 +342,14 @@ function dash_if_blank($val): string {
           <strong><?php echo dash_if_blank((string)$adminCount); ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-          <span class="text-mu
+          <span class="text-muted">Active Applicants</span>
+          <strong><?php echo dash_if_blank((string)($stats['total'] ?? '')); ?></strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2">
+          <span class="text-muted">System Status</span>
+          <span class="badge bg-success">Online</span>
+        </div>
+      </div>
     </div>
 
     <!-- Quick Actions -->
