@@ -263,6 +263,20 @@ function dash_if_blank($val): string {
         </div>
       </div>
     </div>
+    <div class="soft-divider"></div>
+    <div class="p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-white">
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Date Applied</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php if (empty($recentApplicants)): ?>
             <tr>
               <td colspan="4" class="text-center text-muted py-4">No applicants yet</td>
             </tr>
