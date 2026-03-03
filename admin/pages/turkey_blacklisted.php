@@ -37,7 +37,8 @@ if ($conn instanceof mysqli) {
         $stmt->close();
         if (!empty($row['id'])) {
             $smcBuId = (int) $row['id'];
-            $_SESSION['current_bu_id'] = $smcBuId;
+            // Store SMC BU ID in separate session variable to avoid overwriting CSNK BU
+            $_SESSION['smc_bu_id'] = $smcBuId;
         }
     }
 }
@@ -162,7 +163,8 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                                         <?php else: ?>
                                             <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
                                                 style="width: 50px; height: 50px;">
-                                                <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?></div>
+                                                <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
+                                            </div>
                                         <?php endif; ?>
                                     </td>
                                     <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
