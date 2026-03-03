@@ -498,7 +498,19 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                                 $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
                                 $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
                                 $appBuId = (int) ($app['business_unit_id'] ?? 0);
-                                $canEdit = ($isSuperAdmin || $isAdmin) || ($isEmployee && $appBuId === $currentBuId);
+
+                                // Check if employee can edit/delete this applicant
+                                // For super_admin/admin: can edit/delete all
+                                // For employee: Since this is the SMC page, allow all employees full access to all SMC applicants
+                                $canEdit = false;
+
+                                if ($isSuperAdmin || $isAdmin) {
+                                    $canEdit = true;
+                                } elseif ($isEmployee) {
+                                    // All employees on this SMC page can edit all SMC applicants
+                                    $canEdit = true;
+                                }
+
                                 $statusColors = ['pending' => 'warning', 'on_process' => 'info', 'approved' => 'success', 'deleted' => 'secondary'];
                                 $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
                                 ?>
