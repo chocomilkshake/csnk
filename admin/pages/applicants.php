@@ -116,13 +116,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
  * Load applicants and apply filters.
  * getAll() → show active/non-deleted applicants across statuses.
  * Filter by business_unit_id if user has restricted access (not global admin).
+ * Filter by agency if user is an employee (CSNK or SMC).
  */
+
+// Determine user's agency for filtering
+$userAgency = $auth->getAgency(); // 'csnk', 'smc', or null for admin/super_admin
+
+// For employees, restrict to their agency
+$filterAgency = null;
+if ($currentRole === 'employee' && $userAgency !== null) {
+    $filterAgency = $userAgency;
+}
+
 if ($hasGlobalAccess) {
-    // Admin/Super Admin: show all applicants
-    $applicants = $applicant->getAll();
+    // Admin/Super Admin: show all applicants (optionally filter by agency if specified)
+    $applicants = $applicant->getAll(null, null, $filterAgency);
 } else {
     // Employee: show only applicants from their allowed business units
-    $applicants = $applicant->getAll(null, $currentBuId);
+    $applicants = $applicant->getAll(null, $currentBuId, $filterAgency);
 }
 
 /**
