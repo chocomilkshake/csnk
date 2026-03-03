@@ -429,7 +429,17 @@ function flag_emoji_from_iso2(?string $iso2): string {
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-3">ID</th>
-
+                        <th>Name</th>
+                        <th>Codes</th>
+                        <th>Phone</th>
+                        <th>Currency</th>
+                        <th>Locale</th>
+                        <th class="text-center"># BUs</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php if (empty($countries)): ?>
                         <tr><td colspan="9" class="text-center py-4 text-muted">No countries found.</td></tr>
                     <?php else: foreach ($countries as $c): ?>
