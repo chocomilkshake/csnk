@@ -310,7 +310,17 @@ function flag_emoji_from_iso2(?string $iso2): string {
                         <input list="countryList" name="name" id="countryName" class="form-control"
                                placeholder="e.g. Philippines"
                                value="<?php echo h($editCountry['name'] ?? ''); ?>" required>
-                        <datalist id="" maxlength="3"
+                        <datalist id="countryList"><!-- populated by JS --></datalist>
+                        <div class="form-text">Tip: Pick from the list to auto-fill ISO, phone, currency, timezone and locale.</div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">ISO2 <span class="text-danger">*</span></label>
+                        <input type="text" name="iso2" id="iso2" class="form-control" maxlength="2"
+                               placeholder="PH" value="<?php echo h($editCountry['iso2'] ?? ''); ?>" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">ISO3 <span class="text-danger">*</span></label>
+                        <input type="text" name="iso3" id="iso3" class="form-control" maxlength="3"
                                placeholder="PHL" value="<?php echo h($editCountry['iso3'] ?? ''); ?>" required>
                     </div>
                     <div class="col-md-3">
