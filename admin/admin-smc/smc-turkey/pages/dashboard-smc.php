@@ -308,6 +308,16 @@ function dash_if_blank($val): string {
                     </strong>
                   </div>
                 </td>
+                <td class="text-muted">
+                  <?php echo safe($applicantData['phone_number'] ?? '—'); ?>
+                </td>
+                <td>
+                  <span class="badge bg-<?php ec
+      <div class="soft-divider"></div>
+      <div class="p-5 pt-4">
+        <div class="d-flex justify-co
+      </div>
+      <div class="sow-100">
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
       </div>
