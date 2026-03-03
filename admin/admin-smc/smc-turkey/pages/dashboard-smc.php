@@ -1,28 +1,151 @@
 <?php
-// dashboard-turkey.php (SMC - Turkey)
-// Same UI/UX as dashboard.php, but theme for entity boxes only (dark navy + gold)
-// Data is intentionally blank (no DB calls). Sidebar and global layout remain untouched.
+// dashboard-smc.php (SMC)
+// Same UX as CSNK dashboard, but SMC theme (dark navy + gold) and SMC-scoped data.
 
-$pageTitle = 'SMC Dashboard';
-require_once '../includes/header.php';
-
-// ---------------------- BLANK DATA SETUP ---------------------- //
-$stats = [
-  'total'      => null,
-  'pending'    => null,
-  'on_process' => null,
-  'deleted'    => null
+// ---------- SAFE INCLUDES (with fallbacks) ----------
+$tryIncludes = [
+  // Local SMC includes (one level up from pages/)
+  realpath(__DIR__ . '/../includes'),
+  // Global admin includes (three levels up from pages/)
+  realpath(__DIR__ . '/../../../includes'),
 ];
 
-$recentApplicants      = []; // blank list
-$adminCount            = null;
-$currentRole           = $currentUser['role'] ?? 'employee';
-$isSuperAdmin          = ($currentRole === 'super_admin');
-$isAdmin               = ($currentRole === 'admin');
-$canSeeAdminUX         = ($isAdmin || $isSuperAdmin);
-$recentActivities      = []; // blank list
-$blacklistedApplicants = []; // blank list
-$blacklistedCount      = null;
+// Header (required in both stacks)
+$headerIncluded = false;
+foreach ($tryIncludes as $inc) {
+  if ($inc && file_exists($inc . '/header.php')) {
+    require_once $inc . '/header.php';
+    $headerIncluded = true;
+    break;
+  }
+}
+if (!$headerIncluded) {
+  die("Fatal: header.php not found in expected include paths.");
+}
+
+// Applicant (SMC-scoped version should be findable under SMC includes first)
+$applicantIncluded = false;
+foreach ($tryIncludes as $inc) {
+  if ($inc && file_exists($inc . '/Applicant.php')) {
+    require_once $inc . '/Applicant.php';
+    $applicantIncluded = true;
+    break;
+  }
+}
+if (!$applicantIncluded) {
+  die("Fatal: Applicant.php not found in expected include paths.");
+}
+
+// Admin (may exist only in global admin/includes)
+$adminIncluded = false;
+foreach ($tryIncludes as $inc) {
+  if ($inc && file_exists($inc . '/Admin.php')) {
+    require_once $inc . '/Admin.php';
+    $adminIncluded = true;
+    break;
+  }
+}
+if (!$adminIncluded) {
+  die("Fatal: Admin.php not found in expected include paths.");
+}
+
+// ---------- LIVE DATA (SMC-SCOPED VIA Applicant.php) ----------
+$applicant = new Applicant($database);  // This file should be SMC-scoped (ag.code='smc') as we implemented
+$admin     = new Admin($database);
+
+$stats            = $applicant->getStatistics();           // total, pending, on_process, deleted (SMC-only)
+$recentApplicants = array_slice($applicant->getAll(), 0, 5);
+// Only count admin and employee accounts (exclude super_admin)
+$adminCount       = count($admin->getAll(true));
+
+// Role flags from header.php
+$currentRole   = $currentUser['role'] ?? 'employee';
+$isSuperAdmin  = ($currentRole === 'super_admin');
+$isAdmin       = ($currentRole === 'admin');
+$canSeeAdminUX = ($isAdmin || $isSuperAdmin);
+
+/* ---------------------- Recent activity logs ---------------------- *
+ * Admin:    hide super_admin logs + remove unknowns (INNER JOIN).
+ * SuperAdmin: show all but still remove unknowns (INNER JOIN).
+ * (No agency-scoping here because activity_logs has no agency field)
+ */
+$recentActivities = [];
+if (!empty($currentUser) && $canSeeAdminUX) {
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        $sql = "
+            SELECT al.id,
+                   al.action,
+                   al.description,
+                   al.created_at,
+                   au.full_name,
+                   au.username,
+                   au.role
+            FROM activity_logs AS al
+            INNER JOIN admin_users AS au ON al.admin_id = au.id
+        ";
+        if ($isAdmin) {
+            $sql .= " WHERE COALESCE(au.role,'') <> 'super_admin' ";
+        }
+        $sql .= " ORDER BY al.created_at DESC LIMIT 8";
+
+        if ($result = $conn->query($sql)) {
+            $recentActivities = $result->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+}
+
+/* ---------------------- Blacklisted Applicants (SMC-only) ---------------------- *
+ * We scope to SMC by joining applicants -> business_units -> agencies and ag.code='smc'
+ */
+$blacklistedApplicants = [];
+$blacklistedCount      = 0;
+if (!empty($currentUser) && $canSeeAdminUX) {
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        // Count (SMC-only)
+        $countSql = "
+            SELECT COUNT(*)
+            FROM blacklisted_applicants b
+            INNER JOIN applicants a ON a.id = b.applicant_id
+            INNER JOIN business_units bu ON bu.id = a.business_unit_id
+            INNER JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE b.is_active = 1
+              AND ag.code = 'smc'
+        ";
+        if ($countResult = $conn->query($countSql)) {
+            $blacklistedCount = (int)$countResult->fetch_row()[0];
+        }
+
+        // Recent active blacklists (SMC-only)
+        $sql = "
+            SELECT
+                b.id,
+                b.applicant_id,
+                b.reason,
+                b.issue,
+                b.created_at,
+                a.first_name,
+                a.middle_name,
+                a.last_name,
+                a.suffix,
+                au.full_name AS created_by_name,
+                au.username   AS created_by_username
+            FROM blacklisted_applicants b
+            INNER JOIN applicants     a  ON a.id = b.applicant_id
+            INNER JOIN business_units bu ON bu.id = a.business_unit_id
+            INNER JOIN agencies       ag ON ag.id = bu.agency_id
+            LEFT  JOIN admin_users    au ON au.id = b.created_by
+            WHERE b.is_active = 1
+              AND ag.code = 'smc'
+            ORDER BY b.created_at DESC
+            LIMIT 5
+        ";
+        if ($result = $conn->query($sql)) {
+            $blacklistedApplicants = $result->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+}
 
 // ---------------------- HELPERS ---------------------- //
 function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
@@ -32,15 +155,14 @@ function dash_if_blank($val): string {
 }
 ?>
 
-<!-- Keep page white; only box entities get special theme -->
-<!-- Tailwind utilities (kept minimal) layered on top of Bootstrap -->
+<!-- Tailwind utilities layered on top of Bootstrap -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = { theme:{ extend:{} } };
 </script>
 
 <style>
-  /* ===================== ENTITY BOX THEME ONLY ===================== */
+  /* ===================== ENTITY BOX THEME ONLY (SMC) ===================== */
   .stat-card {
     border-radius: 16px;
     overflow: hidden;
@@ -48,16 +170,9 @@ function dash_if_blank($val): string {
     background: radial-gradient(1200px 320px at -20% -20%, rgba(243,217,139,.35) 0%, #0b1d3a 45%, #0a1220 100%);
     color: #f7f7f8;
   }
-  .stat-card .title {
-    letter-spacing: .06em;
-    opacity: .85;
-  }
-  .stat-card .icon-faint {
-    color: #d4af37; opacity: .9;
-  }
-  .stat-card .big {
-    font-weight: 800; font-size: 2.25rem; line-height: 1.1;
-  }
+  .stat-card .title { letter-spacing: .06em; opacity: .85; }
+  .stat-card .icon-faint { color: #d4af37; opacity: .9; }
+  .stat-card .big { font-weight: 800; font-size: 2.25rem; line-height: 1.1; }
   .stat-chip {
     display:flex; align-items:center; gap:.5rem;
     padding:.45rem .85rem; border-radius: 999px;
@@ -65,11 +180,7 @@ function dash_if_blank($val): string {
     border:1px solid rgba(212,175,55,.28);
   }
   .soft-divider { height:1px; background:#eef2f7; }
-
-  /* Table hover stays subtle on white */
   .table-hover tbody tr:hover { background-color: rgba(0,0,0,.035); }
-
-  /* Small badges for neutral/dark text on white */
   .badge.bg-primary-subtle {
     background-color: rgba(13,110,253,.08) !important;
     color: #0d6efd !important;
@@ -82,7 +193,7 @@ function dash_if_blank($val): string {
   }
 </style>
 
-<!-- ======= STATS GRID (blank counts) ======= -->
+<!-- ======= STATS GRID (live SMC counts) ======= -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
   <!-- Total Applicants -->
   <div class="stat-card">
@@ -91,7 +202,7 @@ function dash_if_blank($val): string {
         <h6 class="title uppercase">TOTAL APPLICANTS</h6>
         <i class="bi bi-people text-3xl icon-faint"></i>
       </div>
-      <div class="mt-3 big"><?php echo dash_if_blank($stats['total']); ?></div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['total'] ?? '')); ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Active pool</span>
       </div>
@@ -105,7 +216,7 @@ function dash_if_blank($val): string {
         <h6 class="title uppercase">PENDING</h6>
         <i class="bi bi-clock-history text-3xl icon-faint"></i>
       </div>
-      <div class="mt-3 big"><?php echo dash_if_blank($stats['pending']); ?></div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['pending'] ?? '')); ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Awaiting review</span>
       </div>
@@ -119,7 +230,7 @@ function dash_if_blank($val): string {
         <h6 class="title uppercase">ON PROCESS</h6>
         <i class="bi bi-hourglass-split text-3xl icon-faint"></i>
       </div>
-      <div class="mt-3 big"><?php echo dash_if_blank($stats['on_process']); ?></div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['on_process'] ?? '')); ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Actively handled</span>
       </div>
@@ -133,7 +244,7 @@ function dash_if_blank($val): string {
         <h6 class="title uppercase">DELETED</h6>
         <i class="bi bi-trash text-3xl icon-faint"></i>
       </div>
-      <div class="mt-3 big"><?php echo dash_if_blank($stats['deleted']); ?></div>
+      <div class="mt-3 big"><?php echo dash_if_blank((string)($stats['deleted'] ?? '')); ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full" style="background:#f3d98b"></span> Soft removed</span>
       </div>
@@ -142,7 +253,7 @@ function dash_if_blank($val): string {
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-  <!-- ===================== Recent Applicants (Blank) ===================== -->
+  <!-- ===================== Recent Applicants (SMC) ===================== -->
   <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border">
     <div class="px-5 pt-5 pb-3">
       <div class="d-flex align-items-center justify-content-between">
@@ -228,11 +339,11 @@ function dash_if_blank($val): string {
       <div class="p-5 pt-4">
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <span class="text-muted">Staff (Admin &amp; Employee)</span>
-          <strong><?php echo dash_if_blank($adminCount); ?></strong>
+          <strong><?php echo dash_if_blank((string)$adminCount); ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <span class="text-muted">Active Applicants</span>
-          <strong><?php echo dash_if_blank($stats['total']); ?></strong>
+          <strong><?php echo dash_if_blank((string)($stats['total'] ?? '')); ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2">
           <span class="text-muted">System Status</span>
@@ -338,7 +449,7 @@ function dash_if_blank($val): string {
       </div>
       <div class="d-flex align-items-center gap-3">
         <span class="badge bg-primary-subtle text-primary px-3 py-2">
-          <i class="bi bi-exclamation-triangle me-1"></i><?php echo dash_if_blank($blacklistedCount); ?> Total
+          <i class="bi bi-exclamation-triangle me-1"></i><?php echo dash_if_blank((string)$blacklistedCount); ?> Total
         </span>
         <a href="blacklisted.php" class="btn btn-sm btn-outline-primary">
           <i class="bi bi-arrow-right me-1"></i>View All
@@ -373,7 +484,7 @@ function dash_if_blank($val): string {
                     $bl['last_name'] ?? '',
                     $bl['suffix'] ?? ''
                   );
-                  $createdBy = $bl['created_by_name'] ?: ($bl['created_by_username'] ?: 'System');
+                  $createdBy = ($bl['created_by_name'] ?? '') ?: (($bl['created_by_username'] ?? '') ?: 'System');
                   $when      = formatDateTime($bl['created_at'] ?? '');
                   $viewUrl   = 'view-applicant.php?id=' . (int)($bl['applicant_id'] ?? 0);
                 ?>
@@ -422,4 +533,4 @@ function dash_if_blank($val): string {
   setInterval(function(){ location.reload(); }, 60000);
 </script>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once $tryIncludes[0] . '/footer.php'; // prefer local footer if available, else header already fatal'd above ?>

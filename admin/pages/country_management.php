@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
             // AUTO-CREATE BU (hidden logic) — only on ADD
             if ($ok) {
                 // Build defaults if not provided (hidden fields)
-                if ($bu_agency_id <= 0) $bu_agency_id = 0;
+                if ($bu_agency_id <= 0) $bu_agency_id = 2;
                 if ($bu_active !== 0 && $bu_active !== 1) $bu_active = 1;
                 if ($bu_code === '') $bu_code = 'SMC-' . $iso2;
                 if ($bu_name === '') $bu_name = 'SMC ' . $name;
@@ -706,7 +706,7 @@ function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
   function suggestBU() {
     const code = (iso2?.value || '').toUpperCase();
     const nm   = (name?.value || '').trim();
-    if (buAgency && !buAgency.value) buAgency.value = '0';
+    if (buAgency && !buAgency.value) buAgency.value = '2';
     if (buActive && !buActive.value) buActive.value = '1';
     if (buCode) buCode.value = code ? `SMC-${code}` : '';
     if (buName) buName.value = nm ? `SMC ${nm}` : '';
