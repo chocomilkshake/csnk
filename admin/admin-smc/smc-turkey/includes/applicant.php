@@ -1,20 +1,23 @@
 <?php
 /**
  * FILE: includes/Applicant.php
- * BU-aware Applicant data access aligned with csnk.sql (composite FKs on applicant children).
+ * BU-aware Applicant data access (SMC-scoped).
+ *
+ * SMC Scope:
+ * - All read queries are forced to agency = 'smc' by joining business_units -> agencies and filtering ag.code='smc'.
  *
  * Key alignments:
  * - applicant_documents: requires (applicant_id, business_unit_id), document_type (enum), document_type_id (nullable)
- * - applicant_reports / applicant_status_reports: require business_unit_id in your csnk.sql
+ * - applicant_reports / applicant_status_reports: require business_unit_id in your schema
  * - client_bookings: composite FKs to (applicant_id, business_unit_id)
  *
- * This class focuses on full feature parity with CSNK while keeping SMC BU safety:
+ * Features:
  *  - create / update applicant
  *  - add/get/delete documents with BU guard
  *  - update video fields (with optional BU guard)
- *  - business units / country filters (SMC-friendly)
+ *  - business units / country filters (SMC-only)
  *  - lifecycle helpers (soft delete/restore/status)
- *  - statistics & latest booking (BU-aware)
+ *  - statistics & latest booking (SMC-only)
  *  - replacement workflow (selection → assign) with BU-safe booking reassignment
  */
 
@@ -22,6 +25,9 @@ class Applicant
 {
     /** @var mysqli */
     private $db;
+
+    /** Agency code for this class scope */
+    private const AGENCY_CODE = 'smc';
 
     public function __construct($database)
     {
@@ -34,14 +40,16 @@ class Applicant
 
     /**
      * Get business units with country and agency, optional active filter.
-     * Optionally filter by agency code (e.g., 'smc' or 'csnk') and/or allowed BU IDs.
+     * Optionally filter by allowed BU IDs.
+     *
+     * NOTE: Default agency is SMC.
      *
      * @param bool        $activeOnly
-     * @param string|null $agencyCode  e.g., 'smc' or 'csnk'
+     * @param string|null $agencyCode  (defaults to 'smc')
      * @param array|null  $allowedBuIds Only return these BU ids (if provided)
      * @return array
      */
-    public function getAllBusinessUnits(bool $activeOnly = true, ?string $agencyCode = null, ?array $allowedBuIds = null): array
+    public function getAllBusinessUnits(bool $activeOnly = true, ?string $agencyCode = self::AGENCY_CODE, ?array $allowedBuIds = null): array
     {
         $where = [];
         $params = [];
@@ -71,7 +79,6 @@ class Applicant
             $params[] = $agencyCode;
         }
         if (!empty($allowedBuIds)) {
-            // Securely filter numeric allowed IDs
             $safeIds = array_values(array_filter(array_map('intval', $allowedBuIds), fn($v) => $v > 0));
             if (!empty($safeIds)) {
                 $in = implode(',', array_fill(0, count($safeIds), '?'));
@@ -105,7 +112,7 @@ class Applicant
     /**
      * Convenience: SMC business units only, with optional allowed BU filter.
      */
-    public function getBusinessUnitsByAgency(string $agencyCode, bool $activeOnly = true, ?array $allowedBuIds = null): array
+    public function getBusinessUnitsByAgency(string $agencyCode = self::AGENCY_CODE, bool $activeOnly = true, ?array $allowedBuIds = null): array
     {
         return $this->getAllBusinessUnits($activeOnly, $agencyCode, $allowedBuIds);
     }
@@ -147,7 +154,6 @@ class Applicant
         $rows = $res2 ? $res2->fetch_all(MYSQLI_ASSOC) : [];
         $stmt2->close();
 
-        // Normalize keys
         foreach ($rows as &$r) {
             $r['id'] = isset($r['id']) ? (int) $r['id'] : null;
             $r['label'] = (string) ($r['label'] ?? $r['code'] ?? '');
@@ -225,7 +231,7 @@ class Applicant
      */
     public function create(array $data)
     {
-        // Normalize daily_rate from input (optional, not always provided from SMC UI)
+        // Normalize daily_rate from input (optional)
         $dailyRate = null;
         if (isset($data['daily_rate']) && $data['daily_rate'] !== '') {
             $dailyRate = round((float) $data['daily_rate'], 2);
@@ -483,19 +489,36 @@ class Applicant
 
     /**
      * Get single applicant; if BU provided, restrict to that BU.
+     * SMC-scoped.
      */
     public function getById(int $id, ?int $businessUnitId = null): ?array
     {
         if ($businessUnitId !== null) {
-            $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? AND business_unit_id = ? LIMIT 1");
+            $stmt = $this->db->prepare("
+                SELECT a.*
+                FROM applicants a
+                JOIN business_units bu ON bu.id = a.business_unit_id
+                JOIN agencies ag ON ag.id = bu.agency_id
+                WHERE a.id = ? AND a.business_unit_id = ? AND ag.code = ?
+                LIMIT 1
+            ");
             if (!$stmt)
                 return null;
-            $stmt->bind_param("ii", $id, $businessUnitId);
+            $ag = self::AGENCY_CODE;
+            $stmt->bind_param("iis", $id, $businessUnitId, $ag);
         } else {
-            $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
+            $stmt = $this->db->prepare("
+                SELECT a.*
+                FROM applicants a
+                JOIN business_units bu ON bu.id = a.business_unit_id
+                JOIN agencies ag ON ag.id = bu.agency_id
+                WHERE a.id = ? AND ag.code = ?
+                LIMIT 1
+            ");
             if (!$stmt)
                 return null;
-            $stmt->bind_param("i", $id);
+            $ag = self::AGENCY_CODE;
+            $stmt->bind_param("is", $id, $ag);
         }
         $stmt->execute();
         $res = $stmt->get_result();
@@ -507,12 +530,13 @@ class Applicant
     /**
      * Get all applicants (optionally by a single status and BU).
      * Excludes blacklisted (active) and soft-deleted.
+     * SMC-scoped.
      */
     public function getAll(?string $status = null, ?int $businessUnitId = null): array
     {
         $where = [];
-        $types = '';
-        $params = [];
+        $types = 's'; // for agency code
+        $params = [self::AGENCY_CODE];
 
         if ($businessUnitId !== null && $businessUnitId > 0) {
             $where[] = "a.business_unit_id = ?";
@@ -532,24 +556,26 @@ class Applicant
             $params[] = $status;
         }
 
-        $sql = "SELECT a.* FROM applicants a WHERE " . implode(" AND ", $where) . " ORDER BY a.created_at DESC";
+        $sql = "
+            SELECT a.*
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = ? AND " . implode(" AND ", $where) . "
+            ORDER BY a.created_at DESC
+        ";
 
-        if (!empty($params)) {
-            $stmt = $this->db->prepare($sql);
-            if (!$stmt) {
-                error_log('Prepare failed (getAll): ' . $this->db->error);
-                return [];
-            }
-            $this->bindByRef($stmt, $types, $params);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-            $stmt->close();
-            return $rows;
-        } else {
-            $res = $this->db->query($sql);
-            return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('Prepare failed (getAll): ' . $this->db->error);
+            return [];
         }
+        $this->bindByRef($stmt, $types, $params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+        return $rows;
     }
 
     /**
@@ -557,41 +583,59 @@ class Applicant
      * - Returns only non-deleted, non-approved applicants
      *   i.e., status IN ('pending','on_process').
      * - Ordered by created_at DESC.
+     * SMC-scoped.
      */
     public function getAllForPublic(): array
     {
-        $sql = "SELECT *
-                FROM applicants
-                WHERE deleted_at IS NULL
-                  AND status IN ('pending','on_process')
-                  AND NOT EXISTS (
-                    SELECT 1 FROM blacklisted_applicants b
-                    WHERE b.applicant_id = applicants.id AND b.is_active = 1
-                  )
-                ORDER BY created_at DESC";
-        $res = $this->db->query($sql);
-        if (!$res)
-            return [];
-        return $res->fetch_all(MYSQLI_ASSOC);
+        $ag = self::AGENCY_CODE;
+        $sql = "
+            SELECT a.*
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = ?
+              AND a.deleted_at IS NULL
+              AND a.status IN ('pending','on_process')
+              AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+            ORDER BY a.created_at DESC
+        ";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) return [];
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
     /**
-     * Get all soft-deleted applicants (excludes actively blacklisted)
+     * Get all soft-deleted applicants (excludes actively blacklisted).
+     * SMC-scoped.
      */
     public function getDeleted(): array
     {
+        $ag = self::AGENCY_CODE;
         $sql = "
-            SELECT *
-            FROM applicants
-            WHERE deleted_at IS NOT NULL
+            SELECT a.*
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = ?
+              AND a.deleted_at IS NOT NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = applicants.id AND b.is_active = 1
+                WHERE b.applicant_id = a.id AND b.is_active = 1
               )
-            ORDER BY deleted_at DESC
+            ORDER BY a.deleted_at DESC
         ";
-        $result = $this->db->query($sql);
-        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) return [];
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
     /* ============================================================
@@ -698,7 +742,6 @@ class Applicant
      */
     public function deleteDocument(int $documentId, int $businessUnitId): bool
     {
-        // Delete only if the doc row is in this BU
         $sql = "DELETE FROM applicant_documents WHERE id = ? AND business_unit_id = ?";
         $stmt = $this->db->prepare($sql);
         if (!$stmt)
@@ -721,7 +764,7 @@ class Applicant
     }
 
     /* ============================================================
-     * LIFECYCLE HELPERS (CSNK parity)
+     * LIFECYCLE HELPERS
      * ============================================================ */
 
     public function softDelete($id): bool
@@ -761,65 +804,63 @@ class Applicant
     }
 
     /* ============================================================
-     * STATISTICS & LATEST BOOKING (BU-AWARE)
+     * STATISTICS & LATEST BOOKING (SMC-SCOPED)
      * ============================================================ */
 
     public function getStatistics(): array
     {
         $stats = [];
+        $ag = self::AGENCY_CODE;
 
-        $result = $this->db->query("
-            SELECT COUNT(*) as total
+        $sqlBase = "
             FROM applicants a
-            WHERE a.deleted_at IS NULL
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = ?
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
                 WHERE b.applicant_id = a.id AND b.is_active = 1
               )
-        ");
-        $stats['total'] = $result ? ($result->fetch_assoc()['total'] ?? 0) : 0;
+        ";
 
-        $result = $this->db->query("
-            SELECT COUNT(*) as pending
-            FROM applicants a
-            WHERE a.status = 'pending'
-              AND a.deleted_at IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = a.id AND b.is_active = 1
-              )
-        ");
-        $stats['pending'] = $result ? ($result->fetch_assoc()['pending'] ?? 0) : 0;
+        // total
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total " . $sqlBase . " AND a.deleted_at IS NULL");
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stats['total'] = $row['total'] ?? 0;
+        $stmt->close();
 
-        $result = $this->db->query("
-            SELECT COUNT(*) as on_process
-            FROM applicants a
-            WHERE a.status = 'on_process'
-              AND a.deleted_at IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = a.id AND b.is_active = 1
-              )
-        ");
-        $stats['on_process'] = $result ? ($result->fetch_assoc()['on_process'] ?? 0) : 0;
+        // pending
+        $stmt = $this->db->prepare("SELECT COUNT(*) as pending " . $sqlBase . " AND a.deleted_at IS NULL AND a.status = 'pending'");
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stats['pending'] = $row['pending'] ?? 0;
+        $stmt->close();
 
-        $result = $this->db->query("
-            SELECT COUNT(*) as deleted
-            FROM applicants a
-            WHERE a.deleted_at IS NOT NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = a.id AND b.is_active = 1
-              )
-        ");
-        $stats['deleted'] = $result ? ($result->fetch_assoc()['deleted'] ?? 0) : 0;
+        // on_process
+        $stmt = $this->db->prepare("SELECT COUNT(*) as on_process " . $sqlBase . " AND a.deleted_at IS NULL AND a.status = 'on_process'");
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stats['on_process'] = $row['on_process'] ?? 0;
+        $stmt->close();
+
+        // deleted
+        $stmt = $this->db->prepare("SELECT COUNT(*) as deleted " . $sqlBase . " AND a.deleted_at IS NOT NULL");
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stats['deleted'] = $row['deleted'] ?? 0;
+        $stmt->close();
 
         return $stats;
     }
 
     /**
      * Get latest booking id for applicant (BU-aware).
-     * For SMC composite FK, we ensure booking matches applicant's BU.
+     * For SMC composite FK, we ensure booking matches applicant's BU and SMC scope via getById().
      */
     public function getLatestBookingIdForApplicant(int $applicantId): ?int
     {
@@ -843,11 +884,12 @@ class Applicant
     }
 
     /**
-     * NEW: Get all "on_process" applicants with their latest client booking (if any).
-     * BU-aware join to client_bookings (composite).
+     * Get all "on_process" applicants with their latest client booking (if any).
+     * SMC-scoped; BU-aware join to client_bookings (composite).
      */
     public function getOnProcessWithLatestBooking(): array
     {
+        $ag = self::AGENCY_CODE;
         $sql = "
             SELECT
                 a.*,
@@ -864,6 +906,8 @@ class Applicant
                 cb.status            AS booking_status,
                 cb.created_at        AS booking_created_at
             FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
             LEFT JOIN (
                 SELECT c1.*
                 FROM client_bookings c1
@@ -876,7 +920,8 @@ class Applicant
                    AND t.max_created = c1.created_at
             ) cb ON cb.applicant_id = a.id
                 AND cb.business_unit_id = a.business_unit_id
-            WHERE a.deleted_at IS NULL
+            WHERE ag.code = ?
+              AND a.deleted_at IS NULL
               AND a.status = 'on_process'
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
@@ -885,10 +930,12 @@ class Applicant
             ORDER BY a.created_at DESC
         ";
 
-        $res = $this->db->query($sql);
-        if (!$res)
-            return [];
-        return $res->fetch_all(MYSQLI_ASSOC);
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) return [];
+        $stmt->bind_param("s", $ag);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
     /* ============================================================
@@ -990,7 +1037,7 @@ class Applicant
     /**
      * Return pending applicants sorted by similarity to original (desc).
      * Excludes deleted and active blacklisted.
-     * SMC: Restricted to the same BU as the original by default (safer).
+     * SMC-scoped (and BU-restricted to the original's BU).
      */
     public function searchPendingCandidatesForReplacement(int $originalApplicantId, int $limit = 50): array
     {
@@ -1001,13 +1048,15 @@ class Applicant
         $origBu = (int) ($original['business_unit_id'] ?? 0);
 
         $sql = "
-            SELECT *
+            SELECT a.*
             FROM applicants a
-            WHERE a.status = 'pending'
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = 'smc'
+              AND a.status = 'pending'
               AND a.deleted_at IS NULL
               AND NOT EXISTS (SELECT 1 FROM blacklisted_applicants b WHERE b.applicant_id = a.id AND b.is_active = 1)
         ";
-        // BU-restrict for SMC
         if ($origBu > 0) {
             $sql .= " AND a.business_unit_id = " . (int)$origBu;
         }
@@ -1017,14 +1066,12 @@ class Applicant
             return [];
         $rows = $res->fetch_all(MYSQLI_ASSOC);
 
-        // Score & sort
         foreach ($rows as &$r) {
             $r['_score'] = $this->computeSimilarityScore($original, $r);
         }
         unset($r);
 
         usort($rows, function ($x, $y) {
-            // Sort by score DESC, then years_experience DESC, then created_at ASC
             if ($y['_score'] !== $x['_score'])
                 return $y['_score'] <=> $x['_score'];
             $yx = (int) ($y['years_experience'] ?? 0);
@@ -1216,7 +1263,9 @@ class Applicant
     /**
      * Get countries with applicant counts for SMC (excludes Philippines).
      * This is used for the country filter on the applicants list page.
-     * 
+     *
+     * Counts are SMC-only (ag.code='smc').
+     *
      * @param int|null $buId BU scope - null for unscoped (super admin/employee)
      * @param string $status Filter by status ('all' or specific status)
      * @param string $q Search query (searches name, email, phone)
@@ -1231,7 +1280,7 @@ class Applicant
         bool $notDeleted = true,
         bool $notBlacklisted = true
     ): array {
-        // Get all countries except Philippines (id=1) for SMC
+        // Countries list (unchanged; counts will be SMC-only)
         $sql = "
             SELECT 
                 c.id,
@@ -1250,28 +1299,26 @@ class Applicant
 
         $countries = $res->fetch_all(MYSQLI_ASSOC);
 
-        // Build filtered count query with aligned WHERE clauses
+        // Build filtered count query with SMC scope
         $countSql = "
             SELECT 
                 bu.country_id,
                 COUNT(a.id) AS applicant_count
             FROM applicants a
             JOIN business_units bu ON bu.id = a.business_unit_id
-            WHERE 1=1
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE ag.code = 'smc'
         ";
 
-        // BU scope
         if ($buId !== null && $buId > 0) {
             $countSql .= " AND a.business_unit_id = " . (int) $buId;
         }
 
-        // Status filter
         if ($status !== 'all') {
             $statusEsc = $this->db->real_escape_string($status);
             $countSql .= " AND a.status = '{$statusEsc}'";
         }
 
-        // Visibility flags
         if ($notDeleted) {
             $countSql .= " AND a.deleted_at IS NULL";
         }
@@ -1283,7 +1330,6 @@ class Applicant
             )";
         }
 
-        // Search query
         if ($q !== '') {
             $qEsc = '%' . $this->db->real_escape_string($q) . '%';
             $countSql .= " AND (a.first_name LIKE '{$qEsc}' OR a.last_name LIKE '{$qEsc}' OR a.email LIKE '{$qEsc}' OR a.phone_number LIKE '{$qEsc}')";
@@ -1299,7 +1345,6 @@ class Applicant
             }
         }
 
-        // Merge counts into countries
         $result = [];
         foreach ($countries as $c) {
             $result[] = [
@@ -1315,8 +1360,8 @@ class Applicant
 
     /**
      * Get applicants with comprehensive filtering + pagination.
-     * Uses aligned WHERE clauses with getCountriesWithCounts().
-     * 
+     * SMC-only via agencies join.
+     *
      * @param int|null $buId BU scope - null for unscoped (super admin/employee)
      * @param int|null $countryId Filter by country ID (null for 'all')
      * @param string $status Filter by status ('all' or specific status)
@@ -1337,8 +1382,7 @@ class Applicant
         int $page = 1,
         int $pageSize = 25
     ): array {
-        // Build WHERE clause with aligned logic
-        $where = "1=1";
+        $where = "ag.code = 'smc'";
 
         if ($buId !== null && $buId > 0) {
             $where .= " AND a.business_unit_id = " . (int) $buId;
@@ -1369,10 +1413,8 @@ class Applicant
             $where .= " AND (a.first_name LIKE '{$qEsc}' OR a.last_name LIKE '{$qEsc}' OR a.email LIKE '{$qEsc}' OR a.phone_number LIKE '{$qEsc}')";
         }
 
-        // Calculate offset for pagination
         $offset = ($page - 1) * $pageSize;
 
-        // Build the full query with JOIN to get country info
         $sql = "
             SELECT 
                 a.*,
@@ -1380,6 +1422,7 @@ class Applicant
                 c.name AS country_name
             FROM applicants a
             JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
             JOIN countries c ON c.id = bu.country_id
             WHERE {$where}
             ORDER BY a.created_at DESC
@@ -1396,8 +1439,8 @@ class Applicant
     }
 
     /**
-     * Get total count of applicants matching filters (for pagination).
-     * 
+     * Get total count of applicants matching filters (SMC-only).
+     *
      * @param int|null $buId BU scope
      * @param int|null $countryId Filter by country ID
      * @param string $status Filter by status
@@ -1414,8 +1457,7 @@ class Applicant
         bool $notDeleted = true,
         bool $notBlacklisted = true
     ): int {
-        // Build WHERE clause with aligned logic
-        $where = "1=1";
+        $where = "ag.code = 'smc'";
 
         if ($buId !== null && $buId > 0) {
             $where .= " AND a.business_unit_id = " . (int) $buId;
@@ -1450,6 +1492,7 @@ class Applicant
             SELECT COUNT(*) as total
             FROM applicants a
             JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
             JOIN countries c ON c.id = bu.country_id
             WHERE {$where}
         ";
@@ -1466,7 +1509,8 @@ class Applicant
     /**
      * Get all business units with their country info for SMC (excluding Philippines).
      * This is used to map country_id to business_unit_id for filtering.
-     * 
+     * SMC-only.
+     *
      * @return array Array of BUs: ['id', 'country_id', 'country_name', 'code', 'name']
      */
     public function getBusinessUnitsByCountry(?int $countryId = null): array
@@ -1480,8 +1524,10 @@ class Applicant
                 c.name AS country_name,
                 c.iso2
             FROM business_units bu
+            JOIN agencies ag ON ag.id = bu.agency_id
             JOIN countries c ON c.id = bu.country_id
-            WHERE bu.active = 1
+            WHERE ag.code = 'smc'
+              AND bu.active = 1
               AND c.active = 1
               AND c.id != 1  -- Exclude Philippines (for SMC)
         ";
