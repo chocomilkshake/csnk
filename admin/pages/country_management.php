@@ -472,7 +472,26 @@ function flag_emoji_from_iso2(?string $iso2): string {
                                     <span class="badge bg-danger-subtle text-danger border-danger-subtle border px-3">Inactive</span>
                                 <?php endif; ?>
                             </td>
-                            <td
+                            <td class="text-end pe-3">
+                                <div class="btn-group">
+                                    <a href="country_management.php?action=edit&id=<?php echo (int)$c['id']; ?>" class="btn btn-sm btn-outline-warning" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a href="country_management.php?action=toggle_active&id=<?php echo (int)$c['id']; ?>"
+                                       class="btn btn-sm <?php echo $isActive ? 'btn-outline-danger' : 'btn-outline-success'; ?>"
+                                       onclick="return confirm('<?php echo $isActive ? 'Deactivate this country?' : 'Activate this country?'; ?>');"
+                                       title="<?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
+                                        <i class="bi <?php echo $isActive ? 'bi-x-circle' : 'bi-check-circle'; ?>"></i>
+
+<script>
+/** Minimal reference set. Extend as needed. */
+const COUNTRY_REF = [
+  // name, iso2, iso3, phone, currency, tz, locale
+  {name:'Afghanistan',iso2:'AF',iso3:'AFG',phone:'+93',currency:'AFN',tz:'Asia/Kabul',locale:'fa_AF'},
+  {name:'Albania',iso2:'AL',iso3:'ALB',phone:'+355',currency:'ALL',tz:'Europe/Tirane',locale:'sq_AL'},
+  {name:'Algeria',iso2:'DZ',iso3:'DZA',phone:'+213',currency:'DZD',tz:'Africa/Algiers',locale:'ar_DZ'},
+  {name:'Argentina',iso2:'AR',iso3:'ARG',phone:'+54',currency:'ARS',tz:'America/Argentina/Buenos_Aires',locale:'es_AR'},
+  {name:'Aust55',currency:'KHR',tz:'Asia/Phnom_Penh',locale:'km_KH'},
   {name:'Canada',iso2:'CA',iso3:'CAN',phone:'+1',currency:'CAD',tz:'America/Toronto',locale:'en_CA'},
   {name:'China',iso2:'CN',iso3:'CHN',phone:'+86',currency:'CNY',tz:'Asia/Shanghai',locale:'zh_CN'},
   {name:'Czechia',iso2:'CZ',iso3:'CZE',phone:'+420',currency:'CZK',tz:'Europe/Prague',locale:'cs_CZ'},
