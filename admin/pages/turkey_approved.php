@@ -1,5 +1,7 @@
 <?php
 // FILE: admin/pages/turkey_approved.php (SMC - Turkey Approved/Hired Applicants)
+// Purpose: Always show only SMC applicants, regardless of status changes elsewhere.
+
 $pageTitle = 'Approved Applicants (SMC - Turkey)';
 
 $ADMIN_ROOT = dirname(__DIR__);
@@ -17,30 +19,34 @@ $database = new Database();
 $auth = new Auth($database);
 $auth->requireLogin();
 
-// Check if user has permission to view SMC data
-// SMC employees can only see SMC, admins/super_admins can see all
+// SMC access only for this page
 if (!$auth->canSeeSMC()) {
-    // User doesn't have SMC access - redirect to main applicants page
     header('Location: applicants.php');
     exit;
 }
 
 $conn = $database->getConnection();
 
-$smcBuId = 0;
+// Grab ALL active SMC BU IDs to enforce SMC-only on the list (for ALL roles)
+$smcBuIds = [];
 if ($conn instanceof mysqli) {
-    $sqlFindSMCBu = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1 ORDER BY bu.id ASC LIMIT 1";
-    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-        if (!empty($row['id'])) {
-            $smcBuId = (int) $row['id'];
-            // Store SMC BU ID in separate session variable to avoid overwriting CSNK BU
-            $_SESSION['smc_bu_id'] = $smcBuId;
+    $sqlSmcBus = "
+        SELECT bu.id
+        FROM business_units bu
+        JOIN agencies ag ON ag.id = bu.agency_id
+        WHERE ag.code = 'smc' AND bu.active = 1
+        ORDER BY bu.id ASC
+    ";
+    if ($res = $conn->query($sqlSmcBus)) {
+        while ($r = $res->fetch_assoc()) {
+            $smcBuIds[] = (int)$r['id'];
         }
     }
+}
+
+// Optional: keep first SMC BU id in session (if you use it elsewhere)
+if (!empty($smcBuIds)) {
+    $_SESSION['smc_bu_id'] = $smcBuIds[0];
 }
 
 if (empty($_SESSION['current_bu_id'])) {
@@ -49,30 +55,83 @@ if (empty($_SESSION['current_bu_id'])) {
 }
 
 require_once $ADMIN_ROOT . '/includes/header.php';
+// NOTE: this Applicant class here is the SMC module DAO
 require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
 
 $applicant = new Applicant($database);
-$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
-$isSuperAdmin = ($currentRole === 'super_admin');
-$isEmployee = ($currentRole === 'employee');
+
+// Role helpers (provided by header/auth in your app)
+$currentBuId   = (int) ($_SESSION['current_bu_id'] ?? 0);
+$isSuperAdmin  = (isset($currentRole) && $currentRole === 'super_admin');
+$isAdmin       = (isset($isAdmin) ? (bool)$isAdmin : (isset($currentRole) && $currentRole === 'admin')); // fallback
+$isEmployee    = (isset($currentRole) && $currentRole === 'employee');
 
 $country = $_GET['country'] ?? 'all';
-$q = isset($_GET['q']) ? trim($_GET['q']) : '';
-$status = 'approved';
+$q       = isset($_GET['q']) ? trim($_GET['q']) : '';
+$status  = 'approved';
 
-$buScope = ($isSuperAdmin || $isEmployee) ? null : $currentBuId;
 $countryId = ($country !== 'all') ? (int) $country : null;
 $notDeleted = true;
 $notBlacklisted = true;
 
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $pageSize = 25;
 
-$applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, $page, $pageSize);
-$totalApplicants = $applicant->getApplicantsCount($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted);
-$totalPages = ceil($totalApplicants / $pageSize);
+// IMPORTANT: We intentionally do not rely on $buScope from role here,
+// we will filter by SMC BUs after fetching to guarantee SMC-only visibility.
+$buScope = null;
 
-$countriesWithCounts = $applicant->getCountriesWithCounts($buScope, $status, $q, $notDeleted, $notBlacklisted);
+// Fetch (using your SMC DAO)
+$applicants = $applicant->getApplicants(
+    $buScope,       // we'll hard-filter below
+    $countryId,
+    $status,
+    $q,
+    $notDeleted,
+    $notBlacklisted,
+    $page,
+    $pageSize
+);
+
+$totalApplicants = $applicant->getApplicantsCount(
+    $buScope,
+    $countryId,
+    $status,
+    $q,
+    $notDeleted,
+    $notBlacklisted
+);
+
+// ---- Hard-filter to SMC-only in PHP to ensure agency never changes visibility ----
+if (!empty($smcBuIds)) {
+    $applicants = array_values(array_filter((array)$applicants, function($row) use ($smcBuIds) {
+        $buId = (int)($row['business_unit_id'] ?? 0);
+        return in_array($buId, $smcBuIds, true);
+    }));
+
+    // If you want the pagination totals to reflect SMC-only after filter:
+    $totalApplicants = count($applicants);
+}
+
+// (Optional) refine country counts to reflect SMC-only as well
+$countriesWithCounts = [];
+try {
+    // Build SMC-only country counts from the filtered applicant list
+    $byCountry = [];
+    foreach ($applicants as $row) {
+        $cid = (int)($row['country_id'] ?? 0);
+        $cname = (string)($row['country_name'] ?? ($row['country'] ?? ''));
+        if (!isset($byCountry[$cid])) {
+            $byCountry[$cid] = ['id' => $cid, 'name' => $cname, 'count' => 0];
+        }
+        $byCountry[$cid]['count']++;
+    }
+    // If you need stable country names, you can fetch from DB instead. For now, derive from rows.
+    $countriesWithCounts = array_values(array_filter($byCountry, fn($c) => $c['id'] > 0));
+} catch (Throwable $e) {
+    // swallow; keep empty counts
+}
 
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) return 'N/A';
@@ -163,14 +222,11 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                                 $appBuId = (int) ($app['business_unit_id'] ?? 0);
 
                                 // Check if employee can edit this applicant
-                                // For super_admin/admin: can edit all
-                                // For employee: Since this is the SMC page, allow all employees full access to all SMC applicants
+                                // For this SMC page: allow admins/super_admins; employees also allowed on all SMC rows
                                 $canEdit = false;
-
                                 if ($isSuperAdmin || $isAdmin) {
                                     $canEdit = true;
                                 } elseif ($isEmployee) {
-                                    // All employees on this SMC page can edit all SMC applicants
                                     $canEdit = true;
                                 }
                                 ?>
@@ -207,4 +263,3 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
 </div>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
-
