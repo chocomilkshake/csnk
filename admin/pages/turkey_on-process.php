@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_on-process.php (SMC - Turkey On Process Applicants)
-$pageTitle = 'On Process Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 
