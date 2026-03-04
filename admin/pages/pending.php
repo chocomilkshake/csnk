@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/pending.php
-$pageTitle = 'Pending Applicants';
+$pageTitle = 'Pending Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
@@ -10,6 +10,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 $applicant = new Applicant($database);
+
+// --- Hard scope this page to CSNK only ---
+const CSNK_AGENCY_CODE = 'csnk';
 
 // Allowed statuses to transition to
 $allowedStatuses = ['pending', 'on_process', 'approved'];
@@ -226,8 +229,8 @@ if ($replaceRecord && $originalApplicant) {
     if ($q !== '') $candidates = $filterQ($candidates, $q);
     $applicants = $candidates; // re-use variable below
 } else {
-    // Normal pending list
-    $applicants = $applicant->getAll('pending');
+    // Normal pending list - Filter by CSNK agency only
+    $applicants = $applicant->getAll('pending', null, CSNK_AGENCY_CODE);
 
     // Filter by search
     $applicants = (function(array $rows, string $query): array {
