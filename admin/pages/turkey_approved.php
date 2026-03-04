@@ -2,7 +2,7 @@
 // FILE: admin/pages/turkey_approved.php (SMC - Turkey Approved/Hired Applicants)
 // Purpose: Always show only SMC applicants, with same UI as approved.php
 
-$pageTitle = 'Approved Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 
