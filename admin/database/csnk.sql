@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 04, 2026 at 06:18 AM
+-- Generation Time: Mar 04, 2026 at 09:43 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -249,7 +249,9 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (601, 18, 'Update Applicant Status', 'Updated status for Ryzza Mae B. Diaz → pending', '::1', '2026-03-03 08:33:20'),
 (602, 18, 'Logout', 'User logged out', '::1', '2026-03-03 08:33:37'),
 (603, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:33:40'),
-(604, 5, 'Login', 'User logged in successfully', '::1', '2026-03-04 01:16:26');
+(604, 5, 'Login', 'User logged in successfully', '::1', '2026-03-04 01:16:26'),
+(605, 12, 'Update Applicant Status', 'Updated status for china Trial → approved', '::1', '2026-03-04 08:31:45'),
+(606, 12, 'Update Applicant Status', 'Updated status for china Trial → pending (CSNK)', '::1', '2026-03-04 08:31:54');
 
 -- --------------------------------------------------------
 
@@ -394,7 +396,7 @@ INSERT INTO `applicants` (`id`, `business_unit_id`, `country_id`, `first_name`, 
 (49, 2, 2, 'Trial', '', 'Trial', '', '09999999999', '09999999999', '', '2001-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[]', '[]', '[]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-03-02 00:57:46', '2026-03-02 01:46:55', NULL),
 (50, 2, 2, 'Trial', '', 'Trial', '', '09999999999', '', '', '2003-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[]', '[]', '[]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 0, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 01:07:53', '2026-03-02 01:46:55', NULL),
 (51, 3, 3, 'Trial', '', 'Trial', '', '09999999999', '09999999992', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Senior High School Graduate (K-12 Curriculum)', 2, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 01:09:52', '2026-03-02 01:46:55', NULL),
-(52, 1, NULL, 'china', '', 'Trial', '', '09999999999', '09999999999', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 02:43:10', '2026-03-03 08:33:18', NULL);
+(52, 1, NULL, 'china', '', 'Trial', '', '09999999999', '09999999999', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 02:43:10', '2026-03-04 08:31:54', NULL);
 
 -- --------------------------------------------------------
 
@@ -599,7 +601,8 @@ INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `business_unit_id`
 (43, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-02-23 22:05:06'),
 (44, 43, 1, 'on_process', 'pending', 'Requirements complete: awdawds', 12, '2026-02-23 22:05:45'),
 (45, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-02-23 22:13:09'),
-(46, 43, 1, 'on_process', 'pending', 'Client confirmed / Ready: awdas', 12, '2026-02-23 22:50:02');
+(46, 43, 1, 'on_process', 'pending', 'Client confirmed / Ready: awdas', 12, '2026-02-23 22:50:02'),
+(48, 52, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 16:31:45');
 
 -- --------------------------------------------------------
 
@@ -1046,7 +1049,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=605;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=607;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -1088,7 +1091,7 @@ ALTER TABLE `applicant_reports`
 -- AUTO_INCREMENT for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `blacklisted_applicants`
