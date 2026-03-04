@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 02, 2026 at 03:52 AM
+-- Generation Time: Mar 04, 2026 at 06:18 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -179,7 +179,77 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (531, 17, 'Login', 'User logged in successfully', '::1', '2026-03-02 01:01:04'),
 (532, 17, 'Add Applicant', 'Added new applicant: Trial Trial', '::1', '2026-03-02 01:07:53'),
 (533, 17, 'Add Applicant', 'Added new applicant: Trial Trial', '::1', '2026-03-02 01:09:52'),
-(534, 17, 'Add Applicant', 'Added new applicant: china Trial', '::1', '2026-03-02 02:43:10');
+(534, 17, 'Add Applicant', 'Added new applicant: china Trial', '::1', '2026-03-02 02:43:10'),
+(535, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 00:49:35'),
+(536, 5, 'Logout', 'User logged out', '::1', '2026-03-03 00:57:37'),
+(537, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 00:57:42'),
+(538, 17, 'Logout', 'User logged out', '::1', '2026-03-03 01:00:03'),
+(539, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 01:00:07'),
+(540, 5, 'Logout', 'User logged out', '::1', '2026-03-03 01:34:38'),
+(541, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 01:34:41'),
+(542, 5, 'Logout', 'User logged out', '::1', '2026-03-03 01:47:15'),
+(543, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 01:47:17'),
+(544, 5, 'Logout', 'User logged out', '::1', '2026-03-03 02:36:09'),
+(545, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 02:36:42'),
+(546, 18, 'Logout', 'User logged out', '::1', '2026-03-03 03:41:57'),
+(547, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:42:01'),
+(548, 17, 'Logout', 'User logged out', '::1', '2026-03-03 03:42:05'),
+(549, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:42:09'),
+(550, 5, 'Logout', 'User logged out', '::1', '2026-03-03 03:44:59'),
+(551, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:45:15'),
+(552, 18, 'Logout', 'User logged out', '::1', '2026-03-03 03:45:20'),
+(553, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:45:23'),
+(554, 17, 'Logout', 'User logged out', '::1', '2026-03-03 03:50:03'),
+(555, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:50:08'),
+(556, 5, 'Logout', 'User logged out', '::1', '2026-03-03 03:51:33'),
+(557, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 03:51:37'),
+(558, 17, 'Login', 'User logged in successfully', '127.0.0.1', '2026-03-03 05:50:57'),
+(559, 17, 'Logout', 'User logged out', '::1', '2026-03-03 05:51:03'),
+(560, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 05:51:07'),
+(561, 18, 'Logout', 'User logged out', '::1', '2026-03-03 05:51:12'),
+(562, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 05:51:14'),
+(563, 5, 'Logout', 'User logged out', '::1', '2026-03-03 06:30:09'),
+(564, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:30:16'),
+(565, 18, 'Logout', 'User logged out', '::1', '2026-03-03 06:30:25'),
+(566, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:30:38'),
+(567, 17, 'Logout', 'User logged out', '::1', '2026-03-03 06:48:11'),
+(568, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:48:17'),
+(569, 17, 'Create Account', 'Created employee smc002 (smc)', '::1', '2026-03-03 06:49:59'),
+(570, 17, 'Logout', 'User logged out', '::1', '2026-03-03 06:50:02'),
+(571, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:50:05'),
+(572, 20, 'Logout', 'User logged out', '::1', '2026-03-03 06:50:11'),
+(573, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:50:14'),
+(574, 20, 'Logout', 'User logged out', '::1', '2026-03-03 06:50:31'),
+(575, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 06:50:39'),
+(576, 5, 'Logout', 'User logged out', '::1', '2026-03-03 07:23:35'),
+(577, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:23:38'),
+(578, 5, 'Update Applicant', 'Updated applicant china Trial (ID: 52)', '::1', '2026-03-03 07:24:11'),
+(579, 5, 'Logout', 'User logged out', '::1', '2026-03-03 07:25:00'),
+(580, 17, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:25:04'),
+(581, 17, 'Logout', 'User logged out', '::1', '2026-03-03 07:36:09'),
+(582, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:36:12'),
+(583, 5, 'Update Applicant', 'Updated applicant Mhi Mha Diaz (ID: 46)', '::1', '2026-03-03 07:36:48'),
+(584, 5, 'Update Applicant Status', 'Updated status for Mhi Mha Diaz → pending', '::1', '2026-03-03 07:37:08'),
+(585, 5, 'Logout', 'User logged out', '::1', '2026-03-03 07:37:27'),
+(586, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:37:32'),
+(587, 20, 'Logout', 'User logged out', '::1', '2026-03-03 07:38:13'),
+(588, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:38:22'),
+(589, 18, 'Logout', 'User logged out', '::1', '2026-03-03 07:56:26'),
+(590, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 07:56:30'),
+(591, 20, 'Logout', 'User logged out', '::1', '2026-03-03 08:15:05'),
+(592, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:15:08'),
+(593, 5, 'Logout', 'User logged out', '::1', '2026-03-03 08:15:15'),
+(594, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:15:20'),
+(595, 20, 'Logout', 'User logged out', '::1', '2026-03-03 08:32:33'),
+(596, 20, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:32:40'),
+(597, 20, 'Update Applicant', 'Updated applicant china Trial (ID: 52)', '::1', '2026-03-03 08:32:55'),
+(598, 20, 'Logout', 'User logged out', '::1', '2026-03-03 08:33:08'),
+(599, 18, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:33:11'),
+(600, 18, 'Update Applicant Status', 'Updated status for china Trial → pending', '::1', '2026-03-03 08:33:18'),
+(601, 18, 'Update Applicant Status', 'Updated status for Ryzza Mae B. Diaz → pending', '::1', '2026-03-03 08:33:20'),
+(602, 18, 'Logout', 'User logged out', '::1', '2026-03-03 08:33:37'),
+(603, 5, 'Login', 'User logged in successfully', '::1', '2026-03-03 08:33:40'),
+(604, 5, 'Login', 'User logged in successfully', '::1', '2026-03-04 01:16:26');
 
 -- --------------------------------------------------------
 
@@ -215,7 +285,8 @@ INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `
 (12, 'jmpogi', 'jm@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QkMvd1FUc2Q0bnBjWHB0Uw$kltUwYy7N9gm+yGcuxlWqQFXnwD/EPRKRexQ1sDBYQM', 'John Michael Masmela', 'avatars/699c53d80ff2a_1771852760.png', 'admin', NULL, NULL, 'active', '2026-02-12 02:33:42', '2026-02-23 13:19:20'),
 (17, 'smc001', 'smc001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$S3BRVFB6YjIxcC5nUDI0Tw$BVJWYVKCIl952PAdRuNwYf4ovRdfKmpAOptWrOu6kvU', 'smc001', NULL, 'super_admin', 'smc', NULL, 'active', '2026-02-25 01:05:52', '2026-02-26 06:10:58'),
 (18, 'csnk001', 'csnk001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cTRHa1lhLkJvQjYwWlFpYg$7QXiD7qZtT316LFZErAQBtqSLkiorr/BSe2rZGecD58', 'csnk001', NULL, 'employee', 'csnk', NULL, 'active', '2026-02-25 01:06:21', '2026-02-25 01:06:21'),
-(19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06');
+(19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06'),
+(20, 'smc002', 'email@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QVdrUHpVbXhidG1vVDJWaQ$qq73QsWG6b7zMiGpLVARRGXOg7JiFXDiMjmxAti34lc', 'smc', NULL, 'employee', 'smc', NULL, 'active', '2026-03-03 06:49:59', '2026-03-03 06:49:59');
 
 -- --------------------------------------------------------
 
@@ -316,14 +387,14 @@ INSERT INTO `applicants` (`id`, `business_unit_id`, `country_id`, `first_name`, 
 (40, 1, 1, 'Hannah', 'Louise', 'Parker', '', '09999999999', '09999999999', 'email@gmail.com', '1999-08-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Elementary Graduate', 3, 'applicants/698e910d1e60e_1770950925.jpg', 'video/698e910d1fc78_1770950925.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:48:45', '2026-03-02 01:46:55', NULL),
 (41, 1, 1, 'Abigail', 'Nicole', 'Sanders', '', '09999999999', '09999999999', 'email@gmail.com', '2000-11-08', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 2, 'applicants/698e918576116_1770951045.jpg', 'video/698e918577686_1770951045.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:50:45', '2026-03-02 01:46:55', NULL),
 (42, 1, 1, 'Natalie', 'Faith', 'Rogers', '', '09999999999', '09999999999', 'email@gmail.com', '1999-01-23', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e9220edd8f_1770951200.jpg', 'video/698e9220ee585_1770951200.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:53:20', '2026-03-02 01:46:55', NULL),
-(43, 1, 1, 'Ryzza Mae', 'B.', 'Diaz', '', '09123123718', '09817238712', 'renzdiaz.contact@gmail.com', '2026-02-25', '87412 ajllmdawudawdawdasdawds', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"BrightClean Services\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati\"}]', '[\"Makati City\",\"Mandaluyong CIty\"]', '[]', '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 150.00, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6996b581e440f_1771484545.jpg', 'video/6996b581ecad4_1771484545.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'approved', 12, '2026-02-19 07:02:25', '2026-03-02 01:46:55', NULL),
-(46, 3, 3, 'Mhi Mha', '', 'Diaz', '', '09128319264', '09128361628', '', '2001-02-12', '1234 wertyuiohjk', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\",\"aeamic\"]', '[]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 2, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-02-26 05:30:39', '2026-03-02 01:46:55', NULL),
+(43, 1, 1, 'Ryzza Mae', 'B.', 'Diaz', '', '09123123718', '09817238712', 'renzdiaz.contact@gmail.com', '2026-02-25', '87412 ajllmdawudawdawdasdawds', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"BrightClean Services\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati\"}]', '[\"Makati City\",\"Mandaluyong CIty\"]', '[]', '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 150.00, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6996b581e440f_1771484545.jpg', 'video/6996b581ecad4_1771484545.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', 12, '2026-02-19 07:02:25', '2026-03-03 08:33:20', NULL),
+(46, 1, NULL, 'Mhi Mha', '', 'Diaz', '', '09128319264', '09128361628', '', '2001-02-12', '1234 wertyuiohjk', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\",\"aeamic\"]', '[]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 2, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-02-26 05:30:39', '2026-03-03 07:37:07', NULL),
 (47, 2, 2, 'Mhi Mha', '', 'Diaz', '', '09283718231', '09359872140', '', '2000-12-12', '123 ertyujf', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"1992\\u20131998\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2020\\u20132024\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-02-26 05:35:45', '2026-03-02 01:46:55', NULL),
 (48, 1, 1, 'Johnny', 'lawin', 'Ocampo', '', '09283718231', '09128361628', 'email@gmail.com', '2003-11-11', '1234  mia[fjdvfkas', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Makati High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Senior High School Graduate (K-12 Curriculum)', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-03-02 00:56:46', '2026-03-02 01:46:55', NULL),
 (49, 2, 2, 'Trial', '', 'Trial', '', '09999999999', '09999999999', '', '2001-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[]', '[]', '[]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-03-02 00:57:46', '2026-03-02 01:46:55', NULL),
 (50, 2, 2, 'Trial', '', 'Trial', '', '09999999999', '', '', '2003-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[]', '[]', '[]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 0, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 01:07:53', '2026-03-02 01:46:55', NULL),
 (51, 3, 3, 'Trial', '', 'Trial', '', '09999999999', '09999999992', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Senior High School Graduate (K-12 Curriculum)', 2, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 01:09:52', '2026-03-02 01:46:55', NULL),
-(52, 4, NULL, 'china', '', 'Trial', '', '09999999999', '09999999999', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 02:43:10', '2026-03-02 02:43:10', NULL);
+(52, 1, NULL, 'china', '', 'Trial', '', '09999999999', '09999999999', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Emillio Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2011 - 2014\",\"role\":\"Kumekendeng\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[]', 'Full Time', NULL, 'Elementary Graduate', 3, NULL, NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 17, '2026-03-02 02:43:10', '2026-03-03 08:33:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -584,7 +655,8 @@ INSERT INTO `business_units` (`id`, `agency_id`, `country_id`, `code`, `name`, `
 (1, 1, 1, 'CSNK-PH', 'CSNK Philippines', 1, '2026-02-24 01:19:27', '2026-02-24 01:19:27'),
 (2, 2, 2, 'SMC-TR', 'SMC Turkey', 1, '2026-02-24 01:19:27', '2026-02-24 01:19:27'),
 (3, 2, 3, 'SMC-BH', 'SMC Bahrain', 1, '2026-02-25 12:47:51', '2026-02-25 12:47:51'),
-(4, 2, 5, 'SMC-CHI', 'SMC China', 1, '2026-03-02 02:41:37', '2026-03-02 02:41:37');
+(4, 2, 5, 'SMC-CHI', 'SMC China', 1, '2026-03-02 02:41:37', '2026-03-02 02:41:37'),
+(5, 2, 6, 'SMC-DAS', 'SMC dasdaf', 1, '2026-03-02 08:02:34', '2026-03-02 08:02:34');
 
 -- --------------------------------------------------------
 
@@ -618,7 +690,7 @@ CREATE TABLE `client_bookings` (
 --
 
 CREATE TABLE `countries` (
-  `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` smallint(5) UNSIGNED NOT NULL,
   `iso2` char(2) NOT NULL,
   `iso3` char(3) NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -627,9 +699,8 @@ CREATE TABLE `countries` (
   `currency_code` char(3) NOT NULL,
   `locale` varchar(10) NOT NULL,
   `date_format` varchar(20) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=6;
+  `active` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `countries`
@@ -640,7 +711,8 @@ INSERT INTO `countries` (`id`, `iso2`, `iso3`, `name`, `default_tz`, `phone_coun
 (2, 'TR', 'TUR', 'Turkey', 'Europe/Istanbul', '+90', 'TRY', 'tr-TR', 'DD.MM.YYYY', 1),
 (3, 'BH', 'BHR', 'Bahrain', 'Asia/Bahrain', '+973', 'BHD', 'en-BH', 'DD/MM/YYYY', 1),
 (4, 'JP', 'JPN', 'Japan', 'Asia/Japan', '+81', 'YEN', 'en_JP', '', 1),
-(5, 'CN', 'CHN', 'China', 'Beijing Time (CST)', '+852', 'CNY', 'zh-CN', 'Y-m-d', 1);
+(5, 'CN', 'CHN', 'China', 'Beijing Time (CST)', '+852', 'CNY', 'zh-CN', 'Y-m-d', 1),
+(6, 'AS', 'ASD', 'dasdaf', '', '+854', 'USD', 'en_da', 'Y-m-d', 1);
 
 -- --------------------------------------------------------
 
@@ -780,7 +852,40 @@ INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login
 (109, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-01 13:07:52', NULL),
 (110, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 08:44:07', '2026-03-02 08:55:03'),
 (111, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 08:55:08', '2026-03-02 09:01:00'),
-(112, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 09:01:04', NULL);
+(112, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 09:01:04', NULL),
+(113, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 08:49:35', '2026-03-03 08:57:37'),
+(114, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 08:57:42', '2026-03-03 09:00:03'),
+(115, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 09:00:07', '2026-03-03 09:34:38'),
+(116, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 09:34:41', '2026-03-03 09:47:15'),
+(117, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 09:47:17', '2026-03-03 10:36:09'),
+(118, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 10:36:42', '2026-03-03 11:41:57'),
+(119, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:42:01', '2026-03-03 11:42:05'),
+(120, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:42:09', '2026-03-03 11:44:59'),
+(121, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:45:15', '2026-03-03 11:45:20'),
+(122, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:45:23', '2026-03-03 11:50:03'),
+(123, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:50:08', '2026-03-03 11:51:33'),
+(124, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 11:51:37', NULL),
+(125, 17, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 13:50:57', '2026-03-03 13:51:03'),
+(126, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 13:51:07', '2026-03-03 13:51:12'),
+(127, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 13:51:14', '2026-03-03 14:30:09'),
+(128, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:30:16', '2026-03-03 14:30:25'),
+(129, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:30:38', '2026-03-03 14:48:11'),
+(130, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:48:17', '2026-03-03 14:50:02'),
+(131, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:50:05', '2026-03-03 14:50:11'),
+(132, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:50:14', '2026-03-03 14:50:31'),
+(133, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 14:50:39', '2026-03-03 15:23:35'),
+(134, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:23:38', '2026-03-03 15:25:00'),
+(135, 17, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:25:04', '2026-03-03 15:36:09'),
+(136, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:36:12', '2026-03-03 15:37:27'),
+(137, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:37:32', '2026-03-03 15:38:13'),
+(138, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:38:22', '2026-03-03 15:56:26'),
+(139, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 15:56:30', '2026-03-03 16:15:04'),
+(140, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 16:15:08', '2026-03-03 16:15:15'),
+(141, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 16:15:20', '2026-03-03 16:32:33'),
+(142, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 16:32:40', '2026-03-03 16:33:08'),
+(143, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 16:33:11', '2026-03-03 16:33:37'),
+(144, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-03 16:33:40', NULL),
+(145, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-04 09:16:26', NULL);
 
 --
 -- Indexes for dumped tables
@@ -941,13 +1046,13 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=535;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=605;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
 --
 ALTER TABLE `admin_users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `agencies`
@@ -995,7 +1100,7 @@ ALTER TABLE `blacklisted_applicants`
 -- AUTO_INCREMENT for table `business_units`
 --
 ALTER TABLE `business_units`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `client_bookings`
@@ -1007,7 +1112,7 @@ ALTER TABLE `client_bookings`
 -- AUTO_INCREMENT for table `countries`
 --
 ALTER TABLE `countries`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `document_types`
@@ -1019,7 +1124,7 @@ ALTER TABLE `document_types`
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
 
 --
 -- Constraints for dumped tables
