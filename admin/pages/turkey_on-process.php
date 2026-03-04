@@ -316,4 +316,3 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 </div>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
-
