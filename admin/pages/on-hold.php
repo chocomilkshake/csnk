@@ -1,10 +1,13 @@
 <?php
 // FILE: admin/pages/on-hold.php
-$pageTitle = 'On Hold Applicants';
+$pageTitle = 'On Hold Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+
+// CSNK agency constant
+const CSNK_AGENCY_CODE = 'csnk';
 
 // CSRF token (used by revert form)
 if (empty($_SESSION['csrf_token'])) {
@@ -31,14 +34,30 @@ if (isset($_GET['q'])) {
 }
 
 /**
- * Load list
+ * Load list - Filter by CSNK agency only
  */
 $applicants = [];
 if (method_exists($applicant, 'getAllByStatus')) {
-    $applicants = $applicant->getAllByStatus('on_hold');
+    // For getAllByStatus, we need to filter manually by CSNK
+    $allOnHold = $applicant->getAllByStatus('on_hold');
+    // Filter to CSNK only by checking business_unit_id
+    $conn = $database->getConnection();
+    $csnkBuIds = [];
+    if ($conn instanceof mysqli) {
+        $sql = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'csnk' AND bu.active = 1";
+        if ($res = $conn->query($sql)) {
+            while ($r = $res->fetch_assoc()) {
+                $csnkBuIds[] = (int)$r['id'];
+            }
+        }
+    }
+    $applicants = array_values(array_filter($allOnHold, function($app) use ($csnkBuIds) {
+        $buId = (int)($app['business_unit_id'] ?? 0);
+        return in_array($buId, $csnkBuIds, true);
+    }));
 } elseif (method_exists($applicant, 'getAll')) {
     // fallback if your class uses getAll(status)
-    $applicants = $applicant->getAll('on_hold');
+    $applicants = $applicant->getAll('on_hold', null, CSNK_AGENCY_CODE);
 }
 
 /**
