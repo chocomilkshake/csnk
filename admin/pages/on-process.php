@@ -178,16 +178,20 @@ if (
     $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
     $ok = false;
 
+    // Default to business_unit_id = 1 if NULL to satisfy FK constraint
+    $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+
     try {
         $conn->begin_transaction();
 
         // Insert into applicant_status_reports (include business_unit_id)
+        // Use COALESCE to handle NULL business_unit_id
         $stmt1 = $conn->prepare("
             INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
         // types: i i s s s i
-        $stmt1->bind_param("iisssi", $id, $businessUnitId, $fromStatus, $to, $reportText, $adminId);
+        $stmt1->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
         $stmt1->execute();
         $stmt1->close();
 
