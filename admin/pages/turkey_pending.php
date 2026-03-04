@@ -53,6 +53,10 @@ require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
 
 $applicant = new Applicant($database);
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+// For SMC pages, use SMC BU instead of the CSNK BU from session
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isEmployee = ($currentRole === 'employee');
 
@@ -60,7 +64,8 @@ $country = $_GET['country'] ?? 'all';
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 $status = 'pending';
 
-$buScope = ($isSuperAdmin || $isEmployee) ? null : $currentBuId;
+// For SMC pages: super admin/employee/admin sees all SMC applicants (null = no BU filter)
+$buScope = null;
 $countryId = ($country !== 'all') ? (int) $country : null;
 $notDeleted = true;
 $notBlacklisted = true;
