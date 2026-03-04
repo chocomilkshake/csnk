@@ -62,6 +62,9 @@ $applicant = new Applicant($database);
 // BU scope (SMC-Turkey only)
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
 
+// For SMC pages, use SMC BU instead of the CSNK BU from session
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
 // Determine if user is super admin (for viewing all SMC applicants)
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isEmployee = ($currentRole === 'employee');
@@ -71,8 +74,8 @@ $country = $_GET['country'] ?? 'all';
 $status = $_GET['status'] ?? 'all';
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-// BU scope: super admin/employee = unscoped (null), admin = scoped to current BU
-$buScope = ($isSuperAdmin || $isEmployee) ? null : $currentBuId;
+// For SMC pages: super admin/employee/admin sees all SMC applicants (null = no BU filter)
+$buScope = null;
 
 // Country ID: null for 'all', otherwise cast to int
 $countryId = ($country !== 'all') ? (int) $country : null;
