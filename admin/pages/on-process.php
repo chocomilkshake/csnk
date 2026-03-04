@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/on-process.php
-$pageTitle = 'On Process Applicants';
+$pageTitle = 'On Process Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
@@ -8,6 +8,9 @@ require_once '../includes/Applicant.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
+
+// --- CSNK Agency Filter ---
+const CSNK_AGENCY_CODE = 'csnk';
 
 // --- Minimal CSRF token ---
 if (empty($_SESSION['csrf_token'])) {
@@ -294,8 +297,24 @@ if (
     exit;
 }
 
-/** Load on_process applicants + latest booking data */
-$applicants = $applicant->getOnProcessWithLatestBooking();
+/** Load on_process applicants + latest booking data - Filter by CSNK agency only */
+$allOnProcess = $applicant->getOnProcessWithLatestBooking();
+
+// Filter to CSNK only by checking business_unit_id
+$conn2 = $database->getConnection();
+$csnkBuIds = [];
+if ($conn2 instanceof mysqli) {
+    $sql = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'csnk' AND bu.active = 1";
+    if ($res = $conn2->query($sql)) {
+        while ($r = $res->fetch_assoc()) {
+            $csnkBuIds[] = (int)$r['id'];
+        }
+    }
+}
+$applicants = array_values(array_filter($allOnProcess, function($app) use ($csnkBuIds) {
+    $buId = (int)($app['business_unit_id'] ?? 0);
+    return in_array($buId, $csnkBuIds, true);
+}));
 
 /** Helpers */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
