@@ -671,8 +671,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             <?php if ($canViewActivity): ?>
                 <div class="sidebar-divider"></div>
                 <div class="sidebar-section-label">Monitoring</div>
-                <a href="#"
-                    class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
+                <a href="#" class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
                     aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
                     data-bs-toggle="tooltip" data-bs-placement="right" title="Activity Logs">
                     <i class="bi bi-clipboard-data"></i>
@@ -700,8 +699,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     }
                 }
                 ?>
-                <a href="#"
-                    class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                <a href="!" class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
                     aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                     data-bs-placement="right" title="Reports">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
@@ -721,8 +719,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             <div class="sidebar-section-label">Settings</div>
 
             <!-- ACCOUNTS -->
-            <a href="#"
-                class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
+            <a href="#" class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Accounts">
                 <i class="bi bi-person-badge"></i>
@@ -730,8 +727,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
             </a>
 
             <!-- PROFILE -->
-            <a href="#"
-                class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
+            <a href="#" class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Profile">
                 <i class="bi bi-person-circle"></i>
