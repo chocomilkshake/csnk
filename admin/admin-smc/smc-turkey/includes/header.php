@@ -699,7 +699,7 @@ $collapseApplicantsId = 'smcTurkeyApplicantsMenu';
                     }
                 }
                 ?>
-                <a href="!" class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                <a href="#" class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
                     aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                     data-bs-placement="right" title="Reports">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
