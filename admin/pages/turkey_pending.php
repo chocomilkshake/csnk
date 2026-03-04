@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_pending.php (SMC - Turkey Pending Applicants)
-$pageTitle = 'Pending Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 
