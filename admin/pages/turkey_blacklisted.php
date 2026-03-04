@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_blacklisted.php (SMC - Turkey Blacklisted Applicants)
-$pageTitle = 'Blacklisted Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 
