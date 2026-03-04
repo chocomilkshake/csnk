@@ -922,36 +922,6 @@ if ($canViewReports && $conn instanceof mysqli) {
                     </div>
                 <?php endif; ?>
 
-                <!-- Agency Switcher for Admin/Super Admin -->
-                <?php if (($isAdmin || $isSuperAdmin) && $canSeeCSNK && $canSeeSMC): ?>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="agencySwitcher"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-switcher me-1"></i>
-                            <?php echo $currentAgencyView === 'smc' ? 'SMC International' : 'CSNK Philippines'; ?>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="agencySwitcher">
-                            <li>
-                                <h6 class="dropdown-header">Switch View</h6>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item <?php echo $currentAgencyView === 'csnk' ? 'active' : ''; ?>"
-                                    href="?switch_agency=csnk">
-                                    <i class="bi bi-geo-alt me-2"></i>CSNK Philippines
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item <?php echo $currentAgencyView === 'smc' ? 'active' : ''; ?>"
-                                    href="?switch_agency=smc">
-                                    <i class="bi bi-globe2 me-2"></i>SMC International
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                <?php endif; ?>
 
                 <span class="ms-2 me-1">Welcome, <strong>
                         <?php echo h($currentUser['full_name'] ?? ''); ?>
