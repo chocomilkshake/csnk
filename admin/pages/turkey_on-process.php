@@ -45,7 +45,20 @@ if ($conn instanceof mysqli) {
             $smcBuId = (int) $row['id'];
             $_SESSION['smc_bu_id'] = $smcBuId;
         }
-    })) {
+    }
+}
+
+if (empty($_SESSION['current_bu_id'])) {
+        function ($v, $k) use ($filterOutKeys) {
+            return !in_array($k, $filterOutKeys, true) && $v !== '' && $v !== null;
+        },
+        ARRAY_FILTER_USE_BOTH
+    );
+    if (!empty($ke
+// Handle status update action
+if (
+
+            if ($stmt = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?")) {
                 $stmt->bind_param("si", $to, $id);
                 $updated = $stmt->execute();
                 $stmt->close();
