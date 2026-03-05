@@ -128,7 +128,33 @@ if (
             }
 
             // Update status
-            idate
+            if ($stmt = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?")) {
+                $stmt->bind_param("si", $to, $id);
+                $updated = $stmt->execute();
+                $stmt->close();
+            }
+
+            // Record status change
+            if ($updated && isset($fromStatus) && $fromStatus !== $to) {
+                $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+                $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus))
+                            . " to " . ucfirst(str_replace('_', ' ', $to));
+                $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+
+                if ($stmtReport = $conn->prepare(
+                    "INSERT INTO applicant_status_reports
+                     (applicant_id, b
+
+    // Redirect back to this listing WITHOUT the action params to avoid loops
+    $qs = $preserveQSWithQuestion ?: '?';
+    redirect('turkey_pending.php' . $qs);
+    exit;
+}
+
+// Handle delete action
+if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
+    $csrfOk = isset($_GET['csrf']) && hash_equals($csrf, (string)$_GET['csrf']);
+    if (!$csrfOk) {
         if (function_exists('setFlashMessage')) {
             setFlashMessage('error', 'Invalid request token.');
         }
