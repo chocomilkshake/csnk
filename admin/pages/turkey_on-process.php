@@ -124,6 +124,21 @@ if (
                 $updated = $stmt->execute();
                 $stmt->close();
             }
+
+            if ($updated && isset($fromStatus) && $fromStatus !== $to) {
+                $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+                $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus))
+                            . " to " . ucfirst(str_replace('_', ' ', $to));
+                $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+
+                if ($stmtReport = $conn->prepare(
+                    "INSERT INTO applicant_status_reports
+                     (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+                     VALUES (?, ?, ?, ?, ?, ?)"
+                )) {
+                    $stmtReport->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
+                    $stmtReport->execute();
+                    $stmtReport->close();
                 }
             }
         }
