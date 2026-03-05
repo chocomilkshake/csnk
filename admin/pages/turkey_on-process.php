@@ -202,7 +202,19 @@ $smcBuId     = (int) ($_SESSION['smc_bu_id'] ?? 0);
 // Roles (ensure $isAdmin exists)
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin      = ($currentRole === 'admin');
-$isEmployee   = ($currentRole ===
+$isEmployee   = ($currentRole === 'employee');
+
+$country = $_GET['country'] ?? 'all';
+$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+$status = 'on_process';
+
+$buScope = null;
+$countryId = ($country !== 'all') ? (int) $country : null;
+$notDeleted = true;
+$notBlacklisted = true;
+
+$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$pageSize = 25;
 
 $applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, $page, $pageSize);
 $totalApplicants = $applicant->getApplicantsCount($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted);
