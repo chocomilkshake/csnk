@@ -332,7 +332,14 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
     .table-card tr.row-raised { position: relative; z-index: 1060; }
 
-    .dd-m; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+    .dd-modern .dropdown-menu {
+        border-radius: .75rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+        min-width: 180px;
+        z-index: 9999 !important;
+    }
+    .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
     .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
     .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
     .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled { color:#9aa0a6; background:transparent; pointer-events:none; }
