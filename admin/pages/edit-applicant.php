@@ -557,48 +557,49 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 
                 <!-- ===== Video Introduction (Preview + Replace/Delete) ===== -->
                 <div class="col-md-3">
-                    <label class="form-label">Video Introduction</label>
-                    <div class="border rounded p-2 text-center">
-                        <?php
-                        $hasVideo = !empty($applicantData['video_url']);
-                        $vt = $applicantData['video_type'] ?? 'iframe';
-                        $vp = $applicantData['video_provider'] ?? null;
-                        $rawUrl = $applicantData['video_url'] ?? '';
-                        ?>
-                        <?php if ($hasVideo): ?>
-                            <?php if ($vt === 'file' || $vp === 'file'): ?>
-                                <?php
-                                $relPath = normalize_upload_relative_path($rawUrl); // e.g., 'video/xxx.mp4'
-                                $publicUrl = htmlspecialchars(getFileUrl($relPath), ENT_QUOTES, 'UTF-8');
-                                ?>
-                                <video id="introVideoEl" controls style="max-height:220px; width:100%; object-fit:cover;">
-                                    <source src="<?= $publicUrl ?>">
-                                    Your browser does not support the video tag.
-                                </video>
+                    <label class="form-label">Video Introduction
+                        <div class="border rounded p-2 text-center">
+                            <?php
+                            $hasVideo = !empty($applicantData['video_url']);
+                            $vt = $applicantData['video_type'] ?? 'iframe';
+                            $vp = $applicantData['video_provider'] ?? null;
+                            $rawUrl = $applicantData['video_url'] ?? '';
+                            ?>
+                            <?php if ($hasVideo): ?>
+                                <?php if ($vt === 'file' || $vp === 'file'): ?>
+                                    <?php
+                                    $relPath = normalize_upload_relative_path($rawUrl); // e.g., 'video/xxx.mp4'
+                                    $publicUrl = htmlspecialchars(getFileUrl($relPath), ENT_QUOTES, 'UTF-8');
+                                    ?>
+                                    <video id="introVideoEl" controls style="max-height:220px; width:100%; object-fit:cover;">
+                                        <source src="<?= $publicUrl ?>">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                <?php else: ?>
+                                    <?php $embed = htmlspecialchars($rawUrl, ENT_QUOTES, 'UTF-8'); ?>
+                                    <div class="ratio ratio-16x9">
+                                        <iframe src="<?= $embed ?>" title="Intro Video"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="d-grid mt-2">
+                                    <button type="button" id="deleteVideoBtn" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash me-1"></i> Delete video
+                                    </button>
+                                </div>
                             <?php else: ?>
-                                <?php $embed = htmlspecialchars($rawUrl, ENT_QUOTES, 'UTF-8'); ?>
-                                <div class="ratio ratio-16x9">
-                                    <iframe src="<?= $embed ?>" title="Intro Video"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                        allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                <div class="text-muted small"
+                                    style="min-height: 220px; display:flex; align-items:center; justify-content:center;">
+                                    No video uploaded
                                 </div>
                             <?php endif; ?>
-                            <div class="d-grid mt-2">
-                                <button type="button" id="deleteVideoBtn" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-trash me-1"></i> Delete video
-                                </button>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-muted small"
-                                style="min-height: 220px; display:flex; align-items:center; justify-content:center;">
-                                No video uploaded
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                        </div>
 
-                    <!-- Replace/Upload: use same naming pattern as Add page -->
-                    <input type="file" class="form-control mt-2" name="videos[]" accept="video/*">
-                    <input type="hidden" name="delete_video" id="deleteVideo" value="0">
+                        <!-- Replace/Upload: use same naming pattern as Add page -->
+                        <input type="file" class="form-control mt-2" name="videos[]" accept="video/*">
+                        <input type="hidden" name="delete_video" id="deleteVideo" value="0">
+                    </label>
                     <small class="text-muted d-block mt-1">Upload a new file to replace the current video. Leave empty
                         to keep it.</small>
 
@@ -608,6 +609,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                                 value="<?= htmlspecialchars($_POST['video_title'] ?? ($currentVideoTitle ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                         </label>
                     </div>
+
                 </div>
                 <!-- ===== End Video Introduction ===== -->
 
