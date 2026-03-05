@@ -75,6 +75,19 @@ if (empty($_SESSION['csrf_token'])) {
     try { $_SESSION['
 // Handle status update action
 if (
+    isset($_GET['action'], $_GET['id'], $_GET['to'])
+    && $_GET['action'] === 'update_status'
+) {
+    $csrfOk = isset($_GET['csrf']) && hash_equals($csrf, (string)$_GET['csrf']);
+
+    if (!$csrfOk) {
+    if (in_array($to, $allowedStatuses, true)) {
+        $updated = false;
+  
+                    $businessUnitId = $currentApp['business_unit_id'];
+                }
+                $stmtCheck->close();
+            }
 
             if ($stmt = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?")) {
                 $stmt->bind_param("si", $to, $id);
