@@ -42,7 +42,9 @@ $csrfToken = $_SESSION['csrf_token'];
 // DB fetch
 $conn = $database->getConnection();
 $rows = [];
-if ($conn instanceof mysqli) {
+$buId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+if ($conn instanceof mysqli && $buId > 0) {
     $sql = "
         SELECT
             b.id,
@@ -63,11 +65,15 @@ if ($conn instanceof mysqli) {
         FROM blacklisted_applicants b
         LEFT JOIN applicants a ON a.id = b.applicant_id
         LEFT JOIN admin_users au ON au.id = b.created_by
-        WHERE b.is_active = 1
+        WHERE b.is_active = 1 AND a.business_unit_id = ?
         ORDER BY b.created_at DESC
     ";
-    if ($res = $conn->query($sql)) {
-        $rows = $res->fetch_all(MYSQLI_ASSOC);
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $buId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
     }
 }
 
