@@ -241,7 +241,34 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
     .status-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
     .status-btn--active { color: #fff; border-color: #4f46e5; background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); }
-    .country-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 
+    .country-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
+    .country-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .75rem; border-radius: .75rem; font-size: .8rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
+    .country-btn--active { color: #fff; border-color: #059669; background: linear-gradient(180deg, #10b981 0%, #059669 100%); }
+    .filter-label { font-size: .75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .25rem; }
+    
+    /* Dropdown Fix */
+    .table-card, .table-card .card-body, .table-card .table-responsive, .table-card table, .table-card thead, .table-card tbody, .table-card tr, .table-card th, .table-card td { overflow: visible !important; }
+    .table-card { position: relative; z-index: 0; }
+    td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
+    .table-card tr.row-raised { position: relative; z-index: 1060; }
+    .dd-modern .dropdown-menu { border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12); min-width: 180px; z-index: 9999 !important; }
+    .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dropdown-item:hover
+            </form>
+        </div>
+    </div>
+                        <?php if (empty($applicants)): ?>
+                            <tr><td colspan="8" class="text-center text-muted py-5">No on-process applicants found.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($applicants as $app): ?>
+                                <?php
+                                $canEdit = ($isSuperAdmin || $isAdmin || $isEmployee);
+                                ?>
+                                <tr>
+                                    <td>
+                                        <?php if (!empty($app['picture'])): ?>
+                                            <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                         <?php else: ?>
                                             <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="widthapp['suffix'])); ?></strong></td>
                                     <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
