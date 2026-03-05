@@ -329,7 +329,7 @@ if ($canViewReports && $conn instanceof mysqli) {
     </title>
     <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-iconz.png">
     <link rel="apple-touch-icon" href="/csnk/resources/img/favicons/apple-touch-icon-180.png">
-    <link rel="icon" href="/csnk/resources/img/csnk-iconz.ico">
+    <link rel="icon" href="/csnk/resources/img/csnk-iconz.png">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/csnk/resources/img/csnk-icon.png">
