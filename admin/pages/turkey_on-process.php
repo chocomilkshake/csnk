@@ -49,6 +49,16 @@ if ($conn instanceof mysqli) {
 }
 
 if (empty($_SESSION['current_bu_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+// Build preserved query string but EXCLUDE action parameters that cause loops
+$filterOutKeys = ['page', 'action', 'id', 'to', 'csrf'];
+$preserveQS = '';
+if (!empty($_GET)) {
+    $kept = array_filter(
+        $_GET,
         function ($v, $k) use ($filterOutKeys) {
             return !in_array($k, $filterOutKeys, true) && $v !== '' && $v !== null;
         },
