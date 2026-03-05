@@ -297,7 +297,17 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         padding: .35rem .75rem;
         border-radius: .75rem;
         font-size: .8rem;
-        
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        background: #fff;
+    }
+    .country-btn--active {
+        color: #fff;
+        border-color: #059669;
+        background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    }
     .filter-label {
         font-size: .75rem;
         font-weight: 600;
