@@ -143,7 +143,24 @@ if (
 
                 if ($stmtReport = $conn->prepare(
                     "INSERT INTO applicant_status_reports
-                     (applicant_id, b
+                     (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+                     VALUES (?, ?, ?, ?, ?, ?)"
+                )) {
+                    $stmtReport->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
+                    $stmtReport->execute();
+                    $stmtReport->close();
+                }
+            }
+        }
+
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage($updated ? 'success' : 'error', $updated ? 'Status updated successfully.' : 'Failed to update status.');
+        }
+    } else {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid status selected.');
+        }
+    }
 
     // Redirect back to this listing WITHOUT the action params to avoid loops
     $qs = $preserveQSWithQuestion ?: '?';
