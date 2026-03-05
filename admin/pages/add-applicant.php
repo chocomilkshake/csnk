@@ -407,86 +407,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Middle Name
-                                <input type="text" class="form-control" name="middle_name"
-                                    value="<?= htmlspecialchars($_POST['middle_name'] ?? '') ?>">
-                            </label>
+                            <label class="form-label">Middle Name</label>
+                            <input type="text" class="form-control" name="middle_name"
+                                value="<?= htmlspecialchars($_POST['middle_name'] ?? '') ?>">
+
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Last Name <span class="text-danger">*</span>
-                                <input type="text" class="form-control" name="last_name" required
-                                    value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
-                            </label>
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" required
+                                value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
+
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Suffix
-                                <input type="text" class="form-control" name="suffix" placeholder="Jr., Sr., III, etc."
-                                    value="<?= htmlspecialchars($_POST['suffix'] ?? '') ?>">
-                            </label>
+                        <div class="col-md-3">
+                            <label class="form-label">Suffix</label>
+                            <input type="text" class="form-control" name="suffix" placeholder="Jr., Sr., III, etc."
+                                value="<?= htmlspecialchars($_POST['suffix'] ?? '') ?>">
+
                         </div>
 
                         <!-- Employment Type moved here -->
-                        <div class="col-md-6">
-                            <label class="form-label">Employment Type <span class="text-danger">*</span>
-                                <select class="form-select" name="employment_type" required>
-                                    <option value="">Select...</option>
-                                    <option value="Full Time" <?= (($_POST['employment_type'] ?? '') === 'Full Time') ? 'selected' : '' ?>>Full Time</option>
-                                    <option value="Part Time" <?= (($_POST['employment_type'] ?? '') === 'Part Time') ? 'selected' : '' ?>>Part Time</option>
-                                </select>
-                            </label>
+                        <div class="col-md-3">
+                            <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="employment_type" required>
+                                <option value="">Select...</option>
+                                <option value="Full Time" <?= (($_POST['employment_type'] ?? '') === 'Full Time') ? 'selected' : '' ?>>Full Time</option>
+                                <option value="Part Time" <?= (($_POST['employment_type'] ?? '') === 'Part Time') ? 'selected' : '' ?>>Part Time</option>
+                            </select>
+
                         </div>
 
                         <!-- Daily Rate -->
-                        <div class="col-md-6">
-                            <label class="form-label">Daily Rate (₱)
-                                <input type="number" class="form-control" name="daily_rate" id="daily_rate" step="0.01"
-                                    min="0" max="100000" inputmode="decimal" placeholder="e.g., 650.00"
-                                    value="<?= htmlspecialchars($_POST['daily_rate'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                            </label>
+                        <div class="col-md-2">
+                            <label class="form-label">Daily Rate (₱)</label>
+                            <input type="number" class="form-control" name="daily_rate" id="daily_rate" step="0.01"
+                                min="0" max="100000" inputmode="decimal" placeholder="e.g., 650.00"
+                                value="<?= htmlspecialchars($_POST['daily_rate'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+
                             <div class="form-text">Leave blank if not set. Use numbers only (auto-rounded to 2
                                 decimals).</div>
                         </div>
 
                         <!-- Phones -->
-                        <div class="col-md-6">
-                            <label class="form-label">Phone Number (Primary)
-                                <input type="tel" class="form-control" name="phone_number"
-                                    placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
-                                    value="<?= htmlspecialchars($_POST['phone_number'] ?? '') ?>">
-                            </label>
+                        <div class="col-md-5">
+                            <label class="form-label">Phone Number (Primary)</label>
+                            <input type="tel" class="form-control" name="phone_number"
+                                placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
+                                value="<?= htmlspecialchars($_POST['phone_number'] ?? '') ?>">
+
                             <div class="form-text">Optional. If provided, must be 11 digits and start with 09.</div>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Phone Number (Alternate)
-                                <input type="tel" class="form-control" name="alt_phone_number"
-                                    placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
-                                    value="<?= htmlspecialchars($_POST['alt_phone_number'] ?? '') ?>">
-                            </label>
+                        <div class="col-md-5">
+                            <label class="form-label">Phone Number (Alternate)</label>
+                            <input type="tel" class="form-control" name="alt_phone_number"
+                                placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
+                                value="<?= htmlspecialchars($_POST['alt_phone_number'] ?? '') ?>">
+
                             <div class="form-text">Optional backup number.</div>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Email
-                                <input type="email" class="form-control" name="email" autocomplete="email"
-                                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-                            </label>
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" autocomplete="email"
+                                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Date of Birth <span class="text-danger">*</span>
-                                <input type="date" class="form-control" name="date_of_birth" required
-                                    value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
-                            </label>
+                            <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="date_of_birth" required
+                                value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
+
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label">Address <span class="text-danger">*</span>
-                                <textarea class="form-control" name="address" rows="2" autocomplete="address"
-                                    required><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
-                            </label>
+                            <label class="form-label">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="address" rows="2" autocomplete="address"
+                                required><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+
                         </div>
                     </div>
                 </div>
@@ -504,21 +504,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="card-body">
             <div class="row g-3 mb-2">
-                <div class="col-md-6">
-                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span>
-                        <select class="form-select" name="education_level" required>
-                            <option value="">Select...</option>
-                            <?php
-                            $opts = getEducationLevelOptions();
-                            $sel = $_POST['education_level'] ?? '';
-                            foreach ($opts as $o):
-                                ?>
-                                <option value="<?= htmlspecialchars($o) ?>" <?= ($sel === $o ? 'selected' : '') ?>>
-                                    <?= htmlspecialchars($o) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
+                <div class="col-md-4">
+                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span></label>
+                    <select class="form-select" name="education_level" required>
+                        <option value="">Select...</option>
+                        <?php
+                        $opts = getEducationLevelOptions();
+                        $sel = $_POST['education_level'] ?? '';
+                        foreach ($opts as $o):
+                            ?>
+                            <option value="<?= htmlspecialchars($o) ?>" <?= ($sel === $o ? 'selected' : '') ?>>
+                                <?= htmlspecialchars($o) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                 </div>
             </div>
 
@@ -527,77 +527,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h6 class="fw-semibold mb-2">Elementary</h6>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[elementary][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[elementary][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[elementary][year]" placeholder="e.g., 2008"
-                            value="<?= htmlspecialchars($_POST['edu']['elementary']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[elementary][year]" placeholder="e.g., 2008"
+                        value="<?= htmlspecialchars($_POST['edu']['elementary']['year'] ?? '') ?>">
+
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">High School</h6>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[highschool][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[highschool][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2012"
-                            value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2012"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? '') ?>">
+
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">Senior High School</h6>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[senior_high][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[senior_high][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Strand
-                        <input type="text" class="form-control" name="edu[senior_high][strand]"
-                            placeholder="e.g., STEM, HUMSS, ABM"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['strand'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Strand</label>
+                    <input type="text" class="form-control" name="edu[senior_high][strand]"
+                        placeholder="e.g., STEM, HUMSS, ABM"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['strand'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[senior_high][year]" placeholder="e.g., 2015"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[senior_high][year]" placeholder="e.g., 2015"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['year'] ?? '') ?>">
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">College</h6>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[college][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[college][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['school'] ?? '') ?>">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Course
-                        <input type="text" class="form-control" name="edu[college][course]"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['course'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Course</label>
+                    <input type="text" class="form-control" name="edu[college][course]"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['course'] ?? '') ?>">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[college][year]" placeholder="e.g., 2019"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[college][year]" placeholder="e.g., 2019"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['year'] ?? '') ?>">
                 </div>
             </div>
         </div>
@@ -643,74 +639,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" id="<?= $id ?>"
                                         name="specialization_skills[]" value="<?= htmlspecialchars($label) ?>" <?= $checked ?>>
-                    </label>
-                    <label class="form-check-label" for="<?= $id ?>"><?= htmlspecialchars($label) ?></label>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-    </div>
-
-    <div class="form-text mt-2">Check all that apply.</div>
-    </div>
-    <div class="card-footer bg-white d-flex justify-content-between">
-        <button type="button" class="btn btn-secondary prev-step">Previous</button>
-        <button type="button" class="btn btn-primary next-step">Next</button>
-    </div>
-    </div>
-
-    <!-- ==================== STEP 4: Preferences (Cities & Languages) ==================== -->
-    <div class="card mb-4 wizard-step d-none" data-step="4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-semibold">Preferences</h5>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <!-- Country (Business Unit) -->
-                <div class="col-md-5">
-                    <label class="form-label">Country <span class="text-danger">*</span>
-                        <select class="form-select" name="business_unit_id" required>
-                            <option value="">Select Country...</option>
-                            <?php foreach ($businessUnits as $bu): ?>
-                                <option value="<?= (int) $bu['id'] ?>" <?= ($currentBuId == (int) $bu['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
+                                    <label class="form-check-label" for="<?= $id ?>"><?= htmlspecialchars($label) ?></label>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
-                    </label>
+                        </div>
+                    </div>
+
+                    <div class="form-text mt-2">Check all that apply.</div>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary prev-step">Previous</button>
+                <button type="button" class="btn btn-primary next-step">Next</button>
+            </div>
+        </div>
+
+        <!-- ==================== STEP 4: Preferences (Cities & Languages) ==================== -->
+        <div class="card mb-4 wizard-step d-none" data-step="4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">Preferences</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Country (Business Unit) -->
+                    <div class="col-md-5">
+                        <label class="form-label">Country <span class="text-danger">*</span>
+                            <select class="form-select" name="business_unit_id" id="<?= $selectId ?>" required>
+                                <option value="">Select Country...</option>
+
+                                <?php if (!empty($businessUnits) && is_iterable($businessUnits)): ?>
+                                    <?php foreach ($businessUnits as $bu): ?>
+                                        <?php
+                                        $id = (int) $bu['id'];
+                                        $label = htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8');
+                                        $selected = $currentBuId === $id ? 'selected' : '';
+                                        ?>
+                                        <option value="<?= $id ?>" <?= $selected ?>><?= $label ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+
+                        </label>
+                    </div>
+
+                    <!-- Preferred Cities (tags) -->
+                    <div class="col-md-7">
+                        <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
+                                each)</small>
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" id="cityInput" class="form-control"
+                                    placeholder="Type a city and press Enter">
+                        </label>
+                        <button type="button" id="addCityBtn" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                    <div id="cityTags" class="d-flex flex-wrap gap-2"></div>
+                    <div class="form-text">Press Enter or click + to add. Click × on a tag to remove.</div>
                 </div>
 
-                <!-- Preferred Cities (tags) -->
-                <div class="col-md-7">
-                    <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
+                <!-- Languages (tags) -->
+                <div class="col-md-5">
+                    <label class="form-label">Languages <small class="text-muted">(press Enter to add
                             each)</small>
-                        <div class="d-flex gap-2 mb-2">
-                            <input type="text" id="cityInput" class="form-control"
-                                placeholder="Type a city and press Enter">
+                        <div class="d-flex gap-2">
+                            <input type="text" id="langInput" class="form-control"
+                                placeholder="e.g., English, Filipino, Arabic">
                     </label>
-                    <button type="button" id="addCityBtn" class="btn btn-outline-primary">
+                    <button type="button" id="addLangBtn" class="btn btn-outline-primary">
                         <i class="bi bi-plus-lg"></i>
                     </button>
                 </div>
-                <div id="cityTags" class="d-flex flex-wrap gap-2"></div>
-                <div class="form-text">Press Enter or click + to add. Click × on a tag to remove.</div>
+                <div id="langTags" class="d-flex flex-wrap gap-2 mt-2"></div>
             </div>
-
-            <!-- Languages (tags) -->
-            <div class="col-md-5">
-                <label class="form-label">Languages <small class="text-muted">(press Enter to add
-                        each)</small>
-                    <div class="d-flex gap-2">
-                        <input type="text" id="langInput" class="form-control"
-                            placeholder="e.g., English, Filipino, Arabic">
-                </label>
-                <button type="button" id="addLangBtn" class="btn btn-outline-primary">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
-            </div>
-            <div id="langTags" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
-    </div>
     </div>
     <div class="card-footer bg-white d-flex justify-content-between">
         <button type="button" class="btn btn-secondary prev-step">Previous</button>
