@@ -464,8 +464,8 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
   </div>
 </div>
 
-<!-- Scripts for Replace Modal binding -->
-<script src="../js/replacements.js"></script>
+<!-- Scripts for Replace Modal binding (SMC Turkey Version) -->
+<script src="../js/turkey_replacements.js"></script>
 <script>
   // expose CSRF to JS
   window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
@@ -482,10 +482,10 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     if (wrap) wrap.innerHTML = '';
   });
 
-  // Bind the form to the helper
+  // Bind the form to the helper (SMC version)
   document.addEventListener('DOMContentLoaded', function() {
-    if (window.Replacements) {
-      Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+    if (window.TurkeyReplacements) {
+      TurkeyReplacements.bindInit('#replaceInitForm', '#replacementCandidates');
     }
   });
 
