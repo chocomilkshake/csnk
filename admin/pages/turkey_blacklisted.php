@@ -63,7 +63,7 @@ $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 if ($conn instanceof mysqli && !empty($smcBuIds)) {
     // Use IN clause for all SMC BU IDs
     $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
-    $sql = "SELECT a.*, ba.reason, ba.blacklisted_at 
+    $sql = "SELECT a.*, ba.reason, ba.created_at as blacklisted_at 
             FROM blacklisted_applicants ba 
             JOIN applicants a ON a.id = ba.applicant_id 
             WHERE a.business_unit_id IN ($placeholders) AND ba.is_active = 1";
@@ -71,7 +71,7 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
     if ($q !== '') {
         $sql .= " AND (a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ?)";
     }
-    $sql .= " ORDER BY ba.blacklisted_at DESC";
+    $sql .= " ORDER BY ba.created_at DESC";
 
     if ($stmt = $conn->prepare($sql)) {
         $types = str_repeat('i', count($smcBuIds));
