@@ -72,7 +72,16 @@ $preserveQSWithQuestion = !empty($preserveQS) ? ('?' . ltrim($preserveQS, '&')) 
 
 // CSRF token (and we'll require it on actions)
 if (empty($_SESSION['csrf_token'])) {
-    try { $_SESSION['
+    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
+    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
+}
+$csrf = $_SESSION['csrf_token'] ?? '';
+
+/** -----------------------------------------------------------------
+ *  ACTION HANDLERS — run BEFORE any output
+ *  ----------------------------------------------------------------- */
+$allowedStatuses = ['pending', 'on_process', 'approved'];
+
 // Handle status update action
 if (
     isset($_GET['action'], $_GET['id'], $_GET['to'])
