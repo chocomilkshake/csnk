@@ -183,7 +183,21 @@ if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
     $id = (int)$_GET['id'];
     $deleted = false;
 
-    if ($con
+    if ($conn instanceof mysqli) {
+        if ($stmt = $conn->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?")) {
+            $stmt->bind_param("i", $id);
+            $deleted = $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
+    }
+
+    $qs = $preserveQSWithQuestion ?: '?';
+    redirect('turkey_pending.php' . $qs);
+    exit;
 }
 
 /** ------------------
