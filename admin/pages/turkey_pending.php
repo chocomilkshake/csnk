@@ -407,7 +407,16 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                             <th>Date Applied</th>
                             <th>Actions</th>
                         </tr>
-                    </thead>MC pages
+                    </thead>
+                    <tbody>
+                        <?php if (empty($applicants)): ?>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">No pending applicants found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($applicants as $app): ?>
+                                <?php
+                                // Roles: super_admin/admin/employee can edit in SMC pages
                                 $canEdit = ($isSuperAdmin || $isAdmin || $isEmployee);
                                 ?>
                                 <tr>
