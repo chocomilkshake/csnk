@@ -90,6 +90,17 @@ if (
     $csrfOk = isset($_GET['csrf']) && hash_equals($csrf, (string)$_GET['csrf']);
 
     if (!$csrfOk) {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid request token.');
+        }
+        $qs = $preserveQSWithQuestion ?: '?';
+        redirect('turkey_on-process.php' . $qs);
+        exit;
+    }
+
+    $id = (int)$_GET['id'];
+    $to = strtolower(trim((string)$_GET['to']));
+
     if (in_array($to, $allowedStatuses, true)) {
         $updated = false;
   
