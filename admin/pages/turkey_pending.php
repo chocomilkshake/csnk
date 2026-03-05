@@ -218,7 +218,7 @@ $isAdmin      = ($currentRole === 'admin');
 $isEmployee   = ($currentRole === 'employee');
 
 $country = $_GET['country'] ?? 'all';
-$q = is_boo" \t\n\r\0\x0B[]\"");
+$q = is" \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
     $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
