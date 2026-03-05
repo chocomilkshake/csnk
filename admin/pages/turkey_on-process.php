@@ -1,4 +1,3 @@
-
 <?php
 // FILE: admin/pages/turkey_on-process.php (SMC - Turkey On Process Applicants)
 $pageTitle = 'SMC Manpower Agency Co.';
@@ -24,37 +23,42 @@ if (!$auth->canSeeSMC()) {
     exit;
 }
 
+// Resolve current user & role
+$currentUser = $auth->getCurrentUser();
+$role = isset($currentUser['role']) ? (string)$currentUser['role'] : 'employee';
+$isSuperAdmin = ($role === 'super_admin');
+$isAdmin = ($role === 'admin');
+$isEmployee = ($role === 'employee');
+$canEdit = ($isSuperAdmin || $isAdmin || $isEmployee);
+
 $conn = $database->getConnection();
 
-$smcBuId = 0;
+// Grab ALL active SMC BU IDs to enforce SMC-only on the list (for ALL roles)
+$smcBuIds = [];
 if ($conn instanceof mysqli) {
-    $sqlFindSMCBu = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1 ORDER BY bu.id ASC LIMIT 1";
-    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-        if (!empty($row['id'])) {
-            $smcBuId = (int) $row['id'];
-            $_SESSION['smc_bu_id'] = $smcBuId;
+    $sqlSmcBus = "
+        SELECT bu.id
+        FROM business_units bu
+        JOIN agencies ag ON ag.id = bu.agency_id
+        WHERE ag.code = 'smc' AND bu.active = 1
+        ORDER BY bu.id ASC
+    ";
+    if ($res = $conn->query($sqlSmcBus)) {
+        while ($r = $res->fetch_assoc()) {
+            $smcBuIds[] = (int)$r['id'];
         }
     }
+}
+
+// Store first SMC BU ID in session (if you use it elsewhere)
+if (!empty($smcBuIds)) {
+    $_SESSION['smc_bu_id'] = $smcBuIds[0];
 }
 
 if (empty($_SESSION['current_bu_id'])) {
     header('Location: login.php');
     exit;
 }
-
-require_once $ADMIN_ROOT . '/includes/header.php';
-require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
-
-$applicant = new Applicant($database);
-$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
-$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
-
-$isSuperAdmin = ($currentRole === 'super_admin');
-$isEmployee = ($currentRole === 'employee');
 
 // CSRF token
 if (empty($_SESSION['csrf_token'])) {
@@ -63,12 +67,12 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf = $_SESSION['csrf_token'];
 
+// Allowed statuses
+$allowedStatuses = ['pending', 'on_process', 'approved'];
+
 // Preserve query string
 $preserveQS = !empty($_GET) ? ('&' . http_build_query(array_filter($_GET, fn($k) => $k !== 'page', ARRAY_FILTER_USE_KEY))) : '';
 $preserveQSWithQuestion = !empty($preserveQS) ? ('?' . ltrim($preserveQS, '&')) : '';
-
-// Allowed statuses to transition to
-$allowedStatuses = ['pending', 'on_process', 'approved'];
 
 // Handle status update with report (POST - from modal)
 if (
@@ -96,7 +100,7 @@ if (
         exit;
     }
     if ($reportText === '' || mb_strlen($reportText) < 5) {
-        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Please provide a brief reason (at least 5 characters).');
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Please provide a Brief reason (at least 5 characters).');
         redirect('turkey_on-process.php' . $preserveQSWithQuestion);
         exit;
     }
@@ -159,18 +163,6 @@ if (
         else setFlashMessage('error', 'Failed to update status or save report.');
     }
 
-    if ($ok && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
-        $fullName = null;
-        if (method_exists($applicant, 'getById')) {
-            $row = $applicant->getById($id);
-            if (is_array($row)) {
-                $fullName = getFullName($row['first_name'] ?? '', $row['middle_name'] ?? '', $row['last_name'] ?? '', $row['suffix'] ?? '');
-            }
-        }
-        $label = $fullName ?: "ID {$id}";
-        $auth->logActivity((int)$_SESSION['admin_id'], 'Update Applicant Status (SMC)', "Updated status for {$label} → {$to}");
-    }
-
     redirect('turkey_on-process.php' . $preserveQSWithQuestion);
     exit;
 }
@@ -184,6 +176,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'update_status' && isset($_GET
         $updated = false;
         $conn = $database->getConnection();
         $businessUnitId = null;
+        $fromStatus = null;
         
         if ($conn instanceof mysqli) {
             if ($stmtCheck = $conn->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1")) {
@@ -258,24 +251,97 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     exit;
 }
 
-$country = $_GET['country'] ?? 'all';
+require_once $ADMIN_ROOT . '/includes/header.php';
+
+// Get applicants with latest booking data for SMC business units
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
-$status = 'on_process';
+$rows = [];
 
-$buScope = null;
-$countryId = ($country !== 'all') ? (int) $country : null;
-$notDeleted = true;
-$notBlacklisted = true;
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+    
+    // Join with client_bookings to get booking info
+    $sql = "SELECT 
+                a.id,
+                a.first_name,
+                a.middle_name,
+                a.last_name,
+                a.suffix,
+                a.phone_number,
+                a.email,
+                a.preferred_location,
+                a.picture,
+                a.status,
+                a.created_at,
+                a.business_unit_id,
+                cb.client_first_name,
+                cb.client_middle_name,
+                cb.client_last_name,
+                cb.client_phone,
+                cb.client_email,
+                cb.client_address,
+                cb.appointment_type,
+                cb.appointment_date,
+                cb.appointment_time
+            FROM applicants a
+            LEFT JOIN (
+                SELECT cb1.* 
+                FROM client_bookings cb1
+                INNER JOIN (
+                    SELECT applicant_id, MAX(created_at) as max_created
+                    FROM client_bookings
+                    GROUP BY applicant_id
+                ) cb2 ON cb1.applicant_id = cb2.applicant_id AND cb1.created_at = cb2.max_created
+            ) cb ON a.id = cb.applicant_id
+            WHERE a.business_unit_id IN ($placeholders) 
+            AND a.status = 'on_process' 
+            AND a.deleted_at IS NULL
+            AND NOT EXISTS (
+                SELECT 1 FROM blacklisted_applicants b
+                WHERE b.applicant_id = a.id AND b.is_active = 1
+            )";
+    
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+    }
+}
 
-$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$pageSize = 25;
+// Filter by search query
+function filterRowsByQuery(array $rows, string $query): array {
+    if ($query === '') return $rows;
+    $needle = mb_strtolower($query);
+    
+    return array_values(array_filter($rows, function(array $row) use ($needle) {
+        $first = mb_strtolower((string)($row['first_name'] ?? ''));
+        $middle = mb_strtolower((string)($row['middle_name'] ?? ''));
+        $last = mb_strtolower((string)($row['last_name'] ?? ''));
+        $email = mb_strtolower((string)($row['email'] ?? ''));
+        $phone = mb_strtolower((string)($row['phone_number'] ?? ''));
+        
+        $cfn = mb_strtolower((string)($row['client_first_name'] ?? ''));
+        $cmn = mb_strtolower((string)($row['client_middle_name'] ?? ''));
+        $cln = mb_strtolower((string)($row['client_last_name'] ?? ''));
+        $cem = mb_strtolower((string)($row['client_email'] ?? ''));
+        $cph = mb_strtolower((string)($row['client_phone'] ?? ''));
+        
+        $applicantName = trim($first . ' ' . $middle . ' ' . $last);
+        $clientName = trim($cfn . ' ' . $cmn . ' ' . $cln);
+        
+        $haystack = implode(' | ', [$first, $middle, $last, $applicantName, $email, $phone, $clientName, $cem, $cph]);
+        
+        return mb_strpos($haystack, $needle) !== false;
+    }));
+}
 
-$applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, $page, $pageSize);
-$totalApplicants = $applicant->getApplicantsCount($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted);
-$totalPages = ceil($totalApplicants / $pageSize);
+if ($q !== '') {
+    $rows = filterRowsByQuery($rows, $q);
+}
 
-$countriesWithCounts = $applicant->getCountriesWithCounts($buScope, $status, $q, $notDeleted, $notBlacklisted);
-
+/** Helpers */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) return 'N/A';
     $arr = json_decode($json, true);
@@ -291,13 +357,11 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     return $full;
 }
 ?>
+
 <style>
     .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
     .status-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
     .status-btn--active { color: #fff; border-color: #4f46e5; background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); }
-    .country-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
-    .country-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .75rem; border-radius: .75rem; font-size: .8rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
-    .country-btn--active { color: #fff; border-color: #059669; background: linear-gradient(180deg, #10b981 0%, #059669 100%); }
     .filter-label { font-size: .75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .25rem; }
     
     /* Dropdown Fix */
@@ -322,141 +386,176 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     .status-modal .form-text { color:#64748b; }
 </style>
 
-<div class="container-fluid px-2">
-    <div class="row align-items-center justify-content-between mb-3">
-        <div class="col-auto">
-            <h4 class="mb-2 fw-semibold">SMC - On Process Applicants</h4>
-            <div class="status-group">
-                <a href="turkey_applicants.php" class="status-btn">All</a>
-                <a href="turkey_pending.php" class="status-btn">Pending</a>
-                <a href="turkey_on-process.php" class="status-btn status-btn--active">On Process</a>
-                <a href="turkey_approved.php" class="status-btn">Hired</a>
-            </div>
-        </div>
-        <?php if (!empty($countriesWithCounts)): ?>
-            <div class="col-12 mt-2">
-                <div class="filter-label">Filter by Country</div>
-                <div class="country-group">
-                    <a href="turkey_on-process.php" class="country-btn <?php echo $country === 'all' ? 'country-btn--active' : ''; ?>">All</a>
-                    <?php foreach ($countriesWithCounts as $c): ?>
-                        <a href="turkey_on-process.php?country=<?php echo (int)$c['id']; ?>" class="country-btn <?php echo $country === (string)$c['id'] ? 'country-btn--active' : ''; ?>"><?php echo h($c['name']); ?> (<?php echo (int)$c['count']; ?>)</a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <div class="row mb-2">
-        <div class="col-12 d-flex justify-content-end">
-            <form method="get" action="turkey_on-process.php" class="d-flex" role="search" style="max-width: 460px; width: 100%;">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Search applicants..." value="<?php echo h($q); ?>">
-                    <input type="hidden" name="country" value="<?php echo h($country); ?>">
-                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                    <?php if ($q !== ''): ?>
-                        <a class="btn btn-outline-secondary" href="turkey_on-process.php?country=<?php echo h($country); ?>"><i class="bi bi-x-lg"></i></a>
-                    <?php endif; ?>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="card table-card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Photo</th>
-                            <th>Name</th>
-                            <th>Phone</th>
-                            <th>Email</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>Date Applied</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($applicants)): ?>
-                            <tr><td colspan="8" class="text-center text-muted py-5">No on-process applicants found.</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($applicants as $app): ?>
-                                <?php
-                                $canEdit = ($isSuperAdmin || $isAdmin || $isEmployee);
-                                $appId = (int)$app['id'];
-                                $appStatus = (string)($app['status'] ?? 'on_process');
-                                $fullName = getFullName($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
-                                $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
-                                ?>
-                                <tr>
-                                    <td>
-                                        <?php if (!empty($app['picture'])): ?>
-                                            <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
-                                        <?php else: ?>
-                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?></div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><strong><?php echo h($fullName); ?></strong></td>
-                                    <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-                                    <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-                                    <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                                    <td><span class="badge bg-info">On Process</span></td>
-                                    <td><?php echo h(formatDate($app['created_at'])); ?></td>
-                                    <td>
-                                        <div class="btn-group dropup dd-modern">
-                                            <a href="view-applicant.php?id=<?php echo $appId; ?>" class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
-                                            <?php if ($canEdit): ?>
-                                                <a href="edit-applicant.php?id=<?php echo $appId; ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
-                                                <a href="turkey_on-process.php?action=delete&id=<?php echo $appId; ?><?php echo $preserveQS; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');"><i class="bi bi-trash"></i></a>
-                                            <?php endif; ?>
-                                            
-                                            <!-- Change Status Dropdown - opens modal when changing from on_process -->
-                                            <div class="dropdown">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false" aria-haspopup="true" title="Change Status" id="changeStatusBtn-<?php echo $appId; ?>"><i class="bi bi-arrow-left-right me-1"></i> Change Status</button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo $appId; ?>">
-                                                    <li>
-                                                        <a class="dropdown-item change-status <?php echo ($appStatus === 'pending') ? 'disabled' : ''; ?>" 
-                                                           href="#"
-                                                           data-id="<?php echo $appId; ?>"
-                                                           data-from="on_process"
-                                                           data-to="pending"
-                                                           data-applicant="<?php echo h($fullName); ?>"
-                                                           data-photo="<?php echo h($photo); ?>">
-                                                            <i class="bi bi-hourglass-split text-warning"></i><span>Pending</span>
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item <?php echo ($appStatus === 'on_process') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo $appId; ?>&to=on_process<?php echo $preserveQS; ?>">
-                                                            <i class="bi bi-arrow-repeat text-info"></i><span>On Process</span>
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item change-status <?php echo ($appStatus === 'approved') ? 'disabled' : ''; ?>"
-                                                           href="#"
-                                                           data-id="<?php echo $appId; ?>"
-                                                           data-from="on_process"
-                                                           data-to="approved"
-                                                           data-applicant="<?php echo h($fullName); ?>"
-                                                           data-photo="<?php echo h($photo); ?>">
-                                                            <i class="bi bi-check2-circle text-success"></i><span>Approved</span>
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-2 fw-semibold">SMC - On Process Applicants</h4>
+        <div class="status-group">
+            <a href="turkey_applicants.php" class="status-btn">All</a>
+            <a href="turkey_pending.php" class="status-btn">Pending</a>
+            <a href="turkey_on-process.php" class="status-btn status-btn--active">On Process</a>
+            <a href="turkey_approved.php" class="status-btn">Hired</a>
         </div>
     </div>
 </div>
 
-<!-- === Status Change Report Modal (SMC Version) === -->
+<!-- Search bar -->
+<div class="mb-3 d-flex justify-content-end">
+    <form method="get" action="turkey_on-process.php" class="w-100" style="max-width: 420px;">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search on-process (applicant or client)..." value="<?php echo h($q); ?>" autocomplete="off">
+            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            <?php if ($q !== ''): ?>
+                <a class="btn btn-outline-secondary" href="turkey_on-process.php"><i class="bi bi-x-lg"></i></a>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
+
+<div class="card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover table-styled align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Applicant</th>
+                        <th>Client</th>
+                        <th>Interview</th>
+                        <th>Date & Time</th>
+                        <th>Applicant Contact</th>
+                        <th>Client Contact</th>
+                        <th>Date Applied</th>
+                        <th style="width: 320px;">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <?php if (empty($rows)): ?>
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-5">
+                                <?php if ($q === ''): ?>
+                                    No applicants currently on process.
+                                <?php else: ?>
+                                    No results for "<strong><?php echo h($q); ?></strong>".
+                                    <a href="turkey_on-process.php" class="ms-1">Clear search</a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($rows as $row): ?>
+                            <?php
+                                $id = (int)$row['id'];
+                                $currentStatus = (string)($row['status'] ?? 'on_process');
+                                
+                                $viewUrl = 'view_onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $deleteUrl = 'turkey_on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                
+                                // Status change URLs
+                                $toPendingUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=pending' . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $toOnProcessUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $toApprovedUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=approved' . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                
+                                // Client info
+                                $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
+                                $clientName = $clientName !== '' ? $clientName : '—';
+                                
+                                // Interview info
+                                $apptType = $row['appointment_type'] ?? '—';
+                                $apptDate = (string)($row['appointment_date'] ?? '');
+                                $apptTime = (string)($row['appointment_time'] ?? '');
+                                $dateTimeDisplay = trim($apptDate . ' ' . $apptTime);
+                                $dateTimeDisplay = $dateTimeDisplay !== '' ? $dateTimeDisplay : '—';
+                                
+                                // Contacts
+                                $appEmail = $row['email'] ?? '';
+                                $appContact = trim(($row['phone_number'] ?? '') . (!empty($appEmail) ? ' / ' . $appEmail : ''));
+                                $appContact = $appContact !== '' ? $appContact : '—';
+                                
+                                $cliEmail = $row['client_email'] ?? '';
+                                $cliContact = trim(($row['client_phone'] ?? '') . (!empty($cliEmail) ? ' / ' . $cliEmail : ''));
+                                $cliContact = $cliContact !== '' ? $cliContact : '—';
+                                
+                                $applicantName = htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8');
+                                $photo = !empty($row['picture']) ? getFileUrl($row['picture']) : '';
+                            ?>
+                            <tr>
+                                <td>
+                                    <?php if (!empty($row['picture'])): ?>
+                                        <img src="<?php echo h(getFileUrl($row['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <?php echo strtoupper(substr($row['first_name'] ?? '', 0, 1)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold"><?php echo $applicantName; ?></div>
+                                    <div class="text-muted small"><?php echo h(renderPreferredLocation($row['preferred_location'] ?? null)); ?></div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold"><?php echo h($clientName); ?></div>
+                                    <div class="text-muted small"><?php echo h($row['client_address'] ?? '—'); ?></div>
+                                </td>
+
+                                <td><?php echo h($apptType); ?></td>
+                                <td><?php echo h($dateTimeDisplay); ?></td>
+                                <td><?php echo h($appContact); ?></td>
+                                <td><?php echo h($cliContact); ?></td>
+                                <td><?php echo h(formatDate($row['created_at'])); ?></td>
+
+                                <td class="actions-cell">
+                                    <div class="btn-group dd-modern dropup">
+                                        <!-- View -->
+                                        <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View"><i class="bi bi-eye"></i></a>
+                                        
+                                        <!-- Edit -->
+                                        <?php if ($canEdit): ?>
+                                            <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Delete -->
+                                        <?php if ($canEdit): ?>
+                                            <a href="<?php echo h($deleteUrl); ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');"><i class="bi bi-trash"></i></a>
+                                        <?php endif; ?>
+
+                                        <!-- Change Status Dropdown -->
+                                        <div class="dropdown dropup">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" title="Change Status" id="changeStatusBtn-<?php echo $id; ?>">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toPendingUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="pending" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-hourglass-split text-warning"></i><span>Pending</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toOnProcessUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="on_process" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-arrow-repeat text-info"></i><span>On-Process</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toApprovedUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="approved" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-check2-circle text-success"></i><span>Approved</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- === Status Change Report Modal === -->
 <div class="modal fade status-modal" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <form method="post" action="turkey_on-process.php" id="statusReportForm" class="modal-content border-0 shadow-lg">
@@ -544,7 +643,7 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Dropdown fix
+    // Initialize dropdowns
     var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
     btns.forEach(function(btn) {
         if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
@@ -576,7 +675,7 @@ document.addEventListener('DOMContentLoaded', function() {
     descTA.addEventListener('input', updateCounter);
     updateCounter();
 
-    // Open modal handler
+    // Open modal (require report only when FROM on_process and TO != from)
     document.querySelectorAll('.change-status').forEach(function(el) {
         el.addEventListener('click', function(ev) {
             ev.preventDefault();
@@ -584,11 +683,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             var fromSt = (el.dataset.from || '').toLowerCase();
             var toSt = (el.dataset.to || '').toLowerCase();
+            var href = el.dataset.href || '#';
             var id = el.dataset.id || '';
             var name = el.dataset.applicant || '';
-            var photo = el.dataset.photo || '';
+            var photo = el.dataset.appPhoto || '';
 
-            // Only require report when changing FROM on_process
+            // Require a report when changing FROM on_process
             if (fromSt === 'on_process' && toSt !== fromSt) {
                 idInput.value = id;
                 toInput.value = toSt;
@@ -616,12 +716,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // For other transitions, redirect directly
-            window.location.href = el.getAttribute('href');
+            // Otherwise, follow the GET link
+            window.location.href = href;
         });
     });
 
-    // Submit - prepend reason to description
+    // When submitting, if a Reason is chosen and not already in the text, prefix it
     document.getElementById('statusReportForm').addEventListener('submit', function() {
         var reason = reasonSelect.value.trim();
         var text = descTA.value.trim();
@@ -642,3 +742,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
+
