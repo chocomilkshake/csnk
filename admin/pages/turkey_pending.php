@@ -351,7 +351,16 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-auto">
             <h4 class="mb-2 fw-semibold">SMC - Pending Applicants</h4>
-          
+            <div class="status-group">
+                <a href="turkey_applicants.php" class="status-btn">All</a>
+                <a href="turkey_pending.php" class="status-btn status-btn--active">Pending</a>
+                <a href="turkey_on-process.php" class="status-btn">On Process</a>
+                <a href="turkey_approved.php" class="status-btn">Hired</a>
+            </div>
+        </div>
+        <?php if (!empty($countriesWithCounts)): ?>
+            <div class="col-12 mt-2">
+                <div class="filter-label">Filter by Country</div>
                 <div class="country-group">
                     <a href="turkey_pending.php"
                         class="country-btn <?php echo $country === 'all' ? 'country-btn--active' : ''; ?>">All</a>
