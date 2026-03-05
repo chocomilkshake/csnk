@@ -334,7 +334,16 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                                     <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong></td>
                                     <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
                                     <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-                            
+                                    <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+                                    <td><span class="badge bg-info">On Process</span></td>
+                                    <td><?php echo h(formatDate($app['created_at'])); ?></td>
+                                    <td>
+                                        <div class="btn-group dropup dd-modern">
+                                            <a href="view-applicant.php?id=<?php echo (int)$app['id']; ?>" class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
+                                            <?php if ($canEdit): ?>
+                                                <a href="edit-applicant.php?id=<?php echo (int)$app['id']; ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                                <a href="turkey_on-process.php?action=delete&id=<?php echo (int)$app['id']; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');"><i class="bi bi-trash"></i></a>
+                                            <?php endif; ?>
                                             
                                             <!-- Change Status Dropdown -->
                                             <div class="dropdown">
