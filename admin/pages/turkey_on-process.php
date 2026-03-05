@@ -163,7 +163,16 @@ if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
 
     if (!$csrfOk) {
         if (function_exists('setFlashMessage')) {
-            setFlas
+            setFlashMessage('error', 'Invalid request token.');
+        }
+        $qs = $preserveQSWithQuestion ?: '?';
+        redirect('turkey_on-process.php' . $qs);
+        exit;
+    }
+
+    $id = (int)$_GET['id'];
+    $deleted = false;
+    if ($conn instanceof mysqli) {
         if ($stmt = $conn->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?")) {
             $stmt->bind_param("i", $id);
             $deleted = $stmt->execute();
