@@ -779,6 +779,15 @@ if ($canViewReports && $conn instanceof mysqli) {
                             </span>
                         </span>
                     </a>
+                    <a href="turkey_on-hold.php"
+                        class="sidebar-item <?php echo $currentPage === 'turkey_on-hold' ? 'active' : ''; ?>">
+                        <i class="bi bi-pause-circle"></i><span class="label"><span class="text">On Hold</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo ($smcOnHoldCount ?? 0) === 0 ? 'is-zero' : ''; ?>">
+                                <?php echo (int) ($smcOnHoldCount ?? 0); ?>
+                            </span>
+                        </span>
+                    </a>
                     <a href="turkey_deleted.php"
                         class="sidebar-item <?php echo $currentPage === 'turkey_deleted' ? 'active' : ''; ?>">
                         <i class="bi bi-trash"></i><span class="label"><span class="text">Deleted</span></span>
