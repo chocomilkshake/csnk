@@ -254,7 +254,21 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     .dd-modern .dropdown-menu { border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12); min-width: 180px; z-index: 9999 !important; }
     .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
     .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
-    .dd-m
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+    .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled { color:#9aa0a6; background:transparent; pointer-events:none; }
+    .btn-status { border-radius: .75rem; }
+    table.table-styled { margin-bottom: 0; }
+</style>
+
+<div class="container-fluid px-2">
+    <div class="row ali
+                <div class="country-group">
+                    <a href="turkey_on-process.php" class="country-btn <?php echo $country === 'all' ? 'country-btn--active' : ''; ?>">All</a>
+                    <?php foreach ($countriesWithCounts as $c): ?>
+                        <a href="turkey_on-process.php?country=<?php echo (int)$c['id']; ?>" class="country-btn <?php echo $country === (string)$c['id'] ? 'country-btn--active' : ''; ?>"><?php echo h($c['name']); ?> (<?php echo (int)$c['count']; ?>)</a>
+                    <?php endforeac
+                    <?php endif; ?>
+                </div>
             </form>
         </div>
     </div>
