@@ -468,7 +468,41 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                                                     title="Change Status"
                                                     id="changeStatusBtn-<?php echo (int) $app['id']; ?>">
                                                     <i class="bi bi-arrow-left-right me-1"></i>
-                                        
+                                                    Change Status
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow"
+                                                    aria-labelledby="changeStatusBtn-<?php echo (int) $app['id']; ?>">
+                                                    <li>
+                                                        <a class="dropdown-item <?php echo ($app['status'] === 'pending') ? 'disabled' : ''; ?>"
+                                                           href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <i class="bi bi-hourglass-split text-warning"></i>
+                                                            <span>Pending</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item <?php echo ($app['status'] === 'on_process') ? 'disabled' : ''; ?>"
+                                                           href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=on_process<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <i class="bi bi-arrow-repeat text-info"></i>
+                                                            <span>On Process</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item <?php echo ($app['status'] === 'approved') ? 'disabled' : ''; ?>"
+                                                           href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=approved<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <i class="bi bi-check2-circle text-success"></i>
+                                                            <span>Approved</span>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
