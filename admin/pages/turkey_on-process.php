@@ -298,6 +298,24 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
             </form>
         </div>
     </div>
+
+    <div class="card table-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Date Applied</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         <?php if (empty($applicants)): ?>
                             <tr><td colspan="8" class="text-center text-muted py-5">No on-process applicants found.</td></tr>
                         <?php else: ?>
