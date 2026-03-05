@@ -64,7 +64,15 @@ if (!empty($_GET)) {
         },
         ARRAY_FILTER_USE_BOTH
     );
-    if (!empty($ke
+    if (!empty($kept)) {
+        $preserveQS = '&' . http_build_query($kept);
+    }
+}
+$preserveQSWithQuestion = !empty($preserveQS) ? ('?' . ltrim($preserveQS, '&')) : '';
+
+// CSRF token (and we'll require it on actions)
+if (empty($_SESSION['csrf_token'])) {
+    try { $_SESSION['
 // Handle status update action
 if (
 
