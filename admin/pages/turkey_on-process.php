@@ -223,7 +223,14 @@ $totalPages = ceil($totalApplicants / $pageSize);
 $countriesWithCounts = $applicant->getCountriesWithCounts($buScope, $status, $q, $notDeleted, $notBlacklisted);
 
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
-    if (empty($json)) return 'N/A';i> Change Status</button>
+    if (empty($json)) return 'N/A';
+    $arr = json_decode($json, true);
+    if (!is_array($arr)) {
+        $fallback = trim($json);
+        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+        return $fallback !== '' ? $fallback : 'N/A';
+    }
+    $cities = array_values-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false" aria-haspopup="true" title="Change Status" id="changeStatusBtn-<?php echo (int)$app['id']; ?>"><i class="bi bi-arrow-left-right me-1"></i> Change Status</button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
                                                     <li><a class="dropdown-item <?php echo ($app['status'] === 'pending') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo (int)$app['id']; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"><i class="bi bi-hourglass-split text-warning"></i><span>Pending</span></a></li>
                                                     <li><a class="dropdown-item <?php echo ($app['status'] === 'on_process') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo (int)$app['id']; ?>&to=on_process<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"><i class="bi bi-arrow-repeat text-info"></i><span>On Process</span></a></li>
