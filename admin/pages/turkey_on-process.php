@@ -230,7 +230,16 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-    $cities = array_values-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false" aria-haspopup="true" title="Change Status" id="changeStatusBtn-<?php echo (int)$app['id']; ?>"><i class="bi bi-arrow-left-right me-1"></i> Change Status</button>
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+    if (empty($cities)) return 'N/A';
+    $full = implode(', ', $cities);
+    if (mb_strlen($full) > $maxLen) return $cities[0];
+    return $full;
+}
+?>
+<style>
+    .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
+                                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false" aria-haspopup="true" title="Change Status" id="changeStatusBtn-<?php echo (int)$app['id']; ?>"><i class="bi bi-arrow-left-right me-1"></i> Change Status</button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
                                                     <li><a class="dropdown-item <?php echo ($app['status'] === 'pending') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo (int)$app['id']; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"><i class="bi bi-hourglass-split text-warning"></i><span>Pending</span></a></li>
                                                     <li><a class="dropdown-item <?php echo ($app['status'] === 'on_process') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo (int)$app['id']; ?>&to=on_process<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"><i class="bi bi-arrow-repeat text-info"></i><span>On Process</span></a></li>
