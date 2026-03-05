@@ -103,7 +103,17 @@ if (
 
     if (in_array($to, $allowedStatuses, true)) {
         $updated = false;
-  
+        $businessUnitId = null;
+        $fromStatus = null;
+
+        if ($conn instanceof mysqli) {
+            if ($stmtCheck = $conn->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1")) {
+                $stmtCheck->bind_param("i", $id);
+                $stmtCheck->execute();
+                $resCheck = $stmtCheck->get_result();
+                $currentApp = $resCheck ? $resCheck->fetch_assoc() : null;
+                if ($currentApp) {
+                    $fromStatus = $currentApp['status'];
                     $businessUnitId = $currentApp['business_unit_id'];
                 }
                 $stmtCheck->close();
