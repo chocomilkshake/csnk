@@ -19,7 +19,18 @@ $auth->requireLogin();
 
 // Check if user has permission to view SMC data
 if (!$auth->canSeeSMC()) {
-    header('Location: applicant
+    header('Location: applicants.php');
+    exit;
+}
+
+$conn = $database->getConnection();
+
+/** -----------------------------------------------------------------
+ *  Compute/prepare values that do NOT output HTML
+ *  ----------------------------------------------------------------- */
+$smcBuId = 0;
+if ($conn instanceof mysqli) {
+    $sqlFindSMCBu = "S
         }
     })) {
                 $stmt->bind_param("si", $to, $id);
