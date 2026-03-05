@@ -332,7 +332,23 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
     .table-card tr.row-raised { position: relative; z-index: 1060; }
 
-    .dd-m; gap:.5rem; padding:.55rem .9rem; font
+    .dd-m; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+    .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled { color:#9aa0a6; background:transparent; pointer-events:none; }
+    .btn-status { border-radius: .75rem; }
+    table.table-styled { margin-bottom: 0; }
+</style>
+
+<div class="container-fluid px-2">
+    <div class="row align-items-center justify-content-between mb-3">
+        <div class="col-auto">
+            <h4 class="mb-2 fw-semibold">SMC - Pending Applicants</h4>
+          
+                <div class="country-group">
+                    <a href="turkey_pending.php"
+                        class="country-btn <?php echo $country === 'all' ? 'country-btn--active' : ''; ?>">All</a>
+                    <?php foreach ($countriesWithCounts as $c): ?>
                         <a href="turkey_pending.php?country=<?php echo (int) $c['id']; ?>"
                  -flex" role="search"
                 style="max-width: 460px; width: 100%;">
