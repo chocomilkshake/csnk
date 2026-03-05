@@ -123,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- Favicons -->
   <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-iconz.png">
   <link rel="apple-touch-icon" href="/csnk/resources/img/favicons/apple-touch-icon-180.png">
-  <link rel="icon" href="/csnk/resources/img/csnk-iconz.ico">
 
   <!-- Bootstrap + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
