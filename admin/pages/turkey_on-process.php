@@ -30,7 +30,20 @@ $conn = $database->getConnection();
  *  ----------------------------------------------------------------- */
 $smcBuId = 0;
 if ($conn instanceof mysqli) {
-    $sqlFindSMCBu = "S
+    $sqlFindSMCBu = "SELECT bu.id
+                     FROM business_units bu
+                     JOIN agencies ag ON ag.id = bu.agency_id
+                     WHERE ag.code = 'smc' AND bu.active = 1
+                     ORDER BY bu.id ASC
+                     LIMIT 1";
+    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!empty($row['id'])) {
+            $smcBuId = (int) $row['id'];
+            $_SESSION['smc_bu_id'] = $smcBuId;
         }
     })) {
                 $stmt->bind_param("si", $to, $id);
