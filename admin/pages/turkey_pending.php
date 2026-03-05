@@ -256,6 +256,21 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
 }
 ?>
 <style>
+    .status-group {
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, .85);
+    }
+    .status-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .45rem .9rem;
+        border-radius: .75rem;
+        font-size: .875rem;
 
     }
     .country-btn {
