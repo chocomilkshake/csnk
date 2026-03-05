@@ -104,6 +104,33 @@ if (
         redirect('turkey_pending.php' . $qs);
         exit;
     }
+
+    $id = (int)$_GET['id'];
+    $to = strtolower(trim((string)$_GET['to']));
+
+    if (in_array($to, $allowedStatuses, true)) {
+        $updated = false;
+        $businessUnitId = null;
+        $fromStatus = null;
+
+        if ($conn instanceof mysqli) {
+            // Get current status and business_unit_id
+            if ($stmtCheck = $conn->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1")) {
+                $stmtCheck->bind_param("i", $id);
+                $stmtCheck->execute();
+                $resCheck = $stmtCheck->get_result();
+                $currentApp = $resCheck ? $resCheck->fetch_assoc() : null;
+                if ($currentApp) {
+                    $fromStatus = $currentApp['status'];
+                    $businessUnitId = $currentApp['business_unit_id'];
+                }
+                $stmtCheck->close();
+            }
+
+            // Update status
+            idate
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid request token.');
         }
         $qs = $preserveQSWithQuestion ?: '?';
         redirect('turkey_pending.php' . $qs);
