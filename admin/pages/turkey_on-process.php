@@ -239,6 +239,17 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
 ?>
 <style>
     .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
+    .status-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
+    .status-btn--active { color: #fff; border-color: #4f46e5; background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); }
+    .country-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 
+                                        <?php else: ?>
+                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="widthapp['suffix'])); ?></strong></td>
+                                    <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                                    <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                            
+                                            
+                                            <!-- Change Status Dropdown -->
+                                            <div class="dropdown">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false" aria-haspopup="true" title="Change Status" id="changeStatusBtn-<?php echo (int)$app['id']; ?>"><i class="bi bi-arrow-left-right me-1"></i> Change Status</button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo (int)$app['id']; ?>">
                                                     <li><a class="dropdown-item <?php echo ($app['status'] === 'pending') ? 'disabled' : ''; ?>" href="turkey_on-process.php?action=update_status&id=<?php echo (int)$app['id']; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"><i class="bi bi-hourglass-split text-warning"></i><span>Pending</span></a></li>
