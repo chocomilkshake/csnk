@@ -381,9 +381,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-9">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">First Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="first_name" required
-                                value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
+                            <label for="first_name" class="form-label">
+                                First Name <span class="text-danger">*</span>
+                            </label>
+                            <input id="first_name" type="text" class="form-control" name="first_name" required
+                                autocomplete="given-name" value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
                         </div>
 
                         <div class="col-md-6">
@@ -433,7 +435,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email"
+                            <input type="email" class="form-control" name="email" autocomplete="email"
                                 value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                         </div>
 
@@ -445,7 +447,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="col-12">
                             <label class="form-label">Address <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="address" rows="2"
+                            <textarea class="form-control" name="address" rows="2" autocomplete="address"
                                 required><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
                         </div>
                     </div>
