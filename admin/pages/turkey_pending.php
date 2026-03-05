@@ -218,7 +218,20 @@ $isAdmin      = ($currentRole === 'admin');
 $isEmployee   = ($currentRole === 'employee');
 
 $country = $_GET['country'] ?? 'all';
-$q = is" \t\n\r\0\x0B[]\"");
+$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+$status = 'pending';
+
+// For SMC pages: super admin/employee/admin sees all SMC applicants (null = no BU filter)
+$buScope = null;
+$countryId = ($country !== 'all') ? (int) $country : null;
+$notDeleted = true;
+$notBlacklisted = true;
+
+$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$pageSize = 2
+    if (!is_array($arr)) {
+        $fallback = trim($json);
+        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
     $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
