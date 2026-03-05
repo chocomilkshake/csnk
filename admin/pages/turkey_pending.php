@@ -200,7 +200,22 @@ if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
     exit;
 }
 
-/** ------------------
+/** -----------------------------------------------------------------
+ *  Only now include header / output HTML
+ *  ----------------------------------------------------------------- */
+require_once $ADMIN_ROOT . '/includes/header.php';
+require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
+
+$country = $_GET['country'] ?? 'all';
+$q = is_boo" \t\n\r\0\x0B[]\"");
+        return $fallback !== '' ? $fallback : 'N/A';
+    }
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+    if (empty($cities))
+        return 'N/A';
+    $full = implode(', ', $cities);
+    if (mb_strlen($full) > $maxLen)
+        return $cities[0];
     return $full;
 }
 ?>
