@@ -504,21 +504,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="card-body">
             <div class="row g-3 mb-2">
-                <div class="col-md-6">
-                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span>
-                        <select class="form-select" name="education_level" required>
-                            <option value="">Select...</option>
-                            <?php
-                            $opts = getEducationLevelOptions();
-                            $sel = $_POST['education_level'] ?? '';
-                            foreach ($opts as $o):
-                                ?>
-                                <option value="<?= htmlspecialchars($o) ?>" <?= ($sel === $o ? 'selected' : '') ?>>
-                                    <?= htmlspecialchars($o) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
+                <div class="col-md-4">
+                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span></label>
+                    <select class="form-select" name="education_level" required>
+                        <option value="">Select...</option>
+                        <?php
+                        $opts = getEducationLevelOptions();
+                        $sel = $_POST['education_level'] ?? '';
+                        foreach ($opts as $o):
+                            ?>
+                            <option value="<?= htmlspecialchars($o) ?>" <?= ($sel === $o ? 'selected' : '') ?>>
+                                <?= htmlspecialchars($o) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                 </div>
             </div>
 
@@ -527,77 +527,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h6 class="fw-semibold mb-2">Elementary</h6>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[elementary][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[elementary][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[elementary][year]" placeholder="e.g., 2008"
-                            value="<?= htmlspecialchars($_POST['edu']['elementary']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[elementary][year]" placeholder="e.g., 2008"
+                        value="<?= htmlspecialchars($_POST['edu']['elementary']['year'] ?? '') ?>">
+
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">High School</h6>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[highschool][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[highschool][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2012"
-                            value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2012"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? '') ?>">
+
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">Senior High School</h6>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[senior_high][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[senior_high][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['school'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Strand
-                        <input type="text" class="form-control" name="edu[senior_high][strand]"
-                            placeholder="e.g., STEM, HUMSS, ABM"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['strand'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Strand</label>
+                    <input type="text" class="form-control" name="edu[senior_high][strand]"
+                        placeholder="e.g., STEM, HUMSS, ABM"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['strand'] ?? '') ?>">
+
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[senior_high][year]" placeholder="e.g., 2015"
-                            value="<?= htmlspecialchars($_POST['edu']['senior_high']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[senior_high][year]" placeholder="e.g., 2015"
+                        value="<?= htmlspecialchars($_POST['edu']['senior_high']['year'] ?? '') ?>">
                 </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">College</h6>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">School Name
-                        <input type="text" class="form-control" name="edu[college][school]"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['school'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[college][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['school'] ?? '') ?>">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Course
-                        <input type="text" class="form-control" name="edu[college][course]"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['course'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Course</label>
+                    <input type="text" class="form-control" name="edu[college][course]"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['course'] ?? '') ?>">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Year
-                        <input type="text" class="form-control" name="edu[college][year]" placeholder="e.g., 2019"
-                            value="<?= htmlspecialchars($_POST['edu']['college']['year'] ?? '') ?>">
-                    </label>
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[college][year]" placeholder="e.g., 2019"
+                        value="<?= htmlspecialchars($_POST['edu']['college']['year'] ?? '') ?>">
                 </div>
             </div>
         </div>
