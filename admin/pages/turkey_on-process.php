@@ -278,7 +278,21 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                     <a href="turkey_on-process.php" class="country-btn <?php echo $country === 'all' ? 'country-btn--active' : ''; ?>">All</a>
                     <?php foreach ($countriesWithCounts as $c): ?>
                         <a href="turkey_on-process.php?country=<?php echo (int)$c['id']; ?>" class="country-btn <?php echo $country === (string)$c['id'] ? 'country-btn--active' : ''; ?>"><?php echo h($c['name']); ?> (<?php echo (int)$c['count']; ?>)</a>
-                    <?php endforeac
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-12 d-flex justify-content-end">
+            <form method="get" action="turkey_on-process.php" class="d-flex" role="search" style="max-width: 460px; width: 100%;">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search applicants..." value="<?php echo h($q); ?>">
+                    <input type="hidden" name="country" value="<?php echo h($country); ?>">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                    <?php if ($q !== ''): ?>
+                        <a class="btn btn-outline-secondary" href="turkey_on-process.php?country=<?php echo h($country); ?>"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>
