@@ -328,7 +328,10 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                                         <?php if (!empty($app['picture'])): ?>
                                             <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                         <?php else: ?>
-                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="widthapp['suffix'])); ?></strong></td>
+                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong></td>
                                     <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
                                     <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
                             
