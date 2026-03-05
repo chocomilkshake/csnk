@@ -598,9 +598,16 @@ if ($canViewReports && $conn instanceof mysqli) {
         </div>
 
         <nav class="sidebar-menu" aria-label="Primary">
-            <!-- Dashboard -->
-            <a href="dashboard.php" class="sidebar-item <?php echo $currentPage === 'dashboard' ? 'active' : ''; ?>"
-                aria-current="<?php echo $currentPage === 'dashboard' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+            <!-- Dashboard - Dynamic link based on user agency -->
+            <?php 
+            // Determine which dashboard to show based on user's agency
+            $dashboardUrl = 'dashboard.php'; // Default to CSNK
+            if ($userAgency === 'smc' || (!$canSeeCSNK && $canSeeSMC)) {
+                $dashboardUrl = 'turkey_dashboard.php';
+            }
+            ?>
+            <a href="<?php echo h($dashboardUrl); ?>" class="sidebar-item <?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'active' : ''; ?>"
+                aria-current="<?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
                 data-bs-placement="right" title="Dashboard">
                 <i class="bi bi-speedometer2"></i>
                 <span class="label"><span class="text">Dashboard</span></span>
@@ -769,6 +776,15 @@ if ($canViewReports && $conn instanceof mysqli) {
                         <span class="side-badge">
                             <span class="pill-count <?php echo ($smcApprovedCount ?? 0) === 0 ? 'is-zero' : ''; ?>">
                                 <?php echo (int) ($smcApprovedCount ?? 0); ?>
+                            </span>
+                        </span>
+                    </a>
+                    <a href="turkey_on-hold.php"
+                        class="sidebar-item <?php echo $currentPage === 'turkey_on-hold' ? 'active' : ''; ?>">
+                        <i class="bi bi-pause-circle"></i><span class="label"><span class="text">On Hold</span></span>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo ($smcOnHoldCount ?? 0) === 0 ? 'is-zero' : ''; ?>">
+                                <?php echo (int) ($smcOnHoldCount ?? 0); ?>
                             </span>
                         </span>
                     </a>

@@ -98,8 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
           $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
 
-          // Redirect to main dashboard - SMC employees will see SMC section in sidebar
-          header('Location: dashboard.php');
+          // Redirect based on user agency - SMC employees go to turkey dashboard
+          $userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
+          if ($userAgency === 'smc') {
+              header('Location: turkey_dashboard.php');
+          } else {
+              header('Location: dashboard.php');
+          }
           exit();
         } else {
           // Failed login

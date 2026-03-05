@@ -1,6 +1,22 @@
 <?php
+/* BLOCK SMC employees from accessing CSNK dashboard - must be before any output */
+// Start session explicitly
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user agency is SMC
+$userAgencyCheck = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
+
+if ($userAgencyCheck === 'smc') {
+    // SMC employees should use turkey_dashboard.php - redirect immediately (relative path for hosting compatibility)
+    header('Location: turkey_dashboard.php');
+    exit;
+}
+
 $pageTitle = 'CSNK Dashboard';
 require_once '../includes/header.php';
+
 require_once '../includes/Applicant.php';
 require_once '../includes/Admin.php';
 
