@@ -381,7 +381,19 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Search applicants..."
                         value="<?php echo h($q); ?>">
-                    <input 
+                    <input type="hidden" name="country" value="<?php echo h($country); ?>">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                    <?php if ($q !== ''): ?>
+                        <a class="btn btn-outline-secondary" href="turkey_pending.php?country=<?php echo h($country); ?>"><i
+                                class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card table-card">
+        <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover mb-0">
                     <thead>
