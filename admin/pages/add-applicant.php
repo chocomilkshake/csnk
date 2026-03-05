@@ -106,6 +106,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Employment type moved to Step 1
     $employmentType = sanitizeInput($_POST['employment_type'] ?? ''); // Full Time | Part Time
 
+    // --- Daily Rate (daily wage) ---
+    $dailyRate = null;
+    $dailyRateRaw = trim((string) ($_POST['daily_rate'] ?? ''));
+    if ($dailyRateRaw !== '') {
+        // Allow input like "₱650.00" or "650,00"
+        $dailyRateRaw = str_replace(['₱', ',', ' '], '', $dailyRateRaw);
+        if (!is_numeric($dailyRateRaw)) {
+            $errors[] = 'Daily rate must be a valid number.';
+        } else {
+            $dailyRate = round((float) $dailyRateRaw, 2);
+            if ($dailyRate < 0 || $dailyRate > 100000) {
+                $errors[] = 'Daily rate must be between 0 and 100,000.';
+            }
+        }
+    }
+
     // Education level (Step 2)
     $educationLevel = sanitizeInput($_POST['education_level'] ?? '');
 
@@ -248,6 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'employment_type' => $employmentType,
             'education_level' => $educationLevel,
             'years_experience' => $yearsExperience,
+            'daily_rate' => $dailyRate,
 
             'picture' => $picturePath,
             'status' => $status,
@@ -419,6 +436,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="Part Time" <?= (($_POST['employment_type'] ?? '') === 'Part Time') ? 'selected' : '' ?>>Part Time</option>
                                 </select>
                             </label>
+                        </div>
+
+                        <!-- Daily Rate -->
+                        <div class="col-md-6">
+                            <label class="form-label">Daily Rate (₱)
+                                <input type="number" class="form-control" name="daily_rate" id="daily_rate" step="0.01"
+                                    min="0" max="100000" inputmode="decimal" placeholder="e.g., 650.00"
+                                    value="<?= htmlspecialchars($_POST['daily_rate'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            </label>
+                            <div class="form-text">Leave blank if not set. Use numbers only (auto-rounded to 2
+                                decimals).</div>
                         </div>
 
                         <!-- Phones -->
