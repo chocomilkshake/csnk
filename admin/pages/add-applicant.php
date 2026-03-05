@@ -615,10 +615,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="workHistoryRows" class="vstack gap-3"></div>
 
             <div class="row mt-3">
-                <div class="col-md-6">
-                    <label class="form-label">Years of Experience (Auto)
-                        <input type="text" id="yearsTotal" class="form-control" value="0 years" readonly>
-                    </label>
+                <div class="col-md-4">
+                    <label class="form-label">Years of Experience (Auto)</label>
+                    <input type="text" id="yearsTotal" class="form-control" value="0 years" readonly>
+
                     <div class="form-text">Computed from the “Years” column (e.g., 2019–2021 = 2; “3 years” = 3).</div>
                 </div>
             </div>
@@ -626,69 +626,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <hr class="my-4">
 
             <div>
-                <label class="form-label fw-semibold">Specialization Skills
-                    <div class="row">
-                        <?php
-                        $specOpts = getSpecializationOptions();
-                        $postedSpecs = $_POST['specialization_skills'] ?? [];
-                        foreach ($specOpts as $i => $label):
-                            $id = 'spec_' . $i;
-                            $checked = in_array($label, $postedSpecs ?? [], true) ? 'checked' : '';
-                            ?>
-                            <div class="col-md-6">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="<?= $id ?>"
-                                        name="specialization_skills[]" value="<?= htmlspecialchars($label) ?>" <?= $checked ?>>
-                                    <label class="form-check-label" for="<?= $id ?>"><?= htmlspecialchars($label) ?></label>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
+                <label class="form-label fw-semibold">Specialization Skills</label>
 
-                    <div class="form-text mt-2">Check all that apply.</div>
+                <?php
+                $specOpts = getSpecializationOptions();
+                $postedSpecs = $_POST['specialization_skills'] ?? [];
+                ?>
+
+                <!-- Responsive grid: 1 col on xs, 2 on md, 3 on lg -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
+                    <?php foreach ($specOpts as $i => $label):
+                        $id = 'spec_' . $i;
+                        $isChecked = in_array($label, $postedSpecs, true);
+                        $safe = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+                        ?>
+                        <div class="col">
+                            <div class="form-check d-flex align-items-start gap-2 mb-1">
+                                <input class="form-check-input mt-1" type="checkbox" id="<?= $id ?>"
+                                    name="specialization_skills[]" value="<?= $safe ?>" <?= $isChecked ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="<?= $id ?>" style="line-height:1.3;">
+                                    <?= $safe ?>
+                                </label>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="form-text mt-2">Check all that apply.</div>
             </div>
+
             <div class="card-footer bg-white d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary prev-step">Previous</button>
                 <button type="button" class="btn btn-primary next-step">Next</button>
             </div>
         </div>
+    </div>
 
-        <!-- ==================== STEP 4: Preferences (Cities & Languages) ==================== -->
-        <div class="card mb-4 wizard-step d-none" data-step="4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-semibold">Preferences</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Country (Business Unit) -->
-                    <div class="col-md-5">
-                        <label class="form-label">Country <span class="text-danger">*</span>
-                            <select class="form-select" name="business_unit_id" id="<?= $selectId ?>" required>
-                                <option value="">Select Country...</option>
+    <!-- ==================== STEP 4: Preferences (Cities & Languages) ==================== -->
+    <div class="card mb-4 wizard-step d-none" data-step="4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold">Preferences</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Country (Business Unit) -->
+                <div class="col-md-5">
+                    <label class="form-label">Country <span class="text-danger">*</span></label>
+                    <select class="form-select" name="business_unit_id" required>
+                        <option value="">Select Country...</option>
+                        <?php if (!empty($businessUnits) && is_iterable($businessUnits)): ?>
+                            <?php foreach ($businessUnits as $bu): ?>
+                                <?php
+                                $id = (int) $bu['id'];
+                                $label = htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8');
+                                $selected = $currentBuId === $id ? 'selected' : '';
+                                ?>
+                                <option value="<?= $id ?>" <?= $selected ?>><?= $label ?></option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
 
-                                <?php if (!empty($businessUnits) && is_iterable($businessUnits)): ?>
-                                    <?php foreach ($businessUnits as $bu): ?>
-                                        <?php
-                                        $id = (int) $bu['id'];
-                                        $label = htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8');
-                                        $selected = $currentBuId === $id ? 'selected' : '';
-                                        ?>
-                                        <option value="<?= $id ?>" <?= $selected ?>><?= $label ?></option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-
-                        </label>
-                    </div>
-
-                    <!-- Preferred Cities (tags) -->
-                    <div class="col-md-7">
-                        <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
-                                each)</small>
-                            <div class="d-flex gap-2 mb-2">
-                                <input type="text" id="cityInput" class="form-control"
-                                    placeholder="Type a city and press Enter">
-                        </label>
+                <!-- Preferred Cities (tags) -->
+                <div class="col-md-7">
+                    <label class="form-label">Preferred Cities <small class="text-muted">(press Enter to add
+                            each)</small></label>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" id="cityInput" class="form-control"
+                            placeholder="Type a city and press Enter">
                         <button type="button" id="addCityBtn" class="btn btn-outline-primary">
                             <i class="bi bi-plus-lg"></i>
                         </button>
@@ -700,23 +705,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Languages (tags) -->
                 <div class="col-md-5">
                     <label class="form-label">Languages <small class="text-muted">(press Enter to add
-                            each)</small>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="langInput" class="form-control"
-                                placeholder="e.g., English, Filipino, Arabic">
-                    </label>
-                    <button type="button" id="addLangBtn" class="btn btn-outline-primary">
-                        <i class="bi bi-plus-lg"></i>
-                    </button>
+                            each)</small></label>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="langInput" class="form-control"
+                            placeholder="e.g., English, Filipino, Arabic">
+                        <button type="button" id="addLangBtn" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                    <div id="langTags" class="d-flex flex-wrap gap-2 mt-2"></div>
                 </div>
-                <div id="langTags" class="d-flex flex-wrap gap-2 mt-2"></div>
             </div>
         </div>
-    </div>
-    <div class="card-footer bg-white d-flex justify-content-between">
-        <button type="button" class="btn btn-secondary prev-step">Previous</button>
-        <button type="button" class="btn btn-primary next-step">Next</button>
-    </div>
+        <div class="card-footer bg-white d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary prev-step">Previous</button>
+            <button type="button" class="btn btn-primary next-step">Next</button>
+        </div>
     </div>
 
     <!-- ==================== STEP 5: Documents & Submit ==================== -->
@@ -727,57 +731,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Barangay Clearance
-                        <input type="file" class="form-control" name="brgy_clearance" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">Barangay Clearance</label>
+                    <input type="file" class="form-control" name="brgy_clearance" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Birth Certificate
-                        <input type="file" class="form-control" name="birth_certificate" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">Birth Certificate</label>
+                    <input type="file" class="form-control" name="birth_certificate" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">SSS
-                        <input type="file" class="form-control" name="sss" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">SSS</label>
+                    <input type="file" class="form-control" name="sss" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Pag-IBIG
-                        <input type="file" class="form-control" name="pagibig" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">Pag-IBIG</label>
+                    <input type="file" class="form-control" name="pagibig" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">NBI Clearance
-                        <input type="file" class="form-control" name="nbi" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">NBI Clearance</label>
+                    <input type="file" class="form-control" name="nbi" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Police Clearance
-                        <input type="file" class="form-control" name="police_clearance" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">Police Clearance</label>
+                    <input type="file" class="form-control" name="police_clearance" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">TIN ID
-                        <input type="file" class="form-control" name="tin_id" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">TIN ID</label>
+                    <input type="file" class="form-control" name="tin_id" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Passport
-                        <input type="file" class="form-control" name="passport" accept=".pdf,.jpg,.jpeg,.png">
-                    </label>
+                    <label class="form-label">Passport</label>
+                    <input type="file" class="form-control" name="passport" accept=".pdf,.jpg,.jpeg,.png">
+
                 </div>
                 <div class="col-12 mt-3">
-                    <label class="form-label">Video (optional)
-                        <div id="videoDropArea" class="border rounded p-3 text-center"
-                            style="min-height:110px; cursor:pointer; background:#f8f9fa;">
-                            <div id="videoDropPlaceholder" class="text-muted">
-                                <i class="bi bi-cloud-upload me-1"></i>Drag &amp; drop a video here or click to browse
-                            </div>
-                            <video id="videoPreview" class="mt-2 rounded"
-                                style="max-width:100%; max-height:300px; display:none;"></video>
+                    <label class="form-label">Video (optional)</label>
+                    <div id="videoDropArea" class="border rounded p-3 text-center"
+                        style="min-height:110px; cursor:pointer; background:#f8f9fa;">
+                        <div id="videoDropPlaceholder" class="text-muted">
+                            <i class="bi bi-cloud-upload me-1"></i>Drag &amp; drop a video here or click to
+                            browse
                         </div>
-                        <input type="file" class="form-control d-none" id="videoInput" name="videos[]" accept="video/*">
-                    </label>
+                        <video id="videoPreview" class="mt-2 rounded"
+                            style="max-width:100%; max-height:300px; display:none;"></video>
+                    </div>
+                    <input type="file" class="form-control d-none" id="videoInput" name="videos[]" accept="video/*">
+
                     <div id="videoMetaInfo" class="mt-2" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center">
                             <span id="videoFileName" class="text-truncate fw-semibold"></span>
@@ -787,11 +792,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <small class="text-muted" id="videoFileSize"></small>
                     </div>
                     <div class="col-md-6 mt-2">
-                        <label class="form-label">Video Title (optional)
-                            <input type="text" class="form-control" id="videoTitle" name="video_title"
-                                placeholder="e.g., Work Portfolio Video"
-                                value="<?= htmlspecialchars($_POST['video_title'] ?? '') ?>">
-                        </label>
+                        <label class="form-label">Video Title (optional)</label>
+                        <input type="text" class="form-control" id="videoTitle" name="video_title"
+                            placeholder="e.g., Work Portfolio Video"
+                            value="<?= htmlspecialchars($_POST['video_title'] ?? '') ?>">
+
                     </div>
                     <div class="form-text mt-2">Supported: mp4, mov, webm, mkv, avi. Max 200MB.</div>
                 </div>
@@ -928,24 +933,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             row.className = 'row g-2 align-items-end';
             row.innerHTML = `
       <div class="col-md-4">
-        <label class="form-label">Company Name
+        <label class="form-label">Company Name</label>
         <input type="text" class="form-control" name="work_history[${idx}][company]" value="${escapeHtml(values.company || '')}">
-        </label>
+        
       </div>
       <div class="col-md-2">
-        <label class="form-label">Years
+        <label class="form-label">Years</label>
         <input type="text" class="form-control years-input" name="work_history[${idx}][years]" placeholder="e.g., 2019–2021 or 2 years" value="${escapeHtml(values.years || '')}">
-        </label>
+        
       </div>
       <div class="col-md-3">
-        <label class="form-label">Role
+        <label class="form-label">Role</label>
         <input type="text" class="form-control" name="work_history[${idx}][role]" value="${escapeHtml(values.role || '')}">
-        </label>
+        
       </div>
       <div class="col-md-2">
-        <label class="form-label">Location
+        <label class="form-label">Location</label>
         <input type="text" class="form-control" name="work_history[${idx}][location]" placeholder="e.g., Riyadh, KSA" value="${escapeHtml(values.location || '')}">
-        </label>
+        
       </div>
       <div class="col-md-1 d-grid">
         <button type="button" class="btn btn-outline-danger removeRow" title="Remove">
