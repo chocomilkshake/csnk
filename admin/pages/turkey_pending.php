@@ -228,7 +228,19 @@ $notDeleted = true;
 $notBlacklisted = true;
 
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$pageSize = 2
+$pageSize = 25;
+
+$applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, $page, $pageSize);
+$totalApplicants = $applicant->getApplicantsCount($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted);
+$totalPages = ceil($totalApplicants / $pageSize);
+
+$countriesWithCounts = $applicant->getCountriesWithCounts($buScope, $status, $q, $notDeleted, $notBlacklisted);
+
+function renderPreferredLocation(?string $json, int $maxLen = 30): string
+{
+    if (empty($json))
+        return 'N/A';
+    $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
