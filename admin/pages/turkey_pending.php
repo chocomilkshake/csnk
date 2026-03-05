@@ -424,7 +424,29 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                                         <?php if (!empty($app['picture'])): ?>
                                             <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded"
                                                 width="50" height="50" style="object-fit: cover;">
-                             pp['id']; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"
+                                        <?php else: ?>
+                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                                style="width: 50px; height: 50px;">
+                                                <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
+                                    </td>
+                                    <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                                    <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                                    <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+                                    <td><span class="badge bg-warning">Pending</span></td>
+                                    <td><?php echo h(formatDate($app['created_at'])); ?></td>
+                                    <td>
+                                        <div class="btn-group dropup dd-modern">
+                                            <a href="view-applicant.php?id=<?php echo (int) $app['id']; ?>"
+                                                class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
+                                            <?php if ($canEdit): ?>
+                                                <a href="edit-applicant.php?id=<?php echo (int) $app['id']; ?>"
+                                                    class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                                <!-- Delete -->
+                                                <a href="turkey_pending.php?action=delete&id=<?php echo (int) $app['id']; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"
                                                     class="btn btn-sm btn-danger"
          
     </div>
