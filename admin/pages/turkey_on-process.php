@@ -142,6 +142,29 @@ if (
                 }
             }
         }
+
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage($updated ? 'success' : 'error', $updated ? 'Status updated successfully.' : 'Failed to update status.');
+        }
+    } else {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid status selected.');
+        }
+    }
+
+    $qs = $preserveQSWithQuestion ?: '?';
+    redirect('turkey_on-process.php' . $qs);
+    exit;
+}
+
+// Handle delete action
+if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
+    $csrfOk = isset($_GET['csrf']) && hash_equals($csrf, (string)$_GET['csrf']);
+
+
+/** -----------------------------------------------------------------
+ *  Only now
+// Roles (ensure $isAdmin exists)
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin      = ($currentRole === 'admin');
 $isEmployee   = ($currentRole ===
