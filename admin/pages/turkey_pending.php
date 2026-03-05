@@ -448,7 +448,28 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                                                 <!-- Delete -->
                                                 <a href="turkey_pending.php?action=delete&id=<?php echo (int) $app['id']; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"
                                                     class="btn btn-sm btn-danger"
-         
+                                                    title="Delete"
+                                                    onclick="return confirm('Are you sure you want to delete this applicant?');">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            <?php endif; ?>
+
+                                            <!-- Change Status Dropdown -->
+                                            <div class="dropdown">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-auto-close="true"
+                                                    data-bs-display="static"
+                                                    data-bs-offset="0,8"
+                                                    aria-expanded="false"
+                                                    aria-haspopup="true"
+                                                    title="Change Status"
+                                                    id="changeStatusBtn-<?php echo (int) $app['id']; ?>">
+                                                    <i class="bi bi-arrow-left-right me-1"></i>
+                                        
+        </div>
     </div>
 </div>
 
