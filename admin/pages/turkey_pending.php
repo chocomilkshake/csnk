@@ -317,7 +317,17 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         margin-bottom: .25rem;
     }
 
-    /* Dropdown 
+    /* Dropdown Fix: prevent clipping + ensure stacking above other rows */
+    .table-card,
+    .table-card .card-body,
+    .table-card .table-responsive,
+    .table-card table,
+    .table-card thead,
+    .table-card tbody,
+    .table-card tr,
+    .table-card th,
+    .table-card td { overflow: visible !important; }
+
     .table-card { position: relative; z-index: 0; }
     td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
     .table-card tr.row-raised { position: relative; z-index: 1060; }
