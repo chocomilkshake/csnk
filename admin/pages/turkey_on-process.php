@@ -190,7 +190,15 @@ if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
 }
 
 /** -----------------------------------------------------------------
- *  Only now
+ *  Only now include header / output HTML
+ *  ----------------------------------------------------------------- */
+require_once $ADMIN_ROOT . '/includes/header.php';
+require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
+
+$applicant   = new Applicant($database);
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$smcBuId     = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
 // Roles (ensure $isAdmin exists)
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin      = ($currentRole === 'admin');
