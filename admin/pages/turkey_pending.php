@@ -206,6 +206,17 @@ if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
 require_once $ADMIN_ROOT . '/includes/header.php';
 require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
 
+$applicant = new Applicant($database);
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+// For SMC pages, use SMC BU instead of the CSNK BU from session
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
+// Roles (ensure $isAdmin exists)
+$isSuperAdmin = ($currentRole === 'super_admin');
+$isAdmin      = ($currentRole === 'admin');
+$isEmployee   = ($currentRole === 'employee');
+
 $country = $_GET['country'] ?? 'all';
 $q = is_boo" \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
