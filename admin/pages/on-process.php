@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/on-process.php
-$pageTitle = 'On Process Applicants';
+$pageTitle = 'On Process Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
@@ -8,6 +8,9 @@ require_once '../includes/Applicant.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
+
+// --- CSNK Agency Filter ---
+const CSNK_AGENCY_CODE = 'csnk';
 
 // --- Minimal CSRF token ---
 if (empty($_SESSION['csrf_token'])) {
@@ -178,16 +181,20 @@ if (
     $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
     $ok = false;
 
+    // Default to business_unit_id = 1 if NULL to satisfy FK constraint
+    $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+
     try {
         $conn->begin_transaction();
 
         // Insert into applicant_status_reports (include business_unit_id)
+        // Use COALESCE to handle NULL business_unit_id
         $stmt1 = $conn->prepare("
             INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
         // types: i i s s s i
-        $stmt1->bind_param("iisssi", $id, $businessUnitId, $fromStatus, $to, $reportText, $adminId);
+        $stmt1->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
         $stmt1->execute();
         $stmt1->close();
 
@@ -290,8 +297,24 @@ if (
     exit;
 }
 
-/** Load on_process applicants + latest booking data */
-$applicants = $applicant->getOnProcessWithLatestBooking();
+/** Load on_process applicants + latest booking data - Filter by CSNK agency only */
+$allOnProcess = $applicant->getOnProcessWithLatestBooking();
+
+// Filter to CSNK only by checking business_unit_id
+$conn2 = $database->getConnection();
+$csnkBuIds = [];
+if ($conn2 instanceof mysqli) {
+    $sql = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'csnk' AND bu.active = 1";
+    if ($res = $conn2->query($sql)) {
+        while ($r = $res->fetch_assoc()) {
+            $csnkBuIds[] = (int)$r['id'];
+        }
+    }
+}
+$applicants = array_values(array_filter($allOnProcess, function($app) use ($csnkBuIds) {
+    $buId = (int)($app['business_unit_id'] ?? 0);
+    return in_array($buId, $csnkBuIds, true);
+}));
 
 /** Helpers */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {

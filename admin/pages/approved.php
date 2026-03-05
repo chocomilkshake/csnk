@@ -1,10 +1,12 @@
 <?php
-// FILE: pages/approved.php
+// FILE: pages/approved.php  (CSNK-only Approved Applicants)
+// Purpose: List ONLY CSNK applicants, keep them scoped to their agency on all actions.
+
 $pageTitle = 'Approved Applicants';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
-// Ensure session is active (for search persistence + CSRF)
+// Ensure session (for search persistence + CSRF)
 if (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
@@ -15,11 +17,44 @@ if (empty($_SESSION['csrf_token'])) {
 
 $applicant = new Applicant($database);
 
-// Allowed statuses to transition to
+// --- Hard scope this page to CSNK only ---
+const CSNK_AGENCY_CODE = 'csnk';
+
+// Allowed statuses to transition to (this page is Approved but can move around)
 $allowedStatuses = ['pending', 'on_process', 'approved'];
 
 /**
- * --- Search Memory Behavior (consistent) ---
+ * Helper: get applicant's agency code ("csnk" or "smc") by id
+ */
+function getApplicantAgencyCode($database, int $applicantId): ?string {
+    try {
+        $conn = method_exists($database, 'getConnection') ? $database->getConnection() : null;
+        if ($conn instanceof mysqli) {
+            $sql = "
+                SELECT ag.code AS agency_code
+                FROM applicants a
+                JOIN business_units bu ON bu.id = a.business_unit_id
+                JOIN agencies ag ON ag.id = bu.agency_id
+                WHERE a.id = ?
+                LIMIT 1
+            ";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) return null;
+            $stmt->bind_param("i", $applicantId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $row = $res ? $res->fetch_assoc() : null;
+            $stmt->close();
+            return $row['agency_code'] ?? null;
+        }
+    } catch (Throwable $e) {
+        // swallow
+    }
+    return null;
+}
+
+/**
+ * --- Search Memory Behavior ---
  * - If ?clear=1 → clear stored search and redirect to clean list
  * - If ?q=...  → store in session and use
  * - Else if session has last query → use it
@@ -41,11 +76,24 @@ if (isset($_GET['q'])) {
     $q = (string)$_SESSION['approved_q'];
 }
 
-/** Handle delete (soft delete) with search preserved — only if you want delete in Approved */
+/**
+ * Handle delete (soft delete) — CSNK-ONLY
+ */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
-    $deleted = false;
 
+    // Enforce agency scope before modifying
+    $agency = getApplicantAgencyCode($database, $id);
+    if ($agency !== CSNK_AGENCY_CODE) {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Operation blocked: applicant does not belong to CSNK.');
+        }
+        $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+        redirect('approved.php' . $qs);
+        exit;
+    }
+
+    $deleted = false;
     if (method_exists($applicant, 'softDelete')) {
         $deleted = (bool)$applicant->softDelete($id);
     } elseif (method_exists($applicant, 'update')) {
@@ -82,7 +130,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         $auth->logActivity(
             (int)$_SESSION['admin_id'],
             'Delete Applicant',
-            "Deleted applicant {$label} (Approved list)"
+            "Deleted applicant {$label} (Approved list, CSNK)"
         );
     }
 
@@ -92,8 +140,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 }
 
 /**
- * Handle status update (Change Status dropdown).
- * Uses GET for simplicity and preserves the search query on redirect.
+ * Handle status update (Change Status dropdown) — CSNK-ONLY
  */
 if (
     isset($_GET['action'], $_GET['id'], $_GET['to']) &&
@@ -102,12 +149,22 @@ if (
     $id = (int)$_GET['id'];
     $to = strtolower(trim((string)$_GET['to']));
 
+    // Enforce agency scope before modifying
+    $agency = getApplicantAgencyCode($database, $id);
+    if ($agency !== CSNK_AGENCY_CODE) {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Operation blocked: applicant does not belong to CSNK.');
+        }
+        $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+        redirect('approved.php' . $qs);
+        exit;
+    }
+
     if (in_array($to, $allowedStatuses, true)) {
         $updated = false;
 
-        // Prefer Applicant::updateStatus if available, else ::update, else direct PDO fallback
         if (method_exists($applicant, 'updateStatus')) {
-            $updated = (bool) $applicant->updateStatus($id, $to);
+            $updated = (bool) $applicant->updateStatus($id, $to); // status-only; business_unit_id unchanged
         } elseif (method_exists($applicant, 'update')) {
             $updated = (bool) $applicant->update($id, ['status' => $to]);
         } else {
@@ -143,7 +200,7 @@ if (
             $auth->logActivity(
                 (int)$_SESSION['admin_id'],
                 'Update Applicant Status',
-                "Updated status for {$label} → {$to}"
+                "Updated status for {$label} → {$to} (CSNK)"
             );
         }
     } else {
@@ -157,8 +214,8 @@ if (
     exit;
 }
 
-/** Load approved applicants */
-$applicants = $applicant->getAll('approved');
+/** Load approved applicants — strictly CSNK */
+$applicants = $applicant->getAll('approved', null, CSNK_AGENCY_CODE);
 
 /**
  * Helpers
@@ -222,7 +279,7 @@ if ($q !== '') {
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
 ?>
-<!-- ===== Fix dropdown clipping & remove table scroll wrapper (same as pending.php) ===== -->
+<!-- ===== Fix dropdown clipping & remove table scroll wrapper ===== -->
 <style>
     .table-card, .table-card .card-body { overflow: visible !important; }
     .table-card .table-responsive { overflow: visible !important; }
@@ -242,7 +299,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">Approved Applicants</h4>
+    <h4 class="mb-0 fw-semibold">Approved Applicants (CSNK)</h4>
     <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
     </a>
@@ -274,7 +331,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 
 <div class="card table-card">
     <div class="card-body">
-        <!-- Removed .table-responsive to avoid scroll/clipping (matches pending.php) -->
+        <!-- Removed .table-responsive to avoid scroll/clipping -->
         <table class="table table-bordered table-striped table-hover table-styled align-middle">
             <thead>
                 <tr>
@@ -358,7 +415,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
-                                    <!-- Replace (NEW) -->
+                                    <!-- Replace (if you use replacement flow on CSNK) -->
                                     <button class="btn btn-sm btn-danger"
                                             data-bs-toggle="modal"
                                             data-bs-target="#replaceModal"
@@ -367,15 +424,6 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                             title="Replace this approved applicant">
                                         <i class="bi bi-arrow-repeat me-1"></i> Replace
                                     </button>
-
-                                    <!-- Optional: Delete (commented out by default)
-                                    <a href="<?php echo htmlspecialchars($deleteUrl, ENT_QUOTES, 'UTF-8'); ?>"
-                                       class="btn btn-sm btn-danger"
-                                       title="Delete"
-                                       onclick="return confirm('Are you sure you want to delete this applicant?');">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                    -->
 
                                     <!-- Change Status Dropdown -->
                                     <div class="dropdown dropup">
@@ -423,7 +471,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     </div>
 </div>
 
-<!-- ===== Replace Modal (NEW) ===== -->
+<!-- ===== Replace Modal (kept if you use it) ===== -->
 <div class="modal fade" id="replaceModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -472,7 +520,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-danger">
-            <i class="bi bi-arrow-repeat me-1"></i> Start &amp; Suggest
+            <i class="bi bi-arrow-repeat me-1"></i> Start & Suggest
           </button>
         </div>
       </form>
@@ -483,7 +531,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 <!-- Scripts for Replace Modal binding -->
 <script src="../js/replacements.js"></script>
 <script>
-  // optional: expose CSRF to JS (used by replacements.js)
+  // expose CSRF to JS (used by replacements.js)
   window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
 
   // Fill hidden id + label when opening modal

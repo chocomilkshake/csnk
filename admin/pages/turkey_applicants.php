@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_applicants.php (SMC - Turkey within CSNK Admin)
-$pageTitle = 'List of Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 /* ---------- Force SMC Business Unit for this page ---------- */
 $ADMIN_ROOT = dirname(__DIR__);
@@ -20,9 +20,7 @@ $auth = new Auth($database);
 $auth->requireLogin();
 
 // Check if user has permission to view SMC data
-// SMC employees can only see SMC, admins/super_admins can see all
 if (!$auth->canSeeSMC()) {
-    // User doesn't have SMC access - redirect to main applicants page
     header('Location: applicants.php');
     exit;
 }
@@ -40,7 +38,6 @@ if ($conn instanceof mysqli) {
         $stmt->close();
         if (!empty($row['id'])) {
             $smcBuId = (int) $row['id'];
-            // Store SMC BU ID in separate session variable to avoid overwriting CSNK BU
             $_SESSION['smc_bu_id'] = $smcBuId;
         }
     }
@@ -51,18 +48,16 @@ if (empty($_SESSION['current_bu_id'])) {
     exit;
 }
 
-// Now include the main header
 require_once $ADMIN_ROOT . '/includes/header.php';
-
-// Shared model - Use SMC-specific Applicant model
 require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
 
 $applicant = new Applicant($database);
 
 // BU scope (SMC-Turkey only)
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
 
-// Determine if user is super admin (for viewing all SMC applicants)
+// Determine if user is super admin
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isEmployee = ($currentRole === 'employee');
 
@@ -71,17 +66,11 @@ $country = $_GET['country'] ?? 'all';
 $status = $_GET['status'] ?? 'all';
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-// BU scope: super admin/employee = unscoped (null), admin = scoped to current BU
-$buScope = ($isSuperAdmin || $isEmployee) ? null : $currentBuId;
-
-// Country ID: null for 'all', otherwise cast to int
+$buScope = null;
 $countryId = ($country !== 'all') ? (int) $country : null;
-
-// Visibility flags (consistent across both queries)
 $notDeleted = true;
 $notBlacklisted = true;
 
-// Pack into $filters array
 $filters = [
     'buId' => $buScope,
     'countryId' => $countryId,
@@ -198,6 +187,56 @@ unset($c);
 // ---------- GET APPLICANTS LIST ----------
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $pageSize = 25;
+
+/**
+ * Delete action - SMC version
+ */
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $id = (int) $_GET['id'];
+    $deleted = false;
+    
+    if ($conn instanceof mysqli) {
+        if ($stmt = $conn->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?")) {
+            $stmt->bind_param("i", $id);
+            $deleted = $stmt->execute();
+            $stmt->close();
+        }
+    }
+    
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
+    }
+    
+    if ($deleted && isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
+        $fullName = null;
+        if (method_exists($applicant, 'getById')) {
+            $row = $applicant->getById($id);
+            if (is_array($row)) {
+                $fullName = getFullName(
+                    $row['first_name'] ?? '',
+                    $row['middle_name'] ?? '',
+                    $row['last_name'] ?? '',
+                    $row['suffix'] ?? ''
+                );
+            }
+        }
+        $label = $fullName ?: "ID {$id}";
+        $auth->logActivity(
+            (int) $_SESSION['admin_id'],
+            'Delete Applicant',
+            "Deleted applicant {$label} (SMC)"
+        );
+    }
+
+    $params = [];
+    if ($q !== '') $params['q'] = $q;
+    if ($status !== 'all') $params['status'] = $status;
+    if ($country !== 'all') $params['country'] = $country;
+
+    $qs = !empty($params) ? ('?' . http_build_query($params)) : '';
+    redirect('turkey_applicants.php' . $qs);
+    exit;
+}
 
 $applicants = $applicant->getApplicants(
     $filters['buId'],
@@ -431,7 +470,6 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                     }
                     ?>
                 </div>
-            </div>
         <?php endif; ?>
     </div>
 
@@ -453,7 +491,6 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                 </div>
             </form>
         </div>
-    </div>
 
     <div class="card table-card">
         <div class="card-body">
@@ -497,17 +534,15 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                                 $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
                                 $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
                                 $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
+                                $delUrl = 'turkey_applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
                                 $appBuId = (int) ($app['business_unit_id'] ?? 0);
 
                                 // Check if employee can edit/delete this applicant
-                                // For super_admin/admin: can edit/delete all
-                                // For employee: Since this is the SMC page, allow all employees full access to all SMC applicants
                                 $canEdit = false;
 
                                 if ($isSuperAdmin || $isAdmin) {
                                     $canEdit = true;
                                 } elseif ($isEmployee) {
-                                    // All employees on this SMC page can edit all SMC applicants
                                     $canEdit = true;
                                 }
 
@@ -537,15 +572,14 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                                     <td><?php echo h(formatDate($app['created_at'])); ?></td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View"><i
-                                                    class="bi bi-eye"></i></a>
+                                            <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View"><i class="bi bi-eye"></i></a>
                                             <?php if ($canEdit): ?>
-                                                <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit"><i
-                                                        class="bi bi-pencil"></i></a>
+                                                <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                                <?php if ($currentStatus === 'pending'): ?>
+                                                    <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');"><i class="bi bi-trash"></i></a>
+                                                <?php endif; ?>
                                             <?php else: ?>
-                                                <a href="#" class="btn btn-sm btn-secondary" title="Edit"
-                                                    onclick="alert('You do not have access to edit applicants from another country.'); return false;"><i
-                                                        class="bi bi-pencil"></i></a>
+                                                <a href="#" class="btn btn-sm btn-secondary" title="Edit" onclick="alert('You do not have access to edit applicants from another country.'); return false;"><i class="bi bi-pencil"></i></a>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -555,8 +589,6 @@ $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($par
                     </tbody>
                 </table>
             </div>
-        </div>
     </div>
-</div>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>

@@ -616,7 +616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body">
             <div class="row g-3">
                 <!-- Country (Business Unit) -->
-                <!-- <div class="col-md-5">
+                <div class="col-md-5">
                     <label class="form-label">Country <span class="text-danger">*</span>
                         <select class="form-select" name="business_unit_id" required>
                             <option value="">Select Country...</option>
@@ -627,7 +627,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endforeach; ?>
                         </select>
                     </label>
-                </div> -->
+                </div>
 
                 <!-- Preferred Cities (tags) -->
                 <div class="col-md-7">

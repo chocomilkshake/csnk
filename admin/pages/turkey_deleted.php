@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_deleted.php (SMC - Turkey Deleted Applicants)
-$pageTitle = 'Deleted Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 

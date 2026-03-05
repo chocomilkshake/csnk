@@ -1,6 +1,6 @@
 <?php
 // FILE: admin/pages/turkey_blacklisted.php (SMC - Turkey Blacklisted Applicants)
-$pageTitle = 'Blacklisted Applicants (SMC - Turkey)';
+$pageTitle = 'SMC Manpower Agency Co.';
 
 $ADMIN_ROOT = dirname(__DIR__);
 
@@ -27,20 +27,26 @@ if (!$auth->canSeeSMC()) {
 
 $conn = $database->getConnection();
 
-$smcBuId = 0;
+// Grab ALL active SMC BU IDs to enforce SMC-only on the list (for ALL roles)
+$smcBuIds = [];
 if ($conn instanceof mysqli) {
-    $sqlFindSMCBu = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1 ORDER BY bu.id ASC LIMIT 1";
-    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-        if (!empty($row['id'])) {
-            $smcBuId = (int) $row['id'];
-            // Store SMC BU ID in separate session variable to avoid overwriting CSNK BU
-            $_SESSION['smc_bu_id'] = $smcBuId;
+    $sqlSmcBus = "
+        SELECT bu.id
+        FROM business_units bu
+        JOIN agencies ag ON ag.id = bu.agency_id
+        WHERE ag.code = 'smc' AND bu.active = 1
+        ORDER BY bu.id ASC
+    ";
+    if ($res = $conn->query($sqlSmcBus)) {
+        while ($r = $res->fetch_assoc()) {
+            $smcBuIds[] = (int)$r['id'];
         }
     }
+}
+
+// Store first SMC BU ID in session (if you use it elsewhere)
+if (!empty($smcBuIds)) {
+    $_SESSION['smc_bu_id'] = $smcBuIds[0];
 }
 
 if (empty($_SESSION['current_bu_id'])) {
@@ -50,15 +56,17 @@ if (empty($_SESSION['current_bu_id'])) {
 
 require_once $ADMIN_ROOT . '/includes/header.php';
 
-// Get blacklisted applicants for SMC
+// Get blacklisted applicants for ALL SMC business units
 $blacklistedApplicants = [];
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-if ($conn instanceof mysqli) {
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    // Use IN clause for all SMC BU IDs
+    $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
     $sql = "SELECT a.*, ba.reason, ba.blacklisted_at 
             FROM blacklisted_applicants ba 
             JOIN applicants a ON a.id = ba.applicant_id 
-            WHERE a.business_unit_id = ? AND ba.is_active = 1";
+            WHERE a.business_unit_id IN ($placeholders) AND ba.is_active = 1";
 
     if ($q !== '') {
         $sql .= " AND (a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ?)";
@@ -66,12 +74,16 @@ if ($conn instanceof mysqli) {
     $sql .= " ORDER BY ba.blacklisted_at DESC";
 
     if ($stmt = $conn->prepare($sql)) {
+        $types = str_repeat('i', count($smcBuIds));
+        $params = array_merge($smcBuIds);
         if ($q !== '') {
             $searchTerm = "%$q%";
-            $stmt->bind_param('isss', $smcBuId, $searchTerm, $searchTerm, $searchTerm);
-        } else {
-            $stmt->bind_param('i', $smcBuId);
+            $types .= 'sss';
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
         }
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $res = $stmt->get_result();
         $blacklistedApplicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];

@@ -75,10 +75,24 @@ try {
   }
   $db->set_charset('utf8mb4');
 
+  // Get applicant's business_unit_id
+  $appStmt = $db->prepare("SELECT business_unit_id FROM applicants WHERE id = ? AND deleted_at IS NULL");
+  if (!$appStmt) fail(500, ['ok'=>false, 'error'=>'Prepare failed (app): '.$db->error]);
+  $appStmt->bind_param('i', $applicant_id);
+  $appStmt->execute();
+  $appResult = $appStmt->get_result();
+  $applicant = $appResult->fetch_assoc();
+  $appStmt->close();
+
+  if (!$applicant) {
+    fail(404, ['ok'=>false, 'error'=>'Applicant not found']);
+  }
+  $business_unit_id = (int)$applicant['business_unit_id'];
+
   $sql = "INSERT INTO client_bookings
-          (applicant_id, services_json, appointment_type, appointment_date, appointment_time,
+          (applicant_id, business_unit_id, services_json, appointment_type, appointment_date, appointment_time,
            client_first_name, client_middle_name, client_last_name, client_phone, client_email, client_address, status, created_at, updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())";
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())";
 
   $stmt = $db->prepare($sql);
   if (!$stmt) fail(500, ['ok'=>false, 'error'=>'Prepare failed: '.$db->error]);
@@ -87,8 +101,9 @@ try {
 
   // bind_param types: i=integer, s=string
   $stmt->bind_param(
-    'isssssssssss',
+    'iisssssssssss',
     $applicant_id,
+    $business_unit_id,
     $services_json,
     $appointment_type,
     $appointment_date,

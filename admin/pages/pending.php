@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/pending.php
-$pageTitle = 'Pending Applicants';
+$pageTitle = 'Pending Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
@@ -10,6 +10,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 $applicant = new Applicant($database);
+
+// --- Hard scope this page to CSNK only ---
+const CSNK_AGENCY_CODE = 'csnk';
 
 // Allowed statuses to transition to
 $allowedStatuses = ['pending', 'on_process', 'approved'];
@@ -107,8 +110,11 @@ if (isset($_GET['action']) && !$replaceRecord) {
                 $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
                 $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus)) . " to " . ucfirst(str_replace('_', ' ', $to));
                 
+                // Default to business_unit_id = 1 if NULL to satisfy FK constraint
+                $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+                
                 if ($stmtReport = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)")) {
-                    $stmtReport->bind_param("iisssi", $id, $businessUnitId, $fromStatus, $to, $reportText, $adminId);
+                    $stmtReport->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
                     $stmtReport->execute();
                     $stmtReport->close();
                 }
@@ -223,8 +229,8 @@ if ($replaceRecord && $originalApplicant) {
     if ($q !== '') $candidates = $filterQ($candidates, $q);
     $applicants = $candidates; // re-use variable below
 } else {
-    // Normal pending list
-    $applicants = $applicant->getAll('pending');
+    // Normal pending list - Filter by CSNK agency only
+    $applicants = $applicant->getAll('pending', null, CSNK_AGENCY_CODE);
 
     // Filter by search
     $applicants = (function(array $rows, string $query): array {
