@@ -1021,7 +1021,29 @@ class Applicant
                 FOR UPDATE
             ";
             $stmt = $this->db->prepare($sqlLock);
-            if ('i', $replacementApplicantId);
+            if (!$stmt) throw new \RuntimeException('Failed to prepare replacement lock statement.');
+            $stmt->bind_param('i', $replaceId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $rep = $res ? $res->fetch_assoc() : null;
+            $stmt->close();
+
+            if (!$rep) {
+                throw new \RuntimeException('Replacement record not found.');
+            }
+            if (!empty($rep['replacement_applicant_id'])) {
+                throw new \RuntimeException('This replacement is already assigned.');
+            }
+            if (strtolower((string)$rep['status']) !== 'selection') {
+                throw new \RuntimeException('Replacement not in selectable state.');
+            }
+
+            $originalId = (int)$rep['original_applicant_id'];
+            if ($originalId <= 0) {
+                t
+                ");
+                if ($stmt) {
+                    $stmt->bind_param('i', $replacementApplicantId);
                     $stmt->execute();
                     $stmt->close();
 
