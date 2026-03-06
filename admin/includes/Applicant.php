@@ -1040,7 +1040,26 @@ class Applicant
 
             $originalId = (int)$rep['original_applicant_id'];
             if ($originalId <= 0) {
-                t
+                throw new \RuntimeException('Invalid original applicant link.');
+            }
+
+            // 2) CSNK scope checks
+            $origAgency = $this->getAgencyCodeByApplicantId($originalId);
+            if (strtolower((string)$origAgency) !== self::CSNK_AGENCY_CODE) {
+                throw new \RuntimeException('Operation blocked: original applicant is not CSNK.');
+            }
+            $candAgency = $this->getAgencyCodeByApplicantId($replacementApplicantId);
+            if (strtolower((string)$candAgency) !== self::CSNK_AGENCY_CODE) {
+                throw new \RuntimeException('Candidate is not from CSNK.');
+            }
+            if ($replacementApplicantId === $originalId) {
+                throw new \RuntimeException('Cannot assign the same person as their own replacement.');
+            }
+
+            // 3) Load candidate status
+            $stmt = $this->db->prepare("SELECT status FROM applicants WHERE id = ? LIMIT 1");
+            if eted_at IS NULL
+                    LIMIT 1
                 ");
                 if ($stmt) {
                     $stmt->bind_param('i', $replacementApplicantId);
