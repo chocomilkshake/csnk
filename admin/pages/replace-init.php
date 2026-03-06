@@ -56,4 +56,28 @@ if ($adminId === null) {
     setFlashMessage('error', 'Authentication error. Please log in again.');
     redirect('approved.php'); exit;
 }
-if ($
+if ($reason === '') {
+    if ($isAjax) json_out(false, ['message' => 'Please select a reason for replacement.'], 422);
+    setFlashMessage('error', 'Please select a reason.');
+    redirect('approved.php'); exit;
+}
+if ($reportText === '') {
+    if ($isAjax) json_out(false, ['message' => 'Please provide a report/note for the replacement.'], 422);
+    setFlashMessage('error', 'Please provide a report/note.');
+    redirect('approved.php'); exit;
+}
+
+// Upload attachments (optional)
+$attachments = [];
+if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
+    $uploadDir = defined('REPLACEMENTS_UPLOAD_SUBDIR') ? REPLACEMENTS_UPLOAD_SUBDIR : 'replacements/';
+    // Ensure your uploadMultipleFiles() enforces MIME/size and randomizes file names
+    $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
+}
+
+// --- MySQLi connection ---
+$conn = null;
+if (method_exists($database, 'getConnection')) {
+    $conn = $database->getConnection();
+}
+if (!($conn inst
