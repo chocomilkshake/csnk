@@ -113,4 +113,34 @@ try {
         redirect('approved.php'); exit;
     }
 
-    //
+    // Use your existing domain method to create the replacement record
+    $applicant = new Applicant($database);
+    $replacementId = $applicant->createReplacementInit(
+        $originalId,
+        $reason,
+        $reportText,
+        $attachments,
+        $adminId
+    );
+
+    if (!$replacementId) {
+        if ($isAjax) json_out(false, ['message' => 'Failed to create replacement record. The applicant may not exist or may not be in approved status.'], 500);
+        setFlashMessage('error', 'Failed to start replacement.');
+        redirect('approved.php'); exit;
+    }
+
+    if ($isAjax) {
+        json_out(true, [
+            'message'        => 'Replacement request created successfully.',
+            'replacement_id' => (int)$replacementId
+        ]);
+    } else {
+        setFlashMessage('success', 'Replacement request created. Select a replacement next.');
+        redirect('approved.php');
+    }
+} catch (Throwable $e) {
+    error_log('Replace-init error: ' . $e->getMessage());
+    if ($isAjax) json_out(false, ['message' => 'An internal error occurred. Please try again later.'], 500);
+    setFlashMessage('error', 'An internal error occurred. Please try again.');
+    redirect('approved.php'); exit;
+}
