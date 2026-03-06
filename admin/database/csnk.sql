@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Mar 06, 2026 at 06:16 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: localhost:3306
+-- Generation Time: Mar 06, 2026 at 01:15 PM
+-- Server version: 8.0.45-cll-lve
+-- PHP Version: 8.4.18
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `csnk`
+-- Database: `xwhylhzb_csnk`
 --
 
 -- --------------------------------------------------------
@@ -28,13 +28,49 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `activity_logs` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `admin_id` int(10) UNSIGNED DEFAULT NULL,
-  `action` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` int UNSIGNED NOT NULL,
+  `admin_id` int UNSIGNED DEFAULT NULL,
+  `action` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `description` text COLLATE utf8mb4_general_ci,
+  `ip_address` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `activity_logs`
+--
+
+INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_address`, `created_at`) VALUES
+(1, 4, 'Login', 'User logged in successfully', '136.158.56.173', '2026-02-26 12:44:17'),
+(2, 4, 'Update Profile', 'Updated profile information', '136.158.56.173', '2026-02-26 12:47:15'),
+(3, 4, 'Update Profile', 'Updated profile information', '136.158.56.173', '2026-02-26 12:47:43'),
+(4, 4, 'Logout', 'User logged out', '136.158.56.173', '2026-02-26 12:47:48'),
+(5, 5, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-02 00:42:28'),
+(6, 5, 'Logout', 'User logged out', '112.209.73.113', '2026-03-02 00:43:18'),
+(7, 18, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-02 07:06:04'),
+(8, 18, 'Login', 'User logged in successfully', '136.158.56.173', '2026-03-02 15:01:36'),
+(9, 18, 'Logout', 'User logged out', '136.158.56.173', '2026-03-02 15:01:46'),
+(10, 17, 'Login', 'User logged in successfully', '136.158.56.173', '2026-03-02 15:01:55'),
+(11, 17, 'Logout', 'User logged out', '136.158.56.173', '2026-03-02 15:03:18'),
+(12, 18, 'Login', 'User logged in successfully', '136.158.56.173', '2026-03-02 15:03:25'),
+(13, 18, 'Add Applicant', 'Added new applicant: Renz Roann Diaz', '136.158.56.173', '2026-03-02 15:11:30'),
+(14, 18, 'Update Applicant', 'Updated applicant Renz Roann Batuigas Diaz (ID: 44)', '136.158.56.173', '2026-03-02 15:12:46'),
+(15, 18, 'Logout', 'User logged out', '136.158.56.173', '2026-03-02 15:13:54'),
+(16, 17, 'Login', 'User logged in successfully', '136.158.56.173', '2026-03-02 15:14:01'),
+(17, 17, 'Logout', 'User logged out', '136.158.56.173', '2026-03-02 15:15:03'),
+(18, 18, 'Login', 'User logged in successfully', '136.158.56.173', '2026-03-02 15:15:10'),
+(19, 18, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-05 00:08:01'),
+(20, 5, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-05 00:11:57'),
+(21, 5, 'Add Applicant', 'Added new applicant: REMY ENGLAN', '112.209.73.113', '2026-03-05 00:24:10'),
+(22, 5, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-05 02:55:41'),
+(23, 5, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-05 05:17:36'),
+(24, 5, 'Add Applicant', 'Added new applicant: ROSITA GALVEZ', '112.209.73.113', '2026-03-05 05:26:04'),
+(25, 5, 'Update Applicant', 'Updated applicant ROSITA CABARLES GALVEZ (ID: 46)', '112.209.73.113', '2026-03-05 05:27:02'),
+(26, 5, 'Update Applicant', 'Updated applicant ROSITA CABARLES GALVEZ (ID: 46)', '112.209.73.113', '2026-03-05 05:27:32'),
+(27, 5, 'Add Applicant', 'Added new applicant: JINKY TAMAYO', '112.209.73.113', '2026-03-05 05:33:00'),
+(28, 5, 'Login', 'User logged in successfully', '112.209.73.113', '2026-03-05 07:46:34'),
+(29, 5, 'Add Applicant', 'Added new applicant: TARA ANN MILLARE', '112.209.73.113', '2026-03-05 07:52:18'),
+(30, 5, 'Update Applicant', 'Updated applicant Renz Roann Batuigas Diaz (ID: 44)', '112.209.73.113', '2026-03-05 08:07:06');
 
 -- --------------------------------------------------------
 
@@ -43,35 +79,33 @@ CREATE TABLE `activity_logs` (
 --
 
 CREATE TABLE `admin_users` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `full_name` varchar(100) NOT NULL,
-  `avatar` varchar(255) DEFAULT NULL,
-  `role` enum('super_admin','admin','employee') DEFAULT 'employee',
-  `agency` enum('csnk','smc') DEFAULT NULL,
-  `business_unit_id` int(10) UNSIGNED DEFAULT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` int UNSIGNED NOT NULL,
+  `username` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `full_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `avatar` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `role` enum('super_admin','admin','employee') COLLATE utf8mb4_general_ci DEFAULT 'employee',
+  `agency` enum('csnk','smc') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `business_unit_id` int UNSIGNED DEFAULT NULL,
+  `status` enum('active','inactive') COLLATE utf8mb4_general_ci DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `admin_users`
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `avatar`, `role`, `agency`, `business_unit_id`, `status`, `created_at`, `updated_at`) VALUES
-(4, 'renzadmin', 'renzdiaz.contact@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$US9RRDloSHR3MGlzeUdGdw$cjNozvyDewv1phUaRVyn/6zcDKOdoSGJp1fBt5MABFE', 'Renz Diaz', 'avatars/699556f4c657c_1771394804.jpg', 'super_admin', NULL, NULL, 'active', '2026-02-07 10:20:55', '2026-02-18 06:06:44'),
-(5, 'elliadmin', 'elli@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cFZvOHZCckJkcDd4a0Y1cA$d+28H23RKZagXG81OSdY8xWa8x2KNSFuHip8xsxI2No', 'John Ellijah', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-07 10:21:28', '2026-02-26 08:05:17'),
+(4, 'renzadmin', 'renzdiaz.contact@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$US9RRDloSHR3MGlzeUdGdw$cjNozvyDewv1phUaRVyn/6zcDKOdoSGJp1fBt5MABFE', 'Renz Diaz', 'avatars/69a040ef7811b_1772110063.jpg', 'super_admin', NULL, NULL, 'active', '2026-02-07 10:20:55', '2026-02-26 12:47:43'),
+(5, 'elliadmin', 'elli@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cFZvOHZCckJkcDd4a0Y1cA$d+28H23RKZagXG81OSdY8xWa8x2KNSFuHip8xsxI2No', 'John Ellijah', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-07 10:21:28', '2026-02-10 11:15:33'),
 (6, 'andreiadmin', 'andrei@gmail.com', '$2y$10$ROQGHUJso58ON6NCsv2PRO14x3Nviq3fZrkEU8KLne6BTEbVuhSq2', 'Andrei Javillo', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-07 10:22:05', '2026-02-07 10:22:05'),
 (7, 'ralphadmin', 'ralph@gmail.com', '$2y$10$MUi6.7QJykPG48jx9e8lLu2V72JRHYu91.aRd5LFviHcJokQfvaf2', 'Ralph Justine Gallentes', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-10 00:32:00', '2026-02-10 00:32:00'),
 (8, 'cabritoadmin', 'cabs@gmail.com', '$2y$10$AbWEDXv5fqBAkhk1quS.7.eJKD2uyUyenhinmN906bbJlePsxOlSq', 'John Adrian Cabrito', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-10 00:32:53', '2026-02-10 00:32:53'),
 (12, 'jmpogi', 'jm@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QkMvd1FUc2Q0bnBjWHB0Uw$kltUwYy7N9gm+yGcuxlWqQFXnwD/EPRKRexQ1sDBYQM', 'John Michael Masmela', 'avatars/699c53d80ff2a_1771852760.png', 'admin', NULL, NULL, 'active', '2026-02-12 02:33:42', '2026-02-23 13:19:20'),
-(17, 'smc001', 'smc001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$S3BRVFB6YjIxcC5nUDI0Tw$BVJWYVKCIl952PAdRuNwYf4ovRdfKmpAOptWrOu6kvU', 'smc001', NULL, 'super_admin', 'smc', NULL, 'active', '2026-02-25 01:05:52', '2026-02-26 06:10:58'),
-(18, 'csnk001', 'csnk001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cTRHa1lhLkJvQjYwWlFpYg$7QXiD7qZtT316LFZErAQBtqSLkiorr/BSe2rZGecD58', 'csnk001', NULL, 'employee', 'csnk', NULL, 'active', '2026-02-25 01:06:21', '2026-02-25 01:06:21'),
-(19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06'),
-(20, 'smc002', 'email@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QVdrUHpVbXhidG1vVDJWaQ$qq73QsWG6b7zMiGpLVARRGXOg7JiFXDiMjmxAti34lc', 'smc', NULL, 'employee', 'smc', NULL, 'active', '2026-03-03 06:49:59', '2026-03-03 06:49:59');
+(17, 'smc001', 'smc001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$S3BRVFB6YjIxcC5nUDI0Tw$BVJWYVKCIl952PAdRuNwYf4ovRdfKmpAOptWrOu6kvU', 'smc001', NULL, 'employee', 'smc', NULL, 'active', '2026-02-25 01:05:52', '2026-02-25 01:05:52'),
+(18, 'csnk001', 'csnk001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cTRHa1lhLkJvQjYwWlFpYg$7QXiD7qZtT316LFZErAQBtqSLkiorr/BSe2rZGecD58', 'csnk001', NULL, 'employee', 'csnk', NULL, 'active', '2026-02-25 01:06:21', '2026-02-25 01:06:21');
 
 -- --------------------------------------------------------
 
@@ -80,9 +114,9 @@ INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `
 --
 
 CREATE TABLE `admin_user_business_units` (
-  `admin_user_id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `admin_user_id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -91,11 +125,11 @@ CREATE TABLE `admin_user_business_units` (
 --
 
 CREATE TABLE `agencies` (
-  `id` smallint(5) UNSIGNED NOT NULL,
-  `code` varchar(20) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` smallint UNSIGNED NOT NULL,
+  `code` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `agencies`
@@ -112,38 +146,37 @@ INSERT INTO `agencies` (`id`, `code`, `name`, `active`) VALUES
 --
 
 CREATE TABLE `applicants` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED NOT NULL,
-  `country_id` int(11) DEFAULT NULL,
-  `first_name` varchar(100) NOT NULL,
-  `middle_name` varchar(100) DEFAULT NULL,
-  `last_name` varchar(100) NOT NULL,
-  `suffix` varchar(20) DEFAULT NULL,
-  `phone_number` varchar(20) NOT NULL,
-  `alt_phone_number` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `first_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `middle_name` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `last_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `suffix` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `phone_number` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `alt_phone_number` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `date_of_birth` date NOT NULL,
-  `address` text NOT NULL,
-  `educational_attainment` longtext DEFAULT NULL,
-  `work_history` longtext DEFAULT NULL,
-  `preferred_location` longtext DEFAULT NULL,
-  `languages` longtext DEFAULT NULL,
-  `specialization_skills` longtext DEFAULT NULL,
-  `employment_type` enum('Full Time','Part Time') DEFAULT NULL,
+  `address` text COLLATE utf8mb4_general_ci NOT NULL,
+  `educational_attainment` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `work_history` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `preferred_location` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `languages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `specialization_skills` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `employment_type` enum('Full Time','Part Time') COLLATE utf8mb4_general_ci DEFAULT NULL,
   `daily_rate` decimal(10,2) DEFAULT NULL,
-  `education_level` enum('Elementary Graduate','Secondary Level (Attended High School)','Secondary Graduate (Junior High School / Old Curriculum)','Senior High School Graduate (K-12 Curriculum)','Technical-Vocational / TESDA Graduate','Tertiary Level (College Undergraduate)','Tertiary Graduate (Bachelor’s Degree)') DEFAULT NULL,
-  `years_experience` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `picture` varchar(255) DEFAULT NULL,
-  `video_url` varchar(1024) DEFAULT NULL,
-  `video_provider` enum('youtube','vimeo','file','other') DEFAULT NULL,
-  `video_type` enum('iframe','file') NOT NULL DEFAULT 'iframe',
-  `video_title` varchar(200) DEFAULT NULL,
-  `video_thumbnail_url` varchar(1024) DEFAULT NULL,
-  `video_duration_seconds` int(10) UNSIGNED DEFAULT NULL,
-  `status` enum('pending','on_process','approved','on_hold','deleted') NOT NULL DEFAULT 'pending',
-  `created_by` int(10) UNSIGNED DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `education_level` enum('Elementary Graduate','Secondary Level (Attended High School)','Secondary Graduate (Junior High School / Old Curriculum)','Senior High School Graduate (K-12 Curriculum)','Technical-Vocational / TESDA Graduate','Tertiary Level (College Undergraduate)','Tertiary Graduate (Bachelor’s Degree)') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `years_experience` int UNSIGNED NOT NULL DEFAULT '0',
+  `picture` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `video_url` varchar(1024) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `video_provider` enum('youtube','vimeo','file','other') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `video_type` enum('iframe','file') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'iframe',
+  `video_title` varchar(200) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `video_thumbnail_url` varchar(1024) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `video_duration_seconds` int UNSIGNED DEFAULT NULL,
+  `status` enum('pending','on_process','approved','on_hold','deleted') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
+  `created_by` int UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -151,70 +184,12 @@ CREATE TABLE `applicants` (
 -- Dumping data for table `applicants`
 --
 
-INSERT INTO `applicants` (`id`, `business_unit_id`, `country_id`, `first_name`, `middle_name`, `last_name`, `suffix`, `phone_number`, `alt_phone_number`, `email`, `date_of_birth`, `address`, `educational_attainment`, `work_history`, `preferred_location`, `languages`, `specialization_skills`, `employment_type`, `daily_rate`, `education_level`, `years_experience`, `picture`, `video_url`, `video_provider`, `video_type`, `video_title`, `video_thumbnail_url`, `video_duration_seconds`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(23, 1, 1, 'Maria Lourdes', 'Santos', 'Cruz', '', '09124567831', '09167345218', 'maria.cruz28@example.com', '1997-03-14', '1241 Ilang‑Ilang St., Brgy. 105, Tondo, Manila', '{\"elementary\":{\"school\":\"Jose Corazon de Jesus Elementary School\",\"year\":\"2004\\u20132010\"},\"highschool\":{\"school\":\"Tondo High School\",\"year\":\"2010\\u20132014\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"BrightClean Services\",\"years\":\"2021\\u20132024\",\"role\":\"Housekeepe\",\"location\":\"Pasay\"}]', '[\"Manila\",\"Pasay\",\"Makati\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\"]', 'Full Time', 700.00, 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698e9436d886b_1770951734.jpg', 'video/698e9436e46e0_1770951734.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:02:14', '2026-03-02 01:46:55', NULL),
-(24, 1, 1, 'Joanna Marie', 'Pascual', 'Dela Torre', '', '09983457621', '09284567310', 'joannamdtorre@example.com', '1991-07-22', '92 Dahlia St., Brgy. Baesa, Quezon City', '{\"elementary\":{\"school\":\"Baesa Elementary School\",\"year\":\"1998\\u20132004\"},\"highschool\":{\"school\":\"Quezon City High Schoo\",\"year\":\"2004\\u20132008\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CleanPro Manila\",\"years\":\"2018\\u20132023\",\"role\":\"All\\u2011Around Helper\",\"location\":\"Quezon City\"}]', '[\"Quezon City\",\"Manila\",\"San Juan\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 5, 'applicants/698e9578069e6_1770952056.jpg', 'video/698e95781c1dc_1770952056.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:07:36', '2026-03-02 01:46:55', NULL),
-(25, 1, 1, 'Ana Beatriz', 'Gomez', 'Reyes', '', '09156780234', '09156780234', 'ana.reyes25@example.com', '2001-01-09', '815 San Marcelino St., Brgy. Malate, Manila', '{\"elementary\":{\"school\":\"Malate Elementary School\",\"year\":\"2007\\u20132013\"},\"highschool\":{\"school\":\"Manila High School\",\"year\":\"2013\\u20132017\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Family Care Agency\",\"years\":\"2022\\u20132024\",\"role\":\"Babysitter\",\"location\":\"Ermita\"}]', '[\"Manila\",\"Pasay\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e96988e7b0_1770952344.jpg', 'video/698e96989948b_1770952344.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:12:24', '2026-03-02 01:46:55', NULL),
-(26, 1, 1, 'Kristine Joy', 'Villanueva', 'Ramos', '', '09097865432', '09120457839', 'kjramos42@example.com', '1983-06-03', '54 Sampaguita St., Brgy. Cupang, Muntinlupa City', '{\"elementary\":{\"school\":\"Cupang Elementary School\",\"year\":\"1990\\u20131996\"},\"highschool\":{\"school\":\"Muntinlupa National High School\",\"year\":\"1996\\u20132000\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"SouthClean Services\",\"years\":\"2017\\u20132023\",\"role\":\"Housemaid\",\"location\":\"Muntinlupa\"},{\"company\":\"Evergreen Laundry\",\"years\":\"2014\\u20132017\",\"role\":\"Laundry Worker\",\"location\":\"Pasig\"}]', '[\"Muntinlupa\",\"Las Pi\\u00f1as\",\"Para\\u00f1aque\"]', '[]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 9, 'applicants/698e977bb17ee_1770952571.jpg', 'video/698e977bc23d6_1770952571.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:16:11', '2026-03-02 01:46:55', NULL),
-(27, 1, 1, 'Shiela May', 'Basco', 'Cortez', '', '09189234577', '09361245780', 'shielamcortez30@example.com', '1995-11-16', '2385 Mabini St., Brgy. San Andres Bukid, Manila', '{\"elementary\":{\"school\":\"San Andres Elementary School\",\"year\":\"2002\\u20132008\"},\"highschool\":{\"school\":\"Arellano High School\",\"year\":\"2008\\u20132012\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"FreshStart Maid Agency\",\"years\":\"2020\\u20132024\",\"role\":\"Housekeeper\",\"location\":\"Makati\"}]', '[\"Makati\",\"Manila\",\"Taguig\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/698e984dec764_1770952781.jpg', 'video/698e984e007ce_1770952782.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:19:41', '2026-03-04 13:36:17', NULL),
-(28, 1, 1, 'Rowena Liza', 'Cruz', 'Mariano', '', '09351240988', '09278450329', 'rowenamariano45@example.com', '1980-09-28', '702 Maliputo St., Brgy. Karuhatan, Valenzuela City', '{\"elementary\":{\"school\":\"Karuhatan Elementary School\",\"year\":\"1987\\u20131993\"},\"highschool\":{\"school\":\"Valenzuela National High School\",\"year\":\"1993\\u20131997\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"North Metro Helpers\",\"years\":\"2018\\u20132024\",\"role\":\"Cook\\/Housemaid\",\"location\":\"Valenzuela\"},{\"company\":\"CarePlus\",\"years\":\"2014\\u20132018\",\"role\":\"All\\u2011Around Helper\",\"location\":\"Valenzuela\"}]', '[\"Valenzuela\",\"Quezon City\",\"Caloocan\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 10, 'applicants/698e992bbb3a6_1770953003.jpg', 'video/698e992bc7543_1770953003.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:23:23', '2026-03-06 03:01:28', NULL),
-(29, 2, 2, 'Charmaine Rose', 'Dimapilis', 'Jimenez', '', '09273659012', '09190345711', 'charmainejimenez22@example.com', '2004-02-04', '1789 Camarin Road, Brgy. 178, Camarin, Caloocan City', '{\"elementary\":{\"school\":\"Camarin Elementary School\",\"year\":\"2010\\u20132016\"},\"highschool\":{\"school\":\"Caloocan High School\",\"year\":\"2016\\u20132020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Clean &amp;amp;amp; Care Services\",\"years\":\"2023\\u20132024\",\"role\":\"Housemaid\",\"location\":\"Caloocan\"}]', '[\"Caloocan\",\"QC\",\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 1, 'applicants/698e9a253267f_1770953253.jpg', 'video/698e9a253ea3a_1770953253.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:27:33', '2026-03-06 03:31:39', NULL),
-(30, 2, 2, 'Lorna Fe', 'Bagtas', 'Malabanan', '', '09172349850', '09351867209', 'lornamalabanan39@example.com', '1986-04-10', '443 P. Burgos St., Brgy. Poblacion, Makati City', '{\"elementary\":{\"school\":\"Poblacion Elementary School\",\"year\":\"1992\\u20131998\"},\"highschool\":{\"school\":\"Makati High School\",\"year\":\"1998\\u20132002\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Makati HomeCare\",\"years\":\"2020\\u20132024\",\"role\":\"Housemaid\",\"location\":\"Bangkal Makati\"},{\"company\":\"Taguig Helpers Agency\",\"years\":\"2016\\u20132020\",\"role\":\"Cook\",\"location\":\"Makati\"}]', '[\"Makati\",\"Taguig\",\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9adbdc727_1770953435.jpg', 'video/698e9adbe929e_1770953435.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:30:35', '2026-03-04 14:03:22', NULL),
-(31, 2, 2, 'Lea Catherine', 'Fernandez', 'Rivera', '', '09190456722', '09175346098', 'learivera27@example.com', '1998-12-02', '300 San Guillermo St., Brgy. Hulo, Mandaluyong City', '{\"elementary\":{\"school\":\"Hulo Elementary School\",\"year\":\"2004\\u20132010\"},\"highschool\":{\"school\":\"Mandaluyong High School\",\"year\":\"2010\\u20132014\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"MetroClean\",\"years\":\"2021\\u20132024\",\"role\":\"Housekeeper\",\"location\":\"Ortigas\"}]', '[\"Mandaluyong\",\"Pasig\",\"QC\"]', '[]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698e9b841dc91_1770953604.jpg', 'video/698e9b8425cda_1770953604.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:33:24', '2026-03-06 01:31:13', NULL),
-(32, 2, 2, 'Denise Grace', 'Angeles', 'Mendiola', '', '09956873410', '09359872140', 'denisemendiola33@example.com', '1992-08-19', '5124 A. Bonifacio St., Brgy. Western Bicutan, Taguig City', '{\"elementary\":{\"school\":\"Western Bicutan Elementary School\",\"year\":\"1999\\u20132005\"},\"highschool\":{\"school\":\"Taguig National High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Taguig Home Services\",\"years\":\"2019\\u20132024\",\"role\":\"Housemaid\\/Caregiver\",\"location\":\"BGC\"},{\"company\":\"UrbanClean Agency\",\"years\":\"2016\\u20132019\",\"role\":\"Cleaner\",\"location\":\"Pasay\"}]', '[\"Taguig\",\"Pasay\",\"Makati\"]', '[\"Filipino\",\"English\"]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9c75149ea_1770953845.jpg', 'video/698e9c751c0ff_1770953845.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'approved', NULL, '2026-02-13 03:37:25', '2026-03-06 03:31:12', NULL),
-(33, 1, 1, 'Ava', 'Marie', 'Thompson', '', '09999999999', '09999999999', 'email@gmail.com', '1998-02-19', '1234 address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 3, 'applicants/698e8d360baa7_1770949942.jpg', 'video/698e8d3610907_1770949942.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:32:22', '2026-03-05 01:31:56', NULL),
-(34, 1, 1, 'Sophia', 'Claire', 'Ramirez', '', '09999999999', '09999999999', 'email@gmail.com', '1990-11-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Mandaluyong\",\"makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e8df92b357_1770950137.jpg', 'video/698e8df92cdd7_1770950137.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:35:37', '2026-03-02 01:46:55', NULL),
-(35, 1, 1, 'Isabella', 'Grace', 'Mitchell', '', '09999999999', '09999999999', 'email@gmail.com', '2000-08-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"IT\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"Mandaluyong\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Technical-Vocational / TESDA Graduate', 2, 'applicants/698e8e832247e_1770950275.jpg', 'video/698e8e83233c5_1770950275.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:37:55', '2026-03-02 01:46:55', NULL),
-(36, 1, 1, 'Emily', 'Rose', 'Johnson', '', '09999999999', '09999999999', 'email@gmail.com', '1960-02-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"paranaque\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp;amp; Housekeeping (General)\",\"Cooking &amp;amp; Food Service\",\"Pet &amp;amp; Outdoor Maintenance\"]', 'Full Time', NULL, 'Senior High School Graduate (K-12 Curriculum)', 2, 'applicants/698e8f3716c79_1770950455.jpg', 'video/698e8f231b3bd_1770950435.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:40:35', '2026-03-06 03:01:24', NULL),
-(37, 1, 1, 'Mia', 'Elizabeth', 'Carter', '', '09999999999', '09999999999', 'email@gmail.com', '2001-11-02', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e8fa38a07a_1770950563.jpg', 'video/698e8fa38af70_1770950563.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:42:43', '2026-03-02 01:46:55', NULL),
-(38, 1, 1, 'Olivia', 'Jane', 'Peterson', '', '09999999999', '09999999999', 'email@gmail.com', '1990-03-06', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e901853864_1770950680.jpg', 'video/698e9018547b8_1770950680.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:44:40', '2026-03-06 02:20:24', NULL),
-(39, 1, 1, 'Chloe', 'Ann', 'Sullivan', '', '09999999999', '09999999999', 'email@gmail.com', '1989-01-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Taguig\",\"BGC\"]', '[\"English\",\"Filipino\"]', '[\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 2, 'applicants/698e90a11d029_1770950817.jpg', 'video/698e90a11f3d4_1770950817.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:46:57', '2026-03-02 01:46:55', NULL),
-(40, 1, 1, 'Hannah', 'Louise', 'Parker', '', '09999999999', '09999999999', 'email@gmail.com', '1999-08-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Elementary Graduate', 3, 'applicants/698e910d1e60e_1770950925.jpg', 'video/698e910d1fc78_1770950925.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:48:45', '2026-03-06 02:22:32', NULL),
-(41, 1, 1, 'Abigail', 'Nicole', 'Sanders', '', '09999999999', '09999999999', 'email@gmail.com', '2000-11-08', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 2, 'applicants/698e918576116_1770951045.jpg', 'video/698e918577686_1770951045.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:50:45', '2026-03-02 01:46:55', NULL),
-(42, 1, 1, 'Natalie', 'Faith', 'Rogers', '', '09999999999', '09999999999', 'email@gmail.com', '1999-01-23', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e9220edd8f_1770951200.jpg', 'video/698e9220ee585_1770951200.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:53:20', '2026-03-02 01:46:55', NULL),
-(43, 1, 1, 'Ryzza Mae', 'B.', 'Diaz', '', '09123123718', '09817238712', 'renzdiaz.contact@gmail.com', '2026-02-25', '87412 ajllmdawudawdawdasdawds', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"BrightClean Services\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati\"}]', '[\"Makati City\",\"Mandaluyong CIty\"]', '[]', '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 150.00, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6996b581e440f_1771484545.jpg', 'video/6996b581ecad4_1771484545.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', 12, '2026-02-19 07:02:25', '2026-03-06 03:01:27', NULL);
-
---
--- Triggers `applicants`
---
-DELIMITER $$
-CREATE TRIGGER `applicants_ad_recycle` AFTER DELETE ON `applicants` FOR EACH ROW BEGIN
-  /*
-    If dependent rows were cascaded, the id is now safe to recycle.
-    IGNORE prevents duplicate key if same id somehow re-queued.
-  */
-  INSERT IGNORE INTO recycled_ids (table_name, id)
-  VALUES ('applicants', OLD.id);
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `applicants_bi_reuse` BEFORE INSERT ON `applicants` FOR EACH ROW BEGIN
-  DECLARE v_reuse BIGINT UNSIGNED;
-
-  /* Only apply if no explicit id provided (NULL or 0) */
-  IF (NEW.id IS NULL OR NEW.id = 0) THEN
-    /*
-      Pick the smallest recycled id for this table.
-      NOTE: Under concurrency this is "good enough" for an admin system.
-    */
-    SELECT ri.id INTO v_reuse
-    FROM recycled_ids ri
-    WHERE ri.table_name = 'applicants'
-    ORDER BY ri.id ASC
-    LIMIT 1;
-
-    IF v_reuse IS NOT NULL THEN
-      -- Set the recycled id
-      SET NEW.id = v_reuse;
-      -- Consume it
-      DELETE FROM recycled_ids
-      WHERE table_name = 'applicants' AND id = v_reuse;
-    END IF;
-  END IF;
-END
-$$
-DELIMITER ;
+INSERT INTO `applicants` (`id`, `business_unit_id`, `first_name`, `middle_name`, `last_name`, `suffix`, `phone_number`, `alt_phone_number`, `email`, `date_of_birth`, `address`, `educational_attainment`, `work_history`, `preferred_location`, `languages`, `specialization_skills`, `employment_type`, `daily_rate`, `education_level`, `years_experience`, `picture`, `video_url`, `video_provider`, `video_type`, `video_title`, `video_thumbnail_url`, `video_duration_seconds`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(44, 1, 'Renz Roann', 'Batuigas', 'Diaz', '', '09187238712', '09817287381', 'renzdiaz@gmail.com', '2003-12-17', '2461 Princess Floresca St. Pandacan, Manila', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati City\"}]', '[\"Makati\",\"Malate\"]', '[]', '[\"Cooking & Food Service\",\"Pet & Outdoor Maintenance\"]', 'Full Time', 900.00, 'Secondary Level (Attended High School)', 4, 'applicants/69a939aa5fdbf_1772698026.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 18, '2026-03-02 15:11:30', '2026-03-05 08:07:06', NULL),
+(45, 1, 'REMY', 'MANZANO', 'ENGLAN', '', '', '', '', '1981-04-05', 'BINALONAN PGN', '{\"elementary\":{\"school\":\"\",\"year\":\"\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"SMC Manpower Agency Co.\",\"years\":\"6\",\"role\":\"Domestic Worker\",\"location\":\"Singapore\"}]', '[\"Manila\"]', '[\"English\",\"Arabic\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Part Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 6, 'applicants/69a8cd2a875fb_1772670250.png', 'video/69a8cd2a8a2a5_1772670250.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-03-05 00:24:10', '2026-03-05 00:24:10', NULL),
+(46, 1, 'ROSITA', 'CABARLES', 'GALVEZ', '', '09999999999', '', '', '1995-01-01', 'Manila', '{\"elementary\":{\"school\":\"\",\"year\":\"\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"SMC Manpower Agency Co.\",\"years\":\"2\",\"role\":\"Domestic Worker\",\"location\":\"United Arab Emirates\"}]', '[\"Manila\"]', '[\"Filipino\",\"English\"]', '[\"Cleaning & Housekeeping (General)\",\"Laundry & Clothing Care\",\"Cooking & Food Service\",\"Childcare & Maternity (Yaya)\"]', 'Part Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/69a913ebd49bc_1772688363.jpg', 'video/69a913ebdfdf3_1772688363.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-03-05 05:26:03', '2026-03-05 05:27:32', NULL),
+(47, 1, 'JINKY', 'ASENCIO', 'TAMAYO', '', '', '', '', '1989-11-22', 'OTON ILOILO', '{\"elementary\":{\"school\":\"\",\"year\":\"\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"SMC Manpower Agency Co.\",\"years\":\"1\",\"role\":\"Domestic Worker\",\"location\":\"Kuwait\"}]', '[\"Manila\"]', '[\"Filipino\",\"English\",\"Arabic\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Part Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 1, 'applicants/69a9158c24acd_1772688780.png', 'video/69a9158c2777d_1772688780.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-03-05 05:33:00', '2026-03-05 05:33:00', NULL),
+(48, 1, 'TARA ANN', 'REQUERQUE', 'MILLARE', '', '', '', '', '1990-02-08', 'Manila', '{\"elementary\":{\"school\":\"\",\"year\":\"\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"SMC Manpower Agency Co.\",\"years\":\"1\",\"role\":\"Domestic Worker\",\"location\":\"Saudi\"}]', '[\"Manila\"]', '[\"Filipino\",\"English\",\"Arabic\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Part Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 1, 'applicants/69a936327a1ca_1772697138.png', 'video/69a936327f351_1772697138.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-03-05 07:52:18', '2026-03-05 07:52:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -223,108 +198,14 @@ DELIMITER ;
 --
 
 CREATE TABLE `applicant_documents` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `applicant_id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED NOT NULL,
-  `document_type_id` int(10) UNSIGNED DEFAULT NULL,
-  `document_type` enum('brgy_clearance','birth_certificate','sss','pagibig','nbi','police_clearance','tin_id','passport') NOT NULL,
-  `file_path` varchar(255) NOT NULL,
-  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `applicant_documents`
---
-
-INSERT INTO `applicant_documents` (`id`, `applicant_id`, `business_unit_id`, `document_type_id`, `document_type`, `file_path`, `uploaded_at`) VALUES
-(161, 23, 1, 1, 'brgy_clearance', 'documents/698e9436dda8e_1770951734.jpg', '2026-02-13 03:02:14'),
-(162, 23, 1, 2, 'birth_certificate', 'documents/698e9436de60c_1770951734.jpg', '2026-02-13 03:02:14'),
-(163, 23, 1, 3, 'sss', 'documents/698e9436df31c_1770951734.jpg', '2026-02-13 03:02:14'),
-(164, 23, 1, 4, 'pagibig', 'documents/698e9436e0517_1770951734.jpg', '2026-02-13 03:02:14'),
-(165, 23, 1, 5, 'nbi', 'documents/698e9436e16f0_1770951734.jpg', '2026-02-13 03:02:14'),
-(166, 23, 1, 6, 'police_clearance', 'documents/698e9436e223c_1770951734.jpg', '2026-02-13 03:02:14'),
-(167, 23, 1, 7, 'tin_id', 'documents/698e9436e2e94_1770951734.jpg', '2026-02-13 03:02:14'),
-(168, 23, 1, 8, 'passport', 'documents/698e9436e3ade_1770951734.jpg', '2026-02-13 03:02:14'),
-(169, 24, 1, 1, 'brgy_clearance', 'documents/698e95780d9c3_1770952056.jpg', '2026-02-13 03:07:36'),
-(170, 24, 1, 2, 'birth_certificate', 'documents/698e95780f5d0_1770952056.png', '2026-02-13 03:07:36'),
-(171, 24, 1, 3, 'sss', 'documents/698e957810ec3_1770952056.jpg', '2026-02-13 03:07:36'),
-(172, 24, 1, 4, 'pagibig', 'documents/698e957812bfd_1770952056.jpg', '2026-02-13 03:07:36'),
-(173, 24, 1, 5, 'nbi', 'documents/698e957814ca4_1770952056.jpg', '2026-02-13 03:07:36'),
-(174, 24, 1, 6, 'police_clearance', 'documents/698e957816f42_1770952056.png', '2026-02-13 03:07:36'),
-(175, 24, 1, 7, 'tin_id', 'documents/698e9578189a4_1770952056.png', '2026-02-13 03:07:36'),
-(176, 24, 1, 8, 'passport', 'documents/698e95781a55f_1770952056.jpg', '2026-02-13 03:07:36'),
-(177, 25, 1, 1, 'brgy_clearance', 'documents/698e969891f78_1770952344.jpg', '2026-02-13 03:12:24'),
-(178, 25, 1, 2, 'birth_certificate', 'documents/698e969893293_1770952344.png', '2026-02-13 03:12:24'),
-(179, 25, 1, 3, 'sss', 'documents/698e969893eac_1770952344.jpg', '2026-02-13 03:12:24'),
-(180, 25, 1, 4, 'pagibig', 'documents/698e969894b88_1770952344.png', '2026-02-13 03:12:24'),
-(181, 25, 1, 5, 'nbi', 'documents/698e969895f80_1770952344.jpg', '2026-02-13 03:12:24'),
-(182, 25, 1, 6, 'police_clearance', 'documents/698e969896ba6_1770952344.jpg', '2026-02-13 03:12:24'),
-(183, 25, 1, 7, 'tin_id', 'documents/698e969897a2d_1770952344.png', '2026-02-13 03:12:24'),
-(184, 25, 1, 8, 'passport', 'documents/698e9698985d9_1770952344.jpg', '2026-02-13 03:12:24'),
-(185, 26, 1, 1, 'brgy_clearance', 'documents/698e977bb470b_1770952571.jpg', '2026-02-13 03:16:11'),
-(186, 26, 1, 2, 'birth_certificate', 'documents/698e977bb640b_1770952571.png', '2026-02-13 03:16:11'),
-(187, 26, 1, 3, 'sss', 'documents/698e977bb7c1f_1770952571.jpg', '2026-02-13 03:16:11'),
-(188, 26, 1, 4, 'pagibig', 'documents/698e977bb94d2_1770952571.png', '2026-02-13 03:16:11'),
-(189, 26, 1, 5, 'nbi', 'documents/698e977bbae56_1770952571.jpg', '2026-02-13 03:16:11'),
-(190, 26, 1, 6, 'police_clearance', 'documents/698e977bbcc0c_1770952571.png', '2026-02-13 03:16:11'),
-(191, 26, 1, 7, 'tin_id', 'documents/698e977bbe689_1770952571.jpg', '2026-02-13 03:16:11'),
-(192, 26, 1, 8, 'passport', 'documents/698e977bc05cf_1770952571.png', '2026-02-13 03:16:11'),
-(193, 27, 1, 1, 'brgy_clearance', 'documents/698e984ded5a4_1770952781.jpg', '2026-02-13 03:19:41'),
-(194, 27, 1, 2, 'birth_certificate', 'documents/698e984deea8d_1770952781.jpg', '2026-02-13 03:19:41'),
-(195, 27, 1, 3, 'sss', 'documents/698e984defad2_1770952781.jpg', '2026-02-13 03:19:41'),
-(196, 27, 1, 4, 'pagibig', 'documents/698e984df08c3_1770952781.jpg', '2026-02-13 03:19:41'),
-(197, 27, 1, 5, 'nbi', 'documents/698e984df1697_1770952781.jpg', '2026-02-13 03:19:41'),
-(198, 27, 1, 6, 'police_clearance', 'documents/698e984df22cf_1770952781.jpg', '2026-02-13 03:19:41'),
-(199, 27, 1, 7, 'tin_id', 'documents/698e984df3161_1770952781.jpg', '2026-02-13 03:19:41'),
-(200, 27, 1, 8, 'passport', 'documents/698e984df3d55_1770952781.jpg', '2026-02-13 03:19:41'),
-(201, 28, 1, 1, 'brgy_clearance', 'documents/698e992bc0193_1770953003.jpg', '2026-02-13 03:23:23'),
-(202, 28, 1, 2, 'birth_certificate', 'documents/698e992bc1089_1770953003.jpg', '2026-02-13 03:23:23'),
-(203, 28, 1, 3, 'sss', 'documents/698e992bc1ce0_1770953003.jpg', '2026-02-13 03:23:23'),
-(204, 28, 1, 4, 'pagibig', 'documents/698e992bc2852_1770953003.jpg', '2026-02-13 03:23:23'),
-(205, 28, 1, 5, 'nbi', 'documents/698e992bc3848_1770953003.jpg', '2026-02-13 03:23:23'),
-(206, 28, 1, 6, 'police_clearance', 'documents/698e992bc466e_1770953003.png', '2026-02-13 03:23:23'),
-(207, 28, 1, 7, 'tin_id', 'documents/698e992bc530f_1770953003.png', '2026-02-13 03:23:23'),
-(208, 28, 1, 8, 'passport', 'documents/698e992bc663f_1770953003.png', '2026-02-13 03:23:23'),
-(209, 29, 2, 1, 'brgy_clearance', 'documents/698e9a25374dd_1770953253.jpg', '2026-02-13 03:27:33'),
-(210, 29, 2, 2, 'birth_certificate', 'documents/698e9a253898a_1770953253.jpg', '2026-02-13 03:27:33'),
-(211, 29, 2, 3, 'sss', 'documents/698e9a253950c_1770953253.jpg', '2026-02-13 03:27:33'),
-(212, 29, 2, 4, 'pagibig', 'documents/698e9a253a1c1_1770953253.jpg', '2026-02-13 03:27:33'),
-(213, 29, 2, 5, 'nbi', 'documents/698e9a253ad25_1770953253.jpg', '2026-02-13 03:27:33'),
-(214, 29, 2, 6, 'police_clearance', 'documents/698e9a253b7d7_1770953253.jpg', '2026-02-13 03:27:33'),
-(215, 29, 2, 7, 'tin_id', 'documents/698e9a253d071_1770953253.png', '2026-02-13 03:27:33'),
-(216, 29, 2, 8, 'passport', 'documents/698e9a253dc2c_1770953253.jpg', '2026-02-13 03:27:33'),
-(217, 30, 2, 1, 'brgy_clearance', 'documents/698e9adbe1a60_1770953435.jpg', '2026-02-13 03:30:35'),
-(218, 30, 2, 2, 'birth_certificate', 'documents/698e9adbe2e7c_1770953435.jpg', '2026-02-13 03:30:35'),
-(219, 30, 2, 3, 'sss', 'documents/698e9adbe3bcc_1770953435.jpg', '2026-02-13 03:30:35'),
-(220, 30, 2, 4, 'pagibig', 'documents/698e9adbe48ca_1770953435.png', '2026-02-13 03:30:35'),
-(221, 30, 2, 5, 'nbi', 'documents/698e9adbe58f2_1770953435.jpg', '2026-02-13 03:30:35'),
-(222, 30, 2, 6, 'police_clearance', 'documents/698e9adbe65f2_1770953435.jpg', '2026-02-13 03:30:35'),
-(223, 30, 2, 7, 'tin_id', 'documents/698e9adbe7b3f_1770953435.png', '2026-02-13 03:30:35'),
-(224, 30, 2, 8, 'passport', 'documents/698e9adbe85b2_1770953435.jpg', '2026-02-13 03:30:35'),
-(225, 31, 2, 1, 'brgy_clearance', 'documents/698e9b841eefd_1770953604.jpg', '2026-02-13 03:33:24'),
-(226, 31, 2, 2, 'birth_certificate', 'documents/698e9b841ffe8_1770953604.jpg', '2026-02-13 03:33:24'),
-(227, 31, 2, 3, 'sss', 'documents/698e9b8420b40_1770953604.jpg', '2026-02-13 03:33:24'),
-(228, 31, 2, 4, 'pagibig', 'documents/698e9b8421c59_1770953604.jpg', '2026-02-13 03:33:24'),
-(229, 31, 2, 5, 'nbi', 'documents/698e9b84227ce_1770953604.jpg', '2026-02-13 03:33:24'),
-(230, 31, 2, 6, 'police_clearance', 'documents/698e9b8423305_1770953604.jpg', '2026-02-13 03:33:24'),
-(231, 31, 2, 7, 'tin_id', 'documents/698e9b842427f_1770953604.png', '2026-02-13 03:33:24'),
-(232, 31, 2, 8, 'passport', 'documents/698e9b8424f63_1770953604.png', '2026-02-13 03:33:24'),
-(233, 32, 2, 1, 'brgy_clearance', 'documents/698e9c7515747_1770953845.jpg', '2026-02-13 03:37:25'),
-(234, 32, 2, 2, 'birth_certificate', 'documents/698e9c7516293_1770953845.jpg', '2026-02-13 03:37:25'),
-(235, 32, 2, 3, 'sss', 'documents/698e9c7516d92_1770953845.jpg', '2026-02-13 03:37:25'),
-(236, 32, 2, 4, 'pagibig', 'documents/698e9c7517976_1770953845.png', '2026-02-13 03:37:25'),
-(237, 32, 2, 5, 'nbi', 'documents/698e9c75189d6_1770953845.jpg', '2026-02-13 03:37:25'),
-(238, 32, 2, 6, 'police_clearance', 'documents/698e9c75193e5_1770953845.jpg', '2026-02-13 03:37:25'),
-(239, 32, 2, 7, 'tin_id', 'documents/698e9c751a0ec_1770953845.png', '2026-02-13 03:37:25'),
-(240, 32, 2, 8, 'passport', 'documents/698e9c751b260_1770953845.jpg', '2026-02-13 03:37:25'),
-(241, 43, 1, 1, 'brgy_clearance', 'documents/6996b581e62a7_1771484545.jpg', '2026-02-19 07:02:25'),
-(242, 43, 1, 2, 'birth_certificate', 'documents/6996b581e6bbb_1771484545.jpg', '2026-02-19 07:02:25'),
-(243, 43, 1, 3, 'sss', 'documents/6996b581e77ac_1771484545.png', '2026-02-19 07:02:25'),
-(244, 43, 1, 4, 'pagibig', 'documents/6996b581e84b4_1771484545.jpg', '2026-02-19 07:02:25'),
-(245, 43, 1, 5, 'nbi', 'documents/6996b581e9494_1771484545.jpg', '2026-02-19 07:02:25'),
-(246, 43, 1, 6, 'police_clearance', 'documents/6996b581ea46b_1771484545.jpg', '2026-02-19 07:02:25'),
-(247, 43, 1, 7, 'tin_id', 'documents/6996b581eb076_1771484545.jpg', '2026-02-19 07:02:25'),
-(248, 43, 1, 8, 'passport', 'documents/6996b581ebc85_1771484545.jpg', '2026-02-19 07:02:25');
+  `id` int UNSIGNED NOT NULL,
+  `applicant_id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `document_type_id` int UNSIGNED DEFAULT NULL,
+  `document_type` enum('brgy_clearance','birth_certificate','sss','pagibig','nbi','police_clearance','tin_id','passport') COLLATE utf8mb4_general_ci NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -333,60 +214,20 @@ INSERT INTO `applicant_documents` (`id`, `applicant_id`, `business_unit_id`, `do
 --
 
 CREATE TABLE `applicant_replacements` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED DEFAULT NULL,
-  `original_applicant_id` int(10) UNSIGNED NOT NULL,
-  `replacement_applicant_id` int(10) UNSIGNED DEFAULT NULL,
-  `client_booking_id` int(10) UNSIGNED DEFAULT NULL,
-  `reason` enum('AWOL','Client Left','Not Finished Contract','Performance Issue','Other') NOT NULL,
-  `report_text` text NOT NULL,
-  `attachments_json` longtext DEFAULT NULL,
-  `status` enum('selection','assigned','cancelled') NOT NULL DEFAULT 'selection',
-  `created_by` int(10) UNSIGNED DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `original_applicant_id` int UNSIGNED NOT NULL,
+  `replacement_applicant_id` int UNSIGNED DEFAULT NULL,
+  `client_booking_id` int UNSIGNED DEFAULT NULL,
+  `reason` enum('AWOL','Client Left','Not Finished Contract','Performance Issue','Other') COLLATE utf8mb4_general_ci NOT NULL,
+  `report_text` text COLLATE utf8mb4_general_ci NOT NULL,
+  `attachments_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `status` enum('selection','assigned','cancelled') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'selection',
+  `created_by` int UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `assigned_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `applicant_replacements`
---
-
-INSERT INTO `applicant_replacements` (`id`, `business_unit_id`, `original_applicant_id`, `replacement_applicant_id`, `client_booking_id`, `reason`, `report_text`, `attachments_json`, `status`, `created_by`, `created_at`, `updated_at`, `assigned_at`) VALUES
-(22, 1, 43, 27, NULL, 'Other', 'Health Problem oh their lungs at sakit sa bulsa', '[\"replacements/699bef28049d1_1771826984.png\"]', 'assigned', 12, '2026-02-23 06:09:44', '2026-02-24 01:31:53', '2026-02-23 14:09:54'),
-(23, 1, 23, 37, NULL, 'Other', 'AWOL', '[]', 'assigned', 12, '2026-02-23 06:21:04', '2026-02-24 01:31:53', '2026-02-23 14:21:07'),
-(24, 1, 43, 28, NULL, 'Other', 'awdaw', '[]', 'assigned', 12, '2026-02-23 13:41:36', '2026-02-24 01:31:53', '2026-02-23 21:41:38'),
-(56, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 12, '2026-03-05 06:33:00', '2026-03-05 06:33:00', NULL),
-(57, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 12, '2026-03-05 06:33:05', '2026-03-05 06:33:05', NULL),
-(58, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 12, '2026-03-05 06:33:11', '2026-03-05 06:33:11', NULL),
-(59, 1, 43, NULL, NULL, 'AWOL', 'asasd', '[]', 'selection', 12, '2026-03-05 06:33:18', '2026-03-05 06:33:18', NULL),
-(60, 1, 43, NULL, NULL, 'AWOL', 'asdasd', '[]', 'selection', 12, '2026-03-05 06:44:43', '2026-03-05 06:44:43', NULL),
-(61, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 12, '2026-03-05 06:45:00', '2026-03-05 06:45:00', NULL),
-(62, 1, 43, NULL, NULL, 'AWOL', 'asdasd', '[]', 'selection', 12, '2026-03-05 06:51:31', '2026-03-05 06:51:31', NULL),
-(63, NULL, 32, NULL, NULL, 'Other', 'asd', '[]', 'selection', 12, '2026-03-05 06:52:23', '2026-03-05 06:52:23', NULL),
-(64, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 12, '2026-03-05 06:53:03', '2026-03-05 06:53:03', NULL),
-(65, 1, 43, NULL, NULL, 'AWOL', 'asdasd', '[]', 'selection', 18, '2026-03-05 06:54:01', '2026-03-05 06:54:01', NULL),
-(66, NULL, 32, NULL, NULL, 'Other', 'asd', '[]', 'selection', 20, '2026-03-05 06:54:24', '2026-03-05 06:54:24', NULL),
-(67, NULL, 32, 29, NULL, 'Other', 'asdasd', '[]', 'assigned', 20, '2026-03-05 06:55:43', '2026-03-05 06:55:48', '2026-03-05 14:55:48'),
-(68, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 18, '2026-03-05 06:57:01', '2026-03-05 06:57:01', NULL),
-(69, 1, 43, NULL, NULL, 'AWOL', 'cascasd', '[]', 'selection', 18, '2026-03-05 06:58:05', '2026-03-05 06:58:05', NULL),
-(70, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 18, '2026-03-05 07:21:28', '2026-03-05 07:21:28', NULL),
-(71, 1, 43, NULL, NULL, 'AWOL', 'asdasd', '[]', 'selection', 18, '2026-03-05 07:29:12', '2026-03-05 07:29:12', NULL),
-(72, 1, 43, NULL, NULL, 'AWOL', 'avasd', '[]', 'selection', 18, '2026-03-05 07:33:03', '2026-03-05 07:33:03', NULL),
-(73, NULL, 32, 29, NULL, 'Other', 'awdsawd', '[]', 'assigned', 20, '2026-03-05 07:34:44', '2026-03-05 07:34:48', '2026-03-05 15:34:48'),
-(74, 1, 43, NULL, NULL, 'AWOL', 'asd', '[]', 'selection', 18, '2026-03-05 07:38:43', '2026-03-05 07:38:43', NULL),
-(75, 1, 43, NULL, NULL, 'Performance Issue', 'axwa', '[]', 'selection', 18, '2026-03-05 07:45:16', '2026-03-05 07:45:16', NULL),
-(76, 1, 43, NULL, NULL, 'AWOL', 'asdasdawd', '[]', 'selection', 18, '2026-03-05 08:15:42', '2026-03-05 08:15:42', NULL),
-(77, 1, 43, NULL, NULL, 'Performance Issue', 'awdadsaw', '[]', 'selection', 18, '2026-03-05 08:20:23', '2026-03-05 08:20:23', NULL),
-(78, 1, 43, NULL, NULL, 'AWOL', 'awasfaD', '[]', 'selection', 18, '2026-03-05 08:31:07', '2026-03-05 08:31:07', NULL),
-(79, 1, 40, NULL, NULL, 'Performance Issue', 'awdasdawdsa', '[]', 'selection', 18, '2026-03-06 01:33:44', '2026-03-06 01:33:44', NULL),
-(80, 1, 40, NULL, NULL, 'AWOL', 'awdasd', '[]', 'selection', 18, '2026-03-06 01:48:20', '2026-03-06 01:48:20', NULL),
-(81, 1, 40, NULL, NULL, 'Not Finished Contract', 'asdasda', '[]', 'selection', 18, '2026-03-06 01:54:22', '2026-03-06 01:54:22', NULL),
-(82, 1, 40, 28, NULL, 'Performance Issue', 'awdasdawdas', '[]', 'assigned', 18, '2026-03-06 01:59:10', '2026-03-06 01:59:14', '2026-03-06 09:59:14'),
-(83, 1, 40, 38, NULL, 'Performance Issue', 'awdavawdawdsa', '[]', 'assigned', 18, '2026-03-06 02:20:07', '2026-03-06 02:20:12', '2026-03-06 10:20:12'),
-(84, 1, 43, 28, NULL, 'AWOL', 'awdasdaw', '[]', 'assigned', 18, '2026-03-06 02:59:04', '2026-03-06 02:59:06', '2026-03-06 10:59:06'),
-(85, 1, 28, 36, NULL, 'AWOL', 'awdasdawsasdaw', '[]', 'assigned', 18, '2026-03-06 03:01:11', '2026-03-06 03:01:14', '2026-03-06 11:01:14'),
-(86, NULL, 32, 29, NULL, 'Other', 'adwasd', '[]', 'assigned', 12, '2026-03-06 03:31:24', '2026-03-06 03:31:27', '2026-03-06 11:31:27');
 
 -- --------------------------------------------------------
 
@@ -395,49 +236,13 @@ INSERT INTO `applicant_replacements` (`id`, `business_unit_id`, `original_applic
 --
 
 CREATE TABLE `applicant_reports` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `applicant_id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED DEFAULT NULL,
-  `admin_id` int(10) UNSIGNED DEFAULT NULL,
-  `note_text` text NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `applicant_reports`
---
-
-INSERT INTO `applicant_reports` (`id`, `applicant_id`, `business_unit_id`, `admin_id`, `note_text`, `created_at`) VALUES
-(31, 23, 1, 12, 'Revert to Pending - Reason: Documents Complete. Description: solved', '2026-02-23 21:27:27'),
-(32, 23, 1, 12, 'asdasd', '2026-02-23 21:29:26'),
-(33, 23, 1, 12, 'czxcz', '2026-02-23 21:41:06'),
-(34, 43, 1, 12, 'Replacement Initiated (Reason: Other)\nawdaw', '2026-02-23 21:41:36'),
-(35, 43, 1, 12, 'Revert to Pending - Reason: Documents Complete. Description: awd', '2026-02-23 21:42:07'),
-(42, 43, NULL, 12, 'Replacement Initiated (Reason: AWOL)\nasdasd', '2026-03-05 14:51:31'),
-(43, 32, 2, 12, 'Replacement Initiated (Reason: Other)\nasd', '2026-03-05 14:52:23'),
-(44, 43, NULL, 12, 'Replacement Initiated (Reason: AWOL)\nasd', '2026-03-05 14:53:03'),
-(45, 43, NULL, 18, 'Replacement Initiated (Reason: AWOL)\nasdasd', '2026-03-05 14:54:01'),
-(46, 32, 2, 20, 'Replacement Initiated (Reason: Other)\nasd', '2026-03-05 14:54:24'),
-(47, 32, 2, 20, 'Replacement Initiated (Reason: Other)\nasdasd', '2026-03-05 14:55:43'),
-(48, 43, NULL, 18, 'Replacement Initiated (Reason: AWOL)\nasd', '2026-03-05 14:57:01'),
-(49, 43, NULL, 18, 'Replacement Initiated (Reason: AWOL)\ncascasd', '2026-03-05 14:58:05'),
-(50, 43, NULL, 18, 'Replacement Initiated (Reason: AWOL)\nasd', '2026-03-05 15:21:28'),
-(51, 43, NULL, 18, 'Replacement Initiated (Reason: AWOL)\nasdasd', '2026-03-05 15:29:12'),
-(52, 43, 1, 18, 'Replacement Initiated (Reason: AWOL)\navasd', '2026-03-05 15:33:03'),
-(53, 32, 2, 20, 'Replacement Initiated (Reason: Other)\nawdsawd', '2026-03-05 15:34:44'),
-(54, 43, 1, 18, 'Replacement Initiated (Reason: AWOL)\nasd', '2026-03-05 15:38:43'),
-(55, 43, 1, 18, 'Replacement Initiated (Reason: Performance Issue)\naxwa', '2026-03-05 15:45:16'),
-(56, 43, 1, 18, 'Replacement Initiated (Reason: AWOL)\nasdasdawd', '2026-03-05 16:15:42'),
-(57, 43, 1, 18, 'Replacement Initiated (Reason: Performance Issue)\nawdadsaw', '2026-03-05 16:20:23'),
-(58, 43, 1, 18, 'Replacement Initiated (Reason: AWOL)\nawasfaD', '2026-03-05 16:31:07'),
-(59, 40, 1, 18, 'Replacement Initiated (Reason: Performance Issue)\nawdasdawdsa', '2026-03-06 09:33:44'),
-(60, 40, 1, 18, 'Replacement Initiated (Reason: AWOL)\nawdasd', '2026-03-06 09:48:20'),
-(61, 40, 1, 18, 'Replacement Initiated (Reason: Not Finished Contract)\nasdasda', '2026-03-06 09:54:22'),
-(62, 40, 1, 18, 'Replacement Initiated (Reason: Performance Issue)\nawdasdawdas', '2026-03-06 09:59:10'),
-(63, 40, 1, 18, 'Replacement Initiated (Reason: Performance Issue)\nawdavawdawdsa', '2026-03-06 10:20:07'),
-(64, 43, 1, 18, 'Replacement Initiated (Reason: AWOL)\nawdasdaw', '2026-03-06 10:59:04'),
-(65, 28, 1, 18, 'Replacement Initiated (Reason: AWOL)\nawdasdawsasdaw', '2026-03-06 11:01:11'),
-(66, 32, 2, 12, 'Replacement Initiated (Reason: Other)\nadwasd', '2026-03-06 11:31:24');
+  `id` int UNSIGNED NOT NULL,
+  `applicant_id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `admin_id` int UNSIGNED DEFAULT NULL,
+  `note_text` text COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -446,105 +251,15 @@ INSERT INTO `applicant_reports` (`id`, `applicant_id`, `business_unit_id`, `admi
 --
 
 CREATE TABLE `applicant_status_reports` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `applicant_id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED NOT NULL,
-  `from_status` varchar(50) NOT NULL,
-  `to_status` varchar(50) NOT NULL,
-  `report_text` text NOT NULL,
-  `admin_id` int(10) UNSIGNED DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `applicant_status_reports`
---
-
-INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `business_unit_id`, `from_status`, `to_status`, `report_text`, `admin_id`, `created_at`) VALUES
-(32, 37, 1, 'on_process', 'pending', 'no client', 12, '2026-02-23 14:59:56'),
-(33, 43, 1, 'on_process', 'pending', 'no client', 12, '2026-02-23 21:22:23'),
-(34, 23, 1, 'on_hold', 'pending', 'Reverted from On Hold to Pending. Reason: Documents Complete. Description: solved', 12, '2026-02-23 21:27:27'),
-(35, 32, 2, 'on_process', 'approved', 'Client confirmed / Ready: settled', 12, '2026-02-23 21:31:15'),
-(36, 30, 2, 'on_process', 'approved', 'Client confirmed / Ready: awdasd', 12, '2026-02-23 21:36:16'),
-(37, 43, 1, 'on_process', 'approved', 'Client confirmed / Ready: awdasd', 12, '2026-02-23 21:39:45'),
-(38, 43, 1, 'on_process', 'pending', 'Interview rescheduled: awdas', 12, '2026-02-23 21:40:48'),
-(39, 28, 1, 'pending', 'on_process', 'Replacement for Ryzza Mae Diaz (ID: 43) due to Other.', 12, '2026-02-23 21:41:38'),
-(40, 43, 1, 'approved', 'on_hold', 'Replaced by Applicant ID 28. Reason: Other.', 12, '2026-02-23 21:41:38'),
-(41, 43, 1, 'on_hold', 'pending', 'Reverted from On Hold to Pending. Reason: Documents Complete. Description: awd', 12, '2026-02-23 21:42:07'),
-(42, 28, 1, 'on_process', 'pending', 'Interview rescheduled: awdas', 12, '2026-02-23 21:42:55'),
-(43, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-02-23 22:05:06'),
-(44, 43, 1, 'on_process', 'pending', 'Requirements complete: awdawds', 12, '2026-02-23 22:05:45'),
-(45, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-02-23 22:13:09'),
-(46, 43, 1, 'on_process', 'pending', 'Client confirmed / Ready: awdas', 12, '2026-02-23 22:50:02'),
-(50, 43, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 20:38:01'),
-(51, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-04 20:39:48'),
-(52, 43, 1, 'on_process', 'approved', 'Interview rescheduled: asd', 12, '2026-03-04 20:39:55'),
-(53, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-04 20:58:17'),
-(54, 43, 1, 'on_process', 'approved', 'Passed interview / assessment: goods', 12, '2026-03-04 20:58:26'),
-(55, 28, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:22:46'),
-(56, 27, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:36:11'),
-(57, 32, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-04 21:39:27'),
-(58, 32, 2, 'on_process', 'pending', 'Status changed from On process to Pending', 12, '2026-03-04 21:41:01'),
-(59, 30, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:41:47'),
-(60, 30, 2, 'on_process', 'approved', 'Status changed from On process to Approved', 12, '2026-03-04 21:43:13'),
-(61, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:44:19'),
-(62, 31, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:44:47'),
-(63, 30, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:44:59'),
-(64, 29, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 21:45:03'),
-(65, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 20, '2026-03-04 21:51:32'),
-(66, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-04 22:02:52'),
-(67, 30, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-04 22:03:11'),
-(68, 30, 2, 'on_process', 'pending', 'Status changed from On process to Pending', 12, '2026-03-04 22:03:22'),
-(69, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-05 08:06:56'),
-(70, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:27:14'),
-(71, 43, 1, 'on_process', 'pending', 'Interview rescheduled: asd', 12, '2026-03-05 08:27:26'),
-(72, 32, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:27:32'),
-(73, 32, 2, 'on_process', 'pending', 'Status changed from On process to Pending', 12, '2026-03-05 08:27:46'),
-(74, 32, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:28:40'),
-(75, 29, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:39:54'),
-(76, 32, 2, 'on_process', 'pending', 'Status changed from On process to Pending', 12, '2026-03-05 08:39:59'),
-(77, 29, 2, 'on_process', 'pending', 'Status changed from On process to Pending', 12, '2026-03-05 08:40:04'),
-(78, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-05 08:40:08'),
-(79, 32, 2, 'on_process', 'approved', 'Status changed from On process to Approved', 12, '2026-03-05 08:40:24'),
-(80, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:58:56'),
-(81, 43, 1, 'on_process', 'pending', 'Interview rescheduled: asdasd', 12, '2026-03-05 08:59:05'),
-(82, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 08:59:30'),
-(83, 32, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 09:06:13'),
-(84, 32, 2, 'on_process', 'pending', 'Passed interview / assessment: asdasd', 12, '2026-03-05 09:18:59'),
-(85, 32, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 09:19:20'),
-(86, 32, 2, 'on_process', 'approved', 'Requirements complete: asd', 12, '2026-03-05 09:19:37'),
-(87, 43, 1, 'on_process', 'pending', 'Interview rescheduled: asd', 12, '2026-03-05 09:20:17'),
-(88, 33, 1, 'on_process', 'approved', 'Client confirmed / Ready: asdasd', 12, '2026-03-05 09:31:52'),
-(89, 29, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-05 09:44:42'),
-(90, 31, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 09:44:56'),
-(91, 31, 2, 'on_process', 'pending', 'Interview rescheduled: asdasdas', 12, '2026-03-05 09:45:03'),
-(92, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-05 10:24:46'),
-(93, 43, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 10:26:00'),
-(94, 29, 2, 'pending', 'on_process', 'Status changed from Pending to On process', 12, '2026-03-05 10:44:17'),
-(95, 43, 1, 'on_process', 'pending', 'Requirements complete: asd', 18, '2026-03-05 11:01:56'),
-(96, 29, 2, 'on_process', 'pending', 'Client confirmed / Ready: asdasd', 20, '2026-03-05 13:14:11'),
-(97, 32, 2, 'on_process', 'pending', 'Passed interview / assessment: asddas', 20, '2026-03-05 13:14:19'),
-(98, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 20, '2026-03-05 13:15:32'),
-(99, 43, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-05 14:20:47'),
-(100, 29, 2, 'pending', 'on_process', 'Replacement for Denise Grace Mendiola (ID: 32) due to Other.', 20, '2026-03-05 14:55:48'),
-(101, 29, 2, 'on_process', 'pending', 'Interview rescheduled: asdasd', 20, '2026-03-05 14:56:15'),
-(102, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 20, '2026-03-05 15:34:38'),
-(103, 29, 2, 'pending', 'on_process', 'Replacement for Denise Grace Mendiola (ID: 32) due to Other.', 20, '2026-03-05 15:34:48'),
-(104, 29, 2, 'on_process', 'pending', 'Requirements complete: acwasdwa', 20, '2026-03-05 15:35:03'),
-(105, 31, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 20, '2026-03-06 09:31:06'),
-(106, 40, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 18, '2026-03-06 09:33:37'),
-(107, 28, 1, 'on_process', 'pending', 'Client confirmed / Ready: awdasdaw', 18, '2026-03-06 09:59:41'),
-(108, 38, 1, 'on_process', 'pending', 'Interview rescheduled: adwas', 18, '2026-03-06 10:20:24'),
-(109, 43, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 18, '2026-03-06 10:35:39'),
-(110, 28, 1, 'pending', 'on_process', 'Status changed from Pending to On process', 18, '2026-03-06 10:35:44'),
-(111, 28, 1, 'on_process', 'pending', 'Interview rescheduled: asd', 18, '2026-03-06 10:35:49'),
-(112, 43, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 18, '2026-03-06 10:58:56'),
-(113, 28, 1, 'on_process', 'pending', 'Client confirmed / Ready: asdawc', 18, '2026-03-06 10:59:13'),
-(114, 28, 1, 'pending', 'approved', 'Status changed from Pending to Approved', 18, '2026-03-06 11:01:04'),
-(115, 36, 1, 'on_process', 'pending', 'Client confirmed / Ready: awdas', 18, '2026-03-06 11:01:24'),
-(116, 32, 2, 'pending', 'approved', 'Status changed from Pending to Approved', 12, '2026-03-06 11:31:12'),
-(117, 29, 2, 'pending', 'on_process', 'Replacement for Denise Grace Mendiola (ID: 32) due to Other.', 12, '2026-03-06 11:31:27'),
-(118, 29, 2, 'on_process', 'pending', 'Client confirmed / Ready: asd', 12, '2026-03-06 11:31:39');
+  `id` int UNSIGNED NOT NULL,
+  `applicant_id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `from_status` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `to_status` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `report_text` text COLLATE utf8mb4_general_ci NOT NULL,
+  `admin_id` int UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -553,30 +268,20 @@ INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `business_unit_id`
 --
 
 CREATE TABLE `blacklisted_applicants` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `applicant_id` int(10) UNSIGNED NOT NULL,
-  `reason` varchar(255) NOT NULL,
-  `issue` text DEFAULT NULL,
-  `proof_paths` longtext DEFAULT NULL,
-  `created_by` int(10) UNSIGNED DEFAULT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int UNSIGNED NOT NULL,
+  `applicant_id` int UNSIGNED NOT NULL,
+  `reason` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `issue` text COLLATE utf8mb4_general_ci,
+  `proof_paths` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `created_by` int UNSIGNED DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `reverted_at` datetime DEFAULT NULL,
-  `reverted_by` int(10) UNSIGNED DEFAULT NULL,
-  `compliance_note` text DEFAULT NULL,
-  `compliance_proof_paths` longtext DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `blacklisted_applicants`
---
-
-INSERT INTO `blacklisted_applicants` (`id`, `applicant_id`, `reason`, `issue`, `proof_paths`, `created_by`, `is_active`, `created_at`, `reverted_at`, `reverted_by`, `compliance_note`, `compliance_proof_paths`, `updated_at`) VALUES
-(5, 43, 'sad', 'asdasd', NULL, 12, 0, '2026-02-23 13:28:25', '2026-02-23 21:32:00', 12, 'sawdas', NULL, '2026-02-23 13:32:00'),
-(6, 32, 'asd', 'asdastesttest', NULL, 12, 0, '2026-03-05 01:34:09', '2026-03-05 09:58:40', 12, 'fixed', NULL, '2026-03-05 01:58:40'),
-(7, 30, 'asdas', 'asdasdas', NULL, 12, 0, '2026-03-05 01:34:32', '2026-03-05 09:58:16', 12, 'goods', NULL, '2026-03-05 01:58:16'),
-(8, 39, 'csnk test blacklist', 'awdasdawdas', NULL, 12, 0, '2026-03-05 01:52:44', '2026-03-05 09:58:26', 12, 'settled and fixed issue', NULL, '2026-03-05 01:58:26');
+  `reverted_by` int UNSIGNED DEFAULT NULL,
+  `compliance_note` text COLLATE utf8mb4_general_ci,
+  `compliance_proof_paths` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -585,15 +290,15 @@ INSERT INTO `blacklisted_applicants` (`id`, `applicant_id`, `reason`, `issue`, `
 --
 
 CREATE TABLE `business_units` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `agency_id` smallint(5) UNSIGNED NOT NULL,
-  `country_id` smallint(5) UNSIGNED NOT NULL,
-  `code` varchar(40) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` int UNSIGNED NOT NULL,
+  `agency_id` smallint UNSIGNED NOT NULL,
+  `country_id` smallint UNSIGNED NOT NULL,
+  `code` varchar(40) COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `business_units`
@@ -611,23 +316,30 @@ INSERT INTO `business_units` (`id`, `agency_id`, `country_id`, `code`, `name`, `
 --
 
 CREATE TABLE `client_bookings` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `applicant_id` int(10) UNSIGNED NOT NULL,
-  `business_unit_id` int(10) UNSIGNED NOT NULL,
-  `services_json` longtext NOT NULL,
-  `appointment_type` enum('Video Call','Audio Call','Chat','Office Visit') NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `applicant_id` int UNSIGNED NOT NULL,
+  `business_unit_id` int UNSIGNED NOT NULL,
+  `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `appointment_type` enum('Video Call','Audio Call','Chat','Office Visit') COLLATE utf8mb4_general_ci NOT NULL,
   `appointment_date` date NOT NULL,
   `appointment_time` time NOT NULL,
-  `client_first_name` varchar(100) NOT NULL,
-  `client_middle_name` varchar(100) DEFAULT NULL,
-  `client_last_name` varchar(100) NOT NULL,
-  `client_phone` varchar(30) NOT NULL,
-  `client_email` varchar(150) NOT NULL,
-  `client_address` varchar(255) NOT NULL,
-  `status` enum('submitted','confirmed','cancelled') NOT NULL DEFAULT 'submitted',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `client_first_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `client_middle_name` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `client_last_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `client_phone` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
+  `client_email` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `client_address` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `status` enum('submitted','confirmed','cancelled') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'submitted',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `client_bookings`
+--
+
+INSERT INTO `client_bookings` (`id`, `applicant_id`, `business_unit_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
+(13, 44, 1, '[\"Cleaning & Housekeeping (General)\"]', 'Office Visit', '2026-03-17', '09:29:00', 'John Ellijah', 'Mulawin', 'Renz Diaz', '09270746258', 'roannrenz19@gmail.com', '666 Paco Hellfire St. Paco Manila', 'submitted', '2026-03-05 01:29:45', '2026-03-05 01:29:45');
 
 -- --------------------------------------------------------
 
@@ -636,17 +348,17 @@ CREATE TABLE `client_bookings` (
 --
 
 CREATE TABLE `countries` (
-  `id` smallint(5) UNSIGNED NOT NULL,
-  `iso2` char(2) NOT NULL,
-  `iso3` char(3) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `default_tz` varchar(50) NOT NULL,
-  `phone_country_code` varchar(6) NOT NULL,
-  `currency_code` char(3) NOT NULL,
-  `locale` varchar(10) NOT NULL,
-  `date_format` varchar(20) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` smallint UNSIGNED NOT NULL,
+  `iso2` char(2) COLLATE utf8mb4_general_ci NOT NULL,
+  `iso3` char(3) COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `default_tz` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `phone_country_code` varchar(6) COLLATE utf8mb4_general_ci NOT NULL,
+  `currency_code` char(3) COLLATE utf8mb4_general_ci NOT NULL,
+  `locale` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `date_format` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `countries`
@@ -664,13 +376,13 @@ INSERT INTO `countries` (`id`, `iso2`, `iso3`, `name`, `default_tz`, `phone_coun
 --
 
 CREATE TABLE `document_types` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `country_id` smallint(5) UNSIGNED NOT NULL,
-  `code` varchar(50) NOT NULL,
-  `label` varchar(150) NOT NULL,
-  `is_required` tinyint(1) NOT NULL DEFAULT 0,
-  `active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id` int UNSIGNED NOT NULL,
+  `country_id` smallint UNSIGNED NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `label` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_required` tinyint(1) NOT NULL DEFAULT '0',
+  `active` tinyint(1) NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `document_types`
@@ -704,13 +416,32 @@ CREATE TABLE `recycled_ids` (
 --
 
 CREATE TABLE `session_logs` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `admin_id` int(10) UNSIGNED DEFAULT NULL,
-  `ip_address` varchar(45) NOT NULL,
-  `user_agent` text DEFAULT NULL,
-  `login_time` datetime NOT NULL DEFAULT current_timestamp(),
+  `id` int UNSIGNED NOT NULL,
+  `admin_id` int UNSIGNED DEFAULT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_general_ci NOT NULL,
+  `user_agent` text COLLATE utf8mb4_general_ci,
+  `login_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `logout_time` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `session_logs`
+--
+
+INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
+(100, 4, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-02-26 20:44:17', '2026-02-26 20:47:48'),
+(101, 5, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 08:42:28', '2026-03-02 08:43:18'),
+(102, 18, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36', '2026-03-02 15:06:04', NULL),
+(103, 18, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 23:01:36', '2026-03-02 23:01:46'),
+(104, 17, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 23:01:55', '2026-03-02 23:03:18'),
+(105, 18, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 23:03:25', '2026-03-02 23:13:54'),
+(106, 17, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 23:14:01', '2026-03-02 23:15:03'),
+(107, 18, '136.158.56.173', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-02 23:15:10', NULL),
+(108, 18, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-05 08:08:01', NULL),
+(109, 5, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-05 08:11:57', NULL),
+(110, 5, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-05 10:55:41', NULL),
+(111, 5, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-05 13:17:36', NULL),
+(112, 5, '112.209.73.113', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-05 15:46:34', NULL);
 
 --
 -- Indexes for dumped tables
@@ -877,85 +608,85 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=778;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
 --
 ALTER TABLE `admin_users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `agencies`
 --
 ALTER TABLE `agencies`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` smallint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `applicants`
 --
 ALTER TABLE `applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `applicant_documents`
 --
 ALTER TABLE `applicant_documents`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=249;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `applicant_replacements`
 --
 ALTER TABLE `applicant_replacements`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `applicant_reports`
 --
 ALTER TABLE `applicant_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `blacklisted_applicants`
 --
 ALTER TABLE `blacklisted_applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `business_units`
 --
 ALTER TABLE `business_units`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `client_bookings`
 --
 ALTER TABLE `client_bookings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `countries`
 --
 ALTER TABLE `countries`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` smallint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `document_types`
 --
 ALTER TABLE `document_types`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=184;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
 
 --
 -- Constraints for dumped tables
@@ -1014,7 +745,8 @@ ALTER TABLE `applicant_replacements`
 --
 ALTER TABLE `applicant_reports`
   ADD CONSTRAINT `fk_app_reports_app_bu` FOREIGN KEY (`applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_app_reports_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_app_reports_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_app_reports_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`);
 
 --
 -- Constraints for table `applicant_status_reports`

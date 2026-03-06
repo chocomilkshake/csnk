@@ -9,18 +9,18 @@ $pageTitle = 'Reports - All Applicants';
    Sorted: recent -> oldest (DESC)
 ------------------------------------------------------------ */
 if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id'])) {
-    header('Content-Type: application/json; charset=UTF-8');
+  header('Content-Type: application/json; charset=UTF-8');
 
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
+  require_once '../includes/config.php';
+  require_once '../includes/Database.php';
 
-    $database = new Database();              // mysqli
-    $conn = $database->getConnection();
+  $database = new Database();              // mysqli
+  $conn = $database->getConnection();
 
-    $id = (int)$_GET['id'];
-    $data = [];
+  $id = (int) $_GET['id'];
+  $data = [];
 
-    $sql = "
+  $sql = "
         (
             SELECT
                 'note' AS item_type,
@@ -87,36 +87,36 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
         ORDER BY created_at DESC, origin_id DESC
     ";
 
-    try {
-        if ($stmt = $conn->prepare($sql)) {
-            // notes(1), status(1), role-check(2), filter(2) => 6 ints
-            $stmt->bind_param("iiiiii", $id, $id, $id, $id, $id, $id);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            while ($row = $res->fetch_assoc()) {
-                $data[] = [
-                    'item_type'   => (string)($row['item_type'] ?? 'note'),
-                    'body'        => (string)($row['body'] ?? ''),
-                    'from_status' => (string)($row['from_status'] ?? ''),
-                    'to_status'   => (string)($row['to_status'] ?? ''),
-                    'created_at'  => (string)($row['created_at'] ?? ''),
-                    'admin_name'  => (string)($row['admin_name'] ?? '—'),
-                    'role'        => (string)($row['role'] ?? ''),
-                    'orig_id'     => isset($row['orig_id']) ? (int)$row['orig_id'] : null,
-                    'repl_id'     => isset($row['repl_id']) ? (int)$row['repl_id'] : null,
-                    'reason'      => (string)($row['reason'] ?? ''),
-                    'replacement_status' => (string)($row['replacement_status'] ?? ''),
-                    'assigned_at' => (string)($row['assigned_at'] ?? ''),
-                ];
-            }
-            $stmt->close();
-        }
-    } catch (Throwable $e) {
-        // return what we have
+  try {
+    if ($stmt = $conn->prepare($sql)) {
+      // notes(1), status(1), role-check(2), filter(2) => 6 ints
+      $stmt->bind_param("iiiiii", $id, $id, $id, $id, $id, $id);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      while ($row = $res->fetch_assoc()) {
+        $data[] = [
+          'item_type' => (string) ($row['item_type'] ?? 'note'),
+          'body' => (string) ($row['body'] ?? ''),
+          'from_status' => (string) ($row['from_status'] ?? ''),
+          'to_status' => (string) ($row['to_status'] ?? ''),
+          'created_at' => (string) ($row['created_at'] ?? ''),
+          'admin_name' => (string) ($row['admin_name'] ?? '—'),
+          'role' => (string) ($row['role'] ?? ''),
+          'orig_id' => isset($row['orig_id']) ? (int) $row['orig_id'] : null,
+          'repl_id' => isset($row['repl_id']) ? (int) $row['repl_id'] : null,
+          'reason' => (string) ($row['reason'] ?? ''),
+          'replacement_status' => (string) ($row['replacement_status'] ?? ''),
+          'assigned_at' => (string) ($row['assigned_at'] ?? ''),
+        ];
+      }
+      $stmt->close();
     }
+  } catch (Throwable $e) {
+    // return what we have
+  }
 
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
-    exit;
+  echo json_encode($data, JSON_UNESCAPED_UNICODE);
+  exit;
 }
 
 /* -----------------------------------------------------------
@@ -124,90 +124,106 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
 ------------------------------------------------------------ */
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
-if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+if (session_status() !== PHP_SESSION_ACTIVE) {
+  @session_start();
+}
 $applicant = new Applicant($database);
 
 /* ---------------- CSRF ---------------- */
 if (empty($_SESSION['csrf_token'])) {
-    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
-    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
+  try {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+  } catch (Throwable $e) {
+    $_SESSION['csrf_token'] = bin2hex((string) mt_rand());
+  }
 }
 
 /* ---------------- Search memory ---------------- */
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
-    unset($_SESSION['reports_q']);
-    redirect('reports.php'); exit;
+  unset($_SESSION['reports_q']);
+  redirect('reports.php');
+  exit;
 }
 $q = '';
 if (isset($_GET['q'])) {
-    $q = trim((string)$_GET['q']);
-    if (mb_strlen($q) > 100) { $q = mb_substr($q, 0, 100); }
-    $_SESSION['reports_q'] = $q;
+  $q = trim((string) $_GET['q']);
+  if (mb_strlen($q) > 100) {
+    $q = mb_substr($q, 0, 100);
+  }
+  $_SESSION['reports_q'] = $q;
 } elseif (!empty($_SESSION['reports_q'])) {
-    $q = (string)$_SESSION['reports_q'];
+  $q = (string) $_SESSION['reports_q'];
 }
 
 /* ---------------- Status filter & Sort ---------------- */
-$allowedStatuses = ['all','pending','on_process','approved','on_hold','deleted'];
-$status = isset($_GET['status']) ? strtolower(trim((string)$_GET['status'])) : 'all';
-if (!in_array($status, $allowedStatuses, true)) $status = 'all';
+$allowedStatuses = ['all', 'pending', 'on_process', 'approved', 'on_hold', 'deleted'];
+$status = isset($_GET['status']) ? strtolower(trim((string) $_GET['status'])) : 'all';
+if (!in_array($status, $allowedStatuses, true))
+  $status = 'all';
 
-$allowedSort = ['latest','reports','name','status'];
-$sort = isset($_GET['sort']) ? strtolower(trim((string)$_GET['sort'])) : 'latest';
-if (!in_array($sort, $allowedSort, true)) $sort = 'latest';
+$allowedSort = ['latest', 'reports', 'name', 'status'];
+$sort = isset($_GET['sort']) ? strtolower(trim((string) $_GET['sort'])) : 'latest';
+if (!in_array($sort, $allowedSort, true))
+  $sort = 'latest';
 
 /* ---------------- Handle POST: add a report/note ---------------- */
 if (
-    isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
-    isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
+  isset($_POST['action']) && $_POST['action'] === 'add_applicant_report' &&
+  isset($_POST['id'], $_POST['note_text'], $_POST['csrf_token'])
 ) {
-    $id       = (int)$_POST['id'];
-    $noteText = trim((string)$_POST['note_text']);
+  $id = (int) $_POST['id'];
+  $noteText = trim((string) $_POST['note_text']);
 
-    // preserve filters on redirect
-    $qs = [];
-    if ($q !== '') $qs['q'] = $q;
-    if ($status !== 'all') $qs['status'] = $status;
-    if ($sort !== 'latest') $qs['sort'] = $sort;
-    $qs = $qs ? ('?' . http_build_query($qs)) : '';
+  // preserve filters on redirect
+  $qs = [];
+  if ($q !== '')
+    $qs['q'] = $q;
+  if ($status !== 'all')
+    $qs['status'] = $status;
+  if ($sort !== 'latest')
+    $qs['sort'] = $sort;
+  $qs = $qs ? ('?' . http_build_query($qs)) : '';
 
-    // CSRF
-    $validCsrf = isset($_SESSION['csrf_token'])
-        && hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token']);
-    if (!$validCsrf) {
-        setFlashMessage('error', 'Invalid or missing security token. Please refresh and try again.');
-        redirect('reports.php' . $qs); exit;
-    }
+  // CSRF
+  $validCsrf = isset($_SESSION['csrf_token'])
+    && hash_equals((string) $_SESSION['csrf_token'], (string) $_POST['csrf_token']);
+  if (!$validCsrf) {
+    setFlashMessage('error', 'Invalid or missing security token. Please refresh and try again.');
+    redirect('reports.php' . $qs);
+    exit;
+  }
 
-    if ($noteText === '' || mb_strlen($noteText) < 3) {
-        setFlashMessage('error', 'Please write a short report (min 3 characters).');
-        redirect('reports.php' . $qs); exit;
-    }
+  if ($noteText === '' || mb_strlen($noteText) < 3) {
+    setFlashMessage('error', 'Please write a short report (min 3 characters).');
+    redirect('reports.php' . $qs);
+    exit;
+  }
 
-    $conn = $database->getConnection(); // mysqli
-    $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+  $conn = $database->getConnection(); // mysqli
+  $adminId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null;
 
-    try {
-        if ($stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)")) {
-            $stmt->bind_param("iis", $id, $adminId, $noteText);
-            $ok = $stmt->execute();
-            $stmt->close();
-            if ($ok) {
-                setFlashMessage('success', 'Report saved.');
-                if (isset($auth) && method_exists($auth,'logActivity') && isset($_SESSION['admin_id'])) {
-                    $auth->logActivity((int)$_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
-                }
-            } else {
-                setFlashMessage('error', 'Failed to save report. Please try again.');
-            }
-        } else {
-            setFlashMessage('error', 'Failed to save report. Please try again.');
+  try {
+    if ($stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)")) {
+      $stmt->bind_param("iis", $id, $adminId, $noteText);
+      $ok = $stmt->execute();
+      $stmt->close();
+      if ($ok) {
+        setFlashMessage('success', 'Report saved.');
+        if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+          $auth->logActivity((int) $_SESSION['admin_id'], 'Add Applicant Report', "Applicant ID {$id}: " . mb_substr($noteText, 0, 200));
         }
-    } catch (Throwable $e) {
+      } else {
         setFlashMessage('error', 'Failed to save report. Please try again.');
+      }
+    } else {
+      setFlashMessage('error', 'Failed to save report. Please try again.');
     }
+  } catch (Throwable $e) {
+    setFlashMessage('error', 'Failed to save report. Please try again.');
+  }
 
-    redirect('reports.php' . $qs); exit;
+  redirect('reports.php' . $qs);
+  exit;
 }
 
 /* ---------------- Fetch Applicants (deduplicated) ----------------
@@ -220,22 +236,22 @@ $conn = $database->getConnection(); // mysqli
 
 $whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
 $params = [];
-$types  = '';
+$types = '';
 
 if ($status !== 'all') {
-    $whereStatus .= " AND a.status = ?";
-    $params[] = $status;
-    $types   .= 's';
+  $whereStatus .= " AND a.status = ?";
+  $params[] = $status;
+  $types .= 's';
 }
 
 // Sorting
 $orderSql = " ORDER BY lr.id DESC, a.id DESC"; // newest note first
 if ($sort === 'reports') {
-    $orderSql = " ORDER BY report_count DESC, lr.id DESC, a.id DESC";
+  $orderSql = " ORDER BY report_count DESC, lr.id DESC, a.id DESC";
 } elseif ($sort === 'name') {
-    $orderSql = " ORDER BY a.last_name ASC, a.first_name ASC, a.id ASC";
+  $orderSql = " ORDER BY a.last_name ASC, a.first_name ASC, a.id ASC";
 } elseif ($sort === 'status') {
-    $orderSql = " ORDER BY a.status ASC, lr.id DESC, a.id DESC";
+  $orderSql = " ORDER BY a.status ASC, lr.id DESC, a.id DESC";
 }
 
 $sql = "
@@ -280,65 +296,80 @@ WHERE {$whereStatus}
 
 $rows = [];
 try {
-    if ($types !== '') {
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->bind_param($types, ...$params);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $rows = $res->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
-        }
-    } else {
-        if ($res = $conn->query($sql)) {
-            $rows = $res->fetch_all(MYSQLI_ASSOC);
-        }
+  if ($types !== '') {
+    if ($stmt = $conn->prepare($sql)) {
+      $stmt->bind_param($types, ...$params);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $rows = $res->fetch_all(MYSQLI_ASSOC);
+      $stmt->close();
     }
+  } else {
+    if ($res = $conn->query($sql)) {
+      $rows = $res->fetch_all(MYSQLI_ASSOC);
+    }
+  }
 } catch (Throwable $e) {
-    $rows = [];
+  $rows = [];
 }
 
 /* ---------------- Filter in PHP (search) ---------------- */
-function filterRowsByQuery(array $rows, string $query): array {
-    if ($query === '') return $rows;
-    $needle = mb_strtolower($query);
-    return array_values(array_filter($rows, function(array $row) use ($needle) {
-        $first  = (string)($row['first_name']   ?? '');
-        $middle = (string)($row['middle_name']  ?? '');
-        $last   = (string)($row['last_name']    ?? '');
-        $suffix = (string)($row['suffix']       ?? '');
-        $email  = (string)($row['email']        ?? '');
-        $phone  = (string)($row['phone_number'] ?? '');
-        $latest = (string)($row['latest_note']  ?? '');
-        $admin  = (string)($row['latest_note_admin'] ?? '');
+function filterRowsByQuery(array $rows, string $query): array
+{
+  if ($query === '')
+    return $rows;
+  $needle = mb_strtolower($query);
+  return array_values(array_filter($rows, function (array $row) use ($needle) {
+    $first = (string) ($row['first_name'] ?? '');
+    $middle = (string) ($row['middle_name'] ?? '');
+    $last = (string) ($row['last_name'] ?? '');
+    $suffix = (string) ($row['suffix'] ?? '');
+    $email = (string) ($row['email'] ?? '');
+    $phone = (string) ($row['phone_number'] ?? '');
+    $latest = (string) ($row['latest_note'] ?? '');
+    $admin = (string) ($row['latest_note_admin'] ?? '');
 
-        $fullName = trim("$first $middle $last $suffix");
-        $hay = mb_strtolower(implode(' | ', [$first,$middle,$last,$suffix,$fullName,$email,$phone,$latest,$admin]));
-        return mb_strpos($hay, $needle) !== false;
-    }));
+    $fullName = trim("$first $middle $last $suffix");
+    $hay = mb_strtolower(implode(' | ', [$first, $middle, $last, $suffix, $fullName, $email, $phone, $latest, $admin]));
+    return mb_strpos($hay, $needle) !== false;
+  }));
 }
-if ($q !== '') { $rows = filterRowsByQuery($rows, $q); }
+if ($q !== '') {
+  $rows = filterRowsByQuery($rows, $q);
+}
 
 /* ---------------- Export link ---------------- */
 $qParams = [];
-if ($q !== '') $qParams['q'] = $q;
-if ($status !== 'all') $qParams['status'] = $status;
-if ($sort !== 'latest') $qParams['sort'] = $sort;
+if ($q !== '')
+  $qParams['q'] = $q;
+if ($status !== 'all')
+  $qParams['status'] = $status;
+if ($sort !== 'latest')
+  $qParams['sort'] = $sort;
 $exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_query($qParams)) : '');
 
 /* ---------------- Helpers ---------------- */
-function humanizeStatus(string $s): string {
-    $s = str_replace('_', ' ', $s);
-    return ucwords($s);
+function humanizeStatus(string $s): string
+{
+  $s = str_replace('_', ' ', $s);
+  return ucwords($s);
 }
-function statusBadgeClass(string $status): string {
-    switch (strtolower($status)) {
-        case 'pending':    return 'bg-warning text-dark';
-        case 'on_process': return 'bg-info text-dark';
-        case 'approved':   return 'bg-success';
-        case 'on_hold':    return 'bg-secondary';
-        case 'deleted':    return 'bg-danger';
-        default:           return 'bg-secondary';
-    }
+function statusBadgeClass(string $status): string
+{
+  switch (strtolower($status)) {
+    case 'pending':
+      return 'bg-warning text-dark';
+    case 'on_process':
+      return 'bg-info text-dark';
+    case 'approved':
+      return 'bg-success';
+    case 'on_hold':
+      return 'bg-secondary';
+    case 'deleted':
+      return 'bg-danger';
+    default:
+      return 'bg-secondary';
+  }
 }
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -356,14 +387,8 @@ function statusBadgeClass(string $status): string {
   <div class="row g-2 align-items-center">
     <div class="col-12 col-lg-6">
       <div class="input-group">
-        <input
-          type="text"
-          name="q"
-          class="form-control"
-          placeholder="Search name, email, notes, admin…"
-          value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
-          autocomplete="off"
-        >
+        <input type="text" name="q" class="form-control" placeholder="Search name, email, notes, admin…"
+          value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
         <?php if ($q !== ''): ?>
           <a class="btn btn-outline-secondary" href="reports.php?clear=1" title="Clear">
             <i class="bi bi-x-lg"></i>
@@ -380,18 +405,18 @@ function statusBadgeClass(string $status): string {
         <label class="text-muted small mb-0">Status</label>
         <select name="status" class="form-select" onchange="this.form.submit()">
           <?php
-            $statusOptions = [
-              'all'        => 'All statuses',
-              'pending'    => 'Pending',
-              'on_process' => 'On Process',
-              'approved'   => 'Approved',
-              'on_hold'    => 'On Hold',
-              'deleted'    => 'Deleted'
-            ];
-            foreach ($statusOptions as $val => $label) {
-                $sel = $status === $val ? 'selected' : '';
-                echo '<option value="'.htmlspecialchars($val,ENT_QUOTES).'" '.$sel.'>'.htmlspecialchars($label).'</option>';
-            }
+          $statusOptions = [
+            'all' => 'All statuses',
+            'pending' => 'Pending',
+            'on_process' => 'On Process',
+            'approved' => 'Approved',
+            'on_hold' => 'On Hold',
+            'deleted' => 'Deleted'
+          ];
+          foreach ($statusOptions as $val => $label) {
+            $sel = $status === $val ? 'selected' : '';
+            echo '<option value="' . htmlspecialchars($val, ENT_QUOTES) . '" ' . $sel . '>' . htmlspecialchars($label) . '</option>';
+          }
           ?>
         </select>
       </div>
@@ -402,16 +427,16 @@ function statusBadgeClass(string $status): string {
         <label class="text-muted small mb-0">Sort</label>
         <select name="sort" class="form-select" onchange="this.form.submit()">
           <?php
-            $sortOptions = [
-              'latest'  => 'Newest report',
-              'reports' => 'Most reports',
-              'name'    => 'Name (A–Z)',
-              'status'  => 'Status'
-            ];
-            foreach ($sortOptions as $val => $label) {
-                $sel = $sort === $val ? 'selected' : '';
-                echo '<option value="'.htmlspecialchars($val,ENT_QUOTES).'" '.$sel.'>'.htmlspecialchars($label).'</option>';
-            }
+          $sortOptions = [
+            'latest' => 'Newest report',
+            'reports' => 'Most reports',
+            'name' => 'Name (A–Z)',
+            'status' => 'Status'
+          ];
+          foreach ($sortOptions as $val => $label) {
+            $sel = $sort === $val ? 'selected' : '';
+            echo '<option value="' . htmlspecialchars($val, ENT_QUOTES) . '" ' . $sel . '>' . htmlspecialchars($label) . '</option>';
+          }
           ?>
         </select>
       </div>
@@ -430,7 +455,7 @@ function statusBadgeClass(string $status): string {
             <th style="width:260px;">Status</th>
             <th>Latest Report</th>
             <th class="text-center" style="width:90px;">Count</th>
-            <th style="width:200px;">Reported By</th>
+            <th style="width:200px, fit-content;">Reported By</th>
             <th style="width:170px;">Reported At</th>
             <th style="width:300px;">Actions</th>
           </tr>
@@ -451,38 +476,36 @@ function statusBadgeClass(string $status): string {
           <?php else: ?>
             <?php foreach ($rows as $r): ?>
               <?php
-                $id = (int)$r['id'];
-                $name = getFullName($r['first_name'], $r['middle_name'], $r['last_name'], $r['suffix']);
-                $latestNote  = (string)($r['latest_note'] ?? '');
-                $latestAdmin = (string)($r['latest_note_admin'] ?? '—');
-                $latestAt    = (string)($r['latest_note_at'] ?? '');
-                $reportCount = (int)($r['report_count'] ?? 0);
+              $id = (int) $r['id'];
+              $name = getFullName($r['first_name'], $r['middle_name'], $r['last_name'], $r['suffix']);
+              $latestNote = (string) ($r['latest_note'] ?? '');
+              $latestAdmin = (string) ($r['latest_note_admin'] ?? '—');
+              $latestAt = (string) ($r['latest_note_at'] ?? '');
+              $reportCount = (int) ($r['report_count'] ?? 0);
 
-                // Status logic
-                $tableCurrent = (string)($r['status'] ?? '');
-                $lastFrom     = (string)($r['last_from_status'] ?? '');
-                $lastTo       = (string)($r['last_to_status'] ?? '');
-                $lastStatusAt = (string)($r['last_status_at'] ?? '');
+              // Status logic
+              $tableCurrent = (string) ($r['status'] ?? '');
+              $lastFrom = (string) ($r['last_from_status'] ?? '');
+              $lastTo = (string) ($r['last_to_status'] ?? '');
+              $lastStatusAt = (string) ($r['last_status_at'] ?? '');
 
-                // Prefer latest status change "to" if present; fallback to applicants.status
-                $curr = $lastTo !== '' ? $lastTo : $tableCurrent;
-                $prev = $lastFrom;
-                $hasTransition = ($prev !== '' && $curr !== '' && strcasecmp($prev, $curr) !== 0);
+              // Prefer latest status change "to" if present; fallback to applicants.status
+              $curr = $lastTo !== '' ? $lastTo : $tableCurrent;
+              $prev = $lastFrom;
+              $hasTransition = ($prev !== '' && $curr !== '' && strcasecmp($prev, $curr) !== 0);
 
-                $currClass = statusBadgeClass($curr);
-                $prevClass = statusBadgeClass($prev);
+              $currClass = statusBadgeClass($curr);
+              $prevClass = statusBadgeClass($prev);
               ?>
               <tr>
                 <td>
                   <?php if (!empty($r['picture'])): ?>
-                    <img
-                      src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>"
-                      alt="Photo" class="rounded" width="48" height="48"
-                    >
+                    <img src="<?php echo htmlspecialchars(getFileUrl($r['picture']), ENT_QUOTES, 'UTF-8'); ?>" alt="Photo"
+                      class="rounded" width="48" height="48">
                   <?php else: ?>
                     <div class="rounded bg-secondary text-white d-flex align-items-center justify-content-center"
-                         style="width:48px;height:48px;">
-                      <?php echo strtoupper(substr((string)$r['first_name'], 0, 1)); ?>
+                      style="width:48px;height:48px;">
+                      <?php echo strtoupper(substr((string) $r['first_name'], 0, 1)); ?>
                     </div>
                   <?php endif; ?>
                 </td>
@@ -532,18 +555,15 @@ function statusBadgeClass(string $status): string {
                 <td class="text-nowrap">
                   <div class="d-inline-flex gap-2 align-items-center">
                     <!-- Write report -->
-                    <button class="btn btn-sm btn-primary"
-                            data-id="<?php echo $id; ?>"
-                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
-                            data-bs-toggle="modal" data-bs-target="#reportModal"
-                            onclick="prepReportModal(this)">
+                    <button class="btn btn-sm btn-primary" data-id="<?php echo $id; ?>"
+                      data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="modal"
+                      data-bs-target="#reportModal" onclick="prepReportModal(this)">
                       <i class="bi bi-journal-plus me-1"></i> Write Report
                     </button>
 
                     <!-- Full History -->
-                    <button class="btn btn-sm btn-outline-secondary view-history"
-                            data-id="<?php echo $id; ?>"
-                            data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
+                    <button class="btn btn-sm btn-outline-secondary view-history" data-id="<?php echo $id; ?>"
+                      data-name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>">
                       <i class="bi bi-clock-history me-1"></i> Full History
                     </button>
                   </div>
@@ -571,13 +591,13 @@ function statusBadgeClass(string $status): string {
         </div>
         <div class="mb-3">
           <label for="note_text" class="form-label">Report / Notes <span class="text-danger">*</span></label>
-          <textarea class="form-control" id="note_text" name="note_text" rows="5"
-                    required minlength="3" maxlength="4000"
-                    placeholder="Write your report or notes..."></textarea>
+          <textarea class="form-control" id="note_text" name="note_text" rows="5" required minlength="3"
+            maxlength="4000" placeholder="Write your report or notes..."></textarea>
         </div>
         <input type="hidden" name="action" value="add_applicant_report">
         <input type="hidden" name="id" id="rpt-id" value="">
-        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="csrf_token"
+          value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
@@ -601,7 +621,8 @@ function statusBadgeClass(string $status): string {
         <div class="alert alert-light border d-flex align-items-center" role="alert">
           <i class="bi bi-info-circle me-2 text-primary"></i>
           <div>
-            Entries show <strong>newest first</strong>. Status changes display the move from <em>Previous</em> to <em>Current</em>.
+            Entries show <strong>newest first</strong>. Status changes display the move from <em>Previous</em> to
+            <em>Current</em>.
           </div>
         </div>
 
@@ -618,161 +639,161 @@ function statusBadgeClass(string $status): string {
 </div>
 
 <script>
-function prepReportModal(btn) {
-  var id = btn.getAttribute('data-id') || '';
-  var name = btn.getAttribute('data-name') || '';
-  if (!id) return;
-  document.getElementById('rpt-id').value = id;
-  document.getElementById('rpt-applicant').textContent = name;
-  var ta = document.getElementById('note_text');
-  if (ta) ta.value = '';
-}
+  function prepReportModal(btn) {
+    var id = btn.getAttribute('data-id') || '';
+    var name = btn.getAttribute('data-name') || '';
+    if (!id) return;
+    document.getElementById('rpt-id').value = id;
+    document.getElementById('rpt-applicant').textContent = name;
+    var ta = document.getElementById('note_text');
+    if (ta) ta.value = '';
+  }
 
-document.addEventListener('DOMContentLoaded', function () {
-  var historyModalEl = document.getElementById('historyModal');
-  var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
+  document.addEventListener('DOMContentLoaded', function () {
+    var historyModalEl = document.getElementById('historyModal');
+    var historyModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(historyModalEl) : null;
 
-  // Full History loader (newest first from server)
-  document.querySelectorAll('.view-history').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var id = btn.dataset.id || '';
-      var name = btn.dataset.name || '';
-      if (!id) return;
+    // Full History loader (newest first from server)
+    document.querySelectorAll('.view-history').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.id || '';
+        var name = btn.dataset.name || '';
+        if (!id) return;
 
-      document.getElementById('hist-applicant').textContent = name;
-      var container = document.getElementById('hist-container');
-      container.innerHTML = '<div class="text-muted">Loading history…</div>';
+        document.getElementById('hist-applicant').textContent = name;
+        var container = document.getElementById('hist-container');
+        container.innerHTML = '<div class="text-muted">Loading history…</div>';
 
-      fetch('reports.php?action=history&id=' + encodeURIComponent(id), { credentials: 'same-origin' })
-        .then(function (r) { return r.json(); })
-        .then(function (items) {
-          if (!Array.isArray(items) || items.length === 0) {
-            container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
-            return;
-          }
-
-          var html = '';
-          items.forEach(function (it, idx) {
-            var type = (it.item_type || 'note').toLowerCase();
-            var admin = it.admin_name || '—';
-            var when  = it.created_at || '';
-            var body  = it.body || '';
-
-            // Left icon per type
-            var icon = '<i class="bi bi-journal-text text-secondary"></i>';
-            if (type === 'status') icon = '<i class="bi bi-arrow-left-right text-success"></i>';
-            if (type === 'replacement') icon = '<i class="bi bi-arrow-repeat text-primary"></i>';
-
-            // Build item block (inside the roadmap rail)
-            if (type === 'status') {
-              var froms = humanize((it.from_status || '').replaceAll('_',' '));
-              var tos   = humanize((it.to_status   || '').replaceAll('_',' '));
-              html +=
-                '<div class="mb-3">' +
-                  '<div class="d-flex align-items-start gap-2">' +
-                    '<div class="mt-1">' + icon + '</div>' +
-                    '<div class="flex-grow-1">' +
-                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
-                        '<span class="badge text-bg-success">Status</span>' +
-                        '<span class="badge rounded-pill ' + badgeClass(it.from_status) + '">' + escapeHtml(froms) + '</span>' +
-                        '<i class="bi bi-arrow-right text-muted"></i>' +
-                        '<span class="badge rounded-pill ' + badgeClass(it.to_status) + '">' + escapeHtml(tos) + '</span>' +
-                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
-                      '</div>' +
-                      (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
-                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>';
-            } else if (type === 'replacement') {
-              var role = (it.role || '').toLowerCase();
-              var orig = it.orig_id || '';
-              var repl = it.repl_id || '';
-              var reason = it.reason || '';
-              var rstat  = it.replacement_status || '';
-              var assigned = it.assigned_at || '';
-
-              var title = 'Replacement';
-              var detail = '';
-              if (role === 'replacement_out') {
-                title = 'Replacement Created';
-                detail = 'Replaced by Applicant ID ' + escapeHtml(String(repl || '—'));
-              } else if (role === 'replacement_in') {
-                title = 'Replacement Assignment';
-                detail = 'Assigned as replacement for Applicant ID ' + escapeHtml(String(orig || '—'));
-              }
-              if (reason)  detail += (detail ? ' • ' : '') + 'Reason: ' + escapeHtml(reason);
-              if (rstat)   detail += (detail ? ' • ' : '') + 'Status: ' + escapeHtml(rstat);
-              if (assigned)detail += (detail ? ' • ' : '') + 'Assigned at: ' + escapeHtml(assigned);
-
-              html +=
-                '<div class="mb-3">' +
-                  '<div class="d-flex align-items-start gap-2">' +
-                    '<div class="mt-1">' + icon + '</div>' +
-                    '<div class="flex-grow-1">' +
-                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
-                        '<span class="badge text-bg-primary">Replacement</span>' +
-                        '<span class="fw-semibold">' + escapeHtml(title) + '</span>' +
-                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
-                      '</div>' +
-                      (detail ? ('<div class="mt-1">' + detail + '</div>') : '') +
-                      (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
-                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>';
-            } else {
-              // note
-              html +=
-                '<div class="mb-3">' +
-                  '<div class="d-flex align-items-start gap-2">' +
-                    '<div class="mt-1">' + icon + '</div>' +
-                    '<div class="flex-grow-1">' +
-                      '<div class="d-flex flex-wrap align-items-center gap-2">' +
-                        '<span class="badge text-bg-secondary">Report</span>' +
-                        '<span class="fw-semibold">Report</span>' +
-                        '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
-                      '</div>' +
-                      '<div class="mt-2">' + (body ? escapeHtml(body) : '—') + '</div>' +
-                      '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>';
+        fetch('reports.php?action=history&id=' + encodeURIComponent(id), { credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (items) {
+            if (!Array.isArray(items) || items.length === 0) {
+              container.innerHTML = '<div class="text-muted">No history found for this applicant.</div>';
+              return;
             }
+
+            var html = '';
+            items.forEach(function (it, idx) {
+              var type = (it.item_type || 'note').toLowerCase();
+              var admin = it.admin_name || '—';
+              var when = it.created_at || '';
+              var body = it.body || '';
+
+              // Left icon per type
+              var icon = '<i class="bi bi-journal-text text-secondary"></i>';
+              if (type === 'status') icon = '<i class="bi bi-arrow-left-right text-success"></i>';
+              if (type === 'replacement') icon = '<i class="bi bi-arrow-repeat text-primary"></i>';
+
+              // Build item block (inside the roadmap rail)
+              if (type === 'status') {
+                var froms = humanize((it.from_status || '').replaceAll('_', ' '));
+                var tos = humanize((it.to_status || '').replaceAll('_', ' '));
+                html +=
+                  '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                  '<div class="mt-1">' + icon + '</div>' +
+                  '<div class="flex-grow-1">' +
+                  '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                  '<span class="badge text-bg-success">Status</span>' +
+                  '<span class="badge rounded-pill ' + badgeClass(it.from_status) + '">' + escapeHtml(froms) + '</span>' +
+                  '<i class="bi bi-arrow-right text-muted"></i>' +
+                  '<span class="badge rounded-pill ' + badgeClass(it.to_status) + '">' + escapeHtml(tos) + '</span>' +
+                  '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                  '</div>' +
+                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                  '</div>' +
+                  '</div>' +
+                  '</div>';
+              } else if (type === 'replacement') {
+                var role = (it.role || '').toLowerCase();
+                var orig = it.orig_id || '';
+                var repl = it.repl_id || '';
+                var reason = it.reason || '';
+                var rstat = it.replacement_status || '';
+                var assigned = it.assigned_at || '';
+
+                var title = 'Replacement';
+                var detail = '';
+                if (role === 'replacement_out') {
+                  title = 'Replacement Created';
+                  detail = 'Replaced by Applicant ID ' + escapeHtml(String(repl || '—'));
+                } else if (role === 'replacement_in') {
+                  title = 'Replacement Assignment';
+                  detail = 'Assigned as replacement for Applicant ID ' + escapeHtml(String(orig || '—'));
+                }
+                if (reason) detail += (detail ? ' • ' : '') + 'Reason: ' + escapeHtml(reason);
+                if (rstat) detail += (detail ? ' • ' : '') + 'Status: ' + escapeHtml(rstat);
+                if (assigned) detail += (detail ? ' • ' : '') + 'Assigned at: ' + escapeHtml(assigned);
+
+                html +=
+                  '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                  '<div class="mt-1">' + icon + '</div>' +
+                  '<div class="flex-grow-1">' +
+                  '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                  '<span class="badge text-bg-primary">Replacement</span>' +
+                  '<span class="fw-semibold">' + escapeHtml(title) + '</span>' +
+                  '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                  '</div>' +
+                  (detail ? ('<div class="mt-1">' + detail + '</div>') : '') +
+                  (body ? ('<div class="mt-2">' + escapeHtml(body) + '</div>') : '') +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                  '</div>' +
+                  '</div>' +
+                  '</div>';
+              } else {
+                // note
+                html +=
+                  '<div class="mb-3">' +
+                  '<div class="d-flex align-items-start gap-2">' +
+                  '<div class="mt-1">' + icon + '</div>' +
+                  '<div class="flex-grow-1">' +
+                  '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                  '<span class="badge text-bg-secondary">Report</span>' +
+                  '<span class="fw-semibold">Report</span>' +
+                  '<span class="ms-auto text-muted small">' + escapeHtml(when) + '</span>' +
+                  '</div>' +
+                  '<div class="mt-2">' + (body ? escapeHtml(body) : '—') + '</div>' +
+                  '<div class="text-muted small mt-2">By ' + escapeHtml(admin) + '</div>' +
+                  '</div>' +
+                  '</div>' +
+                  '</div>';
+              }
+            });
+
+            container.innerHTML = html;
+          })
+          .catch(function () {
+            container.innerHTML = '<div class="text-danger">Failed to load history. Please try again.</div>';
           });
 
-          container.innerHTML = html;
-        })
-        .catch(function () {
-          container.innerHTML = '<div class="text-danger">Failed to load history. Please try again.</div>';
-        });
-
-      if (historyModal) historyModal.show();
+        if (historyModal) historyModal.show();
+      });
     });
-  });
 
-  // Helpers
-  function humanize(s) {
-    s = s || '';
-    return s.replace(/\b\w/g, function(m){ return m.toUpperCase(); });
-  }
-  window.badgeClass = function(status) {
-    status = (status || '').toLowerCase();
-    switch (status) {
-      case 'pending':    return 'bg-warning text-dark';
-      case 'on_process': return 'bg-info text-dark';
-      case 'approved':   return 'bg-success';
-      case 'on_hold':    return 'bg-secondary';
-      case 'deleted':    return 'bg-danger';
-      default:           return 'bg-secondary';
+    // Helpers
+    function humanize(s) {
+      s = s || '';
+      return s.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
     }
-  }
-  function escapeHtml(s) {
-    return (s||'').replace(/[&<>"']/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c];
-    });
-  }
-});
+    window.badgeClass = function (status) {
+      status = (status || '').toLowerCase();
+      switch (status) {
+        case 'pending': return 'bg-warning text-dark';
+        case 'on_process': return 'bg-info text-dark';
+        case 'approved': return 'bg-success';
+        case 'on_hold': return 'bg-secondary';
+        case 'deleted': return 'bg-danger';
+        default: return 'bg-secondary';
+      }
+    }
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c];
+      });
+    }
+  });
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

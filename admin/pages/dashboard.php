@@ -2,16 +2,16 @@
 /* BLOCK SMC employees from accessing CSNK dashboard - must be before any output */
 // Start session explicitly
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+  session_start();
 }
 
 // Check if user agency is SMC
 $userAgencyCheck = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
 
 if ($userAgencyCheck === 'smc') {
-    // SMC employees should use turkey_dashboard.php - redirect immediately (relative path for hosting compatibility)
-    header('Location: turkey_dashboard.php');
-    exit;
+  // SMC employees should use turkey_dashboard.php - redirect immediately (relative path for hosting compatibility)
+  header('Location: turkey_dashboard.php');
+  exit;
 }
 
 $pageTitle = 'CSNK Dashboard';
@@ -21,19 +21,19 @@ require_once '../includes/Applicant.php';
 require_once '../includes/Admin.php';
 
 $applicant = new Applicant($database);
-$admin     = new Admin($database);
+$admin = new Admin($database);
 
 // High-level stats
-$stats             = $applicant->getStatistics();
-$recentApplicants  = array_slice($applicant->getAll(), 0, 5);
+$stats = $applicant->getStatistics();
+$recentApplicants = array_slice($applicant->getAll(), 0, 5);
 // Only count admin and employee accounts (exclude super_admin)
-$adminCount        = count($admin->getAll(true));
+$adminCount = count($admin->getAll(true));
 
 // Role flags from header.php
-$currentRole    = $currentUser['role'] ?? 'employee';
-$isSuperAdmin   = ($currentRole === 'super_admin');
-$isAdmin        = ($currentRole === 'admin');
-$canSeeAdminUX  = ($isAdmin || $isSuperAdmin);
+$currentRole = $currentUser['role'] ?? 'employee';
+$isSuperAdmin = ($currentRole === 'super_admin');
+$isAdmin = ($currentRole === 'admin');
+$canSeeAdminUX = ($isAdmin || $isSuperAdmin);
 
 /* ---------------------- Recent activity logs ---------------------- *
  * Admin:    hide super_admin logs + remove unknowns (INNER JOIN).
@@ -41,9 +41,9 @@ $canSeeAdminUX  = ($isAdmin || $isSuperAdmin);
  */
 $recentActivities = [];
 if (!empty($currentUser) && $canSeeAdminUX) {
-    $conn = $database->getConnection();
-    if ($conn instanceof mysqli) {
-        $sql = "
+  $conn = $database->getConnection();
+  if ($conn instanceof mysqli) {
+    $sql = "
             SELECT al.id,
                    al.action,
                    al.description,
@@ -54,31 +54,31 @@ if (!empty($currentUser) && $canSeeAdminUX) {
             FROM activity_logs AS al
             INNER JOIN admin_users AS au ON al.admin_id = au.id
         ";
-        if ($isAdmin) {
-            $sql .= " WHERE COALESCE(au.role,'') <> 'super_admin' ";
-        }
-        $sql .= " ORDER BY al.created_at DESC LIMIT 8";
-
-        if ($result = $conn->query($sql)) {
-            $recentActivities = $result->fetch_all(MYSQLI_ASSOC);
-        }
+    if ($isAdmin) {
+      $sql .= " WHERE COALESCE(au.role,'') <> 'super_admin' ";
     }
+    $sql .= " ORDER BY al.created_at DESC LIMIT 8";
+
+    if ($result = $conn->query($sql)) {
+      $recentActivities = $result->fetch_all(MYSQLI_ASSOC);
+    }
+  }
 }
 
 /* ---------------------- Blacklisted Applicants ---------------------- */
 $blacklistedApplicants = [];
-$blacklistedCount      = 0;
+$blacklistedCount = 0;
 if (!empty($currentUser) && $canSeeAdminUX) {
-    $conn = $database->getConnection();
-    if ($conn instanceof mysqli) {
-        // Count
-        $countSql = "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1";
-        if ($countResult = $conn->query($countSql)) {
-            $blacklistedCount = (int)$countResult->fetch_row()[0];
-        }
+  $conn = $database->getConnection();
+  if ($conn instanceof mysqli) {
+    // Count
+    $countSql = "SELECT COUNT(*) FROM blacklisted_applicants WHERE is_active = 1";
+    if ($countResult = $conn->query($countSql)) {
+      $blacklistedCount = (int) $countResult->fetch_row()[0];
+    }
 
-        // Recent active blacklists
-        $sql = "
+    // Recent active blacklists
+    $sql = "
             SELECT
                 b.id,
                 b.applicant_id,
@@ -98,14 +98,17 @@ if (!empty($currentUser) && $canSeeAdminUX) {
             ORDER BY b.created_at DESC
             LIMIT 5
         ";
-        if ($result = $conn->query($sql)) {
-            $blacklistedApplicants = $result->fetch_all(MYSQLI_ASSOC);
-        }
+    if ($result = $conn->query($sql)) {
+      $blacklistedApplicants = $result->fetch_all(MYSQLI_ASSOC);
     }
+  }
 }
 
 // Helpers
-function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+function safe(?string $s): string
+{
+  return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+}
 ?>
 <!-- Tailwind (via CDN) layered on top of Bootstrap) -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -129,34 +132,47 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
   /* Hybrid polish for Bootstrap + Tailwind */
   .glass-card {
     backdrop-filter: blur(8px);
-    background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.88));
-    border: 1px solid rgba(230,234,242,.85);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, .88));
+    border: 1px solid rgba(230, 234, 242, .85);
     border-radius: 14px;
-    box-shadow: 0 12px 30px rgba(16,24,40,.06);
+    box-shadow: 0 12px 30px rgba(16, 24, 40, .06);
   }
+
   .stat-chip {
-    display:flex; align-items:center; gap:.5rem;
-    padding:.45rem .75rem; border-radius:999px;
-    background: rgba(255,255,255,.12); color:#fff;
-    border:1px solid rgba(255,255,255,.25);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .25);
   }
+
   .truncate-2 {
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .soft-divider { height:1px; background: #eef2f7; }
+
+  .soft-divider {
+    height: 1px;
+    background: #eef2f7;
+  }
 </style>
 
 <!-- ======= STATS GRID ======= -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
   <!-- Total Applicants -->
   <div class="relative overflow-hidden rounded-2xl shadow-soft"
-       style="background: radial-gradient(1200px 300px at -20% -20%, #60a5fa 0%, #1d4ed8 45%, #111827 100%);">
+    style="background: radial-gradient(1200px 300px at -20% -20%, #60a5fa 0%, #1d4ed8 45%, #111827 100%);">
     <div class="p-5 text-white">
       <div class="flex items-center justify-between">
         <h6 class="uppercase tracking-wider opacity-80">Total Applicants</h6>
         <i class="bi bi-people text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int)$stats['total']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['total']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Active pool</span>
       </div>
@@ -165,13 +181,13 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
 
   <!-- Pending -->
   <div class="relative overflow-hidden rounded-2xl shadow-soft"
-       style="background: radial-gradient(1200px 300px at -20% -20%, #fde68a 0%, #d97706 45%, #78350f 100%);">
+    style="background: radial-gradient(1200px 300px at -20% -20%, #fde68a 0%, #d97706 45%, #78350f 100%);">
     <div class="p-5 text-white">
       <div class="flex items-center justify-between">
         <h6 class="uppercase tracking-wider opacity-80">Pending</h6>
         <i class="bi bi-clock-history text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int)$stats['pending']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['pending']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Awaiting review</span>
       </div>
@@ -180,13 +196,13 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
 
   <!-- On Process -->
   <div class="relative overflow-hidden rounded-2xl shadow-soft"
-       style="background: radial-gradient(1200px 300px at -20% -20%, #99f6e4 0%, #06b6d4 45%, #0f172a 100%);">
+    style="background: radial-gradient(1200px 300px at -20% -20%, #99f6e4 0%, #06b6d4 45%, #0f172a 100%);">
     <div class="p-5 text-white">
       <div class="flex items-center justify-between">
         <h6 class="uppercase tracking-wider opacity-80">On Process</h6>
         <i class="bi bi-hourglass-split text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int)$stats['on_process']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['on_process']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Actively handled</span>
       </div>
@@ -195,13 +211,13 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
 
   <!-- Deleted -->
   <div class="relative overflow-hidden rounded-2xl shadow-soft"
-       style="background: radial-gradient(1200px 300px at -20% -20%, #fda4af 0%, #e11d48 45%, #111827 100%);">
+    style="background: radial-gradient(1200px 300px at -20% -20%, #fda4af 0%, #e11d48 45%, #111827 100%);">
     <div class="p-5 text-white">
       <div class="flex items-center justify-between">
         <h6 class="uppercase tracking-wider opacity-80">Deleted</h6>
         <i class="bi bi-trash text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int)$stats['deleted']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['deleted']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Soft removed</span>
       </div>
@@ -212,10 +228,10 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
   <!-- ===================== Recent Applicants ===================== -->
   <div class="lg:col-span-2 glass-card">
-    <div class="px-5 pt-5 pb-3">
+    <div class="px-10 pt-4 pb-3">
       <div class="flex items-center justify-between">
         <div>
-          <h5 class="mb-0 fw-semibold">Recent Applicants</h5>
+          <h3 class="mb-1 fw-semibold">Recent Applicants</h3>
           <small class="text-muted">Latest profiles created in the system.</small>
         </div>
       </div>
@@ -233,52 +249,53 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
             </tr>
           </thead>
           <tbody>
-          <?php if (empty($recentApplicants)): ?>
-            <tr>
-              <td colspan="4" class="text-center text-muted py-4">No applicants yet</td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($recentApplicants as $applicantData): ?>
-              <?php
-                $statusColors = ['pending'=>'warning','on_process'=>'info','approved'=>'success'];
-                $badgeColor   = $statusColors[$applicantData['status']] ?? 'secondary';
-              ?>
+            <?php if (empty($recentApplicants)): ?>
               <tr>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <?php if (!empty($applicantData['picture'])): ?>
-                      <img src="<?php echo safe(getFileUrl($applicantData['picture'])); ?>" alt="Profile"
-                           class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">
-                    <?php else: ?>
-                      <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
-                           style="width: 40px; height: 40px;">
-                        <?php echo strtoupper(substr($applicantData['first_name'] ?? '', 0, 1)); ?>
-                      </div>
-                    <?php endif; ?>
-                    <strong>
-                      <?php echo safe(getFullName(
-                        $applicantData['first_name'] ?? '',
-                        $applicantData['middle_name'] ?? '',
-                        $applicantData['last_name'] ?? '',
-                        $applicantData['suffix'] ?? ''
-                      )); ?>
-                    </strong>
-                  </div>
-                </td>
-                <td class="text-muted">
-                  <?php echo safe($applicantData['phone_number'] ?? '—'); ?>
-                </td>
-                <td>
-                  <span class="badge bg-<?php echo $badgeColor; ?>">
-                    <?php echo safe(ucfirst(str_replace('_', ' ', $applicantData['status'] ?? ''))); ?>
-                  </span>
-                </td>
-                <td class="text-muted">
-                  <?php echo safe(formatDate($applicantData['created_at'] ?? '')); ?>
-                </td>
+                <td colspan="4" class="text-center text-muted py-4">No applicants yet</td>
               </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
+            <?php else: ?>
+              <?php foreach ($recentApplicants as $applicantData): ?>
+                <?php
+                $statusColors = ['pending' => 'warning', 'on_process' => 'info', 'approved' => 'success'];
+                $badgeColor = $statusColors[$applicantData['status']] ?? 'secondary';
+                ?>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <?php if (!empty($applicantData['picture'])): ?>
+                        <img src="<?php echo safe(getFileUrl($applicantData['picture'])); ?>" alt="Profile"
+                          class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">
+                      <?php else: ?>
+                        <div
+                          class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                          style="width: 40px; height: 40px;">
+                          <?php echo strtoupper(substr($applicantData['first_name'] ?? '', 0, 1)); ?>
+                        </div>
+                      <?php endif; ?>
+                      <strong>
+                        <?php echo safe(getFullName(
+                          $applicantData['first_name'] ?? '',
+                          $applicantData['middle_name'] ?? '',
+                          $applicantData['last_name'] ?? '',
+                          $applicantData['suffix'] ?? ''
+                        )); ?>
+                      </strong>
+                    </div>
+                  </td>
+                  <td class="text-muted">
+                    <?php echo safe($applicantData['phone_number'] ?? '—'); ?>
+                  </td>
+                  <td>
+                    <span class="badge bg-<?php echo $badgeColor; ?>">
+                      <?php echo safe(ucfirst(str_replace('_', ' ', $applicantData['status'] ?? ''))); ?>
+                    </span>
+                  </td>
+                  <td class="text-muted">
+                    <?php echo safe(formatDate($applicantData['created_at'] ?? '')); ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
@@ -296,11 +313,11 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
       <div class="p-5 pt-4">
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <span class="text-muted">Staff (Admin &amp; Employee)</span>
-          <strong><?php echo (int)$adminCount; ?></strong>
+          <strong><?php echo (int) $adminCount; ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <span class="text-muted">Active Applicants</span>
-          <strong><?php echo (int)$stats['total']; ?></strong>
+          <strong><?php echo (int) $stats['total']; ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2">
           <span class="text-muted">System Status</span>
@@ -358,10 +375,11 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
           <tbody>
             <?php foreach ($recentActivities as $log): ?>
               <?php
-                // INNER JOIN ensures we don't get Unknown users anymore
-                $displayName = $log['full_name'] ?: ($log['username'] ?? ''); // fallback should not occur
-                if ($displayName === '') continue; // extra safety
-                $roleLabel   = $log['role'] ?? '';
+              // INNER JOIN ensures we don't get Unknown users anymore
+              $displayName = $log['full_name'] ?: ($log['username'] ?? ''); // fallback should not occur
+              if ($displayName === '')
+                continue; // extra safety
+              $roleLabel = $log['role'] ?? '';
               ?>
               <tr>
                 <td>
@@ -407,7 +425,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
       </div>
       <div class="d-flex align-items-center gap-3">
         <span class="badge bg-danger-subtle text-danger px-3 py-2">
-          <i class="bi bi-exclamation-triangle me-1"></i><?php echo (int)$blacklistedCount; ?> Total
+          <i class="bi bi-exclamation-triangle me-1"></i><?php echo (int) $blacklistedCount; ?> Total
         </span>
         <a href="blacklisted.php" class="btn btn-sm btn-outline-danger">
           <i class="bi bi-arrow-right me-1"></i>View All
@@ -436,21 +454,22 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
             <tbody>
               <?php foreach ($blacklistedApplicants as $bl): ?>
                 <?php
-                  $appName   = getFullName(
-                    $bl['first_name'] ?? '',
-                    $bl['middle_name'] ?? '',
-                    $bl['last_name'] ?? '',
-                    $bl['suffix'] ?? ''
-                  );
-                  $createdBy = $bl['created_by_name'] ?: ($bl['created_by_username'] ?: 'System');
-                  $when      = formatDateTime($bl['created_at'] ?? '');
-                  $viewUrl   = 'view-applicant.php?id=' . (int)($bl['applicant_id'] ?? 0);
+                $appName = getFullName(
+                  $bl['first_name'] ?? '',
+                  $bl['middle_name'] ?? '',
+                  $bl['last_name'] ?? '',
+                  $bl['suffix'] ?? ''
+                );
+                $createdBy = $bl['created_by_name'] ?: ($bl['created_by_username'] ?: 'System');
+                $when = formatDateTime($bl['created_at'] ?? '');
+                $viewUrl = 'view-applicant.php?id=' . (int) ($bl['applicant_id'] ?? 0);
                 ?>
                 <tr>
                   <td>
                     <div class="d-flex align-items-center">
-                      <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
-                           style="width: 36px; height: 36px;">
+                      <div
+                        class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
+                        style="width: 36px; height: 36px;">
                         <i class="bi bi-person-x text-danger"></i>
                       </div>
                       <div>
@@ -459,7 +478,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
                             <?php echo safe($appName); ?>
                           </a>
                         </div>
-                        <div class="text-muted small">ID: <?php echo (int)($bl['applicant_id'] ?? 0); ?></div>
+                        <div class="text-muted small">ID: <?php echo (int) ($bl['applicant_id'] ?? 0); ?></div>
                       </div>
                     </div>
                   </td>
@@ -472,8 +491,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
                     <div class="fw-semibold small"><?php echo safe($createdBy); ?></div>
                   </td>
                   <td>
-                    <div class="text-truncate" style="max-width: 280px;"
-                         title="<?php echo safe($bl['issue'] ?? ''); ?>">
+                    <div class="text-truncate" style="max-width: 280px;" title="<?php echo safe($bl['issue'] ?? ''); ?>">
                       <?php echo !empty($bl['issue']) ? safe($bl['issue']) : '<span class="text-muted">—</span>'; ?>
                     </div>
                   </td>
@@ -490,7 +508,7 @@ function safe(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOT
 
 <script>
   // Refresh every 60s (your original behavior)
-  setInterval(function() {
+  setInterval(function () {
     location.reload();
   }, 60000);
 </script>

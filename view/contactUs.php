@@ -7,10 +7,10 @@ session_start();
 $composer_autoload = __DIR__ . '/../vendor/autoload.php';
 $composer_autoload_missing = false;
 if (is_readable($composer_autoload)) {
-    require_once $composer_autoload;
+  require_once $composer_autoload;
 } else {
-    error_log('Composer autoload missing or unreadable: ' . $composer_autoload);
-    $composer_autoload_missing = true;
+  error_log('Composer autoload missing or unreadable: ' . $composer_autoload);
+  $composer_autoload_missing = true;
 }
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -20,173 +20,174 @@ use PHPMailer\PHPMailer\Exception;
 // Configuration
 // --------------------------------------------------
 $CONFIG = [
-    // ---- CHANGE THESE ----
-    'to_email'      => 'csnkmanila@gmail.com',     // Destination email
-    'to_name'       => 'CSNK Support',
-    'from_email'    => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
-    'from_name'     => 'CSNK Manpower Agency',
-    'subject'       => 'CSNK Contact Form Submission',
-    // ----------------------
-    'max_message'   => 500,
+  // ---- CHANGE THESE ----
+  'to_email' => 'csnkmanila@gmail.com',     // Destination email
+  'to_name' => 'CSNK Support',
+  'from_email' => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
+  'from_name' => 'CSNK Manpower Agency',
+  'subject' => 'CSNK Contact Form Submission',
+  // ----------------------
+  'max_message' => 500,
 
-    // PHPMailer Configuration
-    'smtp_host'     => 'smtp.gmail.com',
-    'smtp_port'     => 587,                        // 587 for TLS
-    'smtp_user'     => 'csnkmanila@gmail.com',
-    'smtp_pass'     => 'svmw uiwi vjvt hteu',          // Gmail App Password (16 chars, NO spaces)
-    'smtp_encrypt'  => 'tls',                      // Overwritten below if PHPMailer is available
-    'smtp_debug'    => 0,                          // 0=off; 2=verbose (logs to error_log)
-    'enable_mail'   => true,                       // set false to skip email while testing
+  // PHPMailer Configuration
+  'smtp_host' => 'smtp.gmail.com',
+  'smtp_port' => 587,                        // 587 for TLS
+  'smtp_user' => 'csnkmanila@gmail.com',
+  'smtp_pass' => 'svmw uiwi vjvt hteu',          // Gmail App Password (16 chars, NO spaces)
+  'smtp_encrypt' => 'tls',                      // Overwritten below if PHPMailer is available
+  'smtp_debug' => 0,                          // 0=off; 2=verbose (logs to error_log)
+  'enable_mail' => true,                       // set false to skip email while testing
 ];
 
 // Prefer PHPMailer constant if available
 if (!$composer_autoload_missing && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-    $CONFIG['smtp_encrypt'] = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+  $CONFIG['smtp_encrypt'] = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 }
 
 // Generate CSRF token
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 $errors = [];
 $success = false;
 
 // Helper: sanitize
-function clean(string $v): string {
-    $v = trim($v);
-    $v = str_replace(["\r\n", "\r"], "\n", $v);
-    return filter_var($v, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW);
+function clean(string $v): string
+{
+  $v = trim($v);
+  $v = str_replace(["\r\n", "\r"], "\n", $v);
+  return preg_replace('/[\x00-\x1F\x7F]/', '', $v);
 }
 
 // On POST: validate + optionally send
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Honeypot (bots fill this)
-    $honeypot = $_POST['website'] ?? '';
+  // Honeypot (bots fill this)
+  $honeypot = $_POST['website'] ?? '';
 
-    // CSRF
-    $csrf = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
-        $errors['general'] = 'Security verification failed. Please refresh and try again.';
+  // CSRF
+  $csrf = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    $errors['general'] = 'Security verification failed. Please refresh and try again.';
+  }
+
+  if (!empty($honeypot)) {
+    // Silently treat as success to avoid tipping off bots
+    $success = true;
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_POST = [];
+  } else {
+    // Gather & sanitize
+    $firstName = clean($_POST['firstName'] ?? '');
+    $lastName = clean($_POST['lastName'] ?? '');
+    $email = clean($_POST['email'] ?? '');
+    // UI forces 11 digits; keep server-side consistent
+    $phone = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
+    $topic = clean($_POST['topic'] ?? '');
+    $message = clean($_POST['message'] ?? '');
+
+    // Validate
+    if ($firstName === '' || mb_strlen($firstName) > 80) {
+      $errors['firstName'] = 'Please enter your first name (max 80 characters).';
+    }
+    if ($lastName === '' || mb_strlen($lastName) > 80) {
+      $errors['lastName'] = 'Please enter your last name (max 80 characters).';
+    }
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      $errors['email'] = 'Please enter a valid email address.';
+    }
+    // If phone provided, require exactly 11 digits (PH mobile format like 09XXXXXXXXX)
+    if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) {
+      $errors['phone'] = 'Please enter an 11-digit phone number.';
+    }
+    if ($topic === '') {
+      $errors['topic'] = 'Please select a topic.';
+    }
+    if ($message === '' || mb_strlen($message) > $CONFIG['max_message']) {
+      $errors['message'] = 'Please enter your message (max ' . (int) $CONFIG['max_message'] . ' characters).';
+    }
+    if (empty($_POST['consent'])) {
+      $errors['consent'] = 'Consent is required.';
     }
 
-    if (!empty($honeypot)) {
-        // Silently treat as success to avoid tipping off bots
-        $success = true;
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $_POST = [];
-    } else {
-        // Gather & sanitize
-        $firstName = clean($_POST['firstName'] ?? '');
-        $lastName  = clean($_POST['lastName'] ?? '');
-        $email     = clean($_POST['email'] ?? '');
-        // UI forces 11 digits; keep server-side consistent
-        $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
-        $topic     = clean($_POST['topic'] ?? '');
-        $message   = clean($_POST['message'] ?? '');
+    // If valid, send email with PHPMailer
+    if (!$errors) {
+      // Plain-text fallback (no submitted/IP/agent)
+      $textBody =
+        "You have a new CSNK contact form submission:\n\n" .
+        "Name: {$firstName} {$lastName}\n" .
+        "Email: {$email}\n" .
+        "Phone: {$phone}\n" .
+        "Topic: {$topic}\n\n" .
+        "Message:\n{$message}\n";
 
-        // Validate
-        if ($firstName === '' || mb_strlen($firstName) > 80) {
-            $errors['firstName'] = 'Please enter your first name (max 80 characters).';
+      if ($CONFIG['enable_mail']) {
+        // If PHPMailer isn't available (missing composer autoload), avoid fatal error and fail gracefully.
+        if ($composer_autoload_missing || !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+          error_log('PHPMailer not available; skipping email send.');
+          $errors['general'] = 'Mail service is temporarily unavailable. Your message was saved but could not be sent. Please try again later.';
+          $CONFIG['enable_mail'] = false;
         }
-        if ($lastName === '' || mb_strlen($lastName) > 80) {
-            $errors['lastName'] = 'Please enter your last name (max 80 characters).';
-        }
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Please enter a valid email address.';
-        }
-        // If phone provided, require exactly 11 digits (PH mobile format like 09XXXXXXXXX)
-        if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) {
-            $errors['phone'] = 'Please enter an 11-digit phone number.';
-        }
-        if ($topic === '') {
-            $errors['topic'] = 'Please select a topic.';
-        }
-        if ($message === '' || mb_strlen($message) > $CONFIG['max_message']) {
-            $errors['message'] = 'Please enter your message (max ' . (int)$CONFIG['max_message'] . ' characters).';
-        }
-        if (empty($_POST['consent'])) {
-            $errors['consent'] = 'Consent is required.';
-        }
+      }
 
-        // If valid, send email with PHPMailer
-        if (!$errors) {
-            // Plain-text fallback (no submitted/IP/agent)
-            $textBody =
-                "You have a new CSNK contact form submission:\n\n" .
-                "Name: {$firstName} {$lastName}\n" .
-                "Email: {$email}\n" .
-                "Phone: {$phone}\n" .
-                "Topic: {$topic}\n\n" .
-                "Message:\n{$message}\n";
+      if ($CONFIG['enable_mail']) {
+        try {
+          // Instantiate PHPMailer via FQCN
+          $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+          $mail->CharSet = 'UTF-8';
 
-            if ($CONFIG['enable_mail']) {
-                // If PHPMailer isn't available (missing composer autoload), avoid fatal error and fail gracefully.
-                if ($composer_autoload_missing || !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-                    error_log('PHPMailer not available; skipping email send.');
-                    $errors['general'] = 'Mail service is temporarily unavailable. Your message was saved but could not be sent. Please try again later.';
-                    $CONFIG['enable_mail'] = false;
-                }
-            }
+          // Server settings
+          $mail->isSMTP();
 
-            if ($CONFIG['enable_mail']) {
-                try {
-                    // Instantiate PHPMailer via FQCN
-                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-                    $mail->CharSet = 'UTF-8';
+          // Debug output level (0 = off). Set to 2 to log verbose debug to error_log.
+          $mail->SMTPDebug = $CONFIG['smtp_debug'] ?? 0;
+          $mail->Debugoutput = function ($str, $level) {
+            error_log("PHPMailer debug level {$level}: {$str}");
+          };
 
-                    // Server settings
-                    $mail->isSMTP();
+          $mail->Host = $CONFIG['smtp_host'];
+          $mail->SMTPAuth = true;
+          $mail->Username = $CONFIG['smtp_user'];
+          $mail->Password = $CONFIG['smtp_pass'];
+          $mail->SMTPSecure = $CONFIG['smtp_encrypt']; // e.g., PHPMailer::ENCRYPTION_STARTTLS
+          $mail->SMTPAutoTLS = true;
+          $mail->Port = (int) $CONFIG['smtp_port'];
 
-                    // Debug output level (0 = off). Set to 2 to log verbose debug to error_log.
-                    $mail->SMTPDebug   = $CONFIG['smtp_debug'] ?? 0;
-                    $mail->Debugoutput = function ($str, $level) {
-                        error_log("PHPMailer debug level {$level}: {$str}");
-                    };
+          // For local development (XAMPP/localhost), allow self-signed certs to avoid TLS handshake failures
+          $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+          if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
+            $mail->SMTPOptions = [
+              'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+              ],
+            ];
+          }
 
-                    $mail->Host        = $CONFIG['smtp_host'];
-                    $mail->SMTPAuth    = true;
-                    $mail->Username    = $CONFIG['smtp_user'];
-                    $mail->Password    = $CONFIG['smtp_pass'];
-                    $mail->SMTPSecure  = $CONFIG['smtp_encrypt']; // e.g., PHPMailer::ENCRYPTION_STARTTLS
-                    $mail->SMTPAutoTLS = true;
-                    $mail->Port        = (int)$CONFIG['smtp_port'];
+          // Recipients: send to company support and CC the client
+          $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
+          $mail->addAddress($CONFIG['to_email'], $CONFIG['to_name'] ?? '');
+          if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $mail->addCC($email);
+            $mail->addReplyTo($email, trim($firstName . ' ' . $lastName));
+          }
 
-                    // For local development (XAMPP/localhost), allow self-signed certs to avoid TLS handshake failures
-                    $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                    if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
-                        $mail->SMTPOptions = [
-                            'ssl' => [
-                                'verify_peer'       => false,
-                                'verify_peer_name'  => false,
-                                'allow_self_signed' => true,
-                            ],
-                        ];
-                    }
+          // Subject (append topic if present)
+          $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
+          $mail->Subject = $subjectBase . (trim($topic) !== '' ? ' - ' . $topic : '');
 
-                    // Recipients: send to company support and CC the client
-                    $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
-                    $mail->addAddress($CONFIG['to_email'], $CONFIG['to_name'] ?? '');
-                    if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                        $mail->addCC($email);
-                        $mail->addReplyTo($email, trim($firstName . ' ' . $lastName));
-                    }
+          // Helper escaper for HTML
+          $h = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+          $senderName = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+          $senderEmail = $email ?? '';
+          $senderPhone = $phone ?? '';
+          $topicSafe = $topic ?? '';
+          $messageSafe = $message ?? '';
 
-                    // Subject (append topic if present)
-                    $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
-                    $mail->Subject = $subjectBase . (trim($topic) !== '' ? ' - ' . $topic : '');
-
-                    // Helper escaper for HTML
-                    $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                    $senderName  = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
-                    $senderEmail = $email ?? '';
-                    $senderPhone = $phone ?? '';
-                    $topicSafe   = $topic ?? '';
-                    $messageSafe = $message ?? '';
-
-                    // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
-                    $htmlBody =
-                      $body = '
+          // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
+          $htmlBody =
+            $body = '
                       <!DOCTYPE html>
                       <html lang="en">
                       <head>
@@ -271,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                           👤 Name
                                         </td>
                                         <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">
-                                          '.$h($senderName).'
+                                          ' . $h($senderName) . '
                                         </td>
                                       </tr>
 
@@ -281,9 +282,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                           ✉ Email
                                         </td>
                                         <td style="padding:10px 0;">
-                                          <a href="mailto:'.$h($senderEmail).'"
+                                          <a href="mailto:' . $h($senderEmail) . '"
                                             style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">
-                                            '.$h($senderEmail).'
+                                            ' . $h($senderEmail) . '
                                           </a>
                                         </td>
                                       </tr>
@@ -294,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                           📱 Phone
                                         </td>
                                         <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">
-                                          '.$h($senderPhone).'
+                                          ' . $h($senderPhone) . '
                                         </td>
                                       </tr>
 
@@ -313,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             color:#d21f3c;
                                             font-size:13px;
                                             font-weight:700;">
-                                            '.$h($topicSafe).'
+                                            ' . $h($topicSafe) . '
                                           </span>
                                         </td>
                                       </tr>
@@ -342,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                       white-space:pre-wrap;
                                       box-shadow:0 2px 8px rgba(0,0,0,0.05);
                                     ">
-                                      '.nl2br($h($messageSafe)).'
+                                      ' . nl2br($h($messageSafe)) . '
                                     </div>
 
                                   </td>
@@ -360,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                       This email was sent automatically from the CSNK website contact form.
                                     </div>
                                     <div style="font-size:12px;color:#aaaaaa;">
-                                      © '.date("Y").' CSNK. All rights reserved.
+                                      © ' . date("Y") . ' CSNK. All rights reserved.
                                     </div>
                                   </td>
                                 </tr>
@@ -374,85 +375,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       </body>
                       </html>';
 
-                    // -------- Embed two logos (CID) --------
-                    // #1 whychoose.png
-                    $whychooseCandidates = [
-                        __DIR__ . '/../resources/img/whychoose.png',
-                        __DIR__ . '/resources/img/whychoose.png',
-                        __DIR__ . '/public/resources/img/whychoose.png',
-                    ];
-                    // #2 secondary logo: try emailogo.png then crempco-logo.png
-                    $secondaryCandidates = [
-                        __DIR__ . '/../resources/img/emailogo.png',
-                        __DIR__ . '/resources/img/emailogo.png',
-                        __DIR__ . '/public/resources/img/emailogo.png',
-                        __DIR__ . '/../resources/img/crempco-logo.png',
-                        __DIR__ . '/resources/img/crempco-logo.png',
-                        __DIR__ . '/public/resources/img/crempco-logo.png',
-                    ];
+          // -------- Embed two logos (CID) --------
+          // #1 whychoose.png
+          $whychooseCandidates = [
+            __DIR__ . '/../resources/img/whychoose.png',
+            __DIR__ . '/resources/img/whychoose.png',
+            __DIR__ . '/public/resources/img/whychoose.png',
+          ];
+          // #2 secondary logo: try emailogo.png then crempco-logo.png
+          $secondaryCandidates = [
+            __DIR__ . '/../resources/img/emailogo.png',
+            __DIR__ . '/resources/img/emailogo.png',
+            __DIR__ . '/public/resources/img/emailogo.png',
+            __DIR__ . '/../resources/img/crempco-logo.png',
+            __DIR__ . '/resources/img/crempco-logo.png',
+            __DIR__ . '/public/resources/img/crempco-logo.png',
+          ];
 
-                    $pickFirstReadable = function (array $paths): ?string {
-                        foreach ($paths as $p) {
-                            if (is_readable($p)) return $p;
-                        }
-                        return null;
-                    };
-
-                    $whychoosePath = $pickFirstReadable($whychooseCandidates);
-                    $secondaryPath = $pickFirstReadable($secondaryCandidates);
-
-                    if ($whychoosePath) {
-                        $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
-                    } else {
-                        error_log('Email embed: whychoose.png not found. Tried: ' . implode(', ', $whychooseCandidates));
-                    }
-
-                    if ($secondaryPath) {
-                        $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
-                        $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
-                        $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
-                    } else {
-                        error_log('Email embed: secondary logo not found. Tried: ' . implode(', ', $secondaryCandidates));
-                    }
-                    // -------- End embed --------
-
-                    // Body
-                    $mail->isHTML(true);
-                    $mail->Body    = $htmlBody;
-                    $mail->AltBody = $textBody;
-
-                    // Send
-                    $mail->send();
-
-                    $success = true;
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
-                    $_POST = []; // clear form
-                } catch (\Throwable $e) {
-                    error_log('Mail Exception: ' . $e->getMessage());
-                    if (isset($mail) && !empty($mail->ErrorInfo)) {
-                        error_log('PHPMailer ErrorInfo: ' . $mail->ErrorInfo);
-                    }
-                    $errors['general'] = 'We could not send your message right now. Please try again later.';
-                }
-            } else {
-                $success = true; // simulated success
-                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                $_POST = [];
+          $pickFirstReadable = function (array $paths): ?string {
+            foreach ($paths as $p) {
+              if (is_readable($p))
+                return $p;
             }
+            return null;
+          };
+
+          $whychoosePath = $pickFirstReadable($whychooseCandidates);
+          $secondaryPath = $pickFirstReadable($secondaryCandidates);
+
+          if ($whychoosePath) {
+            $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+          } else {
+            error_log('Email embed: whychoose.png not found. Tried: ' . implode(', ', $whychooseCandidates));
+          }
+
+          if ($secondaryPath) {
+            $ext = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+            $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+            $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+          } else {
+            error_log('Email embed: secondary logo not found. Tried: ' . implode(', ', $secondaryCandidates));
+          }
+          // -------- End embed --------
+
+          // Body
+          $mail->isHTML(true);
+          $mail->Body = $htmlBody;
+          $mail->AltBody = $textBody;
+
+          // Send
+          $mail->send();
+
+          $success = true;
+          $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
+          $_POST = []; // clear form
+        } catch (\Throwable $e) {
+          error_log('Mail Exception: ' . $e->getMessage());
+          if (isset($mail) && !empty($mail->ErrorInfo)) {
+            error_log('PHPMailer ErrorInfo: ' . $mail->ErrorInfo);
+          }
+          $errors['general'] = 'We could not send your message right now. Please try again later.';
         }
+      } else {
+        $success = true; // simulated success
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $_POST = [];
+      }
     }
+  }
 }
 
 // Helpers for repopulation & invalid class
-function old(string $key, string $default = ''): string {
-    return htmlspecialchars($_POST[$key] ?? $default, ENT_QUOTES, 'UTF-8');
+function old(string $key, string $default = ''): string
+{
+  return htmlspecialchars($_POST[$key] ?? $default, ENT_QUOTES, 'UTF-8');
 }
-function invalidClass(array $errors, string $key): string {
-    return isset($errors[$key]) ? 'is-invalid' : '';
+function invalidClass(array $errors, string $key): string
+{
+  return isset($errors[$key]) ? 'is-invalid' : '';
 }
 ?>
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -463,37 +468,50 @@ function invalidClass(array $errors, string $key): string {
   <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 
   <style>
-    :root{
-      --accent-red: #D72638;      /* red hint */
-      --ink: #111111;             /* black hint */
-      --muted-ink: #6c757d;       /* Bootstrap gray-600 */
-      --bg: #ffffff;              /* white */
+    :root {
+      --accent-red: #D72638;
+      /* red hint */
+      --ink: #111111;
+      /* black hint */
+      --muted-ink: #6c757d;
+      /* Bootstrap gray-600 */
+      --bg: #ffffff;
+      /* white */
       --border: #e9ecef;
-      --ring: rgba(215, 38, 56, .25); /* red focus ring */
+      --ring: rgba(215, 38, 56, .25);
+      /* red focus ring */
     }
+
     body {
       background: var(--bg);
       color: var(--ink);
       font-feature-settings: "kern" 1, "liga" 1;
     }
+
     .contact-card {
       border: 1px solid var(--border);
       border-radius: 14px;
-      box-shadow: 0 6px 28px rgba(17,17,17, .04);
+      box-shadow: 0 6px 28px rgba(17, 17, 17, .04);
       background: #fff;
     }
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
       border-radius: 10px;
       border-color: var(--border);
     }
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
       border-color: var(--accent-red);
       box-shadow: 0 0 0 .25rem var(--ring);
     }
+
     .form-check-input:checked {
       background-color: var(--accent-red);
       border-color: var(--accent-red);
     }
+
     .btn-accent {
       --bs-btn-color: #fff;
       --bs-btn-bg: var(--accent-red);
@@ -502,17 +520,37 @@ function invalidClass(array $errors, string $key): string {
       --bs-btn-hover-border-color: #b81f2f;
       --bs-btn-focus-shadow-rgb: 215, 38, 56;
     }
-    .text-accent { color: var(--accent-red) !important; }
-    .divider { height: 1px; background: var(--border); }
-    .char-counter { font-size: .85rem; color: var(--muted-ink); }
-    .char-counter.warning { color: var(--accent-red); font-weight: 600; }
-    .is-invalid ~ .invalid-feedback { display: block; }
+
+    .text-accent {
+      color: var(--accent-red) !important;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    .char-counter {
+      font-size: .85rem;
+      color: var(--muted-ink);
+    }
+
+    .char-counter.warning {
+      color: var(--accent-red);
+      font-weight: 600;
+    }
+
+    .is-invalid~.invalid-feedback {
+      display: block;
+    }
   </style>
 </head>
+
 <body>
   <!-- Header -->
   <header>
-    <?php $page = 'contact'; include __DIR__ . '/navbar.php'; ?>
+    <?php $page = 'contact';
+    include __DIR__ . '/navbar.php'; ?>
   </header>
 
   <!-- Hero -->
@@ -543,97 +581,72 @@ function invalidClass(array $errors, string $key): string {
       <div class="col-lg-6">
         <div class="contact-card p-4 p-md-5">
           <form id="contactForm" method="post" action="" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token"
+              value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-floating">
                   <!-- First name -->
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    class="form-control <?= invalidClass($errors, 'firstName') ?>"
-                    placeholder="First name"
-                    required
-                    maxlength="80"
-                    autocomplete="given-name"
-                    value="<?= old('firstName') ?>"
-                  />
+                  <input type="text" id="firstName" name="firstName"
+                    class="form-control <?= invalidClass($errors, 'firstName') ?>" placeholder="First name" required
+                    maxlength="80" autocomplete="given-name" value="<?= old('firstName') ?>" />
                   <label for="firstName">First name</label>
-                  <div class="invalid-feedback"><?= htmlspecialchars($errors['firstName'] ?? 'Please enter your first name.', ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['firstName'] ?? 'Please enter your first name.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-floating">
                   <!-- Last name -->
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    class="form-control <?= invalidClass($errors, 'lastName') ?>"
-                    placeholder="Last name"
-                    required
-                    maxlength="80"
-                    autocomplete="family-name"
-                    value="<?= old('lastName') ?>"
-                  />
+                  <input type="text" id="lastName" name="lastName"
+                    class="form-control <?= invalidClass($errors, 'lastName') ?>" placeholder="Last name" required
+                    maxlength="80" autocomplete="family-name" value="<?= old('lastName') ?>" />
                   <label for="lastName">Last name</label>
-                  <div class="invalid-feedback"><?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
                 </div>
               </div>
 
               <div class="col-12">
                 <div class="form-floating">
                   <!-- Email -->
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    class="form-control <?= invalidClass($errors, 'email') ?>"
-                    placeholder="name@example.com"
-                    required
-                    autocomplete="email"
-                    inputmode="email"
-                    value="<?= old('email') ?>"
-                  />
+                  <input type="email" id="email" name="email" class="form-control <?= invalidClass($errors, 'email') ?>"
+                    placeholder="name@example.com" required autocomplete="email" inputmode="email"
+                    value="<?= old('email') ?>" />
                   <label for="email">Email</label>
-                  <div class="invalid-feedback"><?= htmlspecialchars($errors['email'] ?? 'Please enter a valid email address.', ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['email'] ?? 'Please enter a valid email address.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-floating">
                   <!-- Phone (PH 11 digits) -->
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    class="form-control <?= invalidClass($errors, 'phone') ?>"
-                    placeholder="09XXXXXXXXX"
-                    autocomplete="tel-national"
-                    inputmode="tel"
-                    pattern="^\d{11}$"
-                    minlength="11"
-                    maxlength="11"
-                    value="<?= old('phone') ?>"
-                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)"
-                  />
+                  <input type="tel" id="phone" name="phone" class="form-control <?= invalidClass($errors, 'phone') ?>"
+                    placeholder="09XXXXXXXXX" autocomplete="tel-national" inputmode="tel" pattern="^\d{11}$"
+                    minlength="11" maxlength="11" value="<?= old('phone') ?>"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" />
                   <label for="phone">Phone (optional)</label>
-                  <div class="invalid-feedback"><?= htmlspecialchars($errors['phone'] ?? 'Please enter an 11-digit phone number.', ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['phone'] ?? 'Please enter an 11-digit phone number.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-floating">
                   <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
-                  <?php
+                    <?php
                     $topics = ['General Inquiry', 'Support', 'Sales', 'Partnerships'];
                     foreach ($topics as $t) {
                       $sel = (old('topic') === $t) ? 'selected' : '';
                       echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
-                  ?>
+                    ?>
                   </select>
                   <label for="topic">Topic</label>
                   <div class="invalid-feedback">
@@ -644,15 +657,9 @@ function invalidClass(array $errors, string $key): string {
 
               <div class="col-12">
                 <div class="form-floating">
-                  <textarea
-                    id="message"
-                    name="message"
-                    class="form-control <?= invalidClass($errors, 'message') ?>"
-                    placeholder="Your message"
-                    style="height: 140px"
-                    required
-                    maxlength="<?= (int)$CONFIG['max_message'] ?>"
-                  ><?= old('message') ?></textarea>
+                  <textarea id="message" name="message" class="form-control <?= invalidClass($errors, 'message') ?>"
+                    placeholder="Your message" style="height: 140px" required
+                    maxlength="<?= (int) $CONFIG['max_message'] ?>"><?= old('message') ?></textarea>
                   <label for="message">Message</label>
                   <div class="invalid-feedback">
                     <?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?>
@@ -661,7 +668,7 @@ function invalidClass(array $errors, string $key): string {
 
                 <div class="d-flex justify-content-end mt-1">
                   <span id="charCount" class="char-counter" aria-live="polite">
-                    0 / <?= (int)$CONFIG['max_message'] ?>
+                    0 / <?= (int) $CONFIG['max_message'] ?>
                   </span>
                 </div>
               </div>
@@ -675,11 +682,13 @@ function invalidClass(array $errors, string $key): string {
               <div class="col-12">
                 <div class="d-flex align-items-center justify-content-between">
                   <div class="form-check">
-                    <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1" id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
+                    <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1"
+                      id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
                     <label class="form-check-label" for="consent">
                       <a>I agree to the privacy policy. </a>
                     </label>
-                    <div class="invalid-feedback"><?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="invalid-feedback">
+                      <?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
                   </div>
                   <button id="submitBtn" class="btn btn-accent px-4" type="submit">
                     <span class="submit-text">Send message</span>
@@ -721,12 +730,9 @@ function invalidClass(array $errors, string $key): string {
 
           <!-- Map -->
           <div class="col-lg-7">
-            <iframe
-              style="width:100%; height:100%; min-height:420px; border:0;"
+            <iframe style="width:100%; height:100%; min-height:420px; border:0;"
               src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              allowfullscreen>
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
             </iframe>
           </div>
 
@@ -777,9 +783,8 @@ function invalidClass(array $errors, string $key): string {
               </div>
 
               <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-danger rounded-pill px-4"
-                   target="_blank" rel="noopener"
-                   href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                <a class="btn btn-danger rounded-pill px-4" target="_blank" rel="noopener"
+                  href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
                   <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
                 </a>
 
@@ -803,7 +808,8 @@ function invalidClass(array $errors, string $key): string {
 
   <!-- Toast (Success) -->
   <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
-    <div id="successToast" class="toast align-items-center text-bg-light border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div id="successToast" class="toast align-items-center text-bg-light border-0" role="status" aria-live="polite"
+      aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body">
           <span class="text-accent fw-semibold">Thanks!</span> Your message has been sent.
@@ -825,7 +831,7 @@ function invalidClass(array $errors, string $key): string {
     const counterEl = document.getElementById('charCount');
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
 
-    function updateCounter(){
+    function updateCounter() {
       const len = [...(messageEl.value || '')].length;
       counterEl.textContent = `${len} / ${limit}`;
       const threshold = Math.floor(limit * 0.9);
@@ -850,16 +856,17 @@ function invalidClass(array $errors, string $key): string {
   </script>
 
   <?php if ($success): ?>
-  <script>
-    // Show success toast if PHP indicates success
-    (function(){
-      const toastEl = document.getElementById('successToast');
-      if (toastEl) {
-        const toast = new bootstrap.Toast(toastEl);
-        toast.show();
-      }
-    })();
-  </script>
+    <script>
+      // Show success toast if PHP indicates success
+      (function () {
+        const toastEl = document.getElementById('successToast');
+        if (toastEl) {
+          const toast = new bootstrap.Toast(toastEl);
+          toast.show();
+        }
+      })();
+    </script>
   <?php endif; ?>
 </body>
+
 </html>
