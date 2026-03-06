@@ -68,7 +68,22 @@ window.Replacements = (function () {
     });
   }
 
+  function searchCandidates(targetContainer, params) {
+    if (!targetContainer) return;
+    targetContainer.innerHTML = `<div class="text-muted">Finding best candidates…</div>`;
+    const url = new URL(endpoints.search, window.location.href);
+    Object.entries(params || {}).forEach(([k,v]) => url.searchParams.set(k, String(v)));
 
+    fetch(url.toString(), { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok) throw new Error(data.message || 'Search failed.');
+        renderCandidates(targetContainer, data.data, params.replacement_id);
+      })
+      .catch(err => {
+        targetContainer.innerHTML = `<div class="text-danger">${escapeHtml(err.message || 'Search failed')}</div>`;
+      });
+  }
 
 
 
