@@ -984,7 +984,21 @@ class Applicant
     {
         $this->ensureApplicantReplacementsTable();
         $stmt = $this->db->prepare("SELECT * FROM applicant_replacements WHERE id = ? LIMIT 1");
-        if (!$stmt) {pplicantId);
+        if (!$stmt) {
+            error_log('getReplacementById prepare failed: ' . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param("i", $replaceId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        return $row ?: null;
+    }
+
+    /**
+     * AssignqlLock);
+            if ('i', $replacementApplicantId);
                     $stmt->execute();
                     $stmt->close();
 
