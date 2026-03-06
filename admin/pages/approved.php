@@ -471,7 +471,32 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                             </a>
                                         </li>
                                         <li>
-                                            <a 
+                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-arrow-repeat text-info"></i>
+                                                <span>On-Process</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-check2-circle text-success"></i>
+                                                <span>Approved</span>
+                                            </a>
+                                        </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</div>
 
 <!-- Scripts for Replace Modal binding -->
 <script src="../js/replacements.js"></script>
