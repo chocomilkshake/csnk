@@ -186,3 +186,20 @@ try {
         setFlashMessage('error', 'Candidate not assignable (Pending/Approved/On-Process only).');
         redirect('approved.php'); exit;
     }
+
+    if ($candidateId === $originalId) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Cannot assign the same person as their own replacement.'], 422);
+        setFlashMessage('error', 'Cannot self-replace.');
+        redirect('approved.php'); exit;
+    }
+
+    // 4a) Perform the assignment
+    $u = $conn->prepare($sqlUpdateAssign);
+    if (!$u) throw new Exception('Failed to prepare assignment update.');
+    $u->bind_param('ii', $candidateId, $replacementId);
+    $u->execute();
+    $affected = $u->affected_rows) && isset($_SESSION['admin_id'])) {
+        $auth->logActivity((int)$_SESSION['admin_id'], 'Assign Replacement',
+            "Assigned Applicant ID {$candidateId} as replacement for Original ID {$originalId}");
+    }
