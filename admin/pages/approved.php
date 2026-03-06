@@ -331,7 +331,24 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 </div>
 
 <!-- 🔎 Search bar on the right -->
-<div class="mb-3 d-flex j
+<div class="mb-3 d-flex justify-content-end">
+    <form method="get" action="approved.php" class="w-100" style="max-width: 420px;">
+        <div class="input-group">
+            <input
+                type="text"
+                name="q"
+                class="form-control"
+                placeholder="Search approved applicants..."
+                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"
+                autocomplete="off"
+            >
+            <button class="btn btn-outline-secondary" type="submit" title="Search">
+                <i class="bi bi-search"></i>
+            </button>
+            <?php if ($q !== ''): ?>
+                <a class="btn btn-outline-secondary" href="approved.php?clear=1" title="Clear">
+                    <i class="bi bi-x-lg"></i>
+                </a>
             <?php endif; ?>
         </div>
     </form>
