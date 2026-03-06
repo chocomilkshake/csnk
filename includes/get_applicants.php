@@ -361,14 +361,16 @@ try {
         // Languages (string for quick filter + array for detail)
         $languagesStr = implode(',', $langsArr);
 
-        // Photo URL (robust: absolute URL respected, else join with uploads base)
+        // Photo URL - use protocol-relative URLs (//) to support both HTTP and HTTPS
         $photoUrl = $placeholderUrl;
         if (!empty($app['picture'])) {
             $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
-                $photoUrl = $relative; // already absolute
+                // Already full URL - convert http to protocol-relative
+                $photoUrl = preg_replace('~^https?:~', '', $relative);
             } else {
-                $photoUrl = $uploadsBase . $relative;
+                // Relative path - make it protocol-relative
+                $photoUrl = '//' . ltrim($uploadsBase, '/') . $relative;
             }
         }
 
