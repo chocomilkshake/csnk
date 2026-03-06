@@ -72,8 +72,9 @@ function removeApplicantIdFromUrl(){
   }
 }
 
-// ---- CONFIG: app root path (match your mount, e.g., '/csnk-1/') ----
-const APP_BASE = '/csnk-1/';
+// ---- CONFIG: app root path (match your mount, e.g., '/csnk/') ----
+const APP_BASE = '/csnk/';
+
 
 // Poll interval for live refresh
 const POLL_INTERVAL_MS = 15000;
@@ -241,9 +242,9 @@ function renderSkeleton(count = 8) {
 function setAvatar(imgEl, src, placeholder) {
   if (!imgEl) return;
   const fallback = placeholder || '../resources/img/avatar_placeholder.png';
-  const isHttps = location.protocol === 'https:';
   const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
-  const useSrc = (!cleanSrc || (isHttps && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
+  // Use the src directly if available, otherwise fallback
+  const useSrc = cleanSrc || '';
 
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
