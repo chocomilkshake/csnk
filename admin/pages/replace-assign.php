@@ -115,3 +115,29 @@ try {
     $res = $stmt->get_result();
     $rep = $res ? $res->fetch_assoc() : null;
     $stmt->close();
+
+    if (!$rep) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Replacement record not found.'], 404);
+        setFlashMessage('error', 'Replacement record not found.');
+        redirect('approved.php'); exit;
+    }
+    if (!empty($rep['replacement_applicant_id'])) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'This replacement is already assigned.'], 409);
+        setFlashMessage('error', 'This replacement is already assigned.');
+        redirect('approved.php'); exit;
+    }
+    if (strtolower((string)$rep['status']) !== 'selection') {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'This replacement is not in a selectable state.'], 409);
+        setFlashMessage('error', 'Replacement not in selectable state.');
+        redirect('approved.php'); exit;
+    }
+
+    $originalId = (int)$rep['original_applicant_id'];
+    if ($originalId <= 0) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Invalid replacement link to original applicant.'], 422);
+        setFlashMessage('error', 'Invalid replacement link.');
+        redirect('appr
