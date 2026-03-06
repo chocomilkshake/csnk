@@ -249,8 +249,11 @@ function setAvatar(imgEl, src, placeholder) {
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
   imgEl.alt = imgEl.alt || 'Photo';
-  imgEl.src = useSrc || fallback;
-  imgEl.onerror = () => { imgEl.src = fallback; };
+  imgEl.src = useSrc;
+  imgEl.onerror = () => { 
+    // On error, try the placeholder
+    imgEl.src = fallback; 
+  };
 }
 
 /* =========================================================
