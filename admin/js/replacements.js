@@ -34,7 +34,30 @@ window.Replacements = (function () {
       const skills = (item.specialization_skills || []).slice(0,6).map(s => `<span class="badge bg-light text-danger border">${escapeHtml(s)}</span>`).join(' ');
       const cities = (item.preferred_location || []).slice(0,6).map(c => `<span class="badge bg-light text-primary border">${escapeHtml(c)}</span>`).join(' ');
 
-
+      return `
+        <div class="border rounded p-2 mb-2 d-flex align-items-center">
+          ${photo}
+          <div class="flex-grow-1">
+            <div class="fw-semibold">${escapeHtml(item.full_name)}</div>
+            <div class="small text-muted">
+              ${item.email ? escapeHtml(item.email) : '—'} • ${item.phone_number ? escapeHtml(item.phone_number) : '—'}
+            </div>
+            <div class="mt-1 small">
+              <span class="badge bg-secondary-subtle text-dark border me-1">Score: ${item._score}</span>
+              <span class="badge bg-secondary-subtle text-dark border">Experience: ${item.years_experience} yr(s)</span>
+            </div>
+            <div class="mt-2 d-flex flex-wrap gap-1">${skills}</div>
+            <div class="mt-1 d-flex flex-wrap gap-1">${cities}</div>
+          </div>
+          <div class="ms-2">
+            <button class="btn btn-sm btn-success" data-assign data-candidate-id="${item.id}" data-replacement-id="${replacementId}">
+              <i class="bi bi-check2-circle me-1"></i>Assign
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    container.innerHTML = cards;
 
 
 
