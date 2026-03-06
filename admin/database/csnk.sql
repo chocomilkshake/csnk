@@ -178,7 +178,7 @@ CREATE TABLE `applicants` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `applicants`
@@ -227,7 +227,7 @@ CREATE TABLE `applicant_replacements` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `assigned_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -397,6 +397,17 @@ INSERT INTO `document_types` (`id`, `country_id`, `code`, `label`, `is_required`
 (6, 1, 'police_clearance', 'Police Clearance', 0, 1),
 (7, 1, 'tin_id', 'TIN ID', 0, 1),
 (8, 1, 'passport', 'Passport', 0, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `recycled_ids`
+--
+
+CREATE TABLE `recycled_ids` (
+  `table_name` varchar(64) NOT NULL,
+  `id` bigint(20) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -574,6 +585,12 @@ ALTER TABLE `countries`
 ALTER TABLE `document_types`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_doc_type_country_code` (`country_id`,`code`);
+
+--
+-- Indexes for table `recycled_ids`
+--
+ALTER TABLE `recycled_ids`
+  ADD PRIMARY KEY (`table_name`,`id`);
 
 --
 -- Indexes for table `session_logs`
