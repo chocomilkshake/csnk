@@ -360,7 +360,25 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
         <table class="table table-bordered table-striped table-hover table-styled align-middle">
             <thead>
                 <tr>
-                    <th>
+                    <th>Photo</th>
+                    <th>Applicant</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Preferred Location</th>
+                    <th>Date Approved</th>
+                    <th style="width: 420px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($applicants)): ?>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <?php if ($q === ''): ?>
+                                No approved applicants yet.
+                            <?php else: ?>
+                                No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                <a href="approved.php?clear=1" class="ms-1">Clear search</a>
  
                                 <?php if (!empty($row['picture'])): ?>
                     ENT_QUOTES, 'UTF-8'); ?>
