@@ -209,6 +209,89 @@ if (
             else setFlashMessage('error', 'Failed to update status. Please try again.');
         }
 
+        if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+            $fullName = null;
+            if (method_exists($applicant, 'getById')) {
+                $row = $applicant->getById($id);
+                if (is_array($row)) {
+                    $fullName = getFullName(
+                        $row['first_name'] ?? '',
+                        $row['middle_name'] ?? '',
+                        $row['last_name'] ?? ''
+                    );
+                }
+            }
+            $label = $fullName ?: "ID {$id}";
+            $auth->logActivity(
+                (int)$_SESSION['admin_id'],
+                'Update Applicant Status',
+                "Updated status for {$label} → {$to} (CSNK)"
+            );
+        }
+    } else {
+        if (function_exists('setFlashMessage')) {
+            setFlashMessage('error', 'Invalid status selected.');
+        }
+    }
+
+    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+    redirect('approved.php' . $qs);
+    exit;
+}
+
+/** Load approved applicants — strictly CSNK */
+$applicants = $applicant->getAll('approved', null, CSNK_AGENCY_CODE);
+
+/**
+ * Helpers
+ */
+function renderPreferredLocation(?string $json, int $maxLen = 30): string {
+    if (empty($json)) return 'N/A';
+
+    $arr = json_decode($json, true);
+    if (!is_array($arr)) {
+        $fallback = trim($json);
+        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+        return $fallback !== '' ? $fallback : 'N/A';
+    }
+
+    $cities = array_values(array_filter(array_map('trim', $arr), function($v){
+        return is_string($v) && $v !== '';
+    }));
+    if (empty($cities)) return 'N/A';
+
+    $full = implode(', ', $cities);
+    if (mb_strlen($full) > $maxLen) {
+        return $cities[0];
+    }
+    return $full;
+}
+
+function filterRowsByQuery(array $rows, string $query): array {
+    if ($query === '') return $rows;
+    $needle = mb_strtolower($query);
+
+    return array_values(array_filter($rows, function(array $row) use ($needle) {
+        $first  = (string)($row['first_name']   ?? '');
+        $middle = (string)($row['middle_name']  ?? '');
+        $last   = (string)($row['last_name']    ?? '');
+        $suffix = (string)($row['suffix']       ?? '');
+
+        $email  = (string)($row['email']        ?? '');
+        $phone  = (string)($row['phone_number'] ?? '');
+        $loc    = renderPreferredLocation($row['preferred_location'] ?? null, 999);
+
+        $fullName1 = trim($first . ' ' . $last);
+        $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
+        $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
+        $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
+
+        $haystack = mb_strtolower(implode(' | ', [
+            $first, $middle, $last, $suffix,
+            $fullName1, $fullName2, $fullName3, $fullName4,
+            $email, $phone, $loc
+        ]));
+
         return mb_strpos($haystack, $needle) !== false;
     }));
 }
