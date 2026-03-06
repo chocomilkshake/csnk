@@ -55,6 +55,25 @@ if ($replacementId <= 0 || $candidateId <= 0 || $adminId === null) {
     redirect('approved.php'); exit;
 }
 
+// --- Get mysqli connection ---
+$conn = null;
+if (method_exists($database, 'getConnection')) {
+    $conn = $database->getConnection();
+}
+if (!($conn instanceof mysqli)) {
+    if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
+    setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
+    redirect('approved.php'); exit;
+}
+
+// SQLs
+$sqlLockReplacement = "
+    SELECT id, original_applicant_id, replacement_applicant_id, status, business_unit_id
+    FROM applicant_replacements
+    WHERE id = ?
+    FOR UPDATE
+";
+
 $sqlGetAgencyAndStatusByApplicant = "
     SELECT ag.code AS agency_code, a.status
     FROM applicants a
