@@ -99,3 +99,19 @@ $sqlBumpCandidate = "
     SET status = 'on_process', updated_at = NOW()
     WHERE id = ? AND status IN ('pending','approved')
     LIMIT 1
+";
+
+try {
+    // Allowed candidate statuses (align with your suggestions logic)
+    $allowedCandidateStatuses = ['pending', 'approved', 'on_process'];
+
+    $conn->begin_transaction();
+
+    // 1) Lock the replacement row
+    $stmt = $conn->prepare($sqlLockReplacement);
+    if (!$stmt) throw new Exception('Failed to prepare replacement lock statement.');
+    $stmt->bind_param('i', $replacementId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $rep = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
