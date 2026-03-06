@@ -80,4 +80,37 @@ $conn = null;
 if (method_exists($database, 'getConnection')) {
     $conn = $database->getConnection();
 }
-if (!($conn inst
+if (!($conn instanceof mysqli)) {
+    if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
+    setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
+    redirect('approved.php'); exit;
+}
+
+// Ensure original applicant is CSNK
+$sqlGetAgencyByApplicant = "
+    SELECT ag.code AS agency_code
+    FROM applicants a
+    JOIN business_units bu ON bu.id = a.business_unit_id
+    JOIN agencies ag ON ag.id = bu.agency_id
+    WHERE a.id = ?
+    LIMIT 1
+";
+
+try {
+    $okAgency = false;
+    $s = $conn->prepare($sqlGetAgencyByApplicant);
+    if ($s) {
+        $s->bind_param('i', $originalId);
+        $s->execute();
+        $r = $s->get_result();
+        $row = $r ? $r->fetch_assoc() : null;
+        $s->close();
+        $okAgency = $row && strtolower((string)$row['agency_code']) === CSNK_AGENCY_CODE;
+    }
+    if (!$okAgency) {
+        if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
+        setFlashMessage('error', 'Operation blocked: not CSNK.');
+        redirect('approved.php'); exit;
+    }
+
+    //
