@@ -284,20 +284,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>';
 
           // -------- Embed two logos (CID) --------
-          // #1 whychoose.png
+          // #1 whychoose.png - images are in root /resources/img/ (need to go up 4 levels from view/)
           $whychooseCandidates = [
-            __DIR__ . '/../resources/img/whychoose.png',
-            __DIR__ . '/resources/img/whychoose.png',
-            __DIR__ . '/public/resources/img/whychoose.png',
+            __DIR__ . '/../../resources/img/whychoose.png',
+            __DIR__ . '/../../../resources/img/whychoose.png',
+            __DIR__ . '/../../../../resources/img/whychoose.png',
           ];
           // #2 secondary logo: try emailogo.png then crempco-logo.png
           $secondaryCandidates = [
-            __DIR__ . '/../resources/img/emailogo.png',
-            __DIR__ . '/resources/img/emailogo.png',
-            __DIR__ . '/public/resources/img/emailogo.png',
-            __DIR__ . '/../resources/img/crempco-logo.png',
-            __DIR__ . '/resources/img/crempco-logo.png',
-            __DIR__ . '/public/resources/img/crempco-logo.png',
+            __DIR__ . '/../../resources/img/emailogo.png',
+            __DIR__ . '/../../../resources/img/emailogo.png',
+            __DIR__ . '/../../../../resources/img/emailogo.png',
+            __DIR__ . '/../../resources/img/crempco-logo.png',
+            __DIR__ . '/../../../resources/img/crempco-logo.png',
+            __DIR__ . '/../../../../resources/img/crempco-logo.png',
           ];
 
           $pickFirstReadable = function (array $paths): ?string {
@@ -655,7 +655,8 @@ function invalidClass(array $errors, string $key): string
                       <a>I agree to the privacy policy. </a>
                     </label>
                     <div class="invalid-feedback">
-                      <?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
+                      <?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?>
+                    </div>
                   </div>
                   <button id="submitBtn" class="btn btn-accent px-4" type="submit">
                     <span class="submit-text">Send message</span>
