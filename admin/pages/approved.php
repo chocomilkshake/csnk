@@ -496,6 +496,35 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     </div>
 </div>
 
+<!-- ===== Replace Modal ===== -->
+<div class="modal fade" id="replaceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form id="replaceInitForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Replace Applicant — <span id="replaceApplicantName"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="original_applicant_id" id="replaceOriginalId" value="">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Reason <span class="text-danger">*</span></label>
+                <select name="reason" class="form-select" required>
+                    <option v
+          <div id="replacementCandidates" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-arrow-repeat me-1"></i> Start &amp; Suggest
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- Scripts for Replace Modal binding -->
