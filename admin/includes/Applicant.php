@@ -912,6 +912,26 @@ class Applicant
             return null;
         }
 
+        // Capture latest booking (if any)
+        $bookingId = $this->getLatestBookingIdForApplicant($originalApplicantId);
+        $attachmentsJson = json_encode(array_values($attachmentsPaths), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        // Insert replacement record (include business_unit_id)
+        $sql = "INSERT INTO applicant_replacements
+                (business_unit_id, original_applicant_id, client_booking_id, reason, report_text, attachments_json, status, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, 'selection', ?)";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('createReplacementInit prepare error: ' . $this->db->error);
+            return null;
+        }
+        $bindBooking = $bookingId !== null ? $bookingId : null;
+        $stmt->bind_param(
+            "iiisssi",
+            $businessUnitId,
+            $originalApplicantId,
+            $bindBooking,
+            $reason,
             $reportText,
             $attachmentsJson,
             $adminId
