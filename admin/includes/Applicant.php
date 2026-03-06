@@ -833,6 +833,34 @@ class Applicant
             WHERE a.status = 'pending'
               AND a.deleted_at IS NULL
               AND NOT EXISTS (
+                  SELECT 1 FROM blacklisted_applicants b
+                  WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ";
+
+        $rows = [];
+        if ($originalBuId !== null && $originalBuId > 0) {
+            $sql = $baseSql . " AND a.business_unit_id = ? ";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('searchPendingCandidatesForReplacement prepare failed: ' . $this->db->error);
+                return [];
+            }
+            $stmt->bind_param('i', $originalBuId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+            $stmt->close();
+        } else {
+            $res = $this->db->query($baseSql);
+            $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        }
+
+        // Score & sort
+        foreach ($rows as &$r) {
+            $r['_score'] = $this->computeSimilarityScore($original, $r);
+        }
+        unset($r);
 
         usort($rows, function ($x, $y) {
             // Sort by score DESC, then years_experience DESC, then created_at ASC
