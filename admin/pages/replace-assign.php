@@ -166,3 +166,23 @@ try {
     $r = $s->get_result();
     $cand = $r ? $r->fetch_assoc() : null;
     $s->close();
+
+    if (!$cand) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Candidate not found.'], 404);
+        setFlashMessage('error', 'Candidate not found.');
+        redirect('approved.php'); exit;
+    }
+    if (strtolower((string)$cand['agency_code']) !== CSNK_AGENCY_CODE) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Candidate is not from CSNK.'], 422);
+        setFlashMessage('error', 'Candidate is not from CSNK.');
+        redirect('approved.php'); exit;
+    }
+    $candStatus = strtolower((string)$cand['status']);
+    if (!in_array($candStatus, $allowedCandidateStatuses, true)) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Candidate is not in an assignable status (Pending/Approved/On-Process).'], 422);
+        setFlashMessage('error', 'Candidate not assignable (Pending/Approved/On-Process only).');
+        redirect('approved.php'); exit;
+    }
