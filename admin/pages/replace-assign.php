@@ -140,4 +140,29 @@ try {
         $conn->rollback();
         if ($isAjax) json_out(false, ['message' => 'Invalid replacement link to original applicant.'], 422);
         setFlashMessage('error', 'Invalid replacement link.');
-        redirect('appr
+        redirect('approved.php'); exit;
+    }
+
+    // 2) Ensure original is CSNK
+    $s = $conn->prepare($sqlGetAgencyAndStatusByApplicant);
+    if (!$s) throw new Exception('Failed to prepare applicant agency check.');
+    $s->bind_param('i', $originalId);
+    $s->execute();
+    $r = $s->get_result();
+    $orig = $r ? $r->fetch_assoc() : null;
+    $s->close();
+    if (!$orig || strtolower((string)$orig['agency_code']) !== CSNK_AGENCY_CODE) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
+        setFlashMessage('error', 'Operation blocked: not CSNK.');
+        redirect('approved.php'); exit;
+    }
+
+    // 3) Check candidate agency + status
+    $s = $conn->prepare($sqlGetAgencyAndStatusByApplicant);
+    if (!$s) throw new Exception('Failed to prepare candidate agency check.');
+    $s->bind_param('i', $candidateId);
+    $s->execute();
+    $r = $s->get_result();
+    $cand = $r ? $r->fetch_assoc() : null;
+    $s->close();
