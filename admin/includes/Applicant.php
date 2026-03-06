@@ -1080,7 +1080,23 @@ class Applicant
                 WHERE id = ?
                   AND replacement_applicant_id IS NULL
                   AND status IN ('selection')
- T status = 'on_process', updated_at = NOW()
+                LIMIT 1
+            ");
+            if (!$stmt) throw new \RuntimeException('Failed to prepare assignment update.');
+            $stmt->bind_param('ii', $replacementApplicantId, $replaceId);
+            $stmt->execute();
+            $affectedAssign = $stmt->affected_rows;
+            $stmt->close();
+
+            if ($affectedAssign !== 1) {
+                throw new \RuntimeException('Failed to assign (already assigned?).');
+            }
+
+            // 4b) Optionally bump candidate to on_process if needed (pending or approved)
+            if (in_array($candStatus, ['pending', 'approved'], true)) {
+                $stmt = $this->db->prepare("
+                    UPDATE applicants
+                    SET status = 'on_process', updated_at = NOW()
                     WHERE id = ? AND deleted_at IS NULL
                     LIMIT 1
                 ");
