@@ -311,7 +311,28 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     .table-card table, .table-card tbody, .table-card tr { overflow: visible !important; }
     td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
     .dd-modern .dropdown-menu {
-        border-radius: .75rem;
+        border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+        z-index: 9999 !important; min-width: 160px;
+    }
+    .dd-modern .dropdown-item { display: flex; align-items: center; gap: .5rem; padding: .55rem .9rem; font-weight: 500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+    .dd-modern .dropdown-item.disabled,
+    .dd-modern .dropdown-item:disabled { color: #9aa0a6; background-color: transparent; pointer-events: none; }
+    .btn-status { border-radius: .75rem; }
+    table.table-styled { margin-bottom: 0; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-semibold">Approved Applicants (CSNK)</h4>
+    <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+    </a>
+</div>
+
+<!-- 🔎 Search bar on the right -->
+<div class="mb-3 d-flex j
+            <?php endif; ?>
         </div>
     </form>
 </div>
