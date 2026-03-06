@@ -1150,5 +1150,67 @@ class Applicant
      * @param int|null $businessUnitId If provided, only count applicants for this BU
      * @return array Array of countries with counts: ['id', 'name', 'count']
      */
+    public function getCountriesWithCounts(?int $businessUnitId = null): array
+    {
+        // Get all countries except Philippines (id=1) for SMC
+        $sql = "
+            SELECT 
+                c.id,
+                c.name AS country_name,
+                c.iso2
+            FROM countries c
+            WHERE c.active = 1
+              AND c.id != 1
+            ORDER BY c.name ASC
+        ";
 
+        $res = $this->db->query($sql);
+        if (!$res) {
+            return [];
+        }
+
+        $countries = $res->fetch_all(MYSQLI_ASSOC);
+
+        // Now get counts for each country
+        $countSql = "
+            SELECT 
+                bu.country_id,
+                COUNT(a.id) AS applicant_count
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            WHERE a.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM blacklisted_applicants b
+                  WHERE b.applicant_id = a.id AND b.is_active = 1
+              )
+        ";
+
+        // Add BU filter if provided
+        if ($businessUnitId !== null && $businessUnitId > 0) {
+            $countSql .= " AND a.business_unit_id = " . (int) $businessUnitId;
+        }
+
+        $countSql .= " GROUP BY bu.country_id";
+
+        $countRes = $this->db->query($countSql);
+        $counts = [];
+        if ($countRes) {
+            while ($row = $countRes->fetch_assoc()) {
+                $counts[(int) $row['country_id']] = (int) $row['applicant_count'];
+            }
+        }
+
+        // Merge counts into countries
+        $result = [];
+        foreach ($countries as $c) {
+            $result[] = [
+                'id'   => (int) $c['id'],
+                'name' => $c['country_name'],
+                'iso2' => $c['iso2'],
+                'count'=> $counts[$c['id']] ?? 0
+            ];
+        }
+
+        return $result;
+    }
 
