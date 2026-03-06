@@ -997,7 +997,30 @@ class Applicant
     }
 
     /**
-     * AssignqlLock);
+     * Assign the chosen applicant as replacement (transactional, CSNK-scoped, race-safe):
+     * - Lock replacement row (FOR UPDATE)
+     * - CSNK scope check for original & candidate
+     * - Allow candidate status: pending/approved/on_process
+     * - Auto-move candidate to on_process (and log status report) if needed
+     * - Update applicant_replacements row
+     * - activity_logs
+     */
+    public function assignReplacement(int $replaceId, int $replacementApplicantId, int $adminId): bool
+    {
+        // Keep in sync with your endpoint behavior.
+        $allowedCandidateStatuses = ['pending', 'approved', 'on_process'];
+
+        $this->ensureApplicantReplacementsTable();
+        $this->db->begin_transaction();
+        try {
+            // 1) Lock replacement row
+            $sqlLock = "
+                SELECT id, original_applicant_id, replacement_applicant_id, status, business_unit_id
+                FROM applicant_replacements
+                WHERE id = ?
+                FOR UPDATE
+            ";
+            $stmt = $this->db->prepare($sqlLock);
             if ('i', $replacementApplicantId);
                     $stmt->execute();
                     $stmt->close();
