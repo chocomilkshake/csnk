@@ -199,7 +199,28 @@ try {
     if (!$u) throw new Exception('Failed to prepare assignment update.');
     $u->bind_param('ii', $candidateId, $replacementId);
     $u->execute();
-    $affected = $u->affected_rows) && isset($_SESSION['admin_id'])) {
+    $affected = $u->affected_rows;
+    $u->close();
+
+    if ($affected !== 1) {
+        $conn->rollback();
+        if ($isAjax) json_out(false, ['message' => 'Failed to assign replacement. It may have been assigned already.'], 409);
+        setFlashMessage('error', 'Failed to assign (already assigned?).');
+        redirect('approved.php'); exit;
+    }
+
+    // 4b) Optionally bump candidate to on_process
+    if (AUTO_MOVE_CANDIDATE_TO_ON_PROCESS && in_array($candStatus, ['pending', 'approved'], true)) {
+        $bu = $conn->prepare($sqlBumpCandidate);
+        if ($bu) {
+            $bu->bind_param('i', $candidateId);
+            $bu->execute();
+            $bu->close();
+        }
+    }
+
+    // Optional activity log
+    if (method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
         $auth->logActivity((int)$_SESSION['admin_id'], 'Assign Replacement',
             "Assigned Applicant ID {$candidateId} as replacement for Original ID {$originalId}");
     }
