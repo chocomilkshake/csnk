@@ -240,16 +240,22 @@ function renderSkeleton(count = 8) {
 ========================================================= */
 function setAvatar(imgEl, src, placeholder) {
   if (!imgEl) return;
-  const fallback = placeholder || '../resources/img/avatar_placeholder.png';
-  const isHttps = location.protocol === 'https:';
+  // Use the placeholder from API if available, otherwise use correct path
+  const fallback = placeholder || '/csnk/resources/img/placeholder-user.svg';
   const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
-  const useSrc = (!cleanSrc || (isHttps && cleanSrc.startsWith('http:'))) ? '' : cleanSrc;
+  
+  // If we have a valid source, use it; otherwise use fallback
+  // The API now provides full URLs (http:// or https://), so we just use them directly
+  const useSrc = cleanSrc || fallback;
 
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
   imgEl.alt = imgEl.alt || 'Photo';
-  imgEl.src = useSrc || fallback;
-  imgEl.onerror = () => { imgEl.src = fallback; };
+  imgEl.src = useSrc;
+  imgEl.onerror = () => { 
+    // On error, try the placeholder
+    imgEl.src = fallback; 
+  };
 }
 
 /* =========================================================
