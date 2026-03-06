@@ -4,6 +4,9 @@ class Applicant
     /** @var mysqli */
     private $db;
 
+    /** CSNK agency code used for scoping */
+    private const CSNK_AGENCY_CODE = 'csnk';
+
     public function __construct($database)
     {
         $this->db = $database->getConnection();
@@ -77,6 +80,7 @@ class Applicant
         $stmt->close();
         return $result;
     }
+
     /* ============================================================
      * EXISTING METHODS (kept)
      * ============================================================ */
@@ -131,7 +135,7 @@ class Applicant
                 error_log('Prepare failed (getAll): ' . $this->db->error);
                 return [];
             }
-            $this->bindByRef($stmt, $types, $params); // <— helper above
+            $this->bindByRef($stmt, $types, $params); // helper below
             $stmt->execute();
             $res = $stmt->get_result();
             $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
@@ -174,7 +178,7 @@ class Applicant
             WHERE deleted_at IS NOT NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = applicants.id AND b.is_active = 1
+                WHERE b.applicant_id = a.id AND b.is_active = 1
               )
             ORDER BY deleted_at DESC
         ";
@@ -185,10 +189,16 @@ class Applicant
     public function getById($id)
     {
         $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
+        if (!$stmt) {
+            error_log('getById prepare failed: ' . $this->db->error);
+            return null;
+        }
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->fetch_assoc();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+        return $row;
     }
 
     /**
@@ -322,6 +332,7 @@ class Applicant
         $stmt->close();
         return $newId ?: false;
     }
+
     /**
      * Update applicant (includes specialization_skills JSON and business_unit_id).
      */
@@ -416,7 +427,6 @@ class Applicant
                 error_log('Prepare failed (update with rate): ' . $this->db->error);
                 return false;
             }
-            // Order before id: 11 strings, 1 double, 7 strings, 3 ints (years, business_unit_id, country_id) → then id
             // Types: "sssssssssss" + "d" + "sssssss" + "iiii"
             $stmt->bind_param(
                 "sssssssssss" . "d" . "sssssss" . "iiii",
@@ -483,28 +493,36 @@ class Applicant
     {
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?");
         $stmt->bind_param("i", $id);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function restore($id)
     {
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NULL, status = 'pending' WHERE id = ?");
         $stmt->bind_param("i", $id);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function permanentDelete($id)
     {
         $stmt = $this->db->prepare("DELETE FROM applicants WHERE id = ?");
         $stmt->bind_param("i", $id);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function updateStatus($id, $status)
     {
         $stmt = $this->db->prepare("UPDATE applicants SET status = ? WHERE id = ?");
         $stmt->bind_param("si", $status, $id);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     /** Convenience for booking workflow */
@@ -512,30 +530,42 @@ class Applicant
     {
         $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL");
         $stmt->bind_param("i", $id);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function getDocuments($applicantId)
     {
         $stmt = $this->db->prepare("SELECT * FROM applicant_documents WHERE applicant_id = ?");
+        if (!$stmt) {
+            error_log('getDocuments prepare failed: ' . $this->db->error);
+            return [];
+        }
         $stmt->bind_param("i", $applicantId);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $rows = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+        return $rows;
     }
 
     public function addDocument($applicantId, $documentType, $filePath)
     {
         $stmt = $this->db->prepare("INSERT INTO applicant_documents (applicant_id, document_type, file_path) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $applicantId, $documentType, $filePath);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function deleteDocument($documentId)
     {
         $stmt = $this->db->prepare("DELETE FROM applicant_documents WHERE id = ?");
         $stmt->bind_param("i", $documentId);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     /** NEW: delete all docs of a given type for an applicant (for replacement) */
@@ -543,7 +573,9 @@ class Applicant
     {
         $stmt = $this->db->prepare("DELETE FROM applicant_documents WHERE applicant_id = ? AND document_type = ?");
         $stmt->bind_param("is", $applicantId, $documentType);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
     }
 
     public function getStatistics()
@@ -658,6 +690,7 @@ class Applicant
         $sql = "
         CREATE TABLE IF NOT EXISTS `applicant_replacements` (
           `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+          `business_unit_id` INT(10) UNSIGNED DEFAULT NULL,
           `original_applicant_id` INT(10) UNSIGNED NOT NULL,
           `replacement_applicant_id` INT(10) UNSIGNED DEFAULT NULL,
           `client_booking_id` INT(10) UNSIGNED DEFAULT NULL,
@@ -674,16 +707,12 @@ class Applicant
           KEY `idx_ar_replacement_applicant_id` (`replacement_applicant_id`),
           KEY `idx_ar_client_booking_id` (`client_booking_id`),
           KEY `idx_ar_status` (`status`),
-          CONSTRAINT `fk_ar_original_applicant` FOREIGN KEY (`original_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-          CONSTRAINT `fk_ar_replacement_applicant` FOREIGN KEY (`replacement_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-          CONSTRAINT `fk_ar_client_booking` FOREIGN KEY (`client_booking_id`) REFERENCES `client_bookings` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-          CONSTRAINT `fk_ar_created_by_admin` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+          KEY `idx_ar_business_unit_id` (`business_unit_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         ";
         try {
             $this->db->query($sql);
-        } catch (\Throwable $e) { /* silent */
-        }
+        } catch (\Throwable $e) { /* silent */ }
     }
 
     /** Helper: safe JSON decode to array */
@@ -728,16 +757,44 @@ class Applicant
         call_user_func_array([$stmt, 'bind_param'], $refs);
     }
 
+    /** Get agency code (e.g., 'csnk' or 'smc') for an applicant id. */
+    private function getAgencyCodeByApplicantId(int $applicantId): ?string
+    {
+        $sql = "
+            SELECT ag.code AS agency_code
+            FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE a.id = ?
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('getAgencyCodeByApplicantId prepare failed: ' . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param('i', $applicantId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        return $row['agency_code'] ?? null;
+    }
+
     /** Get latest booking id for applicant (or null) */
     public function getLatestBookingIdForApplicant(int $applicantId): ?int
     {
         $sql = "SELECT id FROM client_bookings WHERE applicant_id = ? ORDER BY created_at DESC LIMIT 1";
-        if (!$stmt = $this->db->prepare($sql))
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('getLatestBookingIdForApplicant prepare failed: ' . $this->db->error);
             return null;
+        }
         $stmt->bind_param("i", $applicantId);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
         return $row ? (int) $row['id'] : null;
     }
 
@@ -768,23 +825,14 @@ class Applicant
         if (!$original)
             return [];
 
-        $sql = "
-            SELECT *
+        $originalBuId = isset($original['business_unit_id']) ? (int)$original['business_unit_id'] : null;
+
+        $baseSql = "
+            SELECT a.*
             FROM applicants a
             WHERE a.status = 'pending'
               AND a.deleted_at IS NULL
-              AND NOT EXISTS (SELECT 1 FROM blacklisted_applicants b WHERE b.applicant_id = a.id AND b.is_active = 1)
-        ";
-        $res = $this->db->query($sql);
-        if (!$res)
-            return [];
-        $rows = $res->fetch_all(MYSQLI_ASSOC);
-
-        // Score & sort
-        foreach ($rows as &$r) {
-            $r['_score'] = $this->computeSimilarityScore($original, $r);
-        }
-        unset($r);
+              AND NOT EXISTS (
 
         usort($rows, function ($x, $y) {
             // Sort by score DESC, then years_experience DESC, then created_at ASC
@@ -816,159 +864,27 @@ class Applicant
         array $attachmentsPaths,
         int $adminId
     ): ?int {
-        $this->ensureApplicantReplacementsTable();
-
-        $allowedReasons = ['AWOL', 'Client Left', 'Not Finished Contract', 'Performance Issue', 'Other'];
-        if (!in_array($reason, $allowedReasons, true)) {
-            $reason = 'Other';
-        }
-
-        $orig = $this->getById($originalApplicantId);
-        if (!$orig || ($orig['status'] ?? '') !== 'approved') {
-            return null; // Only allowed from approved original
-        }
-
-        // Capture latest booking (if any)
-        $bookingId = $this->getLatestBookingIdForApplicant($originalApplicantId);
-        $attachmentsJson = json_encode(array_values($attachmentsPaths), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
-        // Insert replacement record
-        $sql = "INSERT INTO applicant_replacements
-                (original_applicant_id, client_booking_id, reason, report_text, attachments_json, status, created_by)
-                VALUES (?, ?, ?, ?, ?, 'selection', ?)";
-        $stmt = $this->db->prepare($sql);
-        $bindBooking = $bookingId !== null ? $bookingId : null;
-        $stmt->bind_param(
-            "iisssi",
-            $originalApplicantId,
-            $bindBooking,
-            $reason,
-            $reportText,
-            $attachmentsJson,
-            $adminId
-        );
+        $this->ensureApplicantReplace
         if (!$stmt->execute()) {
-            return null;
-        }
-        $replaceId = (int) $this->db->insert_id;
-
-        // Write applicant report for the original
-        $repNote = "Replacement Initiated (Reason: {$reason})\n" . $reportText;
-        $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
-        $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
-        $stmt2->execute();
-
-        // Activity log
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-        $action = 'Start Replacement';
-        $desc = "Start replacement for Applicant ID {$originalApplicantId}; Reason: {$reason}";
-        $stmt3 = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
-        $stmt3->bind_param("isss", $adminId, $action, $desc, $ip);
-        $stmt3->execute();
-
-        return $replaceId;
-    }
-
-    /** Fetch a replacement record by id */
-    public function getReplacementById(int $replaceId): ?array
+            error_log('createReplacementInit insert error: ' . $stmt->error);
+            $stmt->close();
+                $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();Id): ?array
     {
         $this->ensureApplicantReplacementsTable();
         $stmt = $this->db->prepare("SELECT * FROM applicant_replacements WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $replaceId);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        return $row ?: null;
-    }
+        if (!$stmt) {pplicantId);
+                    $stmt->execute();
+                    $stmt->close();
 
-    /**
-     * Assign the chosen pending applicant as replacement:
-     * - set applicant.status = 'on_process'
-     * - insert applicant_status_reports
-     * - reassign client_bookings (single id stored on replacement)
-     * - update applicant_replacements row
-     * - activity_logs
-     */
-    public function assignReplacement(int $replaceId, int $replacementApplicantId, int $adminId): bool
-    {
-        $this->ensureApplicantReplacementsTable();
-
-        // Load replacement record
-        $rep = $this->getReplacementById($replaceId);
-        if (!$rep || ($rep['status'] ?? '') !== 'selection') {
-            return false;
-        }
-
-        $originalId = (int) $rep['original_applicant_id'];
-        $original = $this->getById($originalId);
-        if (!$original)
-            return false;
-
-        $candidate = $this->getById($replacementApplicantId);
-        if (!$candidate || ($candidate['status'] ?? '') !== 'pending') {
-            return false;
-        }
-
-        $clientBookingId = $rep['client_booking_id'] !== null ? (int) $rep['client_booking_id'] : null;
-        $reason = (string) $rep['reason'];
-
-        // Build status report text
-        $origName = trim(($original['first_name'] ?? '') . ' ' . ($original['last_name'] ?? ''));
-        $reportText = "Replacement for {$origName} (ID: {$originalId}) due to {$reason}.";
-
-        $this->db->begin_transaction();
-        try {
-            // 1) Update applicant status => on_process (only if was pending)
-            $stmt1 = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND status = 'pending' AND deleted_at IS NULL");
-            $stmt1->bind_param("i", $replacementApplicantId);
-            $stmt1->execute();
-            if ($this->db->affected_rows <= 0) {
-                throw new \RuntimeException('Failed to move candidate to on_process.');
-            }
-
-            // 2) Insert status report line (include business_unit_id)
-            $businessUnitId = $candidate['business_unit_id'] ?? null;
-            $stmt2 = $this->db->prepare("
-                INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
-                VALUES (?, ?, 'pending', 'on_process', ?, ?)
-            ");
-            $stmt2->bind_param("iissi", $replacementApplicantId, $businessUnitId, $reportText, $adminId);
-            $stmt2->execute();
-
-            // 3) Reassign client booking if available
-            if ($clientBookingId !== null) {
-                $stmt3 = $this->db->prepare("UPDATE client_bookings SET applicant_id = ?, updated_at = NOW() WHERE id = ?");
-                $stmt3->bind_param("ii", $replacementApplicantId, $clientBookingId);
-                $stmt3->execute();
-            }
-
-            // 4) Update replacement row => assigned
-            $stmt4 = $this->db->prepare("
-                UPDATE applicant_replacements
-                   SET replacement_applicant_id = ?, status = 'assigned', assigned_at = NOW()
-                 WHERE id = ? AND status = 'selection'
-            ");
-            $stmt4->bind_param("ii", $replacementApplicantId, $replaceId);
-            $stmt4->execute();
-            if ($this->db->affected_rows <= 0) {
-                throw new \RuntimeException('Failed to mark replacement as assigned.');
-            }
-
-            // 5) Activity log
-            $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-            $action = 'Assign Replacement';
-            $desc = "Assigned Applicant ID {$replacementApplicantId} as replacement for Original ID {$originalId}";
-            $stmt5 = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
-            $stmt5->bind_param("isss", $adminId, $action, $desc, $ip);
-            $stmt5->execute();
-
-            $this->db->commit();
-            return true;
-        } catch (\Throwable $e) {
-            $this->db->rollback();
-            return false;
-        }
-    }
+                    // Record status report with the REAL from_status
+                    $reportText = "Replacement assignment — moved from {$candStatus} to on_process.";
+                    $stmt2 = $this->db->prepare("
+                        INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
+                        VALUES (?, ?, 'on_process', ?, ?)
+                    ");
+   
 
     /* ============================================================
      * COUNTRY FILTERING (for SMC international applicants)
@@ -981,104 +897,5 @@ class Applicant
      * @param int|null $businessUnitId If provided, only count applicants for this BU
      * @return array Array of countries with counts: ['id', 'name', 'count']
      */
-    public function getCountriesWithCounts(?int $businessUnitId = null): array
-    {
-        // Get all countries except Philippines (id=1) for SMC
-        $sql = "
-            SELECT 
-                c.id,
-                c.name AS country_name,
-                c.iso2
-            FROM countries c
-            WHERE c.active = 1
-              AND c.id != 1
-            ORDER BY c.name ASC
-        ";
 
-        $res = $this->db->query($sql);
-        if (!$res) {
-            return [];
-        }
 
-        $countries = $res->fetch_all(MYSQLI_ASSOC);
-
-        // Now get counts for each country
-        $countSql = "
-            SELECT 
-                bu.country_id,
-                COUNT(a.id) AS applicant_count
-            FROM applicants a
-            JOIN business_units bu ON bu.id = a.business_unit_id
-            WHERE a.deleted_at IS NULL
-              AND NOT EXISTS (
-                  SELECT 1 FROM blacklisted_applicants b
-                  WHERE b.applicant_id = a.id AND b.is_active = 1
-              )
-        ";
-
-        // Add BU filter if provided
-        if ($businessUnitId !== null && $businessUnitId > 0) {
-            $countSql .= " AND a.business_unit_id = " . (int) $businessUnitId;
-        }
-
-        $countSql .= " GROUP BY bu.country_id";
-
-        $countRes = $this->db->query($countSql);
-        $counts = [];
-        if ($countRes) {
-            while ($row = $countRes->fetch_assoc()) {
-                $counts[(int) $row['country_id']] = (int) $row['applicant_count'];
-            }
-        }
-
-        // Merge counts into countries
-        $result = [];
-        foreach ($countries as $c) {
-            $result[] = [
-                'id' => (int) $c['id'],
-                'name' => $c['country_name'],
-                'iso2' => $c['iso2'],
-                'count' => $counts[$c['id']] ?? 0
-            ];
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get all business units with their country info for SMC (excluding Philippines).
-     * This is used to map country_id to business_unit_id for filtering.
-     * 
-     * @return array Array of BUs
-     */
-    public function getBusinessUnitsByCountry(?int $countryId = null): array
-    {
-        $sql = "
-            SELECT 
-                bu.id AS business_unit_id,
-                bu.code,
-                bu.name AS bu_name,
-                c.id AS country_id,
-                c.name AS country_name,
-                c.iso2
-            FROM business_units bu
-            JOIN countries c ON c.id = bu.country_id
-            WHERE bu.active = 1
-              AND c.active = 1
-              AND c.id != 1
-        ";
-
-        if ($countryId !== null && $countryId > 0) {
-            $sql .= " AND c.id = " . (int) $countryId;
-        }
-
-        $sql .= " ORDER BY c.name ASC, bu.code ASC";
-
-        $res = $this->db->query($sql);
-        if (!$res) {
-            return [];
-        }
-
-        return $res->fetch_all(MYSQLI_ASSOC);
-    }
-}
