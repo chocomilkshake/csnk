@@ -513,7 +513,26 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
             <div class="col-md-6">
               <label class="form-label">Reason <span class="text-danger">*</span></label>
                 <select name="reason" class="form-select" required>
-                    <option v
+                    <option value="AWOL">AWOL</option>
+                    <option value="Client Left">Client Left</option>
+                    <option value="Not Finished Contract">Not Finished Contract</option>
+                    <option value="Performance Issue">Performance Issue</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Report / Note <span class="text-danger">*</span></label>
+              <textarea name="report_text" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Attachments (optional)</label>
+              <input type="file" name="attachments[]" class="form-control" multiple>
+              <div class="form-text">You can upload images/documents/videos as evidence. (Up to 200MB per file)</div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <h6 class="fw-semibold">Suggested Replacement Candidates</h6>
           <div id="replacementCandidates" class="mt-2"></div>
         </div>
         <div class="modal-footer">
