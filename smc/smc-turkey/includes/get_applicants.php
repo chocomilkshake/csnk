@@ -317,8 +317,9 @@ try {
     // Adjust this path to your project root for Turkey
     $appBase = $scheme . '://' . $host . '/csnk/smc/smc-turkey';
 
-    $uploadsBase = rtrim($appBase, '/') . '/../../admin/uploads/';
-    $placeholderUrl = rtrim($appBase, '/') . '/resources/img/placeholder-user.svg';
+    // Build uploads base URL properly (like admin getFileUrl function does)
+    $uploadsBase = $appBase . '/../../admin/uploads/';
+    $placeholderUrl = $appBase . '/resources/img/placeholder-user.svg';
 
     $rows = [];
 
@@ -342,16 +343,16 @@ try {
         // Languages
         $languagesStr = implode(',', $langsArr);
 
-        // Photo URL - use protocol-relative URLs (//) to support both HTTP and HTTPS
+        // Photo URL - properly build the full URL (like admin getFileUrl function does)
         $photoUrl = $placeholderUrl;
         if (!empty($app['picture'])) {
             $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
-                // Already full URL - convert http to protocol-relative
-                $photoUrl = preg_replace('~^https?:~', '', $relative);
+                // Already full URL - use as is
+                $photoUrl = $relative;
             } else {
-                // Relative path - make it protocol-relative
-                $photoUrl = '//' . ltrim($uploadsBase, '/') . $relative;
+                // Relative path - concatenate with uploads base URL
+                $photoUrl = $uploadsBase . $relative;
             }
         }
 
