@@ -892,7 +892,30 @@ class Applicant
         array $attachmentsPaths,
         int $adminId
     ): ?int {
-        $this->ensureApplicantReplace
+        $this->ensureApplicantReplacementsTable();
+
+        $allowedReasons = ['AWOL', 'Client Left', 'Not Finished Contract', 'Performance Issue', 'Other'];
+        if (!in_array($reason, $allowedReasons, true)) {
+            $reason = 'Other';
+        }
+
+        $orig = $this->getById($originalApplicantId);
+        if (!$orig || ($orig['status'] ?? '') !== 'approved') {
+            error_log('createReplacementInit: Original not found or not approved');
+            return null; // Only allowed from approved original
+        }
+
+        // Get the business_unit_id from the original applicant
+        $businessUnitId = isset($orig['business_unit_id']) ? (int)$orig['business_unit_id'] : null;
+        if ($businessUnitId === null || $businessUnitId <= 0) {
+            error_log('createReplacementInit: Original applicant has no business_unit_id');
+            return null;
+        }
+
+            $reportText,
+            $attachmentsJson,
+            $adminId
+        );
         if (!$stmt->execute()) {
             error_log('createReplacementInit insert error: ' . $stmt->error);
             $stmt->close();
