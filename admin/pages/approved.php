@@ -433,7 +433,20 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                        class="btn btn-sm btn-info" title="View">
                                         <i class="bi bi-eye"></i>
                                     </a>
-licant">
+
+                                    <!-- Edit -->
+                                    <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <!-- Replace -->
+                                    <button class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#replaceModal"
+                                            data-applicant-id="<?php echo (int)$id; ?>"
+                                            data-applicant-name="<?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>"
+                                            title="Replace this approved applicant">
                                         <i class=
 <!-- Scripts for Replace Modal binding -->
 <script src="../js/replacements.js"></script>
