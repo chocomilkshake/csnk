@@ -311,7 +311,24 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     .table-card table, .table-card tbody, .table-card tr { overflow: visible !important; }
     td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
     .dd-modern .dropdown-menu {
-        border-radENT_QUOTES, 'UTF-8'); ?></td>
+        border-radius: .75rem;
+        </div>
+    </form>
+</div>
+
+<div class="card table-card">
+    <div class="card-body">
+        <!-- Removed .table-responsive to avoid scroll/clipping -->
+        <table class="table table-bordered table-striped table-hover table-styled align-middle">
+            <thead>
+                <tr>
+                    <th>
+ 
+                                <?php if (!empty($row['picture'])): ?>
+                    ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
