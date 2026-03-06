@@ -22,8 +22,11 @@ if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
 }
 
 // Session Configuration
-// Only adjust session ini and start a session when there isn't already an active session.
+// session_set_cookie_params() and ini_set() MUST be called BEFORE session_start()
+// Only set these if session is NOT already active
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    // Set session ini settings BEFORE starting session
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
@@ -37,9 +40,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         'samesite' => 'Lax',   // 'Strict' if you can, 'None' requires Secure
     ]);
 
+    // Start the session
     session_start();
-} else {
-    // Session already active — avoid changing session ini settings or calling session_start() again.
 }
 
 // Timezone
