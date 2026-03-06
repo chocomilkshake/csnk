@@ -7,7 +7,10 @@ define('DB_NAME', 'csnk');
 
 // Application Configuration
 define('APP_NAME', 'CSNK Admin System');
-define('APP_URL', 'http://localhost/csnk/admin');
+// Auto-detect protocol (http/https) for proper photo URLs
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+define('APP_URL', $scheme . '://' . $host . '/csnk/admin');
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', APP_URL . '/uploads/');
 
@@ -33,9 +36,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
     session_set_cookie_params([
         'lifetime' => 0,
-        'path'     => '/',
-        'domain'   => '',      // set if you use a specific domain
-        'secure'   => false,   // use true in production with HTTPS
+        'path' => '/',
+        'domain' => '',      // set if you use a specific domain
+        'secure' => false,   // use true in production with HTTPS
         'httponly' => true,
         'samesite' => 'Lax',   // 'Strict' if you can, 'None' requires Secure
     ]);
