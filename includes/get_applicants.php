@@ -368,10 +368,10 @@ try {
         if (!empty($app['picture'])) {
             $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
-                // Already full URL - use as is
+                // Already full URL - keep it as is
                 $photoUrl = $relative;
             } else {
-                // Relative path - concatenate with uploads base URL
+                // Relative path - prepend uploads base
                 $photoUrl = $uploadsBase . $relative;
             }
         }

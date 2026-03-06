@@ -72,8 +72,9 @@ function removeApplicantIdFromUrl(){
   }
 }
 
-// ---- CONFIG: app root path (match your mount, e.g., '/csnk-1/') ----
-const APP_BASE = '/csnk-1/';
+// ---- CONFIG: app root path (match your mount, e.g., '/csnk/') ----
+const APP_BASE = '/csnk/';
+
 
 // Poll interval for live refresh
 const POLL_INTERVAL_MS = 15000;
@@ -240,13 +241,10 @@ function renderSkeleton(count = 8) {
 ========================================================= */
 function setAvatar(imgEl, src, placeholder) {
   if (!imgEl) return;
-  // Use the placeholder from API if available, otherwise use correct path
-  const fallback = placeholder || '/csnk/resources/img/placeholder-user.svg';
+  const fallback = placeholder || '../resources/img/avatar_placeholder.png';
   const cleanSrc = (src && typeof src === 'string') ? src.trim() : '';
-  
-  // If we have a valid source, use it; otherwise use fallback
-  // The API now provides full URLs (http:// or https://), so we just use them directly
-  const useSrc = cleanSrc || fallback;
+  // Use the src directly if available, otherwise fallback
+  const useSrc = cleanSrc || '';
 
   imgEl.loading = 'lazy';
   imgEl.decoding = 'async';
