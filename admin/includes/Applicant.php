@@ -1214,3 +1214,40 @@ class Applicant
         return $result;
     }
 
+    /**
+     * Get all business units with their country info for SMC (excluding Philippines).
+     * This is used to map country_id to business_unit_id for filtering.
+     * 
+     * @return array Array of BUs
+     */
+    public function getBusinessUnitsByCountry(?int $countryId = null): array
+    {
+        $sql = "
+            SELECT 
+                bu.id AS business_unit_id,
+                bu.code,
+                bu.name AS bu_name,
+                c.id AS country_id,
+                c.name AS country_name,
+                c.iso2
+            FROM business_units bu
+            JOIN countries c ON c.id = bu.country_id
+            WHERE bu.active = 1
+              AND c.active = 1
+              AND c.id != 1
+        ";
+
+        if ($countryId !== null && $countryId > 0) {
+            $sql .= " AND c.id = " . (int) $countryId;
+        }
+
+        $sql .= " ORDER BY c.name ASC, bu.code ASC";
+
+        $res = $this->db->query($sql);
+        if (!$res) {
+            return [];
+        }
+
+        return $res->fetch_all(MYSQLI_ASSOC);
+    }
+}
