@@ -224,3 +224,21 @@ try {
         $auth->logActivity((int)$_SESSION['admin_id'], 'Assign Replacement',
             "Assigned Applicant ID {$candidateId} as replacement for Original ID {$originalId}");
     }
+
+    $conn->commit();
+
+    if ($isAjax) {
+        json_out(true, ['message' => 'Replacement assigned successfully.']);
+    } else {
+        setFlashMessage('success', 'Replacement assigned successfully.');
+        redirect('approved.php');
+    }
+    exit;
+
+} catch (Throwable $e) {
+    error_log('Replace-assign exception: ' . $e->getMessage());
+    try { $conn->rollback(); } catch (Throwable $e2) {}
+    if ($isAjax) json_out(false, ['message' => 'An internal error occurred. Please try again later.'], 500);
+    setFlashMessage('error', 'An internal error occurred. Please try again.');
+    redirect('approved.php'); exit;
+}
