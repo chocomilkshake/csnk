@@ -35,4 +35,26 @@ function json_out($ok, $payload = [], $http = 200) {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
     setFlashMessage('error', 'Invalid request method.');
-    redirect('approved.ph
+    redirect('approved.php'); exit;
+}
+
+// === REQUIRE CSRF for all POSTs ===
+if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
+    || !hash_equals(
+
+$sqlUpdateAssign = "
+    UPDATE applicant_replacements
+    SET replacement_applicant_id = ?,
+        assigned_at = NOW(),
+        status = 'assigned'
+    WHERE id = ?
+      AND replacement_applicant_id IS NULL
+      AND status IN ('selection')
+    LIMIT 1
+";
+
+$sqlBumpCandidate = "
+    UPDATE applicants
+    SET status = 'on_process', updated_at = NOW()
+    WHERE id = ? AND status IN ('pending','approved')
+    LIMIT 1
