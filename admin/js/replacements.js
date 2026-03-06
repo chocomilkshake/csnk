@@ -59,6 +59,14 @@ window.Replacements = (function () {
     }).join('');
     container.innerHTML = cards;
 
+    container.querySelectorAll('button[data-assign]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const repId = parseInt(btn.getAttribute('data-replacement-id') || '0', 10);
+        const cand  = parseInt(btn.getAttribute('data-candidate-id')   || '0', 10);
+        assign(repId, cand, btn);
+      });
+    });
+  }
 
 
 
