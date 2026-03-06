@@ -1,125 +1,264 @@
 <?php
+// FILE: admin/pages/login.php (hardened)
+
+// --- Bootstrap & config ---
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
 
+// --------- Security Headers (do this before any output) ---------
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+// Strong CSP (allows Bootstrap CDN you use)
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm/bootstrap@5.3.2 'unsafe-inline'; style-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm/bootstrap@5.3.2 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
+
+// Clickjacking, XSS and MIME protections
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: no-referrer-when-downgrade');
+header('X-XSS-Protection: 0'); // Deprecated, CSP is primary
+
+// HSTS for HTTPS sites (uncomment when you have HTTPS fully enabled)
+// if ($isHttps) {
+//     header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+// }
+
+// --------- Session hardening ---------
+// Session cookie params are now set in config.php before session_start()
+// Just ensure session is started here
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+// Create CSRF token (login form)
+if (empty($_SESSION['csrf_login'])) {
+    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+}
+
+// --- Instantiate DB/Auth ---
 $database = new Database();
 /** @var mysqli $mysqli */
-$mysqli = $database->getConnection(); // <-- ensure Database::getConnection() returns mysqli
-$auth = new Auth($database);
+$mysqli = $database->getConnection(); // ensure Database::getConnection returns mysqli
+$auth   = new Auth($database);
 
-// Ensure session + CSRF token
-if (session_status() !== PHP_SESSION_ACTIVE) {
-  session_start();
-}
-if (empty($_SESSION['csrf_login'])) {
-  $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-}
-
-// If already logged in
+// If already logged in, redirect
 if ($auth->isLoggedIn()) {
-  header('Location: dashboard.php');
-  exit();
+    header('Location: dashboard.php');
+    exit();
+}
+
+// ---------- Brute-force controls ----------
+// 4 attempts limit, 4 minutes lockout
+$maxAttempts = 4;
+$lockoutSeconds = 240; // 4 minutes = 240 seconds
+$windowSeconds = 300;  // 5 minutes for IP+username tracking
+
+// Get client's IP for tracking
+$clientIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+// IP+username based tracker functions (for additional tracking)
+function bf_key(string $username): string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $u  = strtolower(trim($username));
+    return sha1($ip . '|' . $u);
+}
+function bf_file(string $key): string {
+    return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'csnk_login_' . $key . '.json';
+}
+function bf_load(string $key): array {
+    $f = bf_file($key);
+    if (is_file($f) && is_readable($f)) {
+        $json = file_get_contents($f);
+        $data = json_decode($json, true);
+        if (is_array($data)) return $data;
+    }
+    return ['count' => 0, 'first' => time()];
+}
+function bf_save(string $key, array $data): void {
+    $f = bf_file($key);
+    @file_put_contents($f, json_encode($data), LOCK_EX);
+}
+function bf_reset(string $key): void {
+    $f = bf_file($key);
+    if (is_file($f)) @unlink($f);
+}
+
+// IP-based lockout tracking using file
+function getLockoutFile(string $ip): string {
+    return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'csnk_lockout_' . md5($ip) . '.json';
+}
+
+function getLockoutData(string $ip): array {
+    $file = getLockoutFile($ip);
+    if (is_file($file) && is_readable($file)) {
+        $json = file_get_contents($file);
+        $data = json_decode($json, true);
+        if (is_array($data)) return $data;
+    }
+    return ['locked' => false, 'locked_at' => 0, 'attempts' => 0];
+}
+
+function saveLockoutData(string $ip, array $data): void {
+    $file = getLockoutFile($ip);
+    @file_put_contents($file, json_encode($data), LOCK_EX);
+}
+
+function clearLockout(string $ip): void {
+    $file = getLockoutFile($ip);
+    if (is_file($file)) @unlink($file);
+}
+
+// Load current lockout status
+$lockoutData = getLockoutData($clientIp);
+$now = time();
+
+// Check if currently locked
+$isLocked = false;
+$remainingTime = 0;
+
+if ($lockoutData['locked'] && $lockoutData['locked_at'] > 0) {
+    $elapsed = $now - $lockoutData['locked_at'];
+    if ($elapsed < $lockoutSeconds) {
+        $isLocked = true;
+        $remainingTime = $lockoutSeconds - $elapsed;
+    } else {
+        // Lockout expired, reset
+        clearLockout($clientIp);
+        $lockoutData = ['locked' => false, 'locked_at' => 0, 'attempts' => 0];
+    }
 }
 
 $error = '';
+$attemptsRemaining = $maxAttempts - ($lockoutData['attempts'] ?? 0);
 
-// Throttle (5 mins window / 5 attempts)
-if (!isset($_SESSION['login_attempts'])) {
-  $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-}
-$windowSeconds = 300;
-$maxAttempts = 5;
-
-if (time() - $_SESSION['login_attempts']['first_attempt'] > $windowSeconds) {
-  $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-}
-if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
-  $error = 'Too many failed attempts. Please wait a few minutes and try again.';
+// If locked, show countdown
+if ($isLocked) {
+    $error = 'Account temporarily locked due to too many failed attempts.';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $csrf = $_POST['csrf_login'] ?? '';
-  $tokenValid = hash_equals($_SESSION['csrf_login'] ?? '', $csrf);
+// Optional: require HTTPS for login POST (uncomment when site is HTTPS-only)
+// if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isHttps) {
+//     $error = 'Secure connection required. Please use HTTPS.';
+// }
 
-  if (!$tokenValid) {
-    $error = 'Security verification failed.';
-    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-  } else {
-    $username = trim((string) ($_POST['username'] ?? ''));
-    if (strlen($username) > 64) {
-      $username = substr($username, 0, 64);
-    }
-    $password = (string) ($_POST['password'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
+    // CSRF check
+    $csrf = $_POST['csrf_login'] ?? '';
+    $tokenValid = hash_equals($_SESSION['csrf_login'] ?? '', $csrf);
 
-    if ($username === '' || $password === '') {
-      $error = 'Please fill in all fields.';
+    if (!$tokenValid) {
+        $error = 'Security verification failed.';
+        $_SESSION['csrf_login'] = bin2hex(random_bytes(32)); // rotate
     } else {
-      if ($_SESSION['login_attempts']['count'] >= $maxAttempts) {
-        $error = 'Too many failed attempts. Please wait a few minutes and try again.';
-      } else {
-        /**
-         * Auth::login() now returns user array on success with consistent session keys.
-         * Session variables are already set in Auth::login().
-         */
-        $user = $auth->login($username, $password);
-
-        if (is_array($user)) {
-          // Session variables are already set by Auth::login()
-          // Just ensure current_bu_id is set (it may have been resolved to a default)
-
-          // If current_bu_id is 0 or not set, use the resolved value from session
-          if (empty($_SESSION['current_bu_id']) || $_SESSION['current_bu_id'] === 0) {
-            // Get the resolved BU from the user's business_unit_id or default
-            $_SESSION['current_bu_id'] = 1; // Default to CSNK-PH (id=1)
-          }
-
-          // (Optional) Load allowed BU IDs for super_admin switcher (only if not already set by Auth)
-          if (!isset($_SESSION['allowed_bu_ids']) && $_SESSION['role'] === 'super_admin') {
-            $_SESSION['allowed_bu_ids'] = [];
-            $sql = "SELECT business_unit_id FROM admin_user_business_units WHERE admin_user_id = ?";
-            if ($stmt = mysqli_prepare($mysqli, $sql)) {
-              mysqli_stmt_bind_param($stmt, 'i', $_SESSION['user_id']);
-              mysqli_stmt_execute($stmt);
-              $res = mysqli_stmt_get_result($stmt);
-              while ($r = mysqli_fetch_assoc($res)) {
-                $_SESSION['allowed_bu_ids'][] = (int) $r['business_unit_id'];
-              }
-              mysqli_stmt_close($stmt);
-            }
-            if (empty($_SESSION['allowed_bu_ids']) && $_SESSION['current_bu_id']) {
-              $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
-            }
-          }
-
-          // Session log is already recorded in Auth::login(), no need to duplicate
-
-          // Reset CSRF & throttling and redirect
-          $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-          $_SESSION['login_attempts'] = ['count' => 0, 'first_attempt' => time()];
-
-          // Redirect based on user agency - SMC employees go to turkey dashboard
-          $userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
-          if ($userAgency === 'smc') {
-              header('Location: turkey_dashboard.php');
-          } else {
-              header('Location: dashboard.php');
-          }
-          exit();
-        } else {
-          // Failed login
-          $error = 'Invalid username or password.';
-          $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
-          $_SESSION['login_attempts']['count']++;
+        // Normalize inputs
+        $username = trim((string)($_POST['username'] ?? ''));
+        // normalize whitespace and case-insensitive compare basis
+        $username = preg_replace('/\s+/u', ' ', $username ?? '');
+        if (mb_strlen($username, 'UTF-8') > 64) {
+            $username = mb_substr($username, 0, 64, 'UTF-8');
         }
-      }
+        $password = (string)($_POST['password'] ?? '');
+
+        if ($username === '' || $password === '') {
+            $error = 'Please fill in all fields.';
+        } else {
+            // File-based brute-force tracker by IP+username
+            $key   = bf_key($username);
+            $now   = time();
+            $track = bf_load($key);
+
+            // Reset IP+username window after 5 minutes
+            if ($now - ($track['first'] ?? $now) > $windowSeconds) {
+                $track = ['count' => 0, 'first' => $now];
+            }
+
+            // Exponential backoff: add small delay based on track['count']
+            if (($track['count'] ?? 0) >= 3) {
+                // delay up to 2s for high counts (tunable)
+                $delayMs = min(2000, (($track['count'] - 2) * 250));
+                usleep($delayMs * 1000);
+            }
+
+            // Gate on both IP-based lockout
+            if ($isLocked) {
+                $error = 'Account temporarily locked due to too many failed attempts.';
+            } else {
+                // Attempt login (Auth::login should use prepared statements & password_verify)
+                $user = $auth->login($username, $password);
+
+                // Destroy password quickly (best effort)
+                $password = str_repeat("\0", strlen($password));
+
+                if (is_array($user)) {
+                    // Success → regenerate session id to prevent fixation
+                    session_regenerate_id(true);
+
+                    // Ensure current_bu_id is set (default to CSNK-PH id=1 if not set)
+                    if (empty($_SESSION['current_bu_id']) || $_SESSION['current_bu_id'] === 0) {
+                        $_SESSION['current_bu_id'] = 1;
+                    }
+
+                    // For super_admins, load allowed BU ids if not set
+                    if (!isset($_SESSION['allowed_bu_ids']) && ($_SESSION['role'] ?? '') === 'super_admin') {
+                        $_SESSION['allowed_bu_ids'] = [];
+                        $sql = "SELECT business_unit_id FROM admin_user_business_units WHERE admin_user_id = ?";
+                        if ($stmt = mysqli_prepare($mysqli, $sql)) {
+                            mysqli_stmt_bind_param($stmt, 'i', $_SESSION['user_id']);
+                            mysqli_stmt_execute($stmt);
+                            $res = mysqli_stmt_get_result($stmt);
+                            while ($r = mysqli_fetch_assoc($res)) {
+                                $_SESSION['allowed_bu_ids'][] = (int)$r['business_unit_id'];
+                            }
+                            mysqli_stmt_close($stmt);
+                        }
+                        if (empty($_SESSION['allowed_bu_ids']) && !empty($_SESSION['current_bu_id'])) {
+                            $_SESSION['allowed_bu_ids'][] = (int)$_SESSION['current_bu_id'];
+                        }
+                    }
+
+                    // Reset CSRF and lockout on success
+                    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+                    clearLockout($clientIp);
+
+                    // Optional bot-friction switch (for future CAPTCHA toggle)
+                    $_SESSION['human_verified'] = true;
+
+                    // Redirect based on agency
+                    $userAgency = strtolower((string)($_SESSION['agency'] ?? ''));
+                    if ($userAgency === 'smc') {
+                        header('Location: turkey_dashboard.php');
+                    } else {
+                        header('Location: dashboard.php');
+                    }
+                    exit();
+                } else {
+                    // Failed login - increment attempts and check for lockout
+                    $currentAttempts = ($lockoutData['attempts'] ?? 0) + 1;
+                    $lockoutData['attempts'] = $currentAttempts;
+                    
+                    if ($currentAttempts >= $maxAttempts) {
+                        // Lock the account
+                        $lockoutData['locked'] = true;
+                        $lockoutData['locked_at'] = time();
+                        saveLockoutData($clientIp, $lockoutData);
+                        $error = 'Account locked! Too many failed attempts. Please wait 4 minutes before trying again.';
+                        $remainingTime = $lockoutSeconds;
+                    } else {
+                        $attemptsLeft = $maxAttempts - $currentAttempts;
+                        $error = 'Invalid username or password. You have ' . $attemptsLeft . ' attempt(s) remaining.';
+                        saveLockoutData($clientIp, $lockoutData);
+                    }
+                    
+                    $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+                }
+            }
+        }
     }
-  }
 }
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -135,7 +274,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <meta name="theme-color" content="#0d6efd">
 </head>
-
 <body class="bg-body-tertiary">
 
   <div class="container py-4 py-md-5">
@@ -179,8 +317,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
             <?php endif; ?>
 
+            <!-- Lockout countdown alert -->
+            <?php if ($isLocked && $remainingTime > 0): ?>
+              <div class="alert alert-warning d-flex align-items-center" role="alert" id="lockoutAlert">
+                <i class="bi bi-clock-fill me-2"></i>
+                <div>
+                  Too many failed attempts. Please wait <span id="countdown"><?php echo $remainingTime; ?></span> seconds before trying again.
+                </div>
+              </div>
+            <?php endif; ?>
+
+            <!-- Attempts remaining info -->
+            <?php if (!$isLocked && isset($lockoutData['attempts']) && $lockoutData['attempts'] > 0): ?>
+              <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <div>You have <?php echo $attemptsRemaining; ?> attempt(s) remaining.</div>
+              </div>
+            <?php endif; ?>
+
             <!-- Login form -->
-            <form method="POST" action="" autocomplete="on" novalidate>
+            <form method="POST" action="" autocomplete="on" novalidate <?php echo $isLocked ? 'id="loginForm"' : ''; ?>>
               <input type="hidden" name="csrf_login"
                 value="<?php echo htmlspecialchars($_SESSION['csrf_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 
@@ -189,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="input-group input-group-lg">
                   <span class="input-group-text"><i class="bi bi-person"></i></span>
                   <input type="text" id="username" name="username" class="form-control"
-                    placeholder="Enter your username" required autofocus autocomplete="username">
+                    placeholder="Enter your username" required autofocus autocomplete="username" maxlength="64">
                 </div>
               </div>
 
@@ -245,7 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       else { sun.classList.remove('d-none'); moon.classList.add('d-none'); }
     }
 
-    document.getElementById('themeToggle').addEventListener('click', function () {
+    document.getElementById('themeToggle')?.addEventListener('click', function () {
       const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
       const next = current === 'light' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-bs-theme', next);
@@ -259,13 +415,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const eyeOpen = document.getElementById('eyeOpen');
     const eyeClosed = document.getElementById('eyeClosed');
 
-    togglePwdBtn.addEventListener('click', () => {
+    togglePwdBtn?.addEventListener('click', () => {
       const isPassword = pwdInput.type === 'password';
       pwdInput.type = isPassword ? 'text' : 'password';
       eyeOpen.classList.toggle('d-none', isPassword);
       eyeClosed.classList.toggle('d-none', !isPassword);
     });
+
+    // Lockout countdown timer
+    const countdownEl = document.getElementById('countdown');
+    if (countdownEl) {
+      let seconds = parseInt(countdownEl.textContent, 10);
+      const loginForm = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const togglePwdBtn2 = document.getElementById('togglePassword');
+      const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+
+      // Disable form inputs when locked
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          if (seconds > 0) {
+            e.preventDefault();
+            alert('Account is locked. Please wait for the countdown to finish.');
+            return false;
+          }
+        });
+      }
+
+      if (usernameInput) usernameInput.disabled = true;
+      if (passwordInput) passwordInput.disabled = true;
+      if (togglePwdBtn2) togglePwdBtn2.disabled = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-clock me-2"></i>Locked';
+      }
+
+      // Countdown timer
+      const timer = setInterval(() => {
+        seconds--;
+        if (countdownEl) {
+          countdownEl.textContent = seconds;
+        }
+        
+        if (seconds <= 0) {
+          clearInterval(timer);
+          // Reload page to reset lockout
+          window.location.reload();
+        }
+      }, 1000);
+    }
   </script>
 </body>
-
 </html>
