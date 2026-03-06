@@ -47,4 +47,13 @@ $reason     = isset($_POST['reason'])      ? trim((string)$_POST['reason'])     
 $reportText = isset($_POST['report_text']) ? trim((string)$_POST['report_text'])  : '';
 
 if ($originalId <= 0) {
-    if ($isAjax) j
+    if ($isAjax) json_out(false, ['message' => 'Missing or invalid original applicant ID.'], 422);
+    setFlashMessage('error', 'Missing required fields.');
+    redirect('approved.php'); exit;
+}
+if ($adminId === null) {
+    if ($isAjax) json_out(false, ['message' => 'Authentication error. Please log in again.'], 401);
+    setFlashMessage('error', 'Authentication error. Please log in again.');
+    redirect('approved.php'); exit;
+}
+if ($
