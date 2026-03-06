@@ -1058,7 +1058,30 @@ class Applicant
 
             // 3) Load candidate status
             $stmt = $this->db->prepare("SELECT status FROM applicants WHERE id = ? LIMIT 1");
-            if eted_at IS NULL
+            if (!$stmt) throw new \RuntimeException('Failed to prepare candidate status check.');
+            $stmt->bind_param('i', $replacementApplicantId);
+            $stmt->execute();
+            $r = $stmt->get_result();
+            $candRow = $r ? $r->fetch_assoc() : null;
+            $stmt->close();
+
+            if (!$candRow) {
+                throw new \RuntimeException('Candidate not found.');
+            }
+            $candStatus = strtolower((string)$candRow['status']);
+            if (!in_array($candStatus, $allowedCandidateStatuses, true)) {
+                throw new \RuntimeException('Candidate not in assignable status (Pending/Approved/On-Process).');
+            }
+
+            // 4a) Assign the candidate to the replacement
+            $stmt = $this->db->prepare("
+                UPDATE applicant_replacements
+                SET replacement_applicant_id = ?, status = 'assigned', assigned_at = NOW()
+                WHERE id = ?
+                  AND replacement_applicant_id IS NULL
+                  AND status IN ('selection')
+ T status = 'on_process', updated_at = NOW()
+                    WHERE id = ? AND deleted_at IS NULL
                     LIMIT 1
                 ");
                 if ($stmt) {
