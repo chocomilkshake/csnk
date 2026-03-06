@@ -366,11 +366,11 @@ try {
         if (!empty($app['picture'])) {
             $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
-                // Already full URL - convert http to protocol-relative
-                $photoUrl = preg_replace('~^https?:~', '', $relative);
+                // Already full URL - keep it as is
+                $photoUrl = $relative;
             } else {
-                // Relative path - make it protocol-relative
-                $photoUrl = '//' . ltrim($uploadsBase, '/') . $relative;
+                // Relative path - prepend uploads base
+                $photoUrl = $uploadsBase . $relative;
             }
         }
 
