@@ -1111,7 +1111,33 @@ class Applicant
                         INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
                         VALUES (?, ?, 'on_process', ?, ?)
                     ");
-   
+                    if ($stmt2) {
+                        $stmt2->bind_param('issi', $replacementApplicantId, $candStatus, $reportText, $adminId);
+                        $stmt2->execute();
+                        $stmt2->close();
+                    }
+                }
+            }
+
+            // 5) Activity log
+            $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+            $action = 'Assign Replacement';
+            $desc = "Assigned Applicant ID {$replacementApplicantId} as replacement for Original ID {$originalId}";
+            $stmt = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
+            if ($stmt) {
+                $stmt->bind_param("isss", $adminId, $action, $desc, $ip);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            error_log('assignReplacement error: ' . $e->getMessage());
+            return false;
+        }
+    }
 
     /* ============================================================
      * COUNTRY FILTERING (for SMC international applicants)
