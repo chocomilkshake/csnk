@@ -85,5 +85,27 @@ window.Replacements = (function () {
       });
   }
 
+  function assign(replacementId, candidateId, buttonEl) {
+    if (!replacementId || !candidateId) return;
+    const fd = new FormData();
+    fd.append('replacement_id', String(replacementId));
+    fd.append('replacement_applicant_id', String(candidateId));
+    fd.append('ajax', '1');
+    if (window.CSRF_TOKEN) fd.append('csrf_token', String(window.CSRF_TOKEN));
 
+    if (buttonEl) { buttonEl.disabled = true; buttonEl.textContent = 'Assigning…'; }
+    fetch(endpoints.assign, { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok) throw new Error(data.message || 'Failed to assign.');
+        toast('Replacement assigned.', 'success');
+        setTimeout(() => window.location.reload(), 800);
+      })
+      .catch(err => {
+        toast(err.message || 'Failed to assign.', 'danger', 3000);
+      })
+      .finally(() => {
+        if (buttonEl) { buttonEl.disabled = false; buttonEl.textContent = 'Assign'; }
+      });
+  }
 
