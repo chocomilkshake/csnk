@@ -961,7 +961,26 @@ class Applicant
             if ($stmt2) {
                 $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
                 $stmt2->execute();
-                $stmt2->close();Id): ?array
+                $stmt2->close();
+            }
+        }
+
+        // Activity log
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+        $action = 'Start Replacement';
+        $desc = "Start replacement for Applicant ID {$originalApplicantId}; Reason: {$reason}";
+        $stmt3 = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
+        if ($stmt3) {
+            $stmt3->bind_param("isss", $adminId, $action, $desc, $ip);
+            $stmt3->execute();
+            $stmt3->close();
+        }
+
+        return $replaceId;
+    }
+
+    /** Fetch a replacement record by id */
+    public function getReplacementById(int $replaceId): ?array
     {
         $this->ensureApplicantReplacementsTable();
         $stmt = $this->db->prepare("SELECT * FROM applicant_replacements WHERE id = ? LIMIT 1");
