@@ -109,3 +109,49 @@ window.Replacements = (function () {
       });
   }
 
+  function bindInit(formSelector, resultsContainerSelector) {
+    const form = document.querySelector(formSelector);
+    const container = document.querySelector(resultsContainerSelector);
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const fd = new FormData(form);
+      fd.append('ajax', '1');
+      if (window.CSRF_TOKEN) fd.append('csrf_token', String(window.CSRF_TOKEN));
+
+      const submitBtn = form.querySelector('[type="submit"]');
+      const oldText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting…'; }
+
+      fetch(endpoints.init, { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(r => {
+          // Check if response is JSON
+          const contentType = r.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            // Not JSON - might be HTML redirect or error page
+            return r.text().then(text => {
+              console.error('Non-JSON response:', text);
+              throw new Error('Server returned an unexpected response. Please check your connection and try again, or check the console for details.');
+            });
+          }
+          return r.json();
+        })
+        .then(data => {
+          if (!data.ok) throw new Error(data.message || 'Failed to start replacement.');
+          const repId = data.replacement_id;
+          toast('Replacement created. Loading candidates…', 'success');
+          searchCandidates(container, { replacement_id: repId });
+        })
+        .catch(err => {
+          console.error('Replace init error:', err);
+          toast(err.message || 'Failed to start replacement.', 'danger', 3500);
+        })
+        .finally(() => {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = oldText; }
+        });
+    });
+  }
+
+  return { bindInit, search: searchCandidates, assign };
+})();
