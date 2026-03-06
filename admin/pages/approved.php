@@ -447,7 +447,32 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                             data-applicant-id="<?php echo (int)$id; ?>"
                                             data-applicant-name="<?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>"
                                             title="Replace this approved applicant">
-                                        <i class=
+                                        <i class="bi bi-arrow-repeat me-1"></i> Replace
+                                    </button>
+
+                                    <!-- Change Status Dropdown -->
+                                    <div class="dropdown dropup">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-auto-close="true"
+                                                aria-expanded="false"
+                                                aria-haspopup="true"
+                                                title="Change Status"
+                                                id="changeStatusBtn-<?php echo $id; ?>">
+                                            <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                                        <li>
+                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
+                                               href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <i class="bi bi-hourglass-split text-warning"></i>
+                                                <span>Pending</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+
 <!-- Scripts for Replace Modal binding -->
 <script src="../js/replacements.js"></script>
 <script>
