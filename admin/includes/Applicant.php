@@ -939,6 +939,26 @@ class Applicant
         if (!$stmt->execute()) {
             error_log('createReplacementInit insert error: ' . $stmt->error);
             $stmt->close();
+            return null;
+        }
+        $replaceId = (int) $this->db->insert_id;
+        $stmt->close();
+
+        // Write applicant report for the original (include business_unit_id if present)
+        $repNote = "Replacement Initiated (Reason: {$reason})\n" . $reportText;
+
+        // Check if business_unit_id column exists in applicant_reports
+        $checkCol = $this->db->query("SHOW COLUMNS FROM applicant_reports LIKE 'business_unit_id'");
+        if ($checkCol && $checkCol->num_rows > 0) {
+            $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)");
+            if ($stmt2) {
+                $stmt2->bind_param("iiis", $originalApplicantId, $businessUnitId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();
+            }
+        } else {
+            $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
+            if ($stmt2) {
                 $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
                 $stmt2->execute();
                 $stmt2->close();Id): ?array
