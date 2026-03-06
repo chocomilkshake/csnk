@@ -402,7 +402,24 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                         <tr>
                             <td>
                                 <?php if (!empty($row['picture'])): ?>
-                    ENT_QUOTES, 'UTF-8'); ?>
+                                    <img
+                                        src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        alt="Photo"
+                                        class="rounded"
+                                        width="50"
+                                        height="50"
+                                        style="object-fit: cover;"
+                                    >
+                                <?php else: ?>
+                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                         style="width: 50px; height: 50px;">
+                                        <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">
+                                    <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                             </td>
                             <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
