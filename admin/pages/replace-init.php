@@ -23,5 +23,28 @@ $isAjax = (
 
 function json_out($ok, $payload = [], $http = 200) {
     http_response_code($http);
-    header('Content-Type: applicat
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
+    setFlashMessage('error', 'Invalid request method.');
+    redirect('approved.php'); exit;
+}
+
+// === REQUIRE CSRF for all POSTs ===
+if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
+    || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
+    if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
+    setFlashMessage('error', 'Invalid security token.');
+    redirect('approved.php'); exit;
+}
+
+$originalId = isset($_POST['original_applicant_id']) ? (int)$_POST['original_applicant_id'] : 0;
+$reason     = isset($_POST['reason'])      ? trim((string)$_POST['reason'])       : '';
+$reportText = isset($_POST['report_text']) ? trim((string)$_POST['report_text'])  : '';
+
+if ($originalId <= 0) {
     if ($isAjax) j
