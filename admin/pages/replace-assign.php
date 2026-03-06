@@ -40,7 +40,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // === REQUIRE CSRF for all POSTs ===
 if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
-    || !hash_equals(
+    || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
+    if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
+    setFlashMessage('error', 'Invalid security token.');
+    redirect('approved.php'); exit;
+}
+
+$replacementId = isset($_POST['replacement_id']) ? (int)$_POST['replacement_id'] : 0;
+$candidateId   = isset($_POST['replacement_applicant_id']) ? (int)$_POST['replacement_applicant_id'] : 0;
+
+if ($replacementId <= 0 || $candidateId <= 0 || $adminId === null) {
+    if ($isAjax) json_out(false, ['message' => 'Missing required fields or authentication.'], 422);
+    setFlashMessage('error', 'Missing fields or authentication.');
+    redirect('approved.php'); exit;
+}
+
+$sqlGetAgencyAndStatusByApplicant = "
+    SELECT ag.code AS agency_code, a.status
+    FROM applicants a
+    JOIN business_units bu ON bu.id = a.business_unit_id
+    JOIN agencies ag ON ag.id = bu.agency_id
+    WHERE a.id = ?
+    LIMIT 1
+";
 
 $sqlUpdateAssign = "
     UPDATE applicant_replacements
