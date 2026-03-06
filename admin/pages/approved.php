@@ -379,7 +379,28 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                             <?php else: ?>
                                 No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
                                 <a href="approved.php?clear=1" class="ms-1">Clear search</a>
- 
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($applicants as $row): ?>
+                        <?php
+                            $id = (int)$row['id'];
+                            $currentStatus = (string)($row['status'] ?? 'approved');
+
+                            $fullName = getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']);
+
+                            $viewUrl = 'view_approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                            $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                            $deleteUrl = 'approved.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                            // Change Status target links (preserve q)
+                            $toPendingUrl    = 'approved.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQ;
+                            $toOnProcessUrl  = 'approved.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
+                            $toApprovedUrl   = 'approved.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQ;
+                        ?>
+                        <tr>
+                            <td>
                                 <?php if (!empty($row['picture'])): ?>
                     ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
