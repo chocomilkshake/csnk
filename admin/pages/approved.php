@@ -550,5 +550,37 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 <script src="../js/replacements.js"></script>
 <script>
   // expose CSRF to JS (used by replacements.js)
-  window.CSRF_TOKEN = "<
+  window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
+
+  // Fill hidden id + label when opening modal
+  document.getElementById('replaceModal')?.addEventListener('show.bs.modal', function (ev) {
+    const btn = ev.relatedTarget;
+    if (!btn) return;
+    const id   = btn.getAttribute('data-applicant-id') || '';
+    const name = btn.getAttribute('data-applicant-name') || '';
+    document.getElementById('replaceOriginalId').value = id;
+    document.getElementById('replaceApplicantName').textContent = name;
+    // Clear previous results
+    const wrap = document.getElementById('replacementCandidates');
+    if (wrap) wrap.innerHTML = '';
+  });
+
+  // Bind the form to the helper
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.Replacements) {
+      Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+    }
+  });
+
+  // Dropdown popper fix
+  document.addEventListener('DOMContentLoaded', function() {
+      var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+      btns.forEach(function(btn) {
+          if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+              new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+          }
+      });
+  });
+</script>
+
 <?php require_once '../includes/footer.php'; ?>
