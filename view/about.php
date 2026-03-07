@@ -497,4 +497,33 @@ foreach ($contentItems as $itm) {
 
       function setActiveChip(btn){
         chips.forEach(c=>{
-          const active = (c=
+          const active = (c===btn);
+          c.classList.toggle('active', active);
+          c.setAttribute('aria-pressed', active ? 'true':'false');
+        });
+      }
+
+      function filterTo(value){
+        const v = (value||'all').toLowerCase();
+        if (v === 'all'){
+          tiles.forEach(t=> t.hidden = false);
+        } else {
+          tiles.forEach(t=>{
+            const cat = (t.getAttribute('data-category-slug')||'').trim().toLowerCase();
+            t.hidden = (cat !== v);
+          });
+        }
+      }
+
+      rail.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.chip');
+        if(!btn) return;
+        setActiveChip(btn);
+        filterTo(btn.getAttribute('data-filter'));
+        // Keep active chip centered in view
+        btn.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
+        updateArrows();
+      });
+
+      // Arrow visibility helpers
+      function updateArrows(
