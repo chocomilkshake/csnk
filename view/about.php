@@ -603,3 +603,25 @@ foreach ($contentItems as $itm) {
       function collectVisible() {
         visible = Array.from(grid.querySelectorAll('.gallery-item')).filter(el => !el.hidden);
       }
+
+      function showAt(i) {
+        if (!visible.length) return;
+        index = (i + visible.length) % visible.length;
+        const tile = visible[index];
+        const src = tile.getAttribute('data-full');
+        const caption = tile.getAttribute('data-caption') || '';
+        imgEl.src = src;
+        imgEl.alt = caption || 'Training image';
+        captionEl.textContent = caption;
+      }
+
+      // Open lightbox on card click
+      grid.addEventListener('click', (e) => {
+        const card = e.target.closest('.training-card');
+        const wrap = e.target.closest('.gallery-item');
+        if (!card || !wrap) return;
+      });
+    })();
+  </script>
+</body>
+</html>
