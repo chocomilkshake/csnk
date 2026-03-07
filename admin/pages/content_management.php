@@ -1,5 +1,5 @@
 <?php
-// content_management.php — modernized Content Management with multi-image DnD uploader (fixed)
+// content_management.php — Agency-scoped Content Management with multi-image DnD uploader
 $pageTitle = 'Content Management';
 require_once '../includes/header.php';
 require_once '../includes/functions.php';
@@ -13,12 +13,77 @@ if (!$isAdmin && !$isSuperAdmin) {
 
 $conn = $database->getConnection();
 
+// Auto-add business_unit_id columns if they don't exist
+$checkCat = $conn->query("SHOW COLUMNS FROM content_categories LIKE 'business_unit_id'");
+if ($checkCat && $checkCat->num_rows === 0) {
+    $conn->query("ALTER TABLE content_categories ADD COLUMN business_unit_id INT UNSIGNED DEFAULT 0 AFTER id");
+}
+$checkCat->close();
+
+$checkItem = $conn->query("SHOW COLUMNS FROM content_items LIKE 'business_unit_id'");
+if ($checkItem && $checkItem->num_rows === 0) {
+    $conn->query("ALTER TABLE content_items ADD COLUMN business_unit_id INT UNSIGNED DEFAULT 0 AFTER id");
+}
+$checkItem->close();
+
+// Get agencies for selector
+$agencies = [];
+$res = $conn->query("SELECT id, code, name FROM agencies WHERE active = 1 ORDER BY id ASC");
+if ($res) {
+    while ($row = $res->fetch_assoc()) {
+        $agencies[$row['code']] = ['id' => (int)$row['id'], 'name' => $row['name']];
+    }
+}
+
+// If no agencies, add default CSNK
+if (empty($agencies)) {
+    $conn->query("INSERT INTO agencies (code, name, active) VALUES ('csnk', 'CSNK', 1)");
+    $agencies['csnk'] = ['id' => 1, 'name' => 'CSNK'];
+}
+
+// Get selected agency from query or default to first
+$activeAgencyCode = isset($_GET['agency']) && isset($agencies[$_GET['agency']]) ? $_GET['agency'] : array_key_first($agencies);
+$activeAgencyId = (int)$agencies[$activeAgencyCode]['id'];
+
+// Get business units for selected agency
+$businessUnits = [];
+$stmt = $conn->prepare("
+    SELECT bu.id, bu.code, bu.name, bu.country_id, c.name as country_name
+    FROM business_units bu
+    LEFT JOIN countries c ON c.id = bu.country_id
+    WHERE bu.agency_id = ? AND bu.active = 1
+    ORDER BY c.name, bu.name
+");
+$stmt->bind_param("i", $activeAgencyId);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $businessUnits[$row['id']] = $row;
+}
+$stmt->close();
+
+// Get selected BU or default to first
+$activeBUId = isset($_GET['bu']) && isset($_GET['bu']) ? (int)$_GET['bu'] : 0;
+if ($activeBUId <= 0 || !isset($businessUnits[$activeBUId])) {
+    $firstBU = reset($businessUnits);
+    $activeBUId = $firstBU ? (int)$firstBU['id'] : 0;
+}
+
+// If no BU available, show message
+$showNoBUMessage = empty($businessUnits) || $activeBUId <= 0;
+
 // Handle form submissions
 $message = '';
 $messageType = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
     $action = $_POST['action'] ?? '';
+
+    // Ensure we're using the correct BU from hidden field
+    $formBU = (int)($_POST['business_unit_id'] ?? $activeBUId);
+    if ($formBU !== $activeBUId) {
+        $formBU = $activeBUId;
+    }
 
     // =========================
     // Category operations
@@ -28,21 +93,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = sanitizeInput($_POST['category_description'] ?? '');
 
         if (!empty($name)) {
-            // Get max display_order
-            $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM content_categories");
+            // Get max display_order for this BU
+            $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM content_categories WHERE business_unit_id = ?");
+            $stmt->bind_param("i", $formBU);
             $stmt->execute();
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
             $nextOrder = $row['next_order'] ?? 1;
             $stmt->close();
 
-            $isActive = 1; // default active
-            $stmt = $conn->prepare("INSERT INTO content_categories (name, description, display_order, is_active) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssii", $name, $description, $nextOrder, $isActive);
+            $isActive = 1;
+            $stmt = $conn->prepare("INSERT INTO content_categories (business_unit_id, name, description, display_order, is_active) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("issii", $formBU, $name, $description, $nextOrder, $isActive);
             if ($stmt->execute()) {
                 $message = 'Category added successfully!';
                 $messageType = 'success';
-                $auth->logActivity($_SESSION['admin_id'], 'Add Content Category', "Added category: $name");
+                $auth->logActivity($_SESSION['admin_id'], 'Add Content Category', "Added category: $name (BU: $formBU)");
             } else {
                 $message = 'Failed to add category.';
                 $messageType = 'danger';
@@ -58,17 +124,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = sanitizeInput($_POST['category_description'] ?? '');
 
         if (!empty($name) && $id > 0) {
-            $stmt = $conn->prepare("UPDATE content_categories SET name = ?, description = ? WHERE id = ?");
-            $stmt->bind_param("ssi", $name, $description, $id);
-            if ($stmt->execute()) {
-                $message = 'Category updated successfully!';
-                $messageType = 'success';
-                $auth->logActivity($_SESSION['admin_id'], 'Update Content Category', "Updated category ID: $id");
-            } else {
-                $message = 'Failed to update category.';
+            // Verify ownership
+            $stmt = $conn->prepare("SELECT id FROM content_categories WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows === 0) {
+                $message = 'Invalid category.';
                 $messageType = 'danger';
+                $stmt->close();
+            } else {
+                $stmt->close();
+                $stmt = $conn->prepare("UPDATE content_categories SET name = ?, description = ? WHERE id = ? AND business_unit_id = ?");
+                $stmt->bind_param("ssii", $name, $description, $id, $activeBUId);
+                if ($stmt->execute()) {
+                    $message = 'Category updated successfully!';
+                    $messageType = 'success';
+                    $auth->logActivity($_SESSION['admin_id'], 'Update Content Category', "Updated category ID: $id");
+                } else {
+                    $message = 'Failed to update category.';
+                    $messageType = 'danger';
+                }
+                $stmt->close();
             }
-            $stmt->close();
         } else {
             $message = 'Category name is required.';
             $messageType = 'warning';
@@ -77,29 +155,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) ($_POST['category_id'] ?? 0);
 
         if ($id > 0) {
-            // Collect image paths to delete from disk
-            $imgs = [];
-            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE category_id = ?");
-            $stmt->bind_param("i", $id);
+            // Verify ownership
+            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE category_id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
             $res = $stmt->get_result();
+            $imgs = [];
             while ($row = $res->fetch_assoc()) {
                 if (!empty($row['image_path'])) $imgs[] = $row['image_path'];
             }
             $stmt->close();
 
+            // Delete files from disk
             foreach ($imgs as $img) {
                 deleteFile($img);
             }
 
             // Delete items, then category
-            $stmt = $conn->prepare("DELETE FROM content_items WHERE category_id = ?");
-            $stmt->bind_param("i", $id);
+            $stmt = $conn->prepare("DELETE FROM content_items WHERE category_id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
             $stmt->close();
 
-            $stmt = $conn->prepare("DELETE FROM content_categories WHERE id = ?");
-            $stmt->bind_param("i", $id);
+            $stmt = $conn->prepare("DELETE FROM content_categories WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             if ($stmt->execute()) {
                 $message = 'Category and all its items deleted successfully!';
                 $messageType = 'success';
@@ -115,9 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isActive = (int) ($_POST['is_active'] ?? 1);
 
         if ($id > 0) {
-            $stmt = $conn->prepare("UPDATE content_categories SET is_active = ? WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE content_categories SET is_active = ? WHERE id = ? AND business_unit_id = ?");
             $newStatus = $isActive ? 0 : 1;
-            $stmt->bind_param("ii", $newStatus, $id);
+            $stmt->bind_param("iii", $newStatus, $id, $activeBUId);
             if ($stmt->execute()) {
                 $message = $newStatus ? 'Category activated!' : 'Category deactivated!';
                 $messageType = 'success';
@@ -132,42 +211,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // =========================
     // Content item operations
     // =========================
-
-    // BULK add: drag-and-drop multiple images
     elseif ($action === 'add_content_bulk') {
-        $categoryId   = (int) ($_POST['category_id'] ?? 0);
-        $descAll      = sanitizeInput($_POST['content_description'] ?? '');
-        $titles       = $_POST['titles'] ?? []; // optional array, aligned to files
+        $categoryId = (int) ($_POST['category_id'] ?? 0);
+        $descAll = sanitizeInput($_POST['content_description'] ?? '');
+        $titles = $_POST['titles'] ?? [];
 
-        // Debug logging (comment/remove after testing)
-        error_log("=== BULK UPLOAD DEBUG ===");
-        error_log("Category ID: " . $categoryId);
-        error_log("FILES count: " . (isset($_FILES['content_images']) ? count($_FILES['content_images']['name']) : 'NOT SET'));
-
-        // Validate category exists and is active
-        if ($categoryId > 0) {
-            $catCheck = $conn->prepare("SELECT id, name FROM content_categories WHERE id = ? AND is_active = 1");
-            $catCheck->bind_param("i", $categoryId);
-            $catCheck->execute();
-            $catResult = $catCheck->get_result();
-            if ($catResult->num_rows === 0) {
-                $message = 'Invalid category selected. Please select an active category.';
-                $messageType = 'danger';
-                $categoryId = 0; // invalidate
-            }
-            $catCheck->close();
+        // Validate category exists and is active for this BU
+        $stmt = $conn->prepare("SELECT id FROM content_categories WHERE id = ? AND business_unit_id = ? AND is_active = 1");
+        $stmt->bind_param("ii", $categoryId, $activeBUId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            $message = 'Invalid category selected.';
+            $messageType = 'danger';
+            $categoryId = 0;
         }
+        $stmt->close();
 
         if ($categoryId > 0 && isset($_FILES['content_images'])) {
             $files = $_FILES['content_images'];
             $fileCount = is_array($files['name']) ? count($files['name']) : 0;
 
-            error_log("File count: " . $fileCount);
-
             if ($fileCount > 0) {
-                // get current max display order
-                $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) as max_order FROM content_items WHERE category_id = ?");
-                $stmt->bind_param("i", $categoryId);
+                // Get current max display order
+                $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) as max_order FROM content_items WHERE category_id = ? AND business_unit_id = ?");
+                $stmt->bind_param("ii", $categoryId, $activeBUId);
                 $stmt->execute();
                 $res = $stmt->get_result()->fetch_assoc();
                 $currentOrder = (int)($res['max_order'] ?? 0);
@@ -177,55 +245,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors = [];
 
                 for ($i = 0; $i < $fileCount; $i++) {
-                    // Build a pseudo $_FILES entry to reuse uploadFile()
                     $one = [
-                        'name'     => $files['name'][$i] ?? '',
-                        'type'     => $files['type'][$i] ?? '',
+                        'name' => $files['name'][$i] ?? '',
+                        'type' => $files['type'][$i] ?? '',
                         'tmp_name' => $files['tmp_name'][$i] ?? '',
-                        'error'    => $files['error'][$i] ?? UPLOAD_ERR_NO_FILE,
-                        'size'     => $files['size'][$i] ?? 0,
+                        'error' => $files['error'][$i] ?? UPLOAD_ERR_NO_FILE,
+                        'size' => $files['size'][$i] ?? 0,
                     ];
 
-                    error_log("Processing file $i: " . $one['name'] . " error: " . $one['error']);
-
-                    // Check for upload errors
-                    if ($one['error'] !== UPLOAD_ERR_OK) {
+                    if ($one['error'] !== UPLOAD_ERR_OK || empty($one['tmp_name'])) {
                         $errors[] = "File {$one['name']}: Upload error code " . $one['error'];
                         continue;
                     }
 
-                    if (empty($one['tmp_name'])) {
-                        $errors[] = "File {$one['name']}: No temporary file";
-                        continue;
-                    }
-
                     $savedPath = uploadFile($one, 'contents');
-                    error_log("Upload result for {$one['name']}: " . ($savedPath ? $savedPath : 'FAILED'));
 
                     if ($savedPath) {
                         $title = '';
                         if (!empty($titles) && isset($titles[$i]) && trim($titles[$i]) !== '') {
                             $title = sanitizeInput($titles[$i]);
                         } else {
-                            // fallback: filename without extension
                             $nameOnly = pathinfo($one['name'], PATHINFO_FILENAME);
                             $title = sanitizeInput($nameOnly);
                         }
                         $currentOrder++;
+                        $isActive = 1;
 
-                        $isActive = 1; // show by default
-                        $stmt = $conn->prepare("
-                            INSERT INTO content_items (category_id, title, image_path, description, display_order, is_active) 
-                            VALUES (?, ?, ?, ?, ?, ?)");
-                        $stmt->bind_param("isssii", $categoryId, $title, $savedPath, $descAll, $currentOrder, $isActive);
+                        $stmt = $conn->prepare("INSERT INTO content_items (business_unit_id, category_id, title, image_path, description, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->bind_param("iisssii", $activeBUId, $categoryId, $title, $savedPath, $descAll, $currentOrder, $isActive);
                         if ($stmt->execute()) {
                             $inserted++;
-                            error_log("DB insert success for: " . $title);
                         } else {
                             $errors[] = "Database error for {$one['name']}: " . $stmt->error;
-                            // failed DB insert, remove uploaded file
                             deleteFile($savedPath);
-                            error_log("DB insert failed, file deleted: " . $savedPath);
                         }
                         $stmt->close();
                     } else {
@@ -240,20 +292,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $message = !empty($errors) ? implode("; ", $errors) : 'No images were saved. Please check the files and try again.';
                     $messageType = 'danger';
-                    error_log("Upload errors: " . implode("; ", $errors));
                 }
             } else {
                 $message = 'Please add at least one image.';
                 $messageType = 'warning';
             }
         } else {
-            $message = 'Please select a category and upload images. Category ID: ' . $categoryId;
+            $message = 'Please select a category and upload images.';
             $messageType = 'warning';
         }
-    }
-
-    elseif ($action === 'add_content') {
-        // Single add (kept for compatibility)
+    } elseif ($action === 'add_content') {
         $categoryId = (int) ($_POST['category_id'] ?? 0);
         $title = sanitizeInput($_POST['content_title'] ?? '');
         $description = sanitizeInput($_POST['content_description'] ?? '');
@@ -261,8 +309,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($categoryId > 0 && isset($_FILES['content_image']) && $_FILES['content_image']['error'] === UPLOAD_ERR_OK) {
             $imagePath = uploadFile($_FILES['content_image'], 'contents');
             if ($imagePath) {
-                $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM content_items WHERE category_id = ?");
-                $stmt->bind_param("i", $categoryId);
+                $stmt = $conn->prepare("SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM content_items WHERE category_id = ? AND business_unit_id = ?");
+                $stmt->bind_param("ii", $categoryId, $activeBUId);
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $row = $result->fetch_assoc();
@@ -270,8 +318,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
 
                 $isActive = 1;
-                $stmt = $conn->prepare("INSERT INTO content_items (category_id, title, image_path, description, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("isssii", $categoryId, $title, $imagePath, $description, $nextOrder, $isActive);
+                $stmt = $conn->prepare("INSERT INTO content_items (business_unit_id, category_id, title, image_path, description, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iisssii", $activeBUId, $categoryId, $title, $imagePath, $description, $nextOrder, $isActive);
                 if ($stmt->execute()) {
                     $message = 'Content added successfully!';
                     $messageType = 'success';
@@ -296,64 +344,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = sanitizeInput($_POST['content_description'] ?? '');
 
         if ($id > 0) {
-            $newImagePath = '';
-            $params = [$title, $description, $id];
-            $types = "ssi";
-
-            if (isset($_FILES['content_image']) && $_FILES['content_image']['error'] === UPLOAD_ERR_OK) {
-                // Get old image path
-                $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ?");
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $oldItem = $result->fetch_assoc();
-                $stmt->close();
-
-                // Upload new first
-                $uploaded = uploadFile($_FILES['content_image'], 'contents');
-                if ($uploaded) {
-                    if ($oldItem && !empty($oldItem['image_path'])) {
-                        deleteFile($oldItem['image_path']);
-                    }
-                    $newImagePath = $uploaded;
-                    $params = array_merge([$newImagePath], $params);
-                    $types = "s" . $types;
-                }
-            }
-
-            $sql = "UPDATE content_items SET title = ?, description = ?";
-            if (!empty($newImagePath)) {
-                $sql .= ", image_path = ?";
-            }
-            $sql .= " WHERE id = ?";
-
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param($types, ...$params);
-
-            if ($stmt->execute()) {
-                $message = 'Content updated successfully!';
-                $messageType = 'success';
-                $auth->logActivity($_SESSION['admin_id'], 'Update Content Item', "Updated content ID: $id");
-            } else {
-                $message = 'Failed to update content.';
-                $messageType = 'danger';
-            }
+            // Get old image path
+            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $oldItem = $result->fetch_assoc();
             $stmt->close();
+
+            if (!$oldItem) {
+                $message = 'Invalid content item.';
+                $messageType = 'danger';
+            } else {
+                $newImagePath = '';
+                $params = [$title, $description, $id, $activeBUId];
+                $types = "ssii";
+
+                if (isset($_FILES['content_image']) && $_FILES['content_image']['error'] === UPLOAD_ERR_OK) {
+                    $uploaded = uploadFile($_FILES['content_image'], 'contents');
+                    if ($uploaded) {
+                        if (!empty($oldItem['image_path'])) {
+                            deleteFile($oldItem['image_path']);
+                        }
+                        $newImagePath = $uploaded;
+                        $params = array_merge([$newImagePath], $params);
+                        $types = "s" . $types;
+                    }
+                }
+
+                $sql = "UPDATE content_items SET title = ?, description = ?";
+                if (!empty($newImagePath)) {
+                    $sql .= ", image_path = ?";
+                }
+                $sql .= " WHERE id = ? AND business_unit_id = ?";
+
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param($types, ...$params);
+
+                if ($stmt->execute()) {
+                    $message = 'Content updated successfully!';
+                    $messageType = 'success';
+                    $auth->logActivity($_SESSION['admin_id'], 'Update Content Item', "Updated content ID: $id");
+                } else {
+                    $message = 'Failed to update content.';
+                    $messageType = 'danger';
+                }
+                $stmt->close();
+            }
         }
     } elseif ($action === 'delete_content') {
         $id = (int) ($_POST['content_id'] ?? 0);
 
         if ($id > 0) {
             // Get image path before deleting
-            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ?");
-            $stmt->bind_param("i", $id);
+            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
             $result = $stmt->get_result();
             $item = $result->fetch_assoc();
             $stmt->close();
 
-            $stmt = $conn->prepare("DELETE FROM content_items WHERE id = ?");
-            $stmt->bind_param("i", $id);
+            $stmt = $conn->prepare("DELETE FROM content_items WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             if ($stmt->execute()) {
                 if ($item && !empty($item['image_path'])) {
                     deleteFile($item['image_path']);
@@ -371,8 +423,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) ($_POST['content_id'] ?? 0);
 
         if ($id > 0) {
-            $stmt = $conn->prepare("UPDATE content_items SET is_active = NOT is_active WHERE id = ?");
-            $stmt->bind_param("i", $id);
+            $stmt = $conn->prepare("UPDATE content_items SET is_active = NOT is_active WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
             if ($stmt->execute()) {
                 $message = 'Content visibility toggled!';
                 $messageType = 'success';
@@ -389,36 +441,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch for display
 // =========================
 $categories = [];
-$stmt = $conn->query("SELECT * FROM content_categories ORDER BY display_order ASC, id ASC");
-if ($stmt) {
-    while ($row = $stmt->fetch_assoc()) {
+$contentItems = [];
+$categoryCounts = [];
+
+if (!$showNoBUMessage) {
+    // Categories for current BU
+    $stmt = $conn->prepare("SELECT * FROM content_categories WHERE business_unit_id = ? ORDER BY display_order ASC, id ASC");
+    $stmt->bind_param("i", $activeBUId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
         $categories[] = $row;
     }
-}
+    $stmt->close();
 
-// content with category info
-$contentItems = [];
-$stmt = $conn->query("
-    SELECT ci.*, cc.name as category_name 
-    FROM content_items ci 
-    LEFT JOIN content_categories cc ON ci.category_id = cc.id 
-    ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC
-");
-if ($stmt) {
-    while ($row = $stmt->fetch_assoc()) {
+    // Content items for current BU
+    $stmt = $conn->prepare("
+        SELECT ci.*, cc.name as category_name 
+        FROM content_items ci 
+        LEFT JOIN content_categories cc ON ci.category_id = cc.id 
+        WHERE ci.business_unit_id = ?
+        ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC
+    ");
+    $stmt->bind_param("i", $activeBUId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
         $contentItems[] = $row;
+    }
+    $stmt->close();
+
+    // Counts per category
+    foreach ($contentItems as $itm) {
+        $cid = (int)$itm['category_id'];
+        $categoryCounts[$cid] = ($categoryCounts[$cid] ?? 0) + 1;
     }
 }
 
-// counts per category
-$categoryCounts = [];
-foreach ($contentItems as $itm) {
-    $cid = (int)$itm['category_id'];
-    $categoryCounts[$cid] = ($categoryCounts[$cid] ?? 0) + 1;
+// Helper function for scope URLs
+function scopeUrl($path, $agency, $bu) {
+    return $path . '?agency=' . urlencode($agency) . '&bu=' . urlencode($bu);
 }
 ?>
 
-<!-- Tailwind (CDN) for minor utility styling -->
+<!-- Tailwind (CDN) -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -428,10 +494,6 @@ foreach ($contentItems as $itm) {
           brand: { DEFAULT: '#b42a00', dark: '#8d2100', light: '#ffede6' },
           ink: '#101320',
           soft: '#f7f9fb'
-        },
-        boxShadow: {
-          card: '0 6px 18px rgba(0,0,0,.08)',
-          cardHover: '0 14px 36px rgba(0,0,0,.16)'
         }
       }
     }
@@ -439,11 +501,49 @@ foreach ($contentItems as $itm) {
 </script>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="mb-0 fw-semibold">Content Management</h4>
+  <div>
+    <h4 class="mb-0 fw-semibold">Content Management</h4>
+    <?php if (!$showNoBUMessage && isset($businessUnits[$activeBUId])): ?>
+    <small class="text-muted">
+      Agency: <strong><?= strtoupper($activeAgencyCode) ?></strong> | 
+      Country: <strong><?= htmlspecialchars($businessUnits[$activeBUId]['country_name'] ?? '') ?></strong> - 
+      <?= htmlspecialchars($businessUnits[$activeBUId]['name'] ?? '') ?>
+    </small>
+    <?php endif; ?>
+  </div>
   <a href="dashboard.php" class="btn btn-outline-secondary">
     <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
   </a>
 </div>
+
+<!-- Agency & BU Selector -->
+<form method="GET" class="row g-3 mb-4">
+  <div class="col-md-3">
+    <label class="form-label">Agency</label>
+    <select name="agency" class="form-select" onchange="this.form.submit()">
+      <?php foreach ($agencies as $code => $a): ?>
+        <option value="<?= htmlspecialchars($code) ?>" <?= $code === $activeAgencyCode ? 'selected' : '' ?>>
+          <?= htmlspecialchars(strtoupper($a['name'])) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Business Unit / Country</label>
+    <select name="bu" class="form-select" onchange="this.form.submit()">
+      <?php foreach ($businessUnits as $buid => $bu): ?>
+        <option value="<?= (int)$buid ?>" <?= (int)$buid === $activeBUId ? 'selected' : '' ?>>
+          <?= htmlspecialchars(($bu['country_name'] ?? '') . ' - ' . $bu['name']) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-filter me-1"></i>Filter
+    </button>
+  </div>
+</form>
 
 <?php if (!empty($message)): ?>
   <div class="alert alert-<?= $messageType ?> alert-dismissible fade show" role="alert">
@@ -451,6 +551,14 @@ foreach ($contentItems as $itm) {
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 <?php endif; ?>
+
+<?php if ($showNoBUMessage): ?>
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    No Business Units found for agency <strong><?= strtoupper($activeAgencyCode) ?></strong>. 
+    Please add a Business Unit first in Country Management.
+  </div>
+<?php else: ?>
 
 <!-- Stats row -->
 <div class="row g-3 mb-4">
@@ -494,9 +602,7 @@ foreach ($contentItems as $itm) {
 
 <div class="tab-content" id="contentTabContent">
 
-  <!-- =================== -->
-  <!-- Categories Tab     -->
-  <!-- =================== -->
+  <!-- Categories Tab -->
   <div class="tab-pane fade show active" id="categories" role="tabpanel">
     <div class="row">
       <div class="col-lg-4 mb-4">
@@ -507,9 +613,10 @@ foreach ($contentItems as $itm) {
           <div class="card-body">
             <form method="POST">
               <input type="hidden" name="action" value="add_category">
+              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
               <div class="mb-3">
                 <label class="form-label">Category Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" name="category_name" required placeholder="e.g., Kasambahay">
+                <input type="text" class="form-control" name="category_name" required placeholder="e.g., About Us">
               </div>
               <div class="mb-3">
                 <label class="form-label">Description</label>
@@ -570,6 +677,7 @@ foreach ($contentItems as $itm) {
                             <input type="hidden" name="action" value="toggle_category">
                             <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
                             <input type="hidden" name="is_active" value="<?= (int)$cat['is_active'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                             <button type="submit" class="btn btn-outline-<?= !empty($cat['is_active']) ? 'warning' : 'success' ?>" title="<?= !empty($cat['is_active']) ? 'Deactivate' : 'Activate' ?>">
                               <i class="bi bi-<?= !empty($cat['is_active']) ? 'eye-slash' : 'eye' ?>"></i>
                             </button>
@@ -577,6 +685,7 @@ foreach ($contentItems as $itm) {
                           <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure? This will also delete all images in this category.');">
                             <input type="hidden" name="action" value="delete_category">
                             <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                             <button type="submit" class="btn btn-outline-danger" title="Delete">
                               <i class="bi bi-trash"></i>
                             </button>
@@ -597,6 +706,7 @@ foreach ($contentItems as $itm) {
                             <div class="modal-body">
                               <input type="hidden" name="action" value="update_category">
                               <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                               <div class="mb-3">
                                 <label class="form-label">Category Name</label>
                                 <input type="text" class="form-control" name="category_name" value="<?= htmlspecialchars($cat['name']) ?>" required>
@@ -625,23 +735,22 @@ foreach ($contentItems as $itm) {
     </div>
   </div>
 
-  <!-- =================== -->
-  <!-- Content Tab        -->
-  <!-- =================== -->
+  <!-- Content Tab -->
   <div class="tab-pane fade" id="content" role="tabpanel">
     <div class="row">
 
-      <!-- Bulk Uploader (Modern) -->
+      <!-- Bulk Uploader -->
       <div class="col-lg-5 mb-4">
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
             <h5 class="mb-0 fw-semibold">Add Images (Bulk)</h5>
-            <span class="badge rounded-pill text-bg-light">Drag &amp; drop, reorder</span>
+            <span class="badge rounded-pill text-bg-light">Drag &amp; drop</span>
           </div>
 
           <div class="card-body">
             <form id="bulkForm" method="POST" enctype="multipart/form-data" onsubmit="return false;">
               <input type="hidden" name="action" value="add_content_bulk">
+              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
 
               <div class="mb-3">
                 <label class="form-label">Category <span class="text-danger">*</span></label>
@@ -664,27 +773,22 @@ foreach ($contentItems as $itm) {
               </div>
 
               <!-- Dropzone -->
-              <div id="dropzone"
-                   class="border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative"
-                   style="border-color:#cbd5e1;">
+              <div id="dropzone" class="border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative" style="border-color:#cbd5e1;">
                 <div class="py-4">
                   <div class="mb-2">
                     <i class="bi bi-cloud-arrow-up fs-1 text-secondary"></i>
                   </div>
                   <p class="mb-1 fw-semibold">Drop images here or click to browse</p>
-                  <p class="text-muted small mb-0">You can drag to reorder before uploading</p>
+                  <p class="text-muted small mb-0">Supports JPG, PNG, GIF, WebP</p>
                 </div>
                 <input id="fileInput" type="file" accept="image/*" multiple class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor:pointer;">
               </div>
 
-              <!-- Previews (sortable) -->
-              <div id="previewGrid" class="mt-3 row g-3">
-                <!-- JS fills tiles here -->
-              </div>
+              <!-- Previews -->
+              <div id="previewGrid" class="mt-3 row g-3"></div>
 
               <div class="d-flex gap-2 mt-3">
                 <button id="btnClearAll" type="button" class="btn btn-outline-secondary btn-sm" disabled>Clear All</button>
-                <!-- IMPORTANT: type="button" to avoid native form submit -->
                 <button id="btnUpload" type="button" class="btn btn-primary ms-auto" disabled>
                   <i class="bi bi-cloud-arrow-up me-1"></i>Upload All
                 </button>
@@ -745,6 +849,7 @@ foreach ($contentItems as $itm) {
                           <form method="POST" class="d-inline">
                             <input type="hidden" name="action" value="toggle_content">
                             <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                             <button type="submit" class="btn btn-outline-<?= !empty($item['is_active']) ? 'warning' : 'success' ?>" title="<?= !empty($item['is_active']) ? 'Hide' : 'Show' ?>">
                               <i class="bi bi-<?= !empty($item['is_active']) ? 'eye-slash' : 'eye' ?>"></i>
                             </button>
@@ -752,6 +857,7 @@ foreach ($contentItems as $itm) {
                           <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this content?');">
                             <input type="hidden" name="action" value="delete_content">
                             <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                             <button type="submit" class="btn btn-outline-danger" title="Delete">
                               <i class="bi bi-trash"></i>
                             </button>
@@ -772,6 +878,7 @@ foreach ($contentItems as $itm) {
                             <div class="modal-body">
                               <input type="hidden" name="action" value="update_content">
                               <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                               <div class="mb-3">
                                 <label class="form-label">Title</label>
                                 <input type="text" class="form-control" name="content_title" value="<?= htmlspecialchars($item['title'] ?? '') ?>">
@@ -812,31 +919,28 @@ foreach ($contentItems as $itm) {
   </div>
 </div>
 
+<?php endif; ?>
+
 <?php require_once '../includes/footer.php'; ?>
 
-<!-- =============== -->
 <!-- Bulk Uploader JS -->
-<!-- =============== -->
 <script>
 (function () {
-  const dropzone   = document.getElementById('dropzone');
-  const fileInput  = document.getElementById('fileInput');
-  const preview    = document.getElementById('previewGrid');
-  const btnUpload  = document.getElementById('btnUpload');
-  const btnClear   = document.getElementById('btnClearAll');
-  const bulkForm   = document.getElementById('bulkForm');
-  const bulkCat    = document.getElementById('bulkCategory');
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('previewGrid');
+  const btnUpload = document.getElementById('btnUpload');
+  const btnClear = document.getElementById('btnClearAll');
+  const bulkCat = document.getElementById('bulkCategory');
 
-  // Internal state: array of {file, title}
   let items = [];
   let isUploading = false;
 
-  // Helpers
   function enableControls() {
     const hasItems = items.length > 0;
-    const isCategoryChosen = (bulkCat.value !== ''); // allow "0" if it ever appears
+    const isCategoryChosen = (bulkCat.value !== '');
     btnUpload.disabled = !hasItems || !isCategoryChosen || isUploading;
-    btnClear.disabled  = !hasItems || isUploading;
+    btnClear.disabled = !hasItems || isUploading;
   }
 
   function fileToDataURL(file) {
@@ -848,28 +952,19 @@ foreach ($contentItems as $itm) {
   }
 
   function createTile(idx, url, name, titleVal) {
-    // Column
     const col = document.createElement('div');
     col.className = 'col-6';
     col.draggable = true;
     col.dataset.index = String(idx);
 
-    // Card
     const card = document.createElement('div');
     card.className = 'border rounded-3 shadow-sm overflow-hidden position-relative';
 
-    // Drag handle
-    const handle = document.createElement('div');
-    handle.className = 'position-absolute top-0 start-0 p-1';
-    handle.innerHTML = '<span class="badge text-bg-dark"><i class="bi bi-grip-vertical"></i></span>';
-
-    // Remove button
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'btn btn-sm btn-light position-absolute top-0 end-0 m-1 rounded-circle shadow-sm';
     remove.innerHTML = '<i class="bi bi-x-lg"></i>';
 
-    // Image
     const imgWrap = document.createElement('div');
     imgWrap.className = 'bg-light';
     imgWrap.style.height = '140px';
@@ -880,7 +975,6 @@ foreach ($contentItems as $itm) {
     img.style.objectFit = 'cover';
     imgWrap.appendChild(img);
 
-    // Title input
     const body = document.createElement('div');
     body.className = 'p-2';
     const input = document.createElement('input');
@@ -896,35 +990,15 @@ foreach ($contentItems as $itm) {
     });
     body.appendChild(input);
 
-    card.appendChild(handle);
     card.appendChild(remove);
     card.appendChild(imgWrap);
     card.appendChild(body);
     col.appendChild(card);
 
-    // Remove logic
     remove.addEventListener('click', () => {
       const i = parseInt(col.dataset.index, 10);
       if (!Number.isNaN(i)) {
         items.splice(i, 1);
-        render();
-      }
-    });
-
-    // Drag logic
-    col.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', col.dataset.index);
-      col.classList.add('opacity-50');
-    });
-    col.addEventListener('dragend', () => col.classList.remove('opacity-50'));
-    col.addEventListener('dragover', (e) => e.preventDefault());
-    col.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-      const to = parseInt(col.dataset.index, 10);
-      if (!Number.isNaN(from) && !Number.isNaN(to) && from !== to) {
-        const [moved] = items.splice(from, 1);
-        items.splice(to, 0, moved);
         render();
       }
     });
@@ -944,8 +1018,8 @@ foreach ($contentItems as $itm) {
   }
 
   function addFiles(fileList) {
-    const accept = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
-    const maxFiles = 40; // arbitrary safety limit
+    const accept = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxFiles = 40;
     for (const file of fileList) {
       if (!accept.includes(file.type)) continue;
       if (items.length >= maxFiles) break;
@@ -954,7 +1028,6 @@ foreach ($contentItems as $itm) {
     render();
   }
 
-  // Drag & drop
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.classList.add('border-primary', 'bg-white');
@@ -970,23 +1043,19 @@ foreach ($contentItems as $itm) {
     }
   });
 
-  // Click to select
   fileInput.addEventListener('change', (e) => {
     addFiles(e.target.files);
-    fileInput.value = ''; // reset
+    fileInput.value = '';
   });
 
-  // Clear all
   btnClear.addEventListener('click', () => {
     if (isUploading) return;
     items = [];
     render();
   });
 
-  // Enable upload when category chosen
   document.getElementById('bulkCategory').addEventListener('change', enableControls);
 
-  // Submit via fetch to preserve file order
   btnUpload.addEventListener('click', async () => {
     if (isUploading) return;
     if (!items.length) return;
@@ -1001,19 +1070,16 @@ foreach ($contentItems as $itm) {
       const fd = new FormData();
       fd.append('action', 'add_content_bulk');
       fd.append('category_id', bulkCat.value);
+      fd.append('business_unit_id', '<?= (int)$activeBUId ?>');
       fd.append('content_description', document.getElementById('bulkDesc').value || '');
 
-      // append files and titles in current order
       items.forEach(({file, title}) => {
         fd.append('content_images[]', file, file.name);
         fd.append('titles[]', title || '');
       });
 
-      const resp = await fetch(window.location.href, {
-        method: 'POST',
-        body: fd
-      });
-      // Force reload so PHP flash message shows
+      const baseUrl = window.location.pathname + '?agency=<?= urlencode($activeAgencyCode) ?>&bu=<?= (int)$activeBUId ?>';
+      await fetch(baseUrl, { method: 'POST', body: fd });
       window.location.reload();
     } catch (e) {
       console.error(e);
@@ -1023,12 +1089,6 @@ foreach ($contentItems as $itm) {
       enableControls();
     }
   });
-
 })();
 </script>
 
-<style>
-/* subtle helper to show draggable */
-[draggable="true"] { cursor: grab; }
-[draggable="true"]:active { cursor: grabbing; }
-</style>
