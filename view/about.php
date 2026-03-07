@@ -620,6 +620,32 @@ foreach ($contentItems as $itm) {
         const card = e.target.closest('.training-card');
         const wrap = e.target.closest('.gallery-item');
         if (!card || !wrap) return;
+
+        collectVisible();
+        if (!visible.length) return;
+
+        // set index to the clicked one
+        index = visible.indexOf(wrap);
+        if (index < 0) index = 0;
+
+        showAt(index);
+        bsModal.show();
+      });
+
+      btnPrev.addEventListener('click', () => showAt(index - 1));
+      btnNext.addEventListener('click', () => showAt(index + 1));
+
+      // Keyboard navigation when modal is open
+      modalEl.addEventListener('shown.bs.modal', () => {
+        function onKey(e) {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); }
+          if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); }
+        }
+        document.addEventListener('keydown', onKey);
+        modalEl.addEventListener('hidden.bs.modal', () => {
+          document.removeEventListener('keydown', onKey);
+          imgEl.src = '';
+        }, { once: true });
       });
     })();
   </script>
