@@ -295,7 +295,7 @@ function safe(?string $s): string
                                 </td>
                                 <td>
                                     <span class="badge bg-info-subtle text-info"
-                                        style="background-color: #cffafe; color: #0891b2;">
+                                        style="background-color: #c3c1c1; color: #303030;">
                                         <i class="bi bi-calendar-event me-1"></i><?php echo safe($contractTerm); ?>
                                     </span>
                                 </td>
