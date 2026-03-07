@@ -462,3 +462,39 @@ foreach ($contentItems as $itm) {
           imgEl.src = btn.dataset.img;
           imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image';
         }
+      }
+
+      function swap(btn) {
+        setActive(btn);
+        swapEls.forEach(el => el.classList.add('is-swapping'));
+        setTimeout(() => {
+          applyFrom(btn);
+          swapEls.forEach(el => el.classList.remove('is-swapping'));
+        }, 150);
+      }
+
+      pills.forEach(btn => {
+        btn.addEventListener('click', () => swap(btn));
+        btn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
+        });
+      });
+
+      const init = container.querySelector('button[aria-selected="true"]') || pills[0];
+      if (init) applyFrom(init);
+    })();
+
+    // ===== Trainings: Filter by category slug + mobile rail UX (no wrap) =====
+    (function () {
+      const grid    = document.getElementById('galleryGrid');
+      const rail    = document.getElementById('galleryFilters');
+      const btnPrev = document.getElementById('fltPrev');
+      const btnNext = document.getElementById('fltNext');
+      if (!grid || !rail) return;
+
+      const chips = Array.from(rail.querySelectorAll('.chip'));
+      const tiles = Array.from(grid.querySelectorAll('.gallery-item'));
+
+      function setActiveChip(btn){
+        chips.forEach(c=>{
+          const active = (c=
