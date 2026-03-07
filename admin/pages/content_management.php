@@ -587,3 +587,236 @@ foreach ($contentItems as $itm) {
 
       <!-- Bulk Uploader (Modern) -->
       <div class="col-lg-5 mb-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Add Images (Bulk)</h5>
+            <span class="badge rounded-pill text-bg-light">Drag &amp; drop, reorder</span>
+          </div>
+
+          <div class="card-body">
+            <form id="bulkForm" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+              <input type="hidden" name="action" value="add_content_bulk">
+
+              <div class="mb-3">
+                <label class="form-label">Category <span class="text-danger">*</span></label>
+                <select class="form-select" name="category_id" id="bulkCategory" required>
+                  <option value="">Select Category</option>
+                  <?php foreach ($categories as $cat): ?>
+                    <?php if ($cat['is_active']): ?>
+                      <option value="<?= $cat['id'] ?>">
+                        <?= htmlspecialchars($cat['name']) ?>
+                        <?= isset($categoryCounts[$cat['id']]) ? ' ('.$categoryCounts[$cat['id']].')' : '' ?>
+                      </option>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Description (applies to all)</label>
+                <textarea class="form-control" name="content_description" id="bulkDesc" rows="2" placeholder="Optional description for all uploads"></textarea>
+              </div>
+
+              <!-- Dropzone -->
+              <div id="dropzone"
+                   class="border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative"
+                   style="border-color:#cbd5e1;">
+                <div class="py-4">
+                  <div class="mb-2">
+                    <i class="bi bi-cloud-arrow-up fs-1 text-secondary"></i>
+                  </div>
+                  <p class="mb-1 fw-semibold">Drop images here or click to browse</p>
+                  <p class="text-muted small mb-0">You can drag to reorder before uploading</p>
+                </div>
+                <input id="fileInput" type="file" accept="image/*" multiple class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor:pointer;">
+              </div>
+
+              <!-- Previews (sortable) -->
+              <div id="previewGrid" class="mt-3 row g-3">
+                <!-- JS fills tiles here -->
+              </div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button id="btnClearAll" type="button" class="btn btn-outline-secondary btn-sm" disabled>Clear All</button>
+                <button id="btnUpload" type="submit" class="btn btn-primary ms-auto" disabled>
+                  <i class="bi bi-cloud-arrow-up me-1"></i>Upload All
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing Items -->
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Content Items</h5>
+            <div class="text-muted small"><?= count($contentItems) ?> item(s)</div>
+          </div>
+          <div class="card-body">
+            <?php if (empty($contentItems)): ?>
+              <p class="text-muted mb-0">No content yet. Add images to see them here.</p>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Category</th>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php foreach ($contentItems as $item): ?>
+                    <tr>
+                      <td>
+                        <?php if (!empty($item['image_path'])): ?>
+                          <img src="<?= getFileUrl($item['image_path']) ?>" alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                        <?php else: ?>
+                          <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-image text-muted"></i>
+                          </div>
+                        <?php endif; ?>
+                      </td>
+                      <td><?= htmlspecialchars($item['category_name'] ?? '-') ?></td>
+                      <td><?= htmlspecialchars($item['title'] ?? '-') ?></td>
+                      <td>
+                        <?php if ($item['is_active']): ?>
+                          <span class="badge bg-success">Active</span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary">Hidden</span>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editContentModal<?= $item['id'] ?>" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <form method="POST" class="d-inline">
+                            <input type="hidden" name="action" value="toggle_content">
+                            <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <button type="submit" class="btn btn-outline-<?= $item['is_active'] ? 'warning' : 'success' ?>" title="<?= $item['is_active'] ? 'Hide' : 'Show' ?>">
+                              <i class="bi bi-<?= $item['is_active'] ? 'eye-slash' : 'eye' ?>"></i>
+                            </button>
+                          </form>
+                          <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this content?');">
+                            <input type="hidden" name="action" value="delete_content">
+                            <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <button type="submit" class="btn btn-outline-danger" title="Delete">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Edit Content Modal -->
+                    <div class="modal fade" id="editContentModal<?= $item['id'] ?>" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Edit Content</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <form method="POST" enctype="multipart/form-data">
+                            <div class="modal-body">
+                              <input type="hidden" name="action" value="update_content">
+                              <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                              <div class="mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" name="content_title" value="<?= htmlspecialchars($item['title'] ?? '') ?>">
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="content_description" rows="2"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Replace Image</label>
+                                <input type="file" class="form-control" name="content_image" accept="image/*">
+                                <div class="form-text">Leave empty to keep current image</div>
+                                <?php if (!empty($item['image_path'])): ?>
+                                  <div class="mt-2">
+                                    <img src="<?= getFileUrl($item['image_path']) ?>" class="img-thumbnail" style="max-height: 100px;">
+                                  </div>
+                                <?php endif; ?>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<?php require_once '../includes/footer.php'; ?>
+
+<!-- =============== -->
+<!-- Bulk Uploader JS -->
+<!-- =============== -->
+<script>
+(function () {
+  const dropzone   = document.getElementById('dropzone');
+  const fileInput  = document.getElementById('fileInput');
+  const preview    = document.getElementById('previewGrid');
+  const btnUpload  = document.getElementById('btnUpload');
+  const btnClear   = document.getElementById('btnClearAll');
+  const bulkForm   = document.getElementById('bulkForm');
+  const bulkCat    = document.getElementById('bulkCategory');
+
+  // Internal state: array of {file, title}
+  let items = [];
+
+  // Helpers
+  function enableControls() {
+    const hasItems = items.length > 0;
+    btnUpload.disabled = !hasItems || !bulkCat.value;
+    btnClear.disabled = !hasItems;
+  }
+
+  function fileToDataURL(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function createTile(idx, url, name, titleVal) {
+    // Column
+    const col = document.createElement('div');
+    col.className = 'col-6';
+    col.draggable = true;
+    col.dataset.index = String(idx);
+
+    // Card
+    const card = document.createElement('div');
+    card.className = 'border rounded-3 shadow-sm overflow-hidden position-relative';
+
+    // Drag handle
+    const handle = document.createElement('div');
+    handle.className = 'position-absolute top-0 start-0 p-1';
+    handle.innerHTML = '<span class="badge text-bg-dark"><i class="bi bi-grip-vertical"></i></span>';
+
+    // Remove button
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn btn-sm btn-light position-absolute top-0 end-0 m-1 rounded-circle shadow-sm';
+    remove.innerHTML = '<i class="bi bi-x-lg"></i>';
+
