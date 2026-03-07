@@ -893,6 +893,33 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <span class="label"><span class="text">Logout</span></span>
             </a>
         </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <nav class="navbar-top d-flex justify-conten
+
+                <span class="ms-2 me-1">Welcome, <strong>
+                        <?php echo h($currentUser['full_name'] ?? ''); ?>
+                    </strong></span>
+                <?php if (!empty($currentUser['avatar'])): ?>
+                    <img src="<?php echo h(getFileUrl($currentUser['avatar'])); ?>" alt="Avatar" class="rounded-circle"
+                        width="40" height="40">
+                <?php else: ?>
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <?php echo strtoupper(substr($currentUser['full_name'] ?? 'U', 0, 1)); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </nav>
+
+        <div class="content-wrapper">
+            <?php
+            $flashMessage = getFlashMessage();
+            if (!empty($flashMessage) && is_array($flashMessage)) {
+                $type = $flashMessage['type'] ?? '';
+                $alertClass = $type === 'success' ? 'alert-success' : 'alert-danger';
                 $message = $flashMessage['message'] ?? '';
                 if ($message !== '') {
                     ?>
