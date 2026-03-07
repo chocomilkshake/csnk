@@ -374,3 +374,48 @@ foreach ($contentItems as $itm) {
                 $catSlug   = slugify($catName);
                 $imgUrl    = getContentImageUrl($item['image_path']);
           ?>
+          <div class="gallery-item"
+               data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+               data-full="<?= htmlspecialchars($imgUrl) ?>"
+               data-caption="<?= htmlspecialchars($itemTitle) ?>">
+            <!-- Card -->
+            <div class="bg-white rounded-2xl shadow-card hover:shadow-cardHover transition
+                        group overflow-hidden cursor-pointer training-card">
+              <div class="w-full h-44 sm:h-48 md:h-56 bg-slate-100 overflow-hidden">
+                <img src="<?= htmlspecialchars($imgUrl) ?>"
+                     alt="<?= htmlspecialchars($itemTitle) ?>"
+                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]">
+              </div>
+              <?php if (!empty($item['title'])): ?>
+                <div class="px-3.5 py-2.5">
+                  <p class="m-0 font-semibold text-[0.98rem] leading-snug line-clamp-2">
+                    <?= htmlspecialchars($item['title']) ?>
+                  </p>
+                </div>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+            <div class="text-center py-10 bg-white rounded-xl shadow-card">
+              <p class="text-slate-500">Contents and Blogs soon!</p>
+            </div>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== -->
+  <!-- CTA: Hire Now!        -->
+  <!-- ====================== -->
+  <section class="py-8 md:py-12">
+    <div class="container mx-auto px-4 md:px-6 lg:px-8">
+      <div class="rounded-2xl bg-white shadow-card px-6 py-6 md:px-8 md:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <p class="m-0 text-xl md:text-2xl font-extrabold text-ink">
+          Hire reliable, properly screened Household Service Workers (HSWs) for your home.
+        </p>
+        <a class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-white fw-bold shadow hover:bg-brand-dark"
+           href="./applicant.php" aria-label="Hire Now">
+          Hire Now! <i class="fa-solid fa-arrow-right"></i>
