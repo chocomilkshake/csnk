@@ -419,3 +419,46 @@ foreach ($contentItems as $itm) {
         <a class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-white fw-bold shadow hover:bg-brand-dark"
            href="./applicant.php" aria-label="Hire Now">
           Hire Now! <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reusable Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap bundle (for modal etc.) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Your site script -->
+  <script src="<?= asset('resources/js/policy-modals.js') ?>"></script>
+
+  <script>
+    // ===== HERO pills swapping =====
+    (function () {
+      const container = document.getElementById('heroPills');
+      const titleEl = document.getElementById('heroTitle');
+      const leadEl = document.getElementById('heroLead');
+      const imgEl = document.getElementById('heroImg');
+      if (!container || !titleEl || !leadEl || !imgEl) return;
+
+      const pills = container.querySelectorAll('button[role="tab"]');
+      const swapEls = [titleEl, leadEl, imgEl];
+
+      function setActive(btn) {
+        pills.forEach(b => {
+          b.classList.remove('bg-ink','text-white','shadow');
+          b.classList.add('bg-slate-100','text-ink');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('bg-ink','text-white','shadow');
+        btn.classList.remove('bg-slate-100','text-ink');
+        btn.setAttribute('aria-selected', 'true');
+      }
+
+      function applyFrom(btn) {
+        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
+        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
+        if (btn.dataset.img) {
+          imgEl.src = btn.dataset.img;
+          imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image';
+        }
