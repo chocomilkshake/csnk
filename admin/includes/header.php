@@ -924,7 +924,31 @@ if ($canViewReports && $conn instanceof mysqli) {
                             <?php foreach ($recentBookings as $booking): ?>
                                 <?php
                                 $appId = (int) ($booking['applicant_id'] ?? 0);
-                                $appName = getFullName($
+                                $appName = getFullName($booking['first_name'] ?? '', $booking['middle_name'] ?? '', $booking['last_name'] ?? '', $booking['suffix'] ?? '');
+                                $clientName = trim(($booking['client_first_name'] ?? '') . ' ' . ($booking['client_last_name'] ?? ''));
+                                $createdAt = formatDateTime($booking['created_at'] ?? '');
+                                $apptType = $booking['appointment_type'] ?? '';
+                                $viewLink = 'view_onprocess.php?id=' . $appId;
+                                ?>
+                                <a href="<?php echo h($viewLink); ?>" class="dropdown-item small">
+                                    <div class="fw-semibold text-truncate">
+                                        <?php echo h($appName); ?>
+                                    </div>
+                                    <div class="text-muted small text-truncate">
+                                        Booked by
+                                        <?php echo h($clientName); ?> (
+                                        <?php echo h($apptType); ?>)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <?php echo h($createdAt); ?>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="on-process.php" class="dropdown-item text-center small text-primary">
+                                View all on-process applicants
+                            </a>
+                        </div>
                     </div>
                 <?php endif; ?>
 
