@@ -104,6 +104,8 @@ if (!empty($currentUser) && $canSeeAdminUX) {
   }
 }
 
+
+
 // Helpers
 function safe(?string $s): string
 {
@@ -505,6 +507,8 @@ function safe(?string $s): string
     </div>
   </div>
 <?php endif; ?>
+
+
 
 <script>
   // Refresh every 60s (your original behavior)
