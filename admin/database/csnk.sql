@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 07, 2026 at 03:52 AM
+-- Generation Time: Mar 07, 2026 at 06:33 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -41,6 +41,7 @@ CREATE TABLE `activity_logs` (
 --
 
 INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_address`, `created_at`) VALUES
+(0, 12, 'Add Content Category', 'Added category: Domestic Workers', '::1', '2026-03-07 03:40:15'),
 (778, 5, 'Add Applicant', 'Added new applicant: Johny Ocamps', '::1', '2026-03-06 06:15:34'),
 (779, 5, 'Login', 'User logged in successfully', '::1', '2026-03-07 01:28:49'),
 (780, 5, 'Update Applicant Status (with report)', 'Updated status for Johny Ocamps → approved; Reason: Passed interview / assessment: GOOOOOOD BOIII', '::1', '2026-03-07 01:37:08');
@@ -664,6 +665,15 @@ CREATE TABLE `content_categories` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `content_categories`
+--
+
+INSERT INTO `content_categories` (`id`, `name`, `description`, `display_order`, `is_active`, `created_at`) VALUES
+(1, 'Domestic Workers', '', 1, 1, '2026-03-07 03:40:15'),
+(2, 'Skilled Driver', '', 2, 1, '2026-03-07 03:40:31'),
+(3, 'Cellphone Technician', '', 3, 1, '2026-03-07 03:40:45');
+
 -- --------------------------------------------------------
 
 --
@@ -680,6 +690,18 @@ CREATE TABLE `content_items` (
   `is_active` tinyint(4) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `content_items`
+--
+
+INSERT INTO `content_items` (`id`, `category_id`, `title`, `image_path`, `description`, `display_order`, `is_active`, `created_at`) VALUES
+(1, 1, 'about3', 'contents/69abb86476c69_1772861540.jpg', '', 1, 1, '2026-03-07 05:32:20'),
+(2, 1, 'about4', 'contents/69abb86477f24_1772861540.jpg', '', 2, 1, '2026-03-07 05:32:20'),
+(3, 1, 'about5', 'contents/69abb86478d67_1772861540.jpg', '', 3, 1, '2026-03-07 05:32:20'),
+(4, 1, 'about8', 'contents/69abb86479e29_1772861540.jpg', '', 4, 1, '2026-03-07 05:32:20'),
+(5, 1, 'about6', 'contents/69abb8647af71_1772861540.jpg', '', 5, 1, '2026-03-07 05:32:20'),
+(6, 3, 'CELLPHONE_TECHNICIAN_eef6c313ee', 'contents/69abb8932a922_1772861587.jpg', '', 1, 1, '2026-03-07 05:33:07');
 
 -- --------------------------------------------------------
 
@@ -762,14 +784,16 @@ CREATE TABLE `session_logs` (
   `user_agent` text DEFAULT NULL,
   `login_time` datetime NOT NULL DEFAULT current_timestamp(),
   `logout_time` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `session_logs`
 --
 
 INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
-(184, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 09:28:49', NULL);
+(184, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 09:28:49', NULL),
+(185, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:09', '2026-03-07 11:42:14'),
+(186, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:26', NULL);
 
 --
 -- Indexes for dumped tables
@@ -877,28 +901,6 @@ ALTER TABLE `blacklisted_applicants`
   ADD KEY `fk_blacklist_reverted_by` (`reverted_by`);
 
 --
--- Indexes for table `business_units`
---
-ALTER TABLE `business_units`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `code` (`code`),
-  ADD UNIQUE KEY `uq_bu_ag_country` (`agency_id`,`country_id`),
-  ADD KEY `fk_bu_country` (`country_id`);
-
---
--- Indexes for table `client_bookings`
---
-ALTER TABLE `client_bookings`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_cb_id_bu` (`id`,`business_unit_id`),
-  ADD KEY `idx_applicant` (`applicant_id`),
-  ADD KEY `idx_client_bookings_created_at` (`created_at`),
-  ADD KEY `idx_client_bookings_status` (`status`),
-  ADD KEY `idx_client_bookings_app_created` (`applicant_id`,`created_at`),
-  ADD KEY `idx_client_bookings_bu` (`business_unit_id`),
-  ADD KEY `fk_cb_app_bu` (`applicant_id`,`business_unit_id`);
-
---
 -- Indexes for table `content_categories`
 --
 ALTER TABLE `content_categories`
@@ -908,30 +910,13 @@ ALTER TABLE `content_categories`
 -- Indexes for table `content_items`
 --
 ALTER TABLE `content_items`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `category_id` (`category_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `countries`
 --
 ALTER TABLE `countries`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `iso2` (`iso2`),
-  ADD UNIQUE KEY `iso3` (`iso3`),
-  ADD UNIQUE KEY `uq_countries_name` (`name`);
-
---
--- Indexes for table `document_types`
---
-ALTER TABLE `document_types`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uq_doc_type_country_code` (`country_id`,`code`);
-
---
--- Indexes for table `recycled_ids`
---
-ALTER TABLE `recycled_ids`
-  ADD PRIMARY KEY (`table_name`,`id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `session_logs`
@@ -946,208 +931,28 @@ ALTER TABLE `session_logs`
 --
 
 --
--- AUTO_INCREMENT for table `activity_logs`
---
-ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=781;
-
---
--- AUTO_INCREMENT for table `admin_users`
---
-ALTER TABLE `admin_users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
-
---
--- AUTO_INCREMENT for table `agencies`
---
-ALTER TABLE `agencies`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `applicants`
---
-ALTER TABLE `applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
-
---
--- AUTO_INCREMENT for table `applicant_documents`
---
-ALTER TABLE `applicant_documents`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=249;
-
---
--- AUTO_INCREMENT for table `applicant_replacements`
---
-ALTER TABLE `applicant_replacements`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
-
---
--- AUTO_INCREMENT for table `applicant_reports`
---
-ALTER TABLE `applicant_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
-
---
--- AUTO_INCREMENT for table `applicant_status_reports`
---
-ALTER TABLE `applicant_status_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=120;
-
---
--- AUTO_INCREMENT for table `blacklisted_applicants`
---
-ALTER TABLE `blacklisted_applicants`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT for table `business_units`
---
-ALTER TABLE `business_units`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `client_bookings`
---
-ALTER TABLE `client_bookings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
-
---
 -- AUTO_INCREMENT for table `content_categories`
 --
 ALTER TABLE `content_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `countries`
 --
 ALTER TABLE `countries`
-  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT for table `document_types`
---
-ALTER TABLE `document_types`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=185;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `activity_logs`
---
-ALTER TABLE `activity_logs`
-  ADD CONSTRAINT `fk_activity_logs_admin` FOREIGN KEY (`admin_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `admin_users`
---
-ALTER TABLE `admin_users`
-  ADD CONSTRAINT `fk_admin_users_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `admin_user_business_units`
---
-ALTER TABLE `admin_user_business_units`
-  ADD CONSTRAINT `fk_aubu_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_aubu_user` FOREIGN KEY (`admin_user_id`) REFERENCES `admin_users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `applicants`
---
-ALTER TABLE `applicants`
-  ADD CONSTRAINT `fk_applicants_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_applicants_created_by` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `applicant_documents`
---
-ALTER TABLE `applicant_documents`
-  ADD CONSTRAINT `fk_app_docs_app_bu` FOREIGN KEY (`applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_app_docs_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`),
-  ADD CONSTRAINT `fk_app_docs_doc_type` FOREIGN KEY (`document_type_id`) REFERENCES `document_types` (`id`),
-  ADD CONSTRAINT `fk_applicant_documents_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `applicant_replacements`
---
-ALTER TABLE `applicant_replacements`
-  ADD CONSTRAINT `fk_ar_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`),
-  ADD CONSTRAINT `fk_ar_client_booking` FOREIGN KEY (`client_booking_id`) REFERENCES `client_bookings` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_client_booking_bu` FOREIGN KEY (`client_booking_id`,`business_unit_id`) REFERENCES `client_bookings` (`id`, `business_unit_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_created_by_admin` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_original_app_bu` FOREIGN KEY (`original_applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_original_applicant` FOREIGN KEY (`original_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_replacement_app_bu` FOREIGN KEY (`replacement_applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ar_replacement_applicant` FOREIGN KEY (`replacement_applicant_id`) REFERENCES `applicants` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `applicant_reports`
---
-ALTER TABLE `applicant_reports`
-  ADD CONSTRAINT `fk_app_reports_app_bu` FOREIGN KEY (`applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_app_reports_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `applicant_status_reports`
---
-ALTER TABLE `applicant_status_reports`
-  ADD CONSTRAINT `fk_asr_app_bu` FOREIGN KEY (`applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_asr_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_asr_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`);
-
---
--- Constraints for table `blacklisted_applicants`
---
-ALTER TABLE `blacklisted_applicants`
-  ADD CONSTRAINT `fk_blacklist_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_blacklist_created_by` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_blacklist_reverted_by` FOREIGN KEY (`reverted_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `business_units`
---
-ALTER TABLE `business_units`
-  ADD CONSTRAINT `fk_bu_agency` FOREIGN KEY (`agency_id`) REFERENCES `agencies` (`id`),
-  ADD CONSTRAINT `fk_bu_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`);
-
---
--- Constraints for table `client_bookings`
---
-ALTER TABLE `client_bookings`
-  ADD CONSTRAINT `fk_booking_applicant` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_cb_app_bu` FOREIGN KEY (`applicant_id`,`business_unit_id`) REFERENCES `applicants` (`id`, `business_unit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_cb_bu` FOREIGN KEY (`business_unit_id`) REFERENCES `business_units` (`id`);
-
---
--- Constraints for table `content_items`
---
-ALTER TABLE `content_items`
-  ADD CONSTRAINT `content_items_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `content_categories` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `document_types`
---
-ALTER TABLE `document_types`
-  ADD CONSTRAINT `fk_doc_types_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`);
-
---
--- Constraints for table `session_logs`
---
-ALTER TABLE `session_logs`
-  ADD CONSTRAINT `fk_session_logs_admin` FOREIGN KEY (`admin_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=187;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
