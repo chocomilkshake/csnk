@@ -309,3 +309,35 @@ foreach ($contentItems as $itm) {
 
   <!-- ===================== -->
   <!-- Trainings (Modern)   -->
+  <!-- ===================== -->
+  <section id="training-gallery" class="py-10 md:py-14">
+    <div class="container mx-auto px-4 md:px-6 lg:px-8">
+
+      <!-- Title -->
+      <div class="mb-3 sm:mb-4">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold">Trainings</h2>
+      </div>
+
+      <!-- FILTERS: mobile-first horizontal rail -->
+      <div class="relative mx-[-8px] sm:mx-0">
+        <!-- Side fades -->
+        <div class="pointer-events-none absolute left-0 top-0 h-full w-6 bg-gradient-to-r from-[#f6f8fb] to-transparent"></div>
+        <div class="pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-[#f6f8fb] to-transparent"></div>
+
+        <!-- Optional micro arrows (auto-hidden by JS) -->
+        <button type="button" id="fltPrev"
+                class="hidden absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur rounded-full shadow p-1.5 border border-slate-200"
+                aria-label="Scroll left">
+          <i class="fa-solid fa-chevron-left text-slate-700 text-xs"></i>
+        </button>
+        <button type="button" id="fltNext"
+                class="hidden absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur rounded-full shadow p-1.5 border border-slate-200"
+                aria-label="Scroll right">
+          <i class="fa-solid fa-chevron-right text-slate-700 text-xs"></i>
+        </button>
+
+        <!-- Sticky on mobile so it stays under navbar -->
+        <div class="sticky top-[68px] z-20 sm:static">
+          <div id="galleryFilters" class="filters-rail" role="group" aria-label="Gallery categories">
+            <!-- ALL chip -->
+            <button type="button" class="chip active" data-filter="all" aria-pressed="true">
