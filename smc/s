@@ -1,12 +1,10 @@
 <?php
 /**
- * Public API: Get Applicants (client-facing)
+ * Public API: Get Applicants for SMC Turkey (client-facing)
  * - CORS enabled
  * - Returns normalized, client-friendly fields
+ * - Filters by business_unit_id = 2 (Turkey)
  * - Robust photo URLs + safe fallbacks
- * - FIXES:
- *    * Availability filtering (Full-time / Part-time)
- *    * Specialization filtering tolerant of "&" vs "and" variants
  */
 
 header('Content-Type: application/json');
@@ -20,9 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Bootstrap admin side
-require_once __DIR__ . '/../admin/includes/config.php';
-require_once __DIR__ . '/../admin/includes/Database.php';
-require_once __DIR__ . '/../admin/includes/Applicant.php';
+require_once __DIR__ . '/../../../admin/includes/config.php';
+require_once __DIR__ . '/../../../admin/includes/Database.php';
+require_once __DIR__ . '/../../../admin/includes/Applicant.php';
+
+// Turkey Business Unit ID
+define('TURKEY_BUSINESS_UNIT_ID', 2);
 
 // Start session for randomization seed (if not already started)
 if (session_status() === PHP_SESSION_NONE) {
@@ -75,8 +76,6 @@ function mapPrimarySpecialization(array $skills): string
 
 /**
  * Generate tolerant variants for specialization LIKEs.
- * e.g., "Laundry & Clothing Care" => ["Laundry & Clothing Care", "Laundry and Clothing Care"]
- *       "Cleaning and Housekeeping (General)" => ["Cleaning and Housekeeping (General)", "Cleaning & Housekeeping (General)"]
  */
 function andAmpVariants(string $label): array
 {
@@ -140,7 +139,7 @@ try {
         $selectedLangs = array_filter(array_map('trim', explode(',', (string) $selectedLangs)));
     }
 
-    // NEW: Availability from UI (Full-time / Part-time)
+    // Availability from UI (Full-time / Part-time)
     $availability = $_GET['availability'] ?? [];
     if (!is_array($availability) && $availability !== '') {
         $availability = array_filter(array_map('trim', explode(',', (string) $availability)));
@@ -149,14 +148,14 @@ try {
     // Build WHERE clauses and bind params dynamically
     $where = ["deleted_at IS NULL"];
 
+    // Filter by Turkey Business Unit
+    $where[] = "business_unit_id = " . TURKEY_BUSINESS_UNIT_ID;
+
     // Public API: exclude applicants that are already approved — they should not be shown to clients
     $where[] = "LOWER(TRIM(status)) != 'approved'";
 
     // Exclude active-blacklisted applicants (server-side blacklist)
     $where[] = "id NOT IN (SELECT applicant_id FROM blacklisted_applicants WHERE is_active = 1)";
-
-    // CSNK Client Side: Only show applicants from CSNK (business_unit_id = 1 - Philippines)
-    $where[] = "business_unit_id = 1";
 
     $types = '';
     $values = [];
@@ -172,9 +171,6 @@ try {
     }
 
     if ($location !== '') {
-        // Search in address field and preferred_location JSON array
-        // For JSON search, we use JSON_SEARCH for MySQL 5.7+ compatibility
-        // Also search the raw JSON string as fallback for older versions or edge cases
         $where[] = "(address LIKE ? OR preferred_location LIKE ? OR JSON_SEARCH(preferred_location, 'one', ?, NULL, '$[*]') IS NOT NULL)";
         $likeLoc = "%{$location}%";
         $types .= 'sss';
@@ -217,9 +213,8 @@ try {
         $values[] = $minExp;
     }
 
-    // NEW: Availability => employment_type tolerance (Full Time / Part Time)
+    // Availability => employment_type tolerance (Full Time / Part Time)
     if (!empty($availability)) {
-        // Normalize incoming values to tokens: 'fulltime' or 'parttime'
         $want = [];
         foreach ($availability as $a) {
             $t = strtolower(preg_replace('/[\s\-]/', '', $a));
@@ -228,8 +223,6 @@ try {
         }
         if (!empty($want)) {
             $in = [];
-            // We will match by REPLACE(LOWER(employment_type), ' ', '') IN (...)
-            // This covers 'Full Time', 'fulltime', 'Full-time' etc.
             $where[] = "("
                 . "REPLACE(LOWER(employment_type), ' ', '') IN ("
                 . implode(',', array_fill(0, count($want), '?'))
@@ -237,13 +230,12 @@ try {
                 . ")";
             foreach (array_keys($want) as $k) {
                 $types .= 's';
-                $values[] = $k; // 'fulltime' or 'parttime'
+                $values[] = $k;
             }
         }
     }
 
     if ($availableBy !== '') {
-        // Compare computed availability = created_at + 30 days <= availableBy
         $where[] = "DATE_ADD(created_at, INTERVAL 30 DAY) <= ?";
         $types .= 's';
         $values[] = $availableBy;
@@ -269,7 +261,6 @@ try {
     $mysqli = $database->getConnection();
     $countStmt = $mysqli->prepare($countSql);
     if ($types !== '') {
-        // bind params to count statement
         $tmp = array_merge([$types], $values);
         $refs = [];
         foreach ($tmp as $k => $v)
@@ -281,27 +272,18 @@ try {
     $totalRow = $countRes->fetch_assoc();
     $total = (int) ($totalRow['cnt'] ?? 0);
 
-    // Advanced randomization: ensures fair distribution across all pages
-    // Uses a combination of session-based seed and deterministic hashing for consistent but varied ordering
+    // Advanced randomization
     $rotateEnabled = !isset($_GET['rotate']) || $_GET['rotate'] !== '0';
 
     if ($rotateEnabled) {
-        // Create a unique seed per session (persists across page loads in same session)
         if (!isset($_SESSION['applicant_random_seed'])) {
-            // Generate a random seed for this session
             $_SESSION['applicant_random_seed'] = bin2hex(random_bytes(8));
         }
 
-        // Combine session seed with daily rotation for better distribution
         $sessionSeed = $_SESSION['applicant_random_seed'];
         $dailySeed = date('Ymd');
         $combinedSeed = $sessionSeed . '_' . $dailySeed;
 
-        // Use a more sophisticated randomization that ensures fair distribution:
-        // 1. Primary: Hash ID with seed for deterministic but varied ordering
-        // 2. Secondary: Use multiplicative hash for better distribution
-        // 3. Tertiary: Fall back to original sort order for consistency
-        // This ensures applicants from all pages get fair representation across different sessions
         $sql = "SELECT * FROM applicants WHERE {$whereSql} 
                 ORDER BY 
                     MOD(CRC32(CONCAT(id, ?)), 10000) ASC,
@@ -329,7 +311,7 @@ try {
     $result = $stmt->get_result();
     $apps = $result->fetch_all(MYSQLI_ASSOC);
 
-    // Base URLs (auto-detect http/https + host)
+    // Base URLs - auto-detect dynamically for hosting compatibility
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     
@@ -337,8 +319,8 @@ try {
     // This makes it hosting-friendly (works on localhost and live server without hardcoding paths)
     $scriptPath = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $scriptPath = str_replace('\\', '/', $scriptPath); // Windows compatibility
-    // Go up from /includes to project root
-    $projectRoot = dirname($scriptPath);
+    // Go up from /smc/smc-turkey/includes to project root
+    $projectRoot = dirname(dirname(dirname($scriptPath)));
     if ($projectRoot === '.' || $projectRoot === '/') {
         $projectRoot = '';
     }
@@ -358,18 +340,17 @@ try {
         $langsArr = json_decode($app['languages'] ?? '[]', true) ?: [];
         $educAttain = json_decode($app['educational_attainment'] ?? '[]', true) ?: [];
 
-        // Normalize skills (avoid excessive HTML entities)
+        // Normalize skills
         $skills = array_values(array_filter(array_map('normalizeSkillLabel', $skills)));
 
-        // Primary specialization (mapped role) – tolerant of &/and
+        // Primary specialization (mapped role)
         $primaryRole = mapPrimarySpecialization($skills);
 
-        // Location city (first preferred city shown on card)
+        // Location city
         $locationCity = !empty($prefLoc) ? (string) $prefLoc[0] : 'N/A';
-        // Region: basic default
-        $locationRegion = 'NCR';
+        $locationRegion = 'Turkey';
 
-        // Languages (string for quick filter + array for detail)
+        // Languages
         $languagesStr = implode(',', $langsArr);
 
         // Photo URL - properly build the full URL (like admin getFileUrl function does)
@@ -377,25 +358,25 @@ try {
         if (!empty($app['picture'])) {
             $relative = ltrim((string) $app['picture'], '/');
             if (preg_match('~^https?://~i', $relative)) {
-                // Already full URL - keep it as is
+                // Already full URL - use as is
                 $photoUrl = $relative;
             } else {
-                // Relative path - prepend uploads base
+                // Relative path - concatenate with uploads base URL
                 $photoUrl = $uploadsBase . $relative;
             }
         }
 
-        // Employment type label for client
+        // Employment type label
         $employmentRaw = (string) ($app['employment_type'] ?? '');
         $employmentLabel = ($employmentRaw === 'Full Time')
             ? 'Full-time'
             : (($employmentRaw === 'Part Time') ? 'Part-time' : 'Full-time');
 
-        // Availability: default created_at + 30 days (kept for sorting/filter logic only)
+        // Availability
         $createdAt = $app['created_at'] ?? date('Y-m-d H:i:s');
         $availDate = date('Y-m-d', strtotime($createdAt . ' +30 days'));
 
-        // Educational attainment display
+        // Educational attainment
         $educationLevelEnum = $app['education_level'] ?? null;
         $educationDisplay = $educationLevelEnum
             ?: ((is_array($educAttain) && !empty($educAttain)) ? implode(', ', $educAttain) : '—');
@@ -406,7 +387,7 @@ try {
             $normalized = str_replace('\\', '/', (string) $app['video_url']);
             $videoRelative = ltrim($normalized, '/');
             if (preg_match('~^https?://~i', $videoRelative)) {
-                $videoUrl = $videoRelative; // YouTube/Vimeo
+                $videoUrl = $videoRelative;
             } elseif (preg_match('~^admin/uploads/~i', $videoRelative)) {
                 $videoUrl = $appBase . '/' . $videoRelative;
             } else {
@@ -424,7 +405,6 @@ try {
             'initials' => initialsFromName($app['first_name'] ?? '', $app['last_name'] ?? ''),
             'age' => computeAge($app['date_of_birth'] ?? null),
 
-            // STATUS (important for client-side filtering)
             'status' => strtolower(trim((string) ($app['status'] ?? ''))),
 
             'specialization' => $primaryRole,
@@ -436,17 +416,15 @@ try {
 
             'years_experience' => (int) ($app['years_experience'] ?? 0),
 
-            'employment_type' => $employmentLabel,  // Full-time | Part-time
-            'employment_type_raw' => $employmentRaw,    // Full Time | Part Time (DB)
+            'employment_type' => $employmentLabel,
+            'employment_type_raw' => $employmentRaw,
 
-            // 🔹 ADD THIS: expose DB daily_rate to clients as a number (or null)
             'daily_rate' => isset($app['daily_rate']) && $app['daily_rate'] !== '' ? (float) $app['daily_rate'] : null,
-
 
             'availability_date' => $availDate,
 
-            'languages' => $languagesStr,     // "English,Filipino"
-            'languages_array' => $langsArr,         // ["English","Filipino"]
+            'languages' => $languagesStr,
+            'languages_array' => $langsArr,
 
             'education_level' => $educationLevelEnum,
             'educational_attainment' => $educAttain,
