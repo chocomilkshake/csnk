@@ -5,8 +5,8 @@ $page = 'about';
 
 /**
  * PROJECT BASE URL
- * If your site runs at http://localhost/csnk/, set this to '/csnk'
- * If your site runs at http://localhost/, set this to ''
+ * For localhost: /csnk
+ * For production: change this to '' (empty) or your domain
  */
 $BASE = '/csnk';
 
@@ -20,19 +20,40 @@ function asset(string $path): string {
 }
 
 /**
- * Database connection for dynamic content
+ * Get database connection using config
  */
-$dbHost = 'localhost';
-$dbUser = 'root';
-$dbPass = '';
-$dbName = 'csnk';
-
-$conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
-if (!$conn) {
-    http_response_code(500);
-    echo "Database connection failed.";
-    exit;
+function getDbConnection() {
+    // Try to include config if exists, otherwise use defaults
+    $dbHost = 'localhost';
+    $dbUser = 'root';
+    $dbPass = '';
+    $dbName = 'csnk';
+    
+    // Try to load from config file if it exists
+    $configFile = dirname(__DIR__) . '/admin/includes/config.php';
+    if (file_exists($configFile)) {
+        include $configFile;
+        if (defined('DB_HOST')) $dbHost = DB_HOST;
+        if (defined('DB_USER')) $dbUser = DB_USER;
+        if (defined('DB_PASS')) $dbPass = DB_PASS;
+        if (defined('DB_NAME')) $dbName = DB_NAME;
+    }
+    
+    $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
+    if (!$conn) {
+        return null;
+    }
+    return $conn;
 }
+
+$conn = getDbConnection();
+if (!$conn) {
+    // Database not available - show static fallback content
+    $contentItems = [];
+    $categories = [];
+    $categoryCounts = [];
+    $totalItems = 0;
+} else {
 
 /**
  * Helper: slugify label for safe filtering (EXACT match)
@@ -96,6 +117,8 @@ foreach ($contentItems as $itm) {
     $slug = slugify($itm['category_name'] ?? '');
     $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
 }
+
+} // End else (database available)
 ?>
 <!DOCTYPE html>
 <html lang="en">
