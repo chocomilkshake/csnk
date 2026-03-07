@@ -117,7 +117,7 @@ if (
         $res = $stmt->get_result();
         if ($row = $res->fetch_assoc()) {
             $fromStatus = (string)($row['status'] ?? '');
-            $businessUnitId = $row['business_unit_id'] ?? null;
+            $businessUnitId = (int)$row['business_unit_id'] ?? null;
         }
         $stmt->close();
     } catch (Throwable $e) {
@@ -132,8 +132,9 @@ if (
 
     // Update status and insert report
     $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
-    $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+    $buIdForReport = !empty($businessUnitId) ? $businessUnitId : 1;
     $ok = false;
+    $errorMsg = '';
 
     try {
         $conn->begin_transaction();
@@ -141,13 +142,19 @@ if (
         // Insert status report
         $stmt1 = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt1->bind_param("iisssi", $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
-        $stmt1->execute();
+        
+        if (!$stmt1->execute()) {
+            throw new Exception("Failed to insert status report: " . $stmt1->error);
+        }
         $stmt1->close();
 
         // Update status
         $stmt2 = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?");
         $stmt2->bind_param("si", $to, $id);
-        $stmt2->execute();
+        
+        if (!$stmt2->execute()) {
+            throw new Exception("Failed to update status: " . $stmt2->error);
+        }
         $stmt2->close();
 
         $conn->commit();
@@ -155,12 +162,13 @@ if (
     } catch (Throwable $e) {
         $conn->rollback();
         error_log('Status change failed: ' . $e->getMessage());
+        $errorMsg = $e->getMessage();
         $ok = false;
     }
 
     if (function_exists('setFlashMessage')) {
         if ($ok) setFlashMessage('success', 'Status updated and report saved.');
-        else setFlashMessage('error', 'Failed to update status or save report.');
+        else setFlashMessage('error', 'Failed to update status or save report. ' . $errorMsg);
     }
 
     redirect('turkey_on-process.php' . $preserveQSWithQuestion);
@@ -203,7 +211,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'update_status' && isset($_GET
         if ($updated && isset($fromStatus) && $fromStatus !== $to) {
             $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
             $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus)) . " to " . ucfirst(str_replace('_', ' ', $to));
-            $buIdForReport = ($businessUnitId !== null) ? $businessUnitId : 1;
+            $buIdForReport = !empty($businessUnitId) ? $businessUnitId : 1;
             
             if ($conn instanceof mysqli) {
                 if ($stmtReport = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)")) {
