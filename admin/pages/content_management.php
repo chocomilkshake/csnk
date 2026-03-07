@@ -820,3 +820,27 @@ foreach ($contentItems as $itm) {
     remove.className = 'btn btn-sm btn-light position-absolute top-0 end-0 m-1 rounded-circle shadow-sm';
     remove.innerHTML = '<i class="bi bi-x-lg"></i>';
 
+    // Image
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'bg-light';
+    imgWrap.style.height = '140px';
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = name || 'image';
+    img.className = 'w-100 h-100';
+    img.style.objectFit = 'cover';
+    imgWrap.appendChild(img);
+
+    // Title input
+    const body = document.createElement('div');
+    body.className = 'p-2';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = 'Title (optional)';
+    input.value = titleVal || '';
+    input.addEventListener('input', () => {
+      const i = parseInt(col.dataset.index, 10);
+      if (!Number.isNaN(i) && items[i]) {
+        items[i].title = input.value;
+      }
