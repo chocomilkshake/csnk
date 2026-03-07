@@ -196,7 +196,32 @@ foreach ($contentItems as $itm) {
       color:#fff;
       border-color:#b42a00;
       box-shadow:0 4px 12px rgba(180,42,0,.35);
--scrollbar-thumb { background: #e5e7eb; border-radius: 999px; }
+    }
+    .chip-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:18px;
+      height:18px;
+      padding:0 .38rem;
+      font-size:.72rem;
+      font-weight:800;
+      border-radius:999px;
+      background:rgba(0,0,0,.08);
+      color:#0f172a;
+    }
+    .chip.active .chip-badge{
+      background:rgba(255,255,255,.22);
+      color:#fff;
+    }
+    @media (max-width: 640px){
+      .filters-rail{ padding:.45rem; }
+    }
+
+    /* Horizontal scrollbars helper (elsewhere if needed) */
+    .scrollbar-slim::-webkit-scrollbar { height: 8px; }
+    .scrollbar-slim::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-slim::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 999px; }
     .scrollbar-slim:hover::-webkit-scrollbar-thumb { background: #d1d5db; }
 
     /* Lightbox image should not exceed viewport */
