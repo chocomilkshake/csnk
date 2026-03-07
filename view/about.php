@@ -341,3 +341,36 @@ foreach ($contentItems as $itm) {
           <div id="galleryFilters" class="filters-rail" role="group" aria-label="Gallery categories">
             <!-- ALL chip -->
             <button type="button" class="chip active" data-filter="all" aria-pressed="true">
+              <span class="chip-label">All</span>
+              <?php if ($totalItems > 0): ?>
+                <span class="chip-badge"><?= $totalItems ?></span>
+              <?php endif; ?>
+            </button>
+
+            <!-- Dynamic chips -->
+            <?php if (!empty($categories)): ?>
+              <?php foreach ($categories as $cat):
+                    $catSlug = slugify($cat['name'] ?? '');
+                    $cnt = $categoryCounts[$catSlug] ?? 0;
+              ?>
+                <button type="button" class="chip" data-filter="<?= htmlspecialchars($catSlug) ?>" aria-pressed="false">
+                  <span class="chip-label"><?= htmlspecialchars($cat['name'] ?? 'Category') ?></span>
+                  <?php if ($cnt > 0): ?>
+                    <span class="chip-badge"><?= $cnt ?></span>
+                  <?php endif; ?>
+                </button>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div id="galleryGrid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <?php if (!empty($contentItems)): ?>
+          <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName   = $item['category_name'] ?? '';
+                $catSlug   = slugify($catName);
+                $imgUrl    = getContentImageUrl($item['image_path']);
+          ?>
