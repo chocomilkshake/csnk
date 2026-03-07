@@ -599,16 +599,17 @@ if ($canViewReports && $conn instanceof mysqli) {
 
         <nav class="sidebar-menu" aria-label="Primary">
             <!-- Dashboard - Dynamic link based on user agency -->
-            <?php 
+            <?php
             // Determine which dashboard to show based on user's agency
             $dashboardUrl = 'dashboard.php'; // Default to CSNK
             if ($userAgency === 'smc' || (!$canSeeCSNK && $canSeeSMC)) {
                 $dashboardUrl = 'turkey_dashboard.php';
             }
             ?>
-            <a href="<?php echo h($dashboardUrl); ?>" class="sidebar-item <?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'active' : ''; ?>"
-                aria-current="<?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
-                data-bs-placement="right" title="Dashboard">
+            <a href="<?php echo h($dashboardUrl); ?>"
+                class="sidebar-item <?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'active' : ''; ?>"
+                aria-current="<?php echo ($currentPage === 'dashboard' || $currentPage === 'turkey_dashboard') ? 'page' : 'false'; ?>"
+                data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
                 <i class="bi bi-speedometer2"></i>
                 <span class="label"><span class="text">Dashboard</span></span>
             </a>
@@ -814,6 +815,16 @@ if ($canViewReports && $conn instanceof mysqli) {
             <?php if ($canViewActivity): ?>
                 <div class="sidebar-divider"></div>
                 <div class="sidebar-section-label">Monitoring</div>
+
+                <!-- Client Management -->
+                <a href="client-management.php"
+                    class="sidebar-item <?php echo $currentPage === 'client-management' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'client-management' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Client Management">
+                    <i class="bi bi-people"></i>
+                    <span class="label"><span class="text">Client Management</span></span>
+                </a>
+
                 <a href="activity-logs.php"
                     class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
                     aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
@@ -844,20 +855,19 @@ if ($canViewReports && $conn instanceof mysqli) {
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
 
-                <!-- ===== Content Management (Admins only) ===== -->
-                <?php if ($isAdmin || $isSuperAdmin): ?>
-                    <a href="#"
-                        class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
-                        aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
-                        data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
-                        <i class="bi bi-flag"></i>
-                        <span class="label"><span class="text">Content Management</span></span>
-                    </a>
+            <!-- ===== Content Management (Admins only) ===== -->
+            <?php if ($isAdmin || $isSuperAdmin): ?>
+                <a href="#" class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                    <i class="bi bi-flag"></i>
+                    <span class="label"><span class="text">Content Management</span></span>
+                </a>
                 <!-- ================================================ -->
             <?php endif; ?>
 
 
-            
+
             <!-- Accounts -->
             <a href="accounts.php" class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
