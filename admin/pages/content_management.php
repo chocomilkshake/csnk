@@ -883,3 +883,9 @@ foreach ($contentItems as $itm) {
 
     return col;
   }
+
+  function render() {
+    preview.innerHTML = '';
+    items.forEach(async (entry, i) => {
+      const url = await fileToDataURL(entry.file);
+      const tile
