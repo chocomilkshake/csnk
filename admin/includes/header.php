@@ -859,7 +859,37 @@ if ($canViewReports && $conn instanceof mysqli) {
 
             
             <!-- Accounts -->
-            <a href="accounts.php" class="sidebar-item <?phed);
+            <a href="accounts.php" class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
+                aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+                data-bs-placement="right" title="Accounts">
+                <i class="bi bi-person-badge"></i>
+                <span class="label"><span class="text">Accounts</span></span>
+            </a>
+
+            <!-- Profile -->
+            <a href="profile.php" class="sidebar-item <?php echo $currentPage === 'profile' ? 'active' : ''; ?>"
+                aria-current="<?php echo $currentPage === 'profile' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+                data-bs-placement="right" title="Profile">
+                <i class="bi bi-person-circle"></i>
+                <span class="label"><span class="text">Profile</span></span>
+            </a>
+            }
+            ?>
+            <!-- Page content continues from here ... (footer will close the tags) -->
+
+            <!-- Bootstrap Bundle (JS for dropdown/collapse/tooltip) -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+                crossorigin="anonymous"></script>
+
+            <script>
+                /* Sidebar toggle with persisted state */
+                (function () {
+                    const btn = document.getElementById('btnSidebarToggle');
+                    const storageKey = 'csnk_sidebar_collapsed';
+
+                    function applyState(collapsed) {
+                        if (window.innerWidth <= 992) {
+                            document.body.classList.toggle('sidebar-hidden', collapsed);
                             document.body.classList.remove('sidebar-collapsed');
                         } else {
                             document.body.classList.toggle('sidebar-collapsed', collapsed);
