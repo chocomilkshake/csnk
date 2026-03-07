@@ -897,7 +897,37 @@ if ($canViewReports && $conn instanceof mysqli) {
 
     <!-- Main Content -->
     <div class="main-content">
-        <nav class="navbar-top d-flex justify-conten
+        <nav class="navbar-top d-flex justify-content-between align-items-center">
+            <div class="nav-left">
+                <button id="btnSidebarToggle" class="btn btn-light btn-sm border me-1" type="button"
+                    title="Toggle sidebar">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                </button>
+                <h5 class="mb-0 fw-semibold">
+                    <?php echo h($pageTitle ?? 'Dashboard'); ?>
+                </h5>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <?php if (!empty($recentBookings) && ($isAdmin || $isSuperAdmin) && $canSeeCSNK): ?>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none position-relative" type="button" id="bookingBell"
+                            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Recent client bookings">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?php echo count($recentBookings); ?>
+                            </span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bookingBell"
+                            style="min-width: 320px;">
+                            <h6 class="dropdown-header">Latest Client Bookings</h6>
+                            <?php foreach ($recentBookings as $booking): ?>
+                                <?php
+                                $appId = (int) ($booking['applicant_id'] ?? 0);
+                                $appName = getFullName($
+                    </div>
+                <?php endif; ?>
+
 
                 <span class="ms-2 me-1">Welcome, <strong>
                         <?php echo h($currentUser['full_name'] ?? ''); ?>
