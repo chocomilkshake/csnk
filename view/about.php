@@ -271,3 +271,41 @@ foreach ($contentItems as $itm) {
               <button type="button"
                       class="px-4 py-2 rounded-full font-semibold transition-all bg-ink text-white shadow
                              focus:outline-none focus:ring-2 focus:ring-brand active"
+                      role="tab" aria-selected="true"
+                      data-title="Get to know CSNK"
+                      data-lead="CSNK Manpower Agency is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full-service manpower agency committed to supporting and empowering Filipino women by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
+                      data-img="<?= asset('resources/img/overview2.png') ?>"
+                      data-img-alt="Overview image">
+                Overview
+              </button>
+
+              <button type="button"
+                      class="px-4 py-2 rounded-full font-semibold transition-all bg-slate-100 text-ink hover:bg-slate-200
+                             focus:outline-none focus:ring-2 focus:ring-brand"
+                      role="tab" aria-selected="false"
+                      data-title="Meet Founder of CSNK"
+                      data-lead="CSNK was founded by Mr. Rogelio M. Lansang year 2010, driven by the mission to provide safe, legitimate and rewarding opportunities to Filipino women, carried out with integrity."
+                      data-img="<?= asset('resources/img/MrRog.png') ?>"
+                      data-img-alt="Founder image">
+                Founder
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Visual -->
+        <div class="flex justify-center lg:justify-end">
+          <div class="rounded-3xl shadow-card bg-white overflow-hidden max-w-md w-full">
+            <img id="heroImg"
+                 src="<?= asset('resources/img/hero1.jpg') ?>"
+                 alt="Hero visual"
+                 class="fade-swap w-full h-auto object-contain">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== -->
+  <!-- Trainings (Modern)   -->
