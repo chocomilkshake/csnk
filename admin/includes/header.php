@@ -847,7 +847,32 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <!-- ===== Content Management (Admins only) ===== -->
                 <?php if ($isAdmin || $isSuperAdmin): ?>
                     <a href="content_management.php"
-                        class="sidebar-item <?php echo $
+                        class="sidebar-item <?php echo $currentPage === 'content_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'content_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Content Management">
+                        <i class="bi bi-images"></i>
+                        <span class="label"><span class="text">Content Management</span></span>
+                    </a>
+                <!-- ================================================ -->
+            <?php endif; ?>
+
+
+            
+            <!-- Accounts -->
+            <a href="accounts.php" class="sidebar-item <?phed);
+                            document.body.classList.remove('sidebar-collapsed');
+                        } else {
+                            document.body.classList.toggle('sidebar-collapsed', collapsed);
+                            document.body.classList.remove('sidebar-hidden');
+                        }
+                    }
+
+                    const initiallyCollapsed = localStorage.getItem(storageKey) === '1';
+                    applyState(initiallyCollapsed);
+
+                    let t;
+                    window.addEventListener('resize', () => {
+                        clearTimeout(t);
                         t = setTimeout(() => applyState(localStorage.getItem(storageKey) === '1'), 120);
                     });
 
