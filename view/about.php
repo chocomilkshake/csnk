@@ -582,3 +582,24 @@ foreach ($contentItems as $itm) {
                     Next <i class="fa-solid fa-chevron-right ms-1"></i>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      const modalEl = document.getElementById('lightboxModal');
+      const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+
+      const imgEl = document.getElementById('lightboxImg');
+      const captionEl = document.getElementById('lightboxCaption');
+      const btnPrev = document.getElementById('lbPrev');
+      const btnNext = document.getElementById('lbNext');
+
+      const grid = document.getElementById('galleryGrid');
+      let visible = [];   // currently visible tiles
+      let index = 0;      // current index in visible
+
+      function collectVisible() {
+        visible = Array.from(grid.querySelectorAll('.gallery-item')).filter(el => !el.hidden);
+      }
