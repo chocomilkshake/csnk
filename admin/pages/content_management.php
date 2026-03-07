@@ -888,4 +888,14 @@ foreach ($contentItems as $itm) {
     preview.innerHTML = '';
     items.forEach(async (entry, i) => {
       const url = await fileToDataURL(entry.file);
-      const tile
+      const tile = createTile(i, url, entry.file.name, entry.title || '');
+      preview.appendChild(tile);
+    });
+    enableControls();
+  }
+
+  function addFiles(fileList) {
+    const accept = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+    const maxFiles = 40; // arbitrary safety limit
+    for (const file of fileList) {
+      if (!accept.includ
