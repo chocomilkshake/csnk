@@ -838,6 +838,33 @@ if ($canViewReports && $conn instanceof mysqli) {
                             </span>
                         </span>
                     </a>
+                <?php endif; ?>
+            <?php endif; /* <-- closes $canViewActivity */ ?>
+
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">Settings</div>
+
+                <!-- ===== Content Management (Admins only) ===== -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="content_management.php"
+                        class="sidebar-item <?php echo $
+                        t = setTimeout(() => applyState(localStorage.getItem(storageKey) === '1'), 120);
+                    });
+
+                    btn?.addEventListener('click', () => {
+                        const current = localStorage.getItem(storageKey) === '1';
+                        const next = !current;
+                        localStorage.setItem(storageKey, next ? '1' : '0');
+                        applyState(next);
+                    });
+
+                    // Initialize tooltips
+                    document.addEventListener('DOMContentLoaded', () => {
+                        if (window.bootstrap && bootstrap.Tooltip) {
+                            const tipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                            tipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+                        }
+
                         // Sidebar collapse: keep submenu open when clicked (do not toggle closed)
                         document.querySelectorAll('.sidebar-toggle[data-bs-toggle="collapse"]').forEach(btn => {
                             btn.addEventListener('click', (e) => {
