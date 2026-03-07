@@ -873,6 +873,35 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <i class="bi bi-person-circle"></i>
                 <span class="label"><span class="text">Profile</span></span>
             </a>
+
+            <?php if ($isAdmin || $isSuperAdmin): ?>
+                <!-- ===== NEW: Country Management (Admins only) ===== -->
+                <a href="country_management.php"
+                    class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                    <i class="bi bi-flag"></i>
+                    <span class="label"><span class="text">Country Management</span></span>
+                </a>
+                <!-- ================================================ -->
+            <?php endif; ?>
+
+            <div class="sidebar-divider"></div>
+            <a href="logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip" data-bs-placement="right"
+                title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="label"><span class="text">Logout</span></span>
+            </a>
+        </nav>
+                $message = $flashMessage['message'] ?? '';
+                if ($message !== '') {
+                    ?>
+                    <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show" role="alert">
+                        <?php echo h((string) $message); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php
+                }
             }
             ?>
             <!-- Page content continues from here ... (footer will close the tags) -->
