@@ -260,6 +260,15 @@ foreach ($contentItems as $itm) {
   <!-- Reusable Navbar -->
   <?php include __DIR__ . '/navbar.php'; ?>
 
+  <!-- Force navbar to show on desktop (fix for Tailwind/Bootstrap conflict) -->
+  <style>
+    @media (min-width: 992px) {
+      .navbar-collapse {
+        display: flex !important;
+      }
+    }
+  </style>
+
   <!-- ===================== -->
   <!-- HERO (Modern 2026)   -->
   <!-- ===================== -->
