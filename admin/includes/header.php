@@ -303,16 +303,26 @@ if (!function_exists('h')) {
     }
 }
 
-/* ---------- Reports note count (badge) - DISTINCT applicants (restored), BU-scoped ---------- */
+/* ---------- Reports note count (badge) - DISTINCT applicants (BU-scoped, active only) ---------- */
 $reportNotesCount = 0;
 if ($canViewReports && $conn instanceof mysqli) {
-    $stmt = $conn->prepare("SELECT COUNT(DISTINCT applicant_id) FROM applicant_reports WHERE business_unit_id = ?");
+    // Simple and reliable query to count distinct applicants with reports
+    // Excludes deleted and blacklisted applicants
+    $sql = "SELECT COUNT(DISTINCT ar.applicant_id) 
+            FROM applicant_reports ar
+            INNER JOIN applicants a ON ar.applicant_id = a.id
+            WHERE ar.business_unit_id = ? 
+              AND a.deleted_at IS NULL
+              AND (SELECT COUNT(*) FROM blacklisted_applicants ba WHERE ba.applicant_id = a.id AND ba.is_active = 1) = 0";
+    
+    $stmt = $conn->prepare($sql);
     if ($stmt) {
         $stmt->bind_param('i', $buId);
         $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_row() : [0];
-        $reportNotesCount = (int) ($row[0] ?? 0);
+        $result = $stmt->get_result();
+        if ($result && $row = $result->fetch_row()) {
+            $reportNotesCount = (int) ($row[0] ?? 0);
+        }
         $stmt->close();
     }
 }
