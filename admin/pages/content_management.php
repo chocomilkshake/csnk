@@ -844,3 +844,23 @@ foreach ($contentItems as $itm) {
       if (!Number.isNaN(i) && items[i]) {
         items[i].title = input.value;
       }
+    });
+    body.appendChild(input);
+
+    card.appendChild(handle);
+    card.appendChild(remove);
+    card.appendChild(imgWrap);
+    card.appendChild(body);
+    col.appendChild(card);
+
+    // Remove logic
+    remove.addEventListener('click', () => {
+      const i = parseInt(col.dataset.index, 10);
+      if (!Number.isNaN(i)) {
+        items.splice(i, 1);
+        render();
+      }
+    });
+
+    // Drag logic
+    col.addEventListener('dragstart', (e) => {
