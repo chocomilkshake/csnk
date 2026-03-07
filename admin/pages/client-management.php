@@ -203,7 +203,7 @@ function safe(?string $s): string
             </div>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table  align-middle mb-0">
                     <thead>
                         <tr>
                             <th style="width: 18%;">Client</th>
