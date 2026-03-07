@@ -251,3 +251,23 @@ foreach ($contentItems as $itm) {
         <!-- Left: Copy -->
         <div>
           <div class="mb-3">
+            <h1 id="heroTitle" class="fade-swap text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
+              Get to know CSNK Manpower Agency
+            </h1>
+          </div>
+
+          <div class="mb-6">
+            <p id="heroLead" class="fade-swap text-slate-700 text-base sm:text-lg leading-relaxed">
+              Clear, honest and customer-first guidance. We connect families with properly
+              screened domestic workers through safe and compliant processes.
+            </p>
+          </div>
+
+          <!-- Modern pills container -->
+          <div class="w-full overflow-x-auto scrollbar-slim">
+            <div id="heroPills"
+                 class="inline-flex gap-2 p-2 bg-white/90 backdrop-blur rounded-full shadow-card"
+                 role="tablist" aria-label="Hero options">
+              <button type="button"
+                      class="px-4 py-2 rounded-full font-semibold transition-all bg-ink text-white shadow
+                             focus:outline-none focus:ring-2 focus:ring-brand active"
