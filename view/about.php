@@ -526,4 +526,38 @@ foreach ($contentItems as $itm) {
       });
 
       // Arrow visibility helpers
-      function updateArrows(
+      function updateArrows(){
+        const max = rail.scrollWidth - rail.clientWidth;
+        if (!btnPrev || !btnNext) return;
+        if (max <= 2){
+          btnPrev.classList.add('hidden');
+          btnNext.classList.add('hidden');
+          return;
+        }
+        const x = rail.scrollLeft;
+        (x <= 2) ? btnPrev.classList.add('hidden') : btnPrev.classList.remove('hidden');
+        (x >= max - 2) ? btnNext.classList.add('hidden') : btnNext.classList.remove('hidden');
+      }
+      rail.addEventListener('scroll', updateArrows);
+      window.addEventListener('resize', updateArrows);
+      updateArrows();
+
+      function scrollByStep(dir){
+        const step = Math.max(rail.clientWidth * 0.7, 140);
+        rail.scrollBy({left: dir * step, behavior:'smooth'});
+      }
+      btnPrev?.addEventListener('click', ()=> scrollByStep(-1));
+      btnNext?.addEventListener('click', ()=> scrollByStep(+1));
+
+      // Initialize
+      const init = rail.querySelector('.chip.active') || rail.querySelector('.chip');
+      if (init){
+        setActiveChip(init);
+        filterTo(init.getAttribute('data-filter'));
+      }
+    })();
+
+    // ===== Lightbox (Bootstrap Modal) with Next/Prev =====
+    (function () {
+      // Create modal HTML once
+      const modalHtml = `
