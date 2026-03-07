@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 07, 2026 at 06:33 AM
+-- Generation Time: Mar 07, 2026 at 08:49 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -171,7 +171,7 @@ INSERT INTO `applicants` (`id`, `business_unit_id`, `country_id`, `first_name`, 
 (29, 2, 2, 'Charmaine Rose', 'Dimapilis', 'Jimenez', '', '09273659012', '09190345711', 'charmainejimenez22@example.com', '2004-02-04', '1789 Camarin Road, Brgy. 178, Camarin, Caloocan City', '{\"elementary\":{\"school\":\"Camarin Elementary School\",\"year\":\"2010\\u20132016\"},\"highschool\":{\"school\":\"Caloocan High School\",\"year\":\"2016\\u20132020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Clean &amp;amp;amp; Care Services\",\"years\":\"2023\\u20132024\",\"role\":\"Housemaid\",\"location\":\"Caloocan\"}]', '[\"Caloocan\",\"QC\",\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 1, 'applicants/698e9a253267f_1770953253.jpg', 'video/698e9a253ea3a_1770953253.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:27:33', '2026-03-06 03:31:39', NULL),
 (30, 2, 2, 'Lorna Fe', 'Bagtas', 'Malabanan', '', '09172349850', '09351867209', 'lornamalabanan39@example.com', '1986-04-10', '443 P. Burgos St., Brgy. Poblacion, Makati City', '{\"elementary\":{\"school\":\"Poblacion Elementary School\",\"year\":\"1992\\u20131998\"},\"highschool\":{\"school\":\"Makati High School\",\"year\":\"1998\\u20132002\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Makati HomeCare\",\"years\":\"2020\\u20132024\",\"role\":\"Housemaid\",\"location\":\"Bangkal Makati\"},{\"company\":\"Taguig Helpers Agency\",\"years\":\"2016\\u20132020\",\"role\":\"Cook\",\"location\":\"Makati\"}]', '[\"Makati\",\"Taguig\",\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9adbdc727_1770953435.jpg', 'video/698e9adbe929e_1770953435.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:30:35', '2026-03-04 14:03:22', NULL),
 (31, 2, 2, 'Lea Catherine', 'Fernandez', 'Rivera', '', '09190456722', '09175346098', 'learivera27@example.com', '1998-12-02', '300 San Guillermo St., Brgy. Hulo, Mandaluyong City', '{\"elementary\":{\"school\":\"Hulo Elementary School\",\"year\":\"2004\\u20132010\"},\"highschool\":{\"school\":\"Mandaluyong High School\",\"year\":\"2010\\u20132014\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"MetroClean\",\"years\":\"2021\\u20132024\",\"role\":\"Housekeeper\",\"location\":\"Ortigas\"}]', '[\"Mandaluyong\",\"Pasig\",\"QC\"]', '[]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 3, 'applicants/698e9b841dc91_1770953604.jpg', 'video/698e9b8425cda_1770953604.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'on_process', NULL, '2026-02-13 03:33:24', '2026-03-07 02:49:42', NULL),
-(32, 2, 2, 'Denise Grace', 'Angeles', 'Mendiola', '', '09956873410', '09359872140', 'denisemendiola33@example.com', '1992-08-19', '5124 A. Bonifacio St., Brgy. Western Bicutan, Taguig City', '{\"elementary\":{\"school\":\"Western Bicutan Elementary School\",\"year\":\"1999\\u20132005\"},\"highschool\":{\"school\":\"Taguig National High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Taguig Home Services\",\"years\":\"2019\\u20132024\",\"role\":\"Housemaid\\/Caregiver\",\"location\":\"BGC\"},{\"company\":\"UrbanClean Agency\",\"years\":\"2016\\u20132019\",\"role\":\"Cleaner\",\"location\":\"Pasay\"}]', '[\"Taguig\",\"Pasay\",\"Makati\"]', '[\"Filipino\",\"English\"]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9c75149ea_1770953845.jpg', 'video/698e9c751c0ff_1770953845.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'approved', NULL, '2026-02-13 03:37:25', '2026-03-06 03:31:12', NULL),
+(32, 2, 2, 'Denise Grace', 'Angeles', 'Mendiola', '', '09956873410', '09359872140', 'denisemendiola33@example.com', '1992-08-19', '5124 A. Bonifacio St., Brgy. Western Bicutan, Taguig City', '{\"elementary\":{\"school\":\"Western Bicutan Elementary School\",\"year\":\"1999\\u20132005\"},\"highschool\":{\"school\":\"Taguig National High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Taguig Home Services\",\"years\":\"2019\\u20132024\",\"role\":\"Housemaid\\/Caregiver\",\"location\":\"BGC\"},{\"company\":\"UrbanClean Agency\",\"years\":\"2016\\u20132019\",\"role\":\"Cleaner\",\"location\":\"Pasay\"}]', '[\"Taguig\",\"Pasay\",\"Makati\"]', '[\"Filipino\",\"English\"]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9c75149ea_1770953845.jpg', 'video/698e9c751c0ff_1770953845.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:37:25', '2026-03-07 06:50:54', NULL),
 (33, 1, 1, 'Ava', 'Marie', 'Thompson', '', '09999999999', '09999999999', 'email@gmail.com', '1998-02-19', '1234 address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 3, 'applicants/698e8d360baa7_1770949942.jpg', 'video/698e8d3610907_1770949942.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:32:22', '2026-03-05 01:31:56', NULL),
 (34, 1, 1, 'Sophia', 'Claire', 'Ramirez', '', '09999999999', '09999999999', 'email@gmail.com', '1990-11-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Mandaluyong\",\"makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e8df92b357_1770950137.jpg', 'video/698e8df92cdd7_1770950137.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:35:37', '2026-03-02 01:46:55', NULL),
 (35, 1, 1, 'Isabella', 'Grace', 'Mitchell', '', '09999999999', '09999999999', 'email@gmail.com', '2000-08-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"IT\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"Mandaluyong\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Technical-Vocational / TESDA Graduate', 2, 'applicants/698e8e832247e_1770950275.jpg', 'video/698e8e83233c5_1770950275.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:37:55', '2026-03-02 01:46:55', NULL),
@@ -472,6 +472,7 @@ CREATE TABLE `applicant_status_reports` (
 --
 
 INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `business_unit_id`, `from_status`, `to_status`, `report_text`, `admin_id`, `created_at`) VALUES
+(0, 32, 2, 'on_process', 'pending', 'Client confirmed / Ready: asdawds', 12, '2026-03-07 14:50:54'),
 (32, 37, 1, 'on_process', 'pending', 'no client', 12, '2026-02-23 14:59:56'),
 (33, 43, 1, 'on_process', 'pending', 'no client', 12, '2026-02-23 21:22:23'),
 (34, 23, 1, 'on_hold', 'pending', 'Reverted from On Hold to Pending. Reason: Documents Complete. Description: solved', 12, '2026-02-23 21:27:27'),
@@ -662,17 +663,18 @@ CREATE TABLE `content_categories` (
   `description` text DEFAULT NULL,
   `display_order` int(11) DEFAULT 0,
   `is_active` tinyint(4) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `business_unit_id` int(10) UNSIGNED NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `content_categories`
 --
 
-INSERT INTO `content_categories` (`id`, `name`, `description`, `display_order`, `is_active`, `created_at`) VALUES
-(1, 'Domestic Workers', '', 1, 1, '2026-03-07 03:40:15'),
-(2, 'Skilled Driver', '', 2, 1, '2026-03-07 03:40:31'),
-(3, 'Cellphone Technician', '', 3, 1, '2026-03-07 03:40:45');
+INSERT INTO `content_categories` (`id`, `name`, `description`, `display_order`, `is_active`, `created_at`, `business_unit_id`) VALUES
+(1, 'Domestic Workers', '', 1, 1, '2026-03-07 03:40:15', 1),
+(2, 'Skilled Driver', '', 2, 1, '2026-03-07 03:40:31', 1),
+(3, 'Cellphone Technician', '', 3, 1, '2026-03-07 03:40:45', 1);
 
 -- --------------------------------------------------------
 
@@ -682,6 +684,7 @@ INSERT INTO `content_categories` (`id`, `name`, `description`, `display_order`, 
 
 CREATE TABLE `content_items` (
   `id` int(11) NOT NULL,
+  `business_unit_id` int(10) UNSIGNED DEFAULT 0,
   `category_id` int(11) NOT NULL,
   `title` varchar(200) DEFAULT NULL,
   `image_path` varchar(255) NOT NULL,
@@ -695,13 +698,12 @@ CREATE TABLE `content_items` (
 -- Dumping data for table `content_items`
 --
 
-INSERT INTO `content_items` (`id`, `category_id`, `title`, `image_path`, `description`, `display_order`, `is_active`, `created_at`) VALUES
-(1, 1, 'about3', 'contents/69abb86476c69_1772861540.jpg', '', 1, 1, '2026-03-07 05:32:20'),
-(2, 1, 'about4', 'contents/69abb86477f24_1772861540.jpg', '', 2, 1, '2026-03-07 05:32:20'),
-(3, 1, 'about5', 'contents/69abb86478d67_1772861540.jpg', '', 3, 1, '2026-03-07 05:32:20'),
-(4, 1, 'about8', 'contents/69abb86479e29_1772861540.jpg', '', 4, 1, '2026-03-07 05:32:20'),
-(5, 1, 'about6', 'contents/69abb8647af71_1772861540.jpg', '', 5, 1, '2026-03-07 05:32:20'),
-(6, 3, 'CELLPHONE_TECHNICIAN_eef6c313ee', 'contents/69abb8932a922_1772861587.jpg', '', 1, 1, '2026-03-07 05:33:07');
+INSERT INTO `content_items` (`id`, `business_unit_id`, `category_id`, `title`, `image_path`, `description`, `display_order`, `is_active`, `created_at`) VALUES
+(2, 0, 1, 'about4', 'contents/69abb86477f24_1772861540.jpg', '', 2, 1, '2026-03-07 05:32:20'),
+(3, 0, 1, 'about5', 'contents/69abb86478d67_1772861540.jpg', '', 3, 1, '2026-03-07 05:32:20'),
+(4, 0, 1, 'about8', 'contents/69abb86479e29_1772861540.jpg', '', 4, 1, '2026-03-07 05:32:20'),
+(5, 0, 1, 'about6', 'contents/69abb8647af71_1772861540.jpg', '', 5, 1, '2026-03-07 05:32:20'),
+(6, 0, 3, 'CELLPHONE_TECHNICIAN_eef6c313ee', 'contents/69abb8932a922_1772861587.jpg', '', 1, 1, '2026-03-07 05:33:07');
 
 -- --------------------------------------------------------
 
@@ -793,7 +795,8 @@ CREATE TABLE `session_logs` (
 INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
 (184, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 09:28:49', NULL),
 (185, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:09', '2026-03-07 11:42:14'),
-(186, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:26', NULL);
+(186, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:26', NULL),
+(187, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 15:02:03', NULL);
 
 --
 -- Indexes for dumped tables
@@ -904,7 +907,8 @@ ALTER TABLE `blacklisted_applicants`
 -- Indexes for table `content_categories`
 --
 ALTER TABLE `content_categories`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cc_bu` (`business_unit_id`);
 
 --
 -- Indexes for table `content_items`
@@ -952,7 +956,7 @@ ALTER TABLE `countries`
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=187;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=188;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
