@@ -227,4 +227,27 @@ foreach ($contentItems as $itm) {
     /* Lightbox image should not exceed viewport */
     .lightbox-img {
       max-width: 100%;
-      max-height
+      max-height: calc(100vh - 10rem);
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body class="bg-soft text-ink">
+
+  <!-- Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
+
+  <!-- ===================== -->
+  <!-- HERO (Modern 2026)   -->
+  <!-- ===================== -->
+  <section class="relative overflow-hidden">
+    <div class="hero-backdrop"></div>
+    <div class="blob blob--1"></div>
+    <div class="blob blob--2"></div>
+
+    <div class="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center py-10 lg:py-16">
+
+        <!-- Left: Copy -->
+        <div>
+          <div class="mb-3">
