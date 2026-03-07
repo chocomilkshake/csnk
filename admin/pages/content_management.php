@@ -941,7 +941,40 @@ foreach ($contentItems as $itm) {
     if (!items.length) return;
     if (!bulkCat.value) { alert('Please select a category.'); return; }
 
-    btnUpload.disable
+    btnUpload.disabled = true;
+    btnUpload.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+
+    try {
+      const fd = new FormData();
+      fd.append('action', 'add_content_bulk');
+      fd.append('category_id', bulkCat.value);
+      fd.append('content_description', document.getElementById('bulkDesc').value || '');
+
+      // append files and titles in current order
+      items.forEach(({file, title}) => {
+        fd.append('content_images[]', file, file.name);
+        fd.append('titles[]', title || '');
+      });
+
+      const resp = await fetch(window.location.href, {
+        method: 'POST',
+        body: fd
+      });
+      const html = await resp.text();
+
+      // naive success-detect: reload to show message
+      // (server sets $message via PHP on same page)
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+      alert('Upload failed. Please try again.');
+      btnUpload.disabled = false;
+      btnUpload.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i>Upload All';
+    }
+  });
+
+})();
+</script>
 
 <style>
 /* subtle helper to show draggable */
