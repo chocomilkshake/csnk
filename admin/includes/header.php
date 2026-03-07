@@ -857,7 +857,7 @@ if ($canViewReports && $conn instanceof mysqli) {
 
             <!-- ===== Content Management (Admins only) ===== -->
             <?php if ($isAdmin || $isSuperAdmin): ?>
-                <a href="#" class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                <a href="content_management.php" class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
                     aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
                     data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
                     <i class="bi bi-flag"></i>
