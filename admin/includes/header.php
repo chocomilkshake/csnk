@@ -834,4 +834,25 @@ if ($canViewReports && $conn instanceof mysqli) {
                         <span class="side-badge" aria-live="polite">
                             <span class="pill-count <?php echo ((int) ($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>"
                                 aria-label="Total reports count">
-                                <?php echo (int) ($
+                                <?php echo (int) ($reportNotesCount ?? 0); ?>
+                            </span>
+                        </span>
+                    </a>
+                        // Sidebar collapse: keep submenu open when clicked (do not toggle closed)
+                        document.querySelectorAll('.sidebar-toggle[data-bs-toggle="collapse"]').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                const targetId = btn.getAttribute('data-bs-target');
+                                if (!targetId) return;
+                                const target = document.querySelector(targetId);
+                                if (!target || !window.bootstrap?.Collapse) return;
+                                if (target.classList.contains('show')) {
+                                    e.preventDefault();
+                                    e.stopImmediatePropagation();
+                                    const collapse = bootstrap.Collapse.getInstance(target);
+                                    if (collapse) collapse.show();
+                                }
+                            }, true);
+                        });
+                    });
+                })();
+            </script>
