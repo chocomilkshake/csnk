@@ -922,3 +922,29 @@ foreach ($contentItems as $itm) {
   });
 
   // Click to select
+  fileInput.addEventListener('change', (e) => {
+    addFiles(e.target.files);
+    fileInput.value = ''; // reset
+  });
+
+  // Clear all
+  btnClear.addEventListener('click', () => {
+    items = [];
+    render();
+  });
+
+  // Enable upload when category chosen
+  document.getElementById('bulkCategory').addEventListener('change', enableControls);
+
+  // Submit via fetch to preserve file order
+  btnUpload.addEventListener('click', async () => {
+    if (!items.length) return;
+    if (!bulkCat.value) { alert('Please select a category.'); return; }
+
+    btnUpload.disable
+
+<style>
+/* subtle helper to show draggable */
+[draggable="true"] { cursor: grab; }
+[draggable="true"]:active { cursor: grabbing; }
+</style>
