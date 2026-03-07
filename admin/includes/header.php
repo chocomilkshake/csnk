@@ -844,6 +844,20 @@ if ($canViewReports && $conn instanceof mysqli) {
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
 
+                <!-- ===== Content Management (Admins only) ===== -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="#"
+                        class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                        <i class="bi bi-flag"></i>
+                        <span class="label"><span class="text">Content Management</span></span>
+                    </a>
+                <!-- ================================================ -->
+            <?php endif; ?>
+
+
+            
             <!-- Accounts -->
             <a href="accounts.php" class="sidebar-item <?php echo $currentPage === 'accounts' ? 'active' : ''; ?>"
                 aria-current="<?php echo $currentPage === 'accounts' ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
