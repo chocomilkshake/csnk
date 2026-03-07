@@ -898,4 +898,27 @@ foreach ($contentItems as $itm) {
     const accept = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
     const maxFiles = 40; // arbitrary safety limit
     for (const file of fileList) {
-      if (!accept.includ
+      if (!accept.includes(file.type)) continue;
+      if (items.length >= maxFiles) break;
+      items.push({ file, title: '' });
+    }
+    render();
+  }
+
+  // Drag & drop
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('border-primary', 'bg-white');
+  });
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('border-primary', 'bg-white');
+  });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-primary', 'bg-white');
+    if (e.dataTransfer.files?.length) {
+      addFiles(e.dataTransfer.files);
+    }
+  });
+
+  // Click to select
