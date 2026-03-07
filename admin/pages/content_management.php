@@ -864,3 +864,22 @@ foreach ($contentItems as $itm) {
 
     // Drag logic
     col.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', col.dataset.index);
+      // add dragging style
+      col.classList.add('opacity-50');
+    });
+    col.addEventListener('dragend', () => col.classList.remove('opacity-50'));
+    col.addEventListener('dragover', (e) => e.preventDefault());
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      const to = parseInt(col.dataset.index, 10);
+      if (!Number.isNaN(from) && !Number.isNaN(to) && from !== to) {
+        const [moved] = items.splice(from, 1);
+        items.splice(to, 0, moved);
+        render();
+      }
+    });
+
+    return col;
+  }
