@@ -587,5 +587,20 @@ if (!$conn) {
       btnPrev.addEventListener('click', () => showAt(index - 1));
       btnNext.addEventListener('click', () => showAt(index + 1));
 
+      // Keyboard navigation when modal is open
+      modalEl.addEventListener('shown.bs.modal', () => {
+        function onKey(e) {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); }
+          if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); }
+        }
+        document.addEventListener('keydown', onKey);
+        modalEl.addEventListener('hidden.bs.modal', () => {
+          document.removeEventListener('keydown', onKey);
+          imgEl.src = '';
+        }, { once: true });
+      });
+    })();
+  </script>
+
 </body>
 </html>
