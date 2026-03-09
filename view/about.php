@@ -458,7 +458,22 @@ if (!$conn) {
         if (btn.dataset.img) {
           imgEl.src = btn.dataset.img;
           imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image';
-        }ctorAll('.gallery-tile'));
+        }
+      }
+
+      function swap(btn) {
+        setActive(btn);
+        swapEls.forEach(el => el.classList.add('is-swapping'));
+        setTimeout(() => {
+          applyFrom(btn);
+          swapEls.forEach(el => el.classList.remove('is-swapping'));
+        }, 150);
+      }
+
+      pills.forEach(btn => {('galleryFilters');
+      if (!grid || !filters) return;
+
+      const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
 
       // Filter buttons (All + dynamic categories)
       filters.addEventListener('click', (e) => {
