@@ -347,6 +347,23 @@ if (!$conn) {
   <section id="training-gallery" class="training-gallery py-5 bg-white">
     <div class="container">
 
+      <!-- Header + Category Filters -->
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+        <h2 class="h1 fw-bold mb-0">Trainings</h2>
+
+        <!-- Category buttons (CMS-driven) -->
+        <div id="galleryFilters" class="btn-group flex-wrap" role="group" aria-label="Gallery categories">
+          <!-- ALL -->
+          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
+          </button>
+
+          <?php if (!empty($categories)): ?>
+            <?php foreach ($categories as $cat):
+              $catName = $cat['name'] ?? 'Category';
+              $catSlug = slugify($catName);
+              $cnt = $categoryCounts[$catSlug] ?? 0;
+            ?>
               <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>" aria-pressed="false">
                 <?= htmlspecialchars($catName) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
