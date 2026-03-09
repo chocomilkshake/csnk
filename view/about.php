@@ -574,6 +574,18 @@ if (!$conn) {
         if (!tile) return;
 
         collectVisible();
-        if (!visib
+        if (!visible.length) return;
+
+        // set index to the clicked one
+        index = visible.indexOf(tile);
+        if (index < 0) index = 0;
+
+        showAt(index);
+        bsModal.show();
+      });
+
+      btnPrev.addEventListener('click', () => showAt(index - 1));
+      btnNext.addEventListener('click', () => showAt(index + 1));
+
 </body>
 </html>
