@@ -275,7 +275,34 @@ if (!$conn) {
     }
     @media (max-width: 575.98px) { .cta-btn::after { right: -1.6rem; font-size: .8rem; } }
     @media (prefers-reduced-motion: reduce) { .cta-btn { transition: none !important; } }
-  </style>allery-grid">
+  </style>
+
+  <!-- HERO -->
+  <section class="hero-section">
+    <div class="hero-grid"></div>
+    <div class="hero-gradient"></div>
+
+    <div class="container">
+      <div class="row align-items-center g-4 g-lg-5">
+
+        <!-- LEFT: Text + pills -->
+        <div class="col-12 col-lg-6">
+          <div class="hero-title-wrap mb-2">
+            <h1 id="heroTitle" class="display-4 fw-bold mb-0 fade-swap">
+              Get to know CSNK Manpower Agency
+            </h1>
+          </div>
+
+          <div class="hero-lead-wrap.png') ?>" data-img-alt="Founder image">
+                Foundere) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
+              </button>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Thumbnails Grid (CMS-driven) -->
+      <div id="galleryGrid" class="gallery-grid">
         <?php if (!empty($contentItems)): ?>
           <?php foreach ($contentItems as $item):
             $itemTitle = $item['title'] ?: 'Training image';
