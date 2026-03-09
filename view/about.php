@@ -504,7 +504,25 @@ if (!$conn) {
           b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
         });
 
-        // Show/hide tiles based on slug (st
+        // Show/hide tiles based on slug (strict match)
+        tiles.forEach(tile => {
+          const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
+          const show = (filter === 'all') ? true : (cat === filter);
+          tile.hidden = !show;
+        });
+      });
+
+      // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
+      // Create modal HTML once
+      const modalHtml = `
+        <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+              <div class="modal-body p-0 d-flex flex-column align-items-center">
+                <button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+
                 <div class="w-100 text-center pt-4 pb-3">
 
       grid.addEventListener('click', (e) => {
