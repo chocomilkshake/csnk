@@ -524,7 +524,32 @@ if (!$conn) {
                 </button>
 
                 <div class="w-100 text-center pt-4 pb-3">
+                  <img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;">
+                </div>
 
+                <div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3">
+                  <button id="lbPrev" class="btn btn-dark rounded-pill px-3">
+                    <i class="fa-solid fa-chevron-left me-1"></i> Prev
+                  </button>
+                  <div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div>
+                  <button id="lbNext" class="btn btn-dark rounded-pill px-3">
+                    Next <i class="fa-solid fa-chevron-right ms-1"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      const modalEl = document.getElementById('lightboxModal');
+      const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+
+      const imgEl = document.getElementById('lightboxImg');
+      const captionEl = document.getElementById<?php
+      }
+
+      // Open lightbox on tile click
       grid.addEventListener('click', (e) => {
         const tile = e.target.closest('.gallery-tile');
         if (!tile) return;
