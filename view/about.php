@@ -381,7 +381,25 @@ if (!$conn) {
             $catSlug   = slugify($catName);
             $imgUrl    = getContentImageUrl($item['image_path']);
           ?>
-            <
+            <button class="gallery-tile"
+                    data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                    data-full="<?= htmlspecialchars($imgUrl) ?>"
+                    data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                    aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+              <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+            </button>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="col-12">
+            <div class="text-center py-5 bg-white rounded-3 border">
+              <p class="text-muted mb-0">Contents and Blogs soon!</p>
+            </div>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </section>
+
   <!-- ====================== -->
   <!-- FINAL CTA: Hire Now!  -->
   <!-- ====================== -->
