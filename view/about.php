@@ -470,7 +470,23 @@ if (!$conn) {
         }, 150);
       }
 
-      pills.forEach(btn => {('galleryFilters');
+      pills.forEach(btn => {
+        btn.addEventListener('click', () => swap(btn));
+        btn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
+        });
+      });
+
+      const init = container.querySelector('.btn.active') || pills[0];
+      if (init) applyFrom(init);
+    })();
+  </script>
+
+  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev -->
+  <script>
+    (function () {
+      const grid = document.getElementById('galleryGrid');
+      const filters = document.getElementById('galleryFilters');
       if (!grid || !filters) return;
 
       const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
