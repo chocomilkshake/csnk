@@ -546,7 +546,7 @@ if (!$conn) {
       const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
 
       const imgEl = document.getElementById('lightboxImg');
-      const captionEl = document.getElementById<?php
+      const captionEl = document.getElementById
       }
 
       // Open lightbox on tile click
