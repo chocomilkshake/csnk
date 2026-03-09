@@ -496,7 +496,22 @@ if (!$conn) {
         const btn = e.target.closest('button[data-filter]');
         if (!btn) return;
 
-        const filter = 
+        const filter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+
+        // Update active state
+        filters.querySelectorAll('button[data-filter]').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+
+        // Show/hide tiles based on slug (st
+                <div class="w-100 text-center pt-4 pb-3">
+
+      grid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.gallery-tile');
+        if (!tile) return;
+
+        collectVisible();
         if (!visib
 </body>
 </html>
