@@ -321,7 +321,34 @@ if (!$conn) {
                 data-title="Meet Founder of CSNK"
                 data-lead="CSNK was founded by Mr. Rogelio M. Lansang year 2010, driven by the mission to provide safe, legitimate and rewarding opportunities to Filipino women, carried out with integrity."
                 data-img="<?= asset('resources/img/MrRog.png') ?>" data-img-alt="Founder image">
-                Foundere) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
+                Founder
+              </button>
+            </div>
+          </div>
+
+          <!-- Spacer (kept for layout compatibility) -->
+          <div class="hero-pills-spacer"></div>
+        </div>
+
+        <!-- RIGHT: Image -->
+        <div class="col-12 col-lg-6 hero-visual">
+          <div class="hero-image-wrap rounded-4">
+            <img id="heroImg" src="<?= asset('resources/img/hero1.jpg') ?>" alt="Hero visual" class="img-fluid fade-swap">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== -->
+  <!-- Training Gallery      -->
+  <!-- ===================== -->
+  <section id="training-gallery" class="training-gallery py-5 bg-white">
+    <div class="container">
+
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>" aria-pressed="false">
+                <?= htmlspecialchars($catName) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
             <?php endforeach; ?>
           <?php endif; ?>
