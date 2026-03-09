@@ -420,7 +420,24 @@ if (!$conn) {
         </div>
       </div><!-- /.cta-hire -->
     </div>
-  </section>roPills');
+  </section>
+
+  <!-- ===================== -->
+  <!-- Page Content Ends     -->
+  <!-- ===================== -->
+
+  <!-- ✅ Reusable Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler (kept as in your old page) -->
+  <script src="<?= asset('resources/js/policy-modals.js') ?>"></script>
+
+  <!-- Page‑local: Hero pill swapper (unchanged from old) -->
+  <script>
+    (function () {
+      const container = document.getElementById('heroPills');
       constxtContent = btn.dataset.title;
         if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
         if (btn.dataset.img) {
