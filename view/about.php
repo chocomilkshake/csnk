@@ -438,7 +438,22 @@ if (!$conn) {
   <script>
     (function () {
       const container = document.getElementById('heroPills');
-      constxtContent = btn.dataset.title;
+      const titleEl = document.getElementById('heroTitle');
+      const leadEl = document.getElementById('heroLead');
+      const imgEl = document.getElementById('heroImg');
+
+      if (!container || !titleEl || !leadEl || !imgEl) return;
+
+      const pills = container.querySelectorAll('.btn');
+      const swapEls = [titleEl, leadEl, imgEl];
+
+      function setActive(btn) {
+        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      }
+
+      function applyFrom(btn) {
+        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
         if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
         if (btn.dataset.img) {
           imgEl.src = btn.dataset.img;
