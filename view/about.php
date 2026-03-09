@@ -546,7 +546,26 @@ if (!$conn) {
       const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
 
       const imgEl = document.getElementById('lightboxImg');
-      const captionEl = document.getElementById
+      const captionEl = document.getElementById('lightboxCaption');
+      const btnPrev = document.getElementById('lbPrev');
+      const btnNext = document.getElementById('lbNext');
+
+      let visible = [];   // currently visible tiles
+      let index = 0;      // current index in visible
+
+      function collectVisible() {
+        visible = tiles.filter(el => !el.hidden);
+      }
+
+      function showAt(i) {
+        if (!visible.length) return;
+        index = (i + visible.length) % visible.length;
+        const tile = visible[index];
+        const src = tile.getAttribute('data-full');
+        const caption = tile.getAttribute('data-caption') || '';
+        imgEl.src = src;
+        imgEl.alt = caption || 'Training image';
+        captionEl.textContent = caption;
       }
 
       // Open lightbox on tile click
