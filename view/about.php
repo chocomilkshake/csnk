@@ -293,7 +293,34 @@ if (!$conn) {
             </h1>
           </div>
 
-          <div class="hero-lead-wrap.png') ?>" data-img-alt="Founder image">
+          <div class="hero-lead-wrap mb-4">
+            <p id="heroLead" class="lead text-black-100 mb-0 fade-swap">
+              Clear, honest and customer‑first guidance. We connect families with properly
+              screened domestic workers through safe and compliant processes.
+            </p>
+          </div>
+
+          <!-- Pills -->
+          <div class="hero-pills-abs-wrapper">
+            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
+              aria-label="Hero options">
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
+                data-title="Get to know CSNK"
+                data-lead="CSNK Manpower Agency is dedicated to providing families with reliable 
+                    and compassionate household assistance. Beyond offering quality domestic help, we 
+                    are a full‑service manpower agency committed to supporting and empowering Filipino 
+                    women by connecting them with safe, legitimate, and rewarding employment opportunities. 
+                    Through proper screening, guidance, and documentation, we ensure that every home receives 
+                    trustworthy service, while every applicant receives a fair chance to build a better future."
+                data-img="<?= asset('resources/img/overview2.png') ?>" data-img-alt="Overview image">
+                Overview
+              </button>
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Meet Founder of CSNK"
+                data-lead="CSNK was founded by Mr. Rogelio M. Lansang year 2010, driven by the mission to provide safe, legitimate and rewarding opportunities to Filipino women, carried out with integrity."
+                data-img="<?= asset('resources/img/MrRog.png') ?>" data-img-alt="Founder image">
                 Foundere) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
             <?php endforeach; ?>
