@@ -408,6 +408,30 @@ if (!$conn) {
       <div class="cta-hire">
         <div class="cta-row">
           <p class="cta-title">
+            Hire reliable, properly screened Household Service Workers (HSWs)
+            for your home.
+          </p>
+
+          <div class="cta-actions">
+            <a class="cta-btn" href="./applicant.php" aria-label="Hire Now">
+              Hire Now! <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div><!-- /.cta-hire -->
+    </div>
+  </section>roPills');
+      constxtContent = btn.dataset.title;
+        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
+        if (btn.dataset.img) {
+          imgEl.src = btn.dataset.img;
+          imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image';
+        }ctorAll('.gallery-tile'));
+
+      // Filter buttons (All + dynamic categories)
+      filters.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-filter]');
+        if (!btn) return;
 
         const filter = 
         if (!visib
