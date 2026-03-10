@@ -45,6 +45,7 @@ if ($conn instanceof mysqli) {
 /* ============================================================================
    Helpers
 ============================================================================ */
+function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function ensure_upper(?string $s, int $max = null): string {
     $s = strtoupper(trim((string)$s));
     if ($max !== null) $s = substr($s, 0, $max);
@@ -57,6 +58,26 @@ function flag_emoji_from_iso2(?string $iso2): string {
     $cp2 = 0x1F1E6 + (ord($iso2[1]) - ord('A'));
     return mb_convert_encoding('&#' . $cp1 . ';', 'UTF-8', 'HTML-ENTITIES')
          . mb_convert_encoding('&#' . $cp2 . ';', 'UTF-8', 'HTML-ENTITIES');
+}
+/**
+ * Build a small flag icon (24x18) using flagcdn.com with emoji fallback
+ * Usage: echo flag_icon('PH', 'Philippines');
+ */
+function flag_icon(?string $iso2, string $nameForAlt = ''): string {
+    $code = strtolower(trim((string)$iso2));
+    if (strlen($code) !== 2) {
+        return '<span class="flag-emoji">'.flag_emoji_from_iso2($iso2).'</span>';
+    }
+    $emoji = flag_emoji_from_iso2($iso2);
+    $alt = h($nameForAlt ?: strtoupper($code).' flag');
+    // stack: image first, reveal emoji if image fails
+    return '
+    <span class="flag-stack" aria-hidden="true">
+      <img class="flag-img" src="https://flagcdn.com/24x18/'.h($code).'.png"
+           width="24" height="18" loading="lazy" alt="'.$alt.'"
+           onerror="this.style.display=\'none\'; const e=this.nextElementSibling; if(e) e.style.display=\'inline-block\';">
+      <span class="flag-emoji" style="display:none">'.$emoji.'</span>
+    </span>';
 }
 
 /* ============================================================================
@@ -98,7 +119,7 @@ if (isset($_GET['action'], $_GET['id'])) {
 /* ============================================================================
    Add/Edit submit
    - Business Unit creation is AUTO (hidden) for ADD only:
-     Agency ID=0, BU Code=SMC-{ISO2}, BU Name=SMC {Country Name}, Active=1
+     Agency ID=2 (default), BU Code=SMC-{ISO2}, BU Name=SMC {Country Name}, Active=1
      If BU code exists already, skip creating duplicate silently.
 ============================================================================ */
 $errors = [];
@@ -189,8 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_country'])) {
                     $stmtBU->bind_param('iissi', $bu_agency_id, $countryId, $bu_code, $bu_name, $bu_active);
                     if (!$stmtBU->execute()) {
                         // Non-fatal: keep country saved even if BU creation fails silently
-                        // You may uncomment the next line if you want to show error:
-                        // $errors[] = "Country saved, but failed to create Business Unit: " . $conn->error;
                     }
                     $stmtBU->close();
                 }
@@ -227,181 +246,353 @@ if ($res) {
     $countries = $res->fetch_all(MYSQLI_ASSOC);
     $res->close();
 }
+
+$totalCount  = count($countries);
+$activeCount = array_reduce($countries, fn($a,$c)=>$a + ((int)($c['active'] ?? 0) === 1 ? 1 : 0), 0);
+$inactiveCount = $totalCount - $activeCount;
 ?>
 <style>
-/* ======== Modern, readable, friendly UI for admins ======== */
 :root{
-  --ring: rgba(37,99,235,.14);
-  --ink: #0f172a;
-  --muted: #64748b;
-  --soft: #f8fafc;
+  --ink:#0f172a; --muted:#64748b; --ring:rgba(37,99,235,.14);
+  --bg:#f8fafc; --card:#ffffff; --card-2:#ffffff; --line:#e2e8f0;
+  --ok:#16a34a; --warn:#f59e0b; --err:#ef4444; --pri:#2563eb; --pri-2:#60a5fa;
 }
-.card { border: none; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
-.form-control, .form-select { border-radius:.6rem; }
-.form-control:focus, .form-select:focus { box-shadow: 0 0 0 .25rem var(--ring); border-color:#93c5fd; }
-.input-icon { position: relative; }
-.input-icon > .bi { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:var(--muted); }
-.input-icon > input { padding-left: 2.25rem; }
-.form-label { font-weight:700; color:var(--ink); }
-.small-hint { color:var(--muted); }
-.badge-soft { border:1px solid rgba(0,0,0,.06); }
-.badge-iso2 { background:#f1f5f9; color:#0f172a; }
-.badge-iso3 { background:#e0f2fe; color:#075985; }
-.mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
-.country-flag { font-size: 1.15rem; margin-right:.35rem; }
-.btn-action { min-width: 36px; border-radius: 10rem; }
-.table td, .table th { vertical-align: middle; }
-.bg-soft { background: var(--soft); }
-.modal-header { border-bottom:1px solid #eef2f7; }
-.modal-footer { border-top:1px solid #eef2f7; }
-.modal-title { font-weight:800; letter-spacing:.2px; }
-hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e2e8f0, #eef2f7); }
+
+/* Light background */
+body { background: linear-gradient(180deg, #f1f5f9, #f8fafc) fixed; }
+
+/* Page title */
+.page-title h4{ font-weight:800; letter-spacing:.3px; color:#1e293b; }
+.page-title p{ color:#64748b; }
+
+/* Stat chips */
+.stats-chip{
+  display:flex; align-items:center; gap:.65rem; padding:.7rem 1rem; border:1px solid var(--line);
+  border-radius:1rem; background:#ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  color:#334155;
+}
+.stats-chip .icon{ width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:rgba(37,99,235,.1); color:#2563eb; }
+.stats-chip .count{ font-weight:800; color:#0f172a; font-size:1.05rem; }
+.stats-chip small{ color:#64748b; display:block; margin-top:-2px; }
+
+/* Card */
+.card {
+  border:1px solid var(--line); border-radius:1rem; overflow:hidden; background:#ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.card-header{
+  background: #f8fafc;
+  border-bottom:1px solid var(--line);
+  padding: .85rem 1rem;
+  position: sticky; top: 0; z-index: 3;
+  color:#334155;
+}
+.card-header .title{ font-weight:700; }
+.card-body{ background:transparent; }
+
+/* Table */
+.table-wrap{ max-height: 64vh; overflow:auto; }
+table.table{ margin:0; color:#334155; }
+table thead th{
+  position: sticky; top: 0; background:#f1f5f9;
+  z-index:2; border-bottom:1px solid var(--line); color:#1e293b; font-weight:700; letter-spacing:.2px;
+}
+.table td, .table th{ vertical-align:middle; border-color: var(--line); }
+.table tbody tr:hover{ background:rgba(37,99,235,.04); }
+
+/* Badges */
+.badge-soft{ border:1px solid var(--line); background:#f8fafc; color:#334155; }
+.badge-iso2{ background:rgba(37,99,235,.1); color:#1d4ed8; cursor:pointer; }
+.badge-iso3{ background:rgba(14,165,233,.12); color:#0369a1; cursor:pointer; }
+.badge-cur{ background:rgba(16,185,129,.1); color:#15803d; cursor:pointer; }
+.badge-ph{ background:rgba(245,158,11,.1); color:#b45309; cursor:pointer; }
+.badge-copy:active{ transform:scale(.97); }
+
+/* Flags */
+.flag-stack { display:inline-flex; align-items:center; justify-content:center; width:24px; height:18px; margin-right:.35rem; border-radius:3px; overflow:hidden; box-shadow:0 0 0 1px rgba(0,0,0,.1); }
+.flag-img { display:block; width:24px; height:18px; object-fit:cover; }
+.flag-emoji { font-size:1rem; line-height:1; }
+
+/* Mono for IDs */
+.mono{ font-variant-numeric:tabular-nums; font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+
+/* Buttons */
+.btn-action{ min-width:36px; border-radius:10rem; position:relative; z-index:1; }
+.btn-toggle{ border-radius:999px; }
+.btn, .form-control, .form-select{ border-radius:.75rem; }
+
+/* Inputs + focus */
+.form-control, .form-select{ background:#ffffff; border-color:var(--line); color:#1e293b; }
+.form-control:focus, .form-select:focus{ box-shadow:0 0 0 .25rem var(--ring); border-color:#93c5fd; outline:none; color:#0f172a; }
+.input-icon{ position:relative; }
+.input-icon > .bi{ position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#64748b; }
+.input-icon > input{ padding-left:2.25rem; }
+.form-label{ font-weight:700; color:#1e293b; }
+.small-hint{ color:#64748b; }
+.bg-soft{ background:#f8fafc; }
+
+/* Divider */
+hr.hr-soft{ border:0; height:1px; background:linear-gradient(90deg,rgba(0,0,0,.04),rgba(0,0,0,.1),rgba(0,0,0,.04)); }
+
+/* Footer (sticky controls) */
+.card-footer{
+  border-top:1px solid var(--line);
+  background:#f8fafc;
+  position: sticky; bottom: 0; z-index: 2;
+  color:#64748b;
+}
+
+/* Tooltip width */
+.tooltip-inner{ max-width:260px; }
+
+/* Status pills */
+.badge-status {
+  display:inline-flex; align-items:center; gap:.35rem; padding:.25rem .6rem; border-radius:999px;
+  font-weight:700;
+}
+.badge-status.ok { background:rgba(22,163,74,.1); color:#15803d; border:1px solid rgba(22,163,74,.2); }
+.badge-status.no { background:rgba(239,68,68,.1); color:#dc2626; border:1px solid rgba(239,68,68,.2); }
+
+/* Responsive */
+@media (max-width: 575.98px){
+  .page-title h4 { font-size:1.05rem; }
+}
 </style>
 
-<div class="row mb-4">
+<div class="row align-items-center justify-content-between mb-3 page-title">
   <div class="col">
-    <h4 class="mb-0">Country Management</h4>
-    <p class="text-muted small">Manage global countries and their regional settings.</p>
+    <h4 class="mb-1">Country Management</h4>
+    <p class="mb-0">Manage global countries and their regional settings.</p>
   </div>
-  <div class="col-auto d-flex align-items-center gap-2">
-    <input id="tblFilter" type="search" class="form-control form-control-sm" placeholder="Search countries...">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-      <i class="bi bi-plus-lg me-1"></i> Add New Country
+
+  <div class="col-auto d-flex flex-wrap gap-2">
+    <div class="stats-chip" title="All countries in the system" data-bs-toggle="tooltip">
+      <div class="icon"><i class="bi bi-globe2"></i></div>
+      <div>
+        <div class="count"><?= (int)$totalCount ?></div>
+        <small>Total</small>
+      </div>
+    </div>
+    <div class="stats-chip" title="Active &amp; available for selection" data-bs-toggle="tooltip">
+      <div class="icon"><i class="bi bi-check2-circle"></i></div>
+      <div>
+        <div class="count"><?= (int)$activeCount ?></div>
+        <small>Active</small>
+      </div>
+    </div>
+    <div class="stats-chip" title="Inactive &amp; hidden from new records" data-bs-toggle="tooltip">
+      <div class="icon"><i class="bi bi-slash-circle"></i></div>
+      <div>
+        <div class="count"><?= (int)$inactiveCount ?></div>
+        <small>Inactive</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar (simplified: removed density, rows, export) -->
+<div class="row g-2 align-items-center toolbar mb-3">
+  <div class="col-sm-6">
+    <div class="input-icon">
+      <i class="bi bi-search"></i>
+      <input id="tblFilter" type="search" class="form-control" placeholder="Search by name or ISO2 (e.g., Philippines or PH)" aria-label="Search countries">
+    </div>
+  </div>
+  <div class="col-sm-auto">
+    <select id="statusFilter" class="form-select" aria-label="Filter by status">
+      <option value="">All statuses</option>
+      <option value="1">Active</option>
+      <option value="0">Inactive</option>
+    </select>
+  </div>
+  <div class="col-sm-auto">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal" title="Add new country">
+      <i class="bi bi-plus-lg me-1"></i><span class="label">Add Country</span>
     </button>
   </div>
 </div>
 
 <?php if (!empty($errors)): ?>
   <div class="alert alert-danger">
-    <ul class="mb-0">
-      <?php foreach ($errors as $e): ?><li><?php echo h($e); ?></li><?php endforeach; ?>
-    </ul>
+    <div class="d-flex align-items-start">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>
+        <strong>We found some issues:</strong>
+        <ul class="mb-0 mt-1">
+          <?php foreach ($errors as $e): ?><li><?php echo h($e); ?></li><?php endforeach; ?>
+        </ul>
+      </div>
+    </div>
   </div>
 <?php endif; ?>
 
-<!-- ============================================================================
-     COUNTRIES TABLE
-============================================================================ -->
-<div class="card border-0 shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0" id="countriesTable">
-        <thead class="bg-light">
-          <tr>
-            <th class="ps-3">ID</th>
-            <th>Name</th>
-            <th>Codes</th>
-            <th>Phone</th>
-            <th>Currency</th>
-            <th>Timezone</th>
-            <th>Locale</th>
-            <th class="text-center"># BUs</th>
-            <th class="text-center">Status</th>
-            <th class="text-end pe-3">Actions</th>
+<!-- Countries Table -->
+<div class="card shadow-sm">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="title"><i class="bi bi-flag me-2 text-primary"></i>Countries</div>
+    <div class="text-muted small" id="tableSummary">Showing 0–0 of 0</div>
+  </div>
+  <div class="card-body p-0 table-wrap">
+    <table class="table table-hover align-middle mb-0" id="countriesTable">
+      <thead>
+        <tr>
+          <th class="ps-3">ID</th>
+          <th>Name</th>
+          <th>Codes</th>
+          <th>Phone</th>
+          <th>Currency</th>
+          <th>Timezone</th>
+          <th>Locale</th>
+          <th class="text-center"># BUs</th>
+          <th class="text-center">Status</th>
+          <th class="text-end pe-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (empty($countries)): ?>
+          <tr><td colspan="10" class="text-center py-5 text-muted">
+            <div class="mb-2"><i class="bi bi-emoji-frown" style="font-size:1.25rem;"></i></div>
+            No countries found. Click <strong>Add Country</strong> to create your first one.
+          </td></tr>
+        <?php else: foreach ($countries as $c): ?>
+          <?php
+            $isActive = (int)($c['active'] ?? 0) === 1;
+            $canDelete = ((int)$c['bu_count'] === 0);
+            $flag = flag_icon($c['iso2'] ?? '', $c['name'] ?? '');
+          ?>
+          <tr data-name="<?php echo strtolower(h($c['name'])); ?>"
+              data-iso2="<?php echo strtolower(h($c['iso2'])); ?>"
+              data-active="<?php echo $isActive ? '1' : '0'; ?>">
+            <td class="ps-3 mono text-muted small"><?php echo (int)$c['id']; ?></td>
+            <td class="text-nowrap">
+              <?php echo $flag; ?>
+              <strong><?php echo h($c['name']); ?></strong>
+            </td>
+            <td class="text-nowrap">
+              <span class="badge badge-soft badge-iso2 badge-copy me-1" data-copy="<?php echo h($c['iso2']); ?>" data-bs-toggle="tooltip" title="Click to copy ISO2">
+                <?php echo h($c['iso2']); ?>
+              </span>
+              <span class="badge badge-soft badge-iso3 badge-copy" data-copy="<?php echo h($c['iso3']); ?>" data-bs-toggle="tooltip" title="Click to copy ISO3">
+                <?php echo h($c['iso3']); ?>
+              </span>
+            </td>
+            <td class="text-nowrap">
+              <span class="badge badge-soft badge-ph badge-copy" data-copy="<?php echo h($c['phone_country_code']); ?>" data-bs-toggle="tooltip" title="Click to copy Phone Code">
+                <?php echo h($c['phone_country_code']); ?>
+              </span>
+            </td>
+            <td class="mono text-nowrap">
+              <span class="badge badge-soft badge-cur badge-copy" data-copy="<?php echo h($c['currency_code']); ?>" data-bs-toggle="tooltip" title="Click to copy Currency Code">
+                <?php echo h($c['currency_code']); ?>
+              </span>
+            </td>
+            <td><small class="text-muted"><?php echo h($c['default_tz']); ?></small></td>
+            <td><small class="text-muted"><?php echo h($c['locale']); ?></small></td>
+            <td class="text-center">
+              <span class="badge rounded-pill <?php echo $c['bu_count']>0 ? 'text-bg-primary' : 'text-bg-secondary'; ?>">
+                <?php echo (int)$c['bu_count']; ?>
+              </span>
+            </td>
+            <td class="text-center">
+              <a href="country_management.php?action=toggle_active&id=<?php echo (int)$c['id']; ?>"
+                 class="text-decoration-none btn btn-outline-<?php echo $isActive ? 'success' : 'danger'; ?> btn-sm btn-toggle px-3"
+                 onclick="return confirm('Toggle status for <?php echo h($c['name']); ?>?');"
+                 title="<?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
+                <?php if ($isActive): ?>
+                  <i class="bi bi-check2-circle me-1"></i> Active
+                <?php else: ?>
+                  <i class="bi bi-x-octagon me-1"></i> Inactive
+                <?php endif; ?>
+              </a>
+            </td>
+            <td class="text-end pe-3">
+              <div class="btn-group">
+                <!-- View -->
+                <button type="button" class="btn btn-info btn-sm btn-action text-white"
+                  data-bs-toggle="modal" data-bs-target="#viewModal"
+                  data-id="<?php echo (int)$c['id']; ?>"
+                  data-name="<?php echo h($c['name']); ?>"
+                  data-iso2="<?php echo h($c['iso2']); ?>"
+                  data-iso3="<?php echo h($c['iso3']); ?>"
+                  data-phone="<?php echo h($c['phone_country_code']); ?>"
+                  data-currency="<?php echo h($c['currency_code']); ?>"
+                  data-tz="<?php echo h($c['default_tz']); ?>"
+                  data-locale="<?php echo h($c['locale']); ?>"
+                  data-datefmt="<?php echo h($c['date_format']); ?>"
+                  data-active="<?php echo $isActive ? '1' : '0'; ?>"
+                  title="View details" aria-label="View">
+                  <i class="bi bi-eye"></i>
+                </button>
+
+                <!-- Edit -->
+                <button type="button" class="btn btn-warning btn-sm btn-action"
+                  data-bs-toggle="modal" data-bs-target="#editModal"
+                  data-id="<?php echo (int)$c['id']; ?>"
+                  data-name="<?php echo h($c['name']); ?>"
+                  data-iso2="<?php echo h($c['iso2']); ?>"
+                  data-iso3="<?php echo h($c['iso3']); ?>"
+                  data-phone="<?php echo h($c['phone_country_code']); ?>"
+                  data-currency="<?php echo h($c['currency_code']); ?>"
+                  data-tz="<?php echo h($c['default_tz']); ?>"
+                  data-locale="<?php echo h($c['locale']); ?>"
+                  data-datefmt="<?php echo h($c['date_format']); ?>"
+                  data-active="<?php echo $isActive ? '1' : '0'; ?>"
+                  title="Edit country" aria-label="Edit">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+
+                <!-- Delete (fixed: removed duplicate data-bs-toggle; modal opens correctly) -->
+                <?php if ($canDelete): ?>
+                  <button type="button" class="btn btn-danger btn-sm btn-action"
+                          data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                          data-delete-url="country_management.php?action=delete&id=<?php echo (int)$c['id']; ?>"
+                          data-delete-name="<?php echo h($c['name']); ?>"
+                          title="Delete" aria-label="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                <?php else: ?>
+                  <button type="button" class="btn btn-danger btn-sm btn-action" disabled
+                          title="Cannot delete while BUs are linked" aria-label="Delete disabled">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                <?php endif; ?>
+              </div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          <?php if (empty($countries)): ?>
-            <tr><td colspan="10" class="text-center py-4 text-muted">No countries found.</td></tr>
-          <?php else: foreach ($countries as $c): ?>
-            <?php
-              $flag = flag_emoji_from_iso2($c['iso2'] ?? '');
-              $isActive = (int)($c['active'] ?? 0) === 1;
-              $canDelete = ((int)$c['bu_count'] === 0);
-            ?>
-            <tr data-name="<?php echo strtolower(h($c['name'])); ?>" data-iso2="<?php echo strtolower(h($c['iso2'])); ?>">
-              <td class="ps-3 mono text-muted small"><?php echo (int)$c['id']; ?></td>
-              <td><span class="country-flag"><?php echo $flag; ?></span><strong><?php echo h($c['name']); ?></strong></td>
-              <td>
-                <span class="badge badge-soft badge-iso2"><?php echo h($c['iso2']); ?></span>
-                <span class="badge badge-soft badge-iso3"><?php echo h($c['iso3']); ?></span>
-              </td>
-              <td><code class="text-danger"><?php echo h($c['phone_country_code']); ?></code></td>
-              <td class="mono"><?php echo h($c['currency_code']); ?></td>
-              <td><small class="text-muted"><?php echo h($c['default_tz']); ?></small></td>
-              <td><small class="text-muted"><?php echo h($c['locale']); ?></small></td>
-              <td class="text-center">
-                <span class="badge rounded-pill <?php echo $c['bu_count']>0 ? 'text-bg-primary' : 'text-bg-light'; ?>"><?php echo (int)$c['bu_count']; ?></span>
-              </td>
-              <td class="text-center">
-                <a href="country_management.php?action=toggle_active&id=<?php echo (int)$c['id']; ?>"
-                   class="text-decoration-none"
-                   onclick="return confirm('Toggle status for <?php echo h($c['name']); ?>?');"
-                   title="Click to <?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
-                  <?php if ($isActive): ?>
-                    <span class="badge bg-success-subtle text-success border-success-subtle border px-3">Active</span>
-                  <?php else: ?>
-                    <span class="badge bg-danger-subtle text-danger border-danger-subtle border px-3">Inactive</span>
-                  <?php endif; ?>
-                </a>
-              </td>
-              <td class="text-end pe-3">
-                <div class="btn-group">
-                  <!-- View -->
-                  <button type="button" class="btn btn-info btn-sm btn-action text-white"
-                    data-bs-toggle="modal" data-bs-target="#viewModal"
-                    data-id="<?php echo (int)$c['id']; ?>"
-                    data-name="<?php echo h($c['name']); ?>"
-                    data-iso2="<?php echo h($c['iso2']); ?>"
-                    data-iso3="<?php echo h($c['iso3']); ?>"
-                    data-phone="<?php echo h($c['phone_country_code']); ?>"
-                    data-currency="<?php echo h($c['currency_code']); ?>"
-                    data-tz="<?php echo h($c['default_tz']); ?>"
-                    data-locale="<?php echo h($c['locale']); ?>"
-                    data-datefmt="<?php echo h($c['date_format']); ?>"
-                    data-active="<?php echo $isActive ? '1' : '0'; ?>"
-                  ><i class="bi bi-eye"></i></button>
-
-                  <!-- Edit -->
-                  <button type="button" class="btn btn-warning btn-sm btn-action"
-                    data-bs-toggle="modal" data-bs-target="#editModal"
-                    data-id="<?php echo (int)$c['id']; ?>"
-                    data-name="<?php echo h($c['name']); ?>"
-                    data-iso2="<?php echo h($c['iso2']); ?>"
-                    data-iso3="<?php echo h($c['iso3']); ?>"
-                    data-phone="<?php echo h($c['phone_country_code']); ?>"
-                    data-currency="<?php echo h($c['currency_code']); ?>"
-                    data-tz="<?php echo h($c['default_tz']); ?>"
-                    data-locale="<?php echo h($c['locale']); ?>"
-                    data-datefmt="<?php echo h($c['date_format']); ?>"
-                    data-active="<?php echo $isActive ? '1' : '0'; ?>"
-                  ><i class="bi bi-pencil-square"></i></button>
-
-<!-- Delete -->
-                  <?php if ($canDelete): ?>
-                    <a href="country_management.php?action=delete&id=<?php echo (int)$c['id']; ?>"
-                       class="btn btn-danger btn-sm btn-action"
-                       onclick="return confirm('Permanently delete <?php echo h($c['name']); ?>? This cannot be undone.')"
-                       title="Delete"><i class="bi bi-trash"></i></a>
-                  <?php else: ?>
-                    <button type="button" class="btn btn-danger btn-sm btn-action" disabled
-                            title="Cannot delete while BUs are linked"><i class="bi bi-trash"></i></button>
-                  <?php endif; ?>
-                </div>
-              </td>
-            </tr>
-          <?php endforeach; endif; ?>
-        </tbody>
-      </table>
+        <?php endforeach; endif; ?>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer d-flex align-items-center justify-content-between">
+    <div class="small" id="selectionHint">
+      <i class="bi bi-info-circle me-1"></i>
+      Tip: Click an ISO/Currency/Phone badge to copy its value.
     </div>
+    <nav>
+      <ul class="pagination pagination-sm mb-0" id="pager">
+        <li class="page-item"><button class="page-link" id="prevPage" aria-label="Previous">&laquo;</button></li>
+        <li class="page-item disabled"><span class="page-link" id="pageInfo">Page 1/1</span></li>
+        <li class="page-item"><button class="page-link" id="nextPage" aria-label="Next">&raquo;</button></li>
+      </ul>
+    </nav>
   </div>
 </div>
 
 <?php require_once '../includes/footer.php'; ?>
 
-<!-- ============================================================================
-     ADD MODAL — simplified, modern, and friendly
-     (BU creation is hidden & automatic)
-============================================================================ -->
+<!-- ===========================
+     ADD MODAL
+=========================== -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-soft">
-        <h6 class="modal-title" id="addModalLabel">Add New Country</h6>
+        <h6 class="modal-title" id="addModalLabel"><i class="bi bi-plus-circle me-2 text-primary"></i>Add New Country</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <form id="countryFormAdd" action="country_management.php" method="POST">
+      <form id="countryFormAdd" action="country_management.php" method="POST" novalidate>
         <input type="hidden" name="id" value="0">
         <!-- Hidden BU fields (auto-managed) -->
         <input type="hidden" name="bu_agency_id" id="add_bu_agency_id" value="0">
@@ -426,7 +617,8 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">ISO2 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso2" class="form-control form-control-lg" maxlength="2" placeholder="PH" required>
+                <input type="text" name="iso2" class="form-control form-control-lg" maxlength="2"
+                       placeholder="PH" pattern="[A-Za-z]{2}" required>
               </div>
             </div>
 
@@ -434,7 +626,8 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">ISO3 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso3" class="form-control form-control-lg" maxlength="3" placeholder="PHL" required>
+                <input type="text" name="iso3" class="form-control form-control-lg" maxlength="3"
+                       placeholder="PHL" pattern="[A-Za-z]{3}" required>
               </div>
             </div>
 
@@ -444,13 +637,15 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
                 <i class="bi bi-clock-history"></i>
                 <input type="text" name="default_tz" class="form-control form-control-lg" placeholder="Asia/Manila">
               </div>
+              <div class="small-hint">Use IANA names like <code>Asia/Manila</code>.</div>
             </div>
 
             <div class="col-md-3">
               <label class="form-label">Phone Code</label>
               <div class="input-icon">
                 <i class="bi bi-telephone"></i>
-                <input type="text" name="phone_country_code" class="form-control form-control-lg" placeholder="+63">
+                <input type="text" name="phone_country_code" class="form-control form-control-lg"
+                       placeholder="+63" pattern="^\+?[0-9\- ]+$">
               </div>
             </div>
 
@@ -458,8 +653,9 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">Currency Code</label>
               <div class="input-icon">
                 <i class="bi bi-cash-coin"></i>
-                <input type="text" name="currency_code" class="form-control form-control-lg" maxlength="3" placeholder="PHP">
+                <input type="text" name="currency_code" class="form-control form-control-lg" maxlength="3" placeholder="PHP" pattern="[A-Za-z]{3}">
               </div>
+              <div class="small-hint">Three-letter ISO code (e.g., USD, EUR, PHP).</div>
             </div>
 
             <div class="col-md-3">
@@ -476,6 +672,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
                 <i class="bi bi-calendar3"></i>
                 <input type="text" name="date_format" class="form-control form-control-lg" value="Y-m-d">
               </div>
+              <div class="small-hint">PHP-like format, e.g., <code>Y-m-d</code> or <code>d/m/Y</code>.</div>
             </div>
 
             <div class="col-12">
@@ -491,7 +688,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-lightning-charge text-warning"></i>
             <small class="text-muted">
-              A default Business Unit will be created automatically (e.g., <span class="mono">SMC-PH</span> / <span class="mono">SMC Philippines</span>). You don’t need to set anything here.
+              A default Business Unit will be created automatically (e.g., <span class="mono">SMC-PH</span> / <span class="mono">SMC Philippines</span>).
             </small>
           </div>
         </div>
@@ -507,14 +704,14 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
   </div>
 </div>
 
-<!-- ============================================================================
+<!-- ===========================
      VIEW MODAL
-============================================================================ -->
+=========================== -->
 <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-soft">
-        <h6 class="modal-title" id="viewModalLabel">Country Details</h6>
+        <h6 class="modal-title" id="viewModalLabel"><i class="bi bi-eye me-2 text-primary"></i>Country Details</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -537,20 +734,20 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
   </div>
 </div>
 
-<!-- ============================================================================
-     EDIT MODAL (no BU UI here; only country fields)
-============================================================================ -->
+<!-- ===========================
+     EDIT MODAL
+=========================== -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-soft">
-        <h6 class="modal-title" id="editModalLabel">Edit Country</h6>
+        <h6 class="modal-title" id="editModalLabel"><i class="bi bi-pencil-square me-2 text-warning"></i>Edit Country</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <form id="countryFormEdit" action="country_management.php" method="POST">
+      <form id="countryFormEdit" action="country_management.php" method="POST" novalidate>
         <input type="hidden" name="id" id="e_id">
-        <!-- For EDIT, do not auto-create new BU. Keep hidden fields empty by default. -->
+        <!-- For EDIT, keep BU hidden fields empty (no new BU auto-create) -->
         <input type="hidden" name="bu_agency_id" id="e_bu_agency_id" value="">
         <input type="hidden" name="bu_code" id="e_bu_code" value="">
         <input type="hidden" name="bu_name" id="e_bu_name" value="">
@@ -571,7 +768,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">ISO2 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso2" id="e_iso2" class="form-control form-control-lg" maxlength="2" required>
+                <input type="text" name="iso2" id="e_iso2" class="form-control form-control-lg" maxlength="2" pattern="[A-Za-z]{2}" required>
               </div>
             </div>
 
@@ -579,7 +776,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">ISO3 <span class="text-danger">*</span></label>
               <div class="input-icon">
                 <i class="bi bi-alphabet"></i>
-                <input type="text" name="iso3" id="e_iso3" class="form-control form-control-lg" maxlength="3" required>
+                <input type="text" name="iso3" id="e_iso3" class="form-control form-control-lg" maxlength="3" pattern="[A-Za-z]{3}" required>
               </div>
             </div>
 
@@ -587,7 +784,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">Default Timezone</label>
               <div class="input-icon">
                 <i class="bi bi-clock-history"></i>
-                <input type="text" name="default_tz" id="e_tz" class="form-control form-control-lg">
+                <input type="text" name="default_tz" id="e_tz" class="form-control form-control-lg" placeholder="Asia/Manila">
               </div>
             </div>
 
@@ -595,7 +792,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">Phone Code</label>
               <div class="input-icon">
                 <i class="bi bi-telephone"></i>
-                <input type="text" name="phone_country_code" id="e_phone" class="form-control form-control-lg">
+                <input type="text" name="phone_country_code" id="e_phone" class="form-control form-control-lg" pattern="^\+?[0-9\- ]+$">
               </div>
             </div>
 
@@ -603,7 +800,7 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
               <label class="form-label">Currency Code</label>
               <div class="input-icon">
                 <i class="bi bi-cash-coin"></i>
-                <input type="text" name="currency_code" id="e_currency" class="form-control form-control-lg" maxlength="3">
+                <input type="text" name="currency_code" id="e_currency" class="form-control form-control-lg" maxlength="3" pattern="[A-Za-z]{3}">
               </div>
             </div>
 
@@ -643,16 +840,44 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
   </div>
 </div>
 
-<!-- ============================================================================
-     SMART AUTOFILL & UI BEHAVIOR — External country_ref.js loaded
-============================================================================ -->
+<!-- ===========================
+     CONFIRM DELETE MODAL
+=========================== -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-soft">
+        <h6 class="modal-title" id="confirmDeleteLabel"><i class="bi bi-trash me-2 text-danger"></i>Delete Country</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">Are you sure you want to permanently delete <strong id="delTargetName">this country</strong>? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <a id="confirmDeleteBtn" class="btn btn-danger"><i class="bi bi-trash me-1"></i> Delete</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================
+     SMART AUTOFILL & UI BEHAVIOR
+=========================== -->
 <script src="../js/country_ref.js"></script>
 <script>
-
+// QSA helpers
 const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
-/* ---------- Populate datalists ---------- */
+// ---------- Tooltips (only where data-bs-toggle="tooltip") ----------
+document.addEventListener('DOMContentLoaded', () => {
+  $$('.badge-copy,[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+});
+
+// ---------- Populate datalists ----------
 function populateDatalist(datalistEl) {
+  if (!datalistEl || !window.COUNTRY_REF) return;
   [...COUNTRY_REF].sort((a,b)=>a.name.localeCompare(b.name))
     .forEach(c => {
       const opt = document.createElement('option');
@@ -663,11 +888,25 @@ function populateDatalist(datalistEl) {
 populateDatalist(document.getElementById('countryListAdd'));
 populateDatalist(document.getElementById('countryListEdit'));
 
-/* ---------- Helpers ---------- */
+// ---------- Helpers ----------
 function deriveLocale(code){ return code ? ('en_' + code) : ''; }
 function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
+function copyText(t){
+  if (!t) return;
+  navigator.clipboard?.writeText(t).then(()=>{}).catch(()=>{});
+}
+$$('.badge-copy').forEach(b=>{
+  b.addEventListener('click', () => {
+    copyText(b.getAttribute('data-copy') || b.textContent.trim());
+    const tip = bootstrap.Tooltip.getInstance(b);
+    if (tip) {
+      tip.hide(); b.setAttribute('data-bs-original-title','Copied!'); tip.show();
+      setTimeout(()=>{ tip.hide(); b.setAttribute('data-bs-original-title','Click to copy'); },900);
+    }
+  });
+});
 
-/* ---------- Smart autofill binding (Add) ---------- */
+// ---------- Smart autofill binding (Add) ----------
 (function bindAdd(){
   const form   = document.getElementById('countryFormAdd');
   if (!form) return;
@@ -714,12 +953,12 @@ function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
 
   name?.addEventListener('change', () => {
     const v = (name.value||'').trim().toLowerCase();
-    const m = COUNTRY_REF.find(c => c.name.toLowerCase() === v);
+    const m = (window.COUNTRY_REF||[]).find(c => c.name.toLowerCase() === v);
     fillFromMatch(m);
   });
   iso2?.addEventListener('blur', () => {
     const code = (iso2.value||'').toUpperCase();
-    const m = COUNTRY_REF.find(c => c.iso2 === code);
+    const m = (window.COUNTRY_REF||[]).find(c => c.iso2 === code);
     if (m && name && !name.value) name.value = m.name;
     fillFromMatch(m);
   });
@@ -727,14 +966,14 @@ function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
   iso2?.addEventListener('input', suggestBU);
 
   form.addEventListener('submit', (e) => {
-    if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); }
-    if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); }
+    if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); return; }
+    if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); return; }
     toUpper(iso2); toUpper(iso3); toUpper(curr);
     suggestBU(); // final sync for hidden BU fields
   });
 })();
 
-/* ---------- Smart autofill binding (Edit) ---------- */
+// ---------- Smart autofill binding (Edit) ----------
 (function bindEdit(){
   const form   = document.getElementById('countryFormEdit');
   if (!form) return;
@@ -764,24 +1003,24 @@ function toUpper(el){ el && (el.value = (el.value || '').toUpperCase()); }
 
   name?.addEventListener('change', () => {
     const v = (name.value||'').trim().toLowerCase();
-    const m = COUNTRY_REF.find(c => c.name.toLowerCase() === v);
+    const m = (window.COUNTRY_REF||[]).find(c => c.name.toLowerCase() === v);
     fillFromMatch(m);
   });
   iso2?.addEventListener('blur', () => {
     const code = (iso2.value||'').toUpperCase();
-    const m = COUNTRY_REF.find(c => c.iso2 === code);
+    const m = (window.COUNTRY_REF||[]).find(c => c.iso2 === code);
     if (m && name && !name.value) name.value = m.name;
     fillFromMatch(m);
   });
 
   form.addEventListener('submit', (e) => {
-    if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); }
-    if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); }
+    if (iso2 && iso2.value.length !== 2) { alert('ISO2 must be 2 characters.'); e.preventDefault(); iso2.focus(); return; }
+    if (iso3 && iso3.value.length !== 3) { alert('ISO3 must be 3 characters.'); e.preventDefault(); iso3.focus(); return; }
     toUpper(iso2); toUpper(iso3); toUpper(curr);
   });
 })();
 
-/* ---------- View modal population ---------- */
+// ---------- View modal population ----------
 const viewModal = document.getElementById('viewModal');
 viewModal?.addEventListener('show.bs.modal', (ev) => {
   const b = ev.relatedTarget;
@@ -797,7 +1036,7 @@ viewModal?.addEventListener('show.bs.modal', (ev) => {
   document.getElementById('v_status').textContent   = d('data-active')==='1' ? 'Active' : 'Inactive';
 });
 
-/* ---------- Edit modal population ---------- */
+// ---------- Edit modal population ----------
 const editModal = document.getElementById('editModal');
 editModal?.addEventListener('show.bs.modal', (ev) => {
   const b = ev.relatedTarget;
@@ -821,19 +1060,73 @@ editModal?.addEventListener('show.bs.modal', (ev) => {
   document.getElementById('e_bu_active').value = '';
 });
 
-/* ---------- Table quick filter ---------- */
-const tblFilter = document.getElementById('tblFilter');
-const table = document.getElementById('countriesTable');
-tblFilter?.addEventListener('input', () => {
-  const q = (tblFilter.value||'').trim().toLowerCase();
-  table.querySelectorAll('tbody tr').forEach(tr => {
-    const n = tr.getAttribute('data-name') || '';
-    const i = tr.getAttribute('data-iso2') || '';
-    tr.style.display = (n.includes(q) || i.includes(q)) ? '' : 'none';
-  });
+// ---------- Delete confirmation modal ----------
+const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+confirmDeleteModal?.addEventListener('show.bs.modal', (ev) => {
+  const b = ev.relatedTarget;
+  const url = b.getAttribute('data-delete-url');
+  const nm  = b.getAttribute('data-delete-name') || 'this country';
+  document.getElementById('delTargetName').textContent = nm;
+  const link = document.getElementById('confirmDeleteBtn');
+  link.setAttribute('href', url);
 });
 
-/* ---------- Re-open modal with posted data on validation errors ---------- */
+// ---------- Table quick filter + status + pagination ----------
+const tblFilter = document.getElementById('tblFilter');
+const statusFilter = document.getElementById('statusFilter');
+const table = document.getElementById('countriesTable');
+const tbody = table?.querySelector('tbody');
+const pageInfo = document.getElementById('pageInfo');
+const tableSummary = document.getElementById('tableSummary');
+const prevBtn = document.getElementById('prevPage');
+const nextBtn = document.getElementById('nextPage');
+
+// Fixed page size (removed UI control)
+const PAGE_SIZE = 25;
+let page = 1;
+
+function getRows() {
+  return [...tbody.querySelectorAll('tr')];
+}
+function matchesFilter(tr, q, status) {
+  const name = tr.getAttribute('data-name') || '';
+  const iso2 = tr.getAttribute('data-iso2') || '';
+  const act  = tr.getAttribute('data-active') || '';
+  const qok  = (!q) || name.includes(q) || iso2.includes(q);
+  const sok  = (!status) || (act === status);
+  return qok && sok;
+}
+function applyFilters() {
+  const q = (tblFilter.value||'').trim().toLowerCase();
+  const st = statusFilter.value || '';
+  const rows = getRows();
+  rows.forEach(tr => tr.style.display = 'none');
+  const filtered = rows.filter(tr => matchesFilter(tr, q, st));
+  const size = PAGE_SIZE;
+  const total = filtered.length;
+  const maxPage = Math.max(1, Math.ceil(total / size));
+  page = Math.min(page, maxPage);
+
+  filtered.forEach((tr, idx) => {
+    const start = (page - 1) * size;
+    const end = start + size;
+    if (idx >= start && idx < end) tr.style.display = '';
+  });
+
+  const startN = total ? ( (page-1)*size + 1 ) : 0;
+  const endN = Math.min(page*size, total);
+  if (tableSummary) tableSummary.textContent = `Showing ${startN}–${endN} of ${total}`;
+  if (pageInfo) pageInfo.textContent = `Page ${page}/${Math.max(1, maxPage)}`;
+  prevBtn?.classList.toggle('disabled', page <= 1);
+  nextBtn?.classList.toggle('disabled', page >= maxPage);
+}
+tblFilter?.addEventListener('input', ()=>{ page=1; applyFilters(); });
+statusFilter?.addEventListener('change', ()=>{ page=1; applyFilters(); });
+prevBtn?.addEventListener('click', ()=>{ if (!prevBtn.classList.contains('disabled')) { page--; applyFilters(); }});
+nextBtn?.addEventListener('click', ()=>{ if (!nextBtn.classList.contains('disabled')) { page++; applyFilters(); }});
+document.addEventListener('DOMContentLoaded', applyFilters);
+
+// ---------- Re-open modal with posted data on validation errors ----------
 <?php if (!empty($errors) && !empty($reopenModal)): ?>
 (function(){
   const mode = <?php echo json_encode($reopenModal); ?>;
@@ -871,4 +1164,4 @@ tblFilter?.addEventListener('input', () => {
   else window.addEventListener('load', open);
 })();
 <?php endif; ?>
-</script>    
+</script>
