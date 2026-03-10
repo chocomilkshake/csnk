@@ -756,14 +756,16 @@ if ($canViewReports && $conn instanceof mysqli) {
                 </div>
 
                 <!-- SMC-Turkey -->
-                <button class="sidebar-item sidebar-toggle" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#smcTurkeyMenu" aria-expanded="false" aria-controls="smcTurkeyMenu"
+                <button class="sidebar-item sidebar-toggle <?php echo $isSMCApplicantsActive ? 'active' : ''; ?>"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#smcTurkeyMenu"
+                    aria-expanded="<?php echo $isSMCApplicantsActive ? 'true' : 'false'; ?>" aria-controls="smcTurkeyMenu"
                     data-bs-placement="right" title="SMC">
                     <i class="bi bi-globe2"></i>
                     <span class="label"><span class="text">SMC-International</span></span>
                     <span class="side-badge"><i class="bi bi-chevron-down"></i></span>
                 </button>
-                <div class="collapse sidebar-submenu" id="smcTurkeyMenu">
+                <div class="collapse <?php echo $isSMCApplicantsActive ? 'show' : ''; ?> sidebar-submenu"
+                    id="smcTurkeyMenu">
                     <a href="turkey_applicants.php"
                         class="sidebar-item <?php echo $currentPage === 'turkey_applicants' ? 'active' : ''; ?>">
                         <i class="bi bi-people"></i><span class="label"><span class="text">List of Applicants</span></span>
