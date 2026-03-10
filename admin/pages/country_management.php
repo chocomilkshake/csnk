@@ -567,7 +567,7 @@ hr.hr-soft{ border:0; height:1px; background:linear-gradient(90deg,rgba(0,0,0,.0
   <div class="card-footer d-flex align-items-center justify-content-between">
     <div class="small" id="selectionHint">
       <i class="bi bi-info-circle me-1"></i>
-      Tip: Click an ISO/Currency/Phone badge to copy its value.
+      List
     </div>
     <nav>
       <ul class="pagination pagination-sm mb-0" id="pager">
