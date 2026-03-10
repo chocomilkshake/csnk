@@ -314,7 +314,7 @@ if ($canViewReports && $conn instanceof mysqli) {
             WHERE ar.business_unit_id = ? 
               AND a.deleted_at IS NULL
               AND (SELECT COUNT(*) FROM blacklisted_applicants ba WHERE ba.applicant_id = a.id AND ba.is_active = 1) = 0";
-    
+
     $stmt = $conn->prepare($sql);
     if ($stmt) {
         $stmt->bind_param('i', $buId);
@@ -835,6 +835,30 @@ if ($canViewReports && $conn instanceof mysqli) {
                     <span class="label"><span class="text">Client Management</span></span>
                 </a>
 
+                <!-- ===== Content Management (Admins only) ===== -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="content_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                        <i class="bi bi-flag"></i>
+                        <span class="label"><span class="text">Content Management</span></span>
+                    </a>
+                    <!-- ================================================ -->
+                <?php endif; ?>
+
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <!-- ===== NEW: Country Management (Admins only) ===== -->
+                    <a href="country_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
+                        <i class="bi bi-flag"></i>
+                        <span class="label"><span class="text">Country Management</span></span>
+                    </a>
+                    <!-- ================================================ -->
+                <?php endif; ?>
+
                 <a href="activity-logs.php"
                     class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
                     aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
@@ -864,18 +888,6 @@ if ($canViewReports && $conn instanceof mysqli) {
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
-
-            <!-- ===== Content Management (Admins only) ===== -->
-            <?php if ($isAdmin || $isSuperAdmin): ?>
-                <a href="content_management.php" class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
-                    <i class="bi bi-flag"></i>
-                    <span class="label"><span class="text">Content Management</span></span>
-                </a>
-                <!-- ================================================ -->
-            <?php endif; ?>
-
 
 
             <!-- Accounts -->
