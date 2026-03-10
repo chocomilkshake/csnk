@@ -621,6 +621,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="divider my-4"></div>
+
+          <div class="small text-secondary">
+            Prefer email?
+            <a href="mailto:<?= htmlspecialchars($CONFIG['to_email'], ENT_QUOTES, 'UTF-8') ?>" class="link-secondary">
+              <?= htmlspecialchars($CONFIG['to_email'], ENT_QUOTES, 'UTF-8') ?>
+            </a>
+            &nbsp;•&nbsp; Call us:
+            <a href="tel:+639000000000" class="link-secondary">+63 900 000 0000</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Contact / Map -->er gap-2 mb-3">
                 <span class="badg
                 <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
