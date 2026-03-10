@@ -173,7 +173,292 @@ function buildBodies(array $data, int $year): array {
                 <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">🏷 Topic</td>
                 <td style="padding:10px 0;">
                   <span style="display:inline-block;padding:6px 14px;background:#fff2f4;border:1px solid #f7cfd4;border-radius:999px;color:#d21f3c;font-size:13px;font-weight:700;">' . h($topicSafe) . '</span>
-                </td>    body{ background:var(--bg); " value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 34px 30px;">
+            <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">💬 Message</div>
+            <div style="background:#ffffff;border-radius:16px;padding:18px 22px;border:1px solid #f0c7cb;line-height:1.7;font-size:15px;color:#374151;white-space:pre-wrap;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+              ' . nl2br(h($messageSafe)) . '
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#faf6f7;padding:16px 26px;border-top:1px solid #e5d1d4;text-align:center;">
+            <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">This email was sent automatically from the CSNK website contact form.</div>
+            <div style="font-size:12px;color:#aaaaaa;">© ' . $year . ' CSNK. All rights reserved.</div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>';
+
+  return [$html, $text];
+}
+
+/**
+ * Try Gmail SMTP (587 → 465), else local sendmail, else PHP mail()
+ * Returns [bool $ok, string $err]
+ */
+function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
+  [$htmlBody, $textBody] = buildBodies($post, (int)date('Y'));
+
+  // Recipient and subject
+  $toEmail = $CONFIG['to_email'];
+  $toName  = $CONFIG['to_name'] ?? '';
+  $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
+  $topic  = trim($post['topic'] ?? '');
+  $subject = $subjectBase . ($topic !== '' ? ' - ' . $topic : '');
+
+  // If PHPMailer is available, use it
+  if ($phpmailerLoaded) {
+    try {
+      $mail = new PHPMailer(true);
+      $mail->CharSet = 'UTF-8';
+      $mail->SMTPDebug = (int)($CONFIG['smtp_debug'] ?? 0);
+      $mail->Debugoutput = function ($str, $level) { error_log("PHPMailer debug {$level}: {$str}"); };
+
+      // We'll attempt two SMTP profiles first:
+      $smtpProfiles = [
+        ['port' => 587, 'secure' => PHPMailer::ENCRYPTION_STARTTLS],
+        ['port' => 465, 'secure' => PHPMailer::ENCRYPTION_SMTPS],
+      ];
+
+      $connected = false;
+      $lastError = '';
+
+      foreach ($smtpProfiles as $p) {
+        try {
+          $mail->clearAllRecipients();
+          $mail->clearAttachments();
+          $mail->clearCustomHeaders();
+
+          $mail->isSMTP();
+          $mail->Host       = $CONFIG['smtp_host'];
+          $mail->SMTPAuth   = true;
+          $mail->Username   = $CONFIG['smtp_user'];
+          $mail->Password   = str_replace(' ', '', (string)$CONFIG['smtp_pass']); // strip spaces
+          $mail->SMTPSecure = $p['secure'];
+          $mail->SMTPAutoTLS = true;
+          $mail->Port       = (int)$p['port'];
+
+          // Allow self-signed only on localhost dev
+          $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+          if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
+            $mail->SMTPOptions = [
+              'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+              ],
+            ];
+          }
+
+          // Recipients & headers
+          $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
+          $mail->addAddress($toEmail, $toName);
+          if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+            $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+            $mail->addCC($post['email']);
+            $mail->addReplyTo($post['email'], $replyName);
+          }
+          $mail->Subject = $subject;
+
+          // Embedded images (CID)
+          $whychoosePath = pickFirstReadable([
+            __DIR__ . '/../resources/img/whychoose.png',
+            __DIR__ . '/resources/img/whychoose.png',
+            __DIR__ . '/public/resources/img/whychoose.png',
+          ]);
+          $secondaryPath = pickFirstReadable([
+            __DIR__ . '/../resources/img/emailogo.png',
+            __DIR__ . '/resources/img/emailogo.png',
+            __DIR__ . '/public/resources/img/emailogo.png',
+            __DIR__ . '/../resources/img/crempco-logo.png',
+            __DIR__ . '/resources/img/crempco-logo.png',
+            __DIR__ . '/public/resources/img/crempco-logo.png',
+          ]);
+          if ($whychoosePath) {
+            $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+          } else {
+            error_log('Email embed: whychoose.png not found.');
+          }
+          if ($secondaryPath) {
+            $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+            $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+            $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+          } else {
+            error_log('Email embed: secondary logo not found.');
+          }
+
+          $mail->isHTML(true);
+          $mail->Body    = $htmlBody;
+          $mail->AltBody = $textBody;
+
+          $mail->send();
+          $connected = true;
+          break; // success via SMTP
+        } catch (\Throwable $smtpEx) {
+          $lastError = $smtpEx->getMessage();
+          error_log('SMTP attempt failed on port ' . $p['port'] . ': ' . $lastError);
+        }
+      }
+
+      if ($connected) {
+        return [true, ''];
+      }
+
+      // If we got here, SMTP failed (blocked/timeout/etc). Try local sendmail via PHPMailer.
+      try {
+        $mail = new PHPMailer(true);
+        $mail->CharSet = 'UTF-8';
+        $mail->isMail(); // local MTA (Exim/sendmail)
+        // Use domain-based From for SPF/DMARC alignment on local send
+        $localFrom = fallbackFromForLocal();
+        $mail->setFrom($localFrom, $CONFIG['from_name'] ?? 'Website');
+        $mail->addAddress($toEmail, $toName);
+        if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+          $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+          $mail->addReplyTo($post['email'], $replyName);
+        }
+        $mail->Subject = $subject;
+
+        // Note: Local mail can embed images, but if sendmail strips cids in some stacks, it still degrades safely.
+        $whychoosePath = pickFirstReadable([
+          __DIR__ . '/../resources/img/whychoose.png',
+          __DIR__ . '/resources/img/whychoose.png',
+          __DIR__ . '/public/resources/img/whychoose.png',
+        ]);
+        $secondaryPath = pickFirstReadable([
+          __DIR__ . '/../resources/img/emailogo.png',
+          __DIR__ . '/resources/img/emailogo.png',
+          __DIR__ . '/public/resources/img/emailogo.png',
+          __DIR__ . '/../resources/img/crempco-logo.png',
+          __DIR__ . '/resources/img/crempco-logo.png',
+          __DIR__ . '/public/resources/img/crempco-logo.png',
+        ]);
+        if ($whychoosePath) {
+          $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+        }
+        if ($secondaryPath) {
+          $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+          $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+          $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+        }
+
+        $mail->isHTML(true);
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = $textBody;
+
+        $mail->send();
+        error_log('Mail sent via local sendmail fallback.');
+        return [true, ''];
+      } catch (\Throwable $sendmailEx) {
+        error_log('Local sendmail fallback failed: ' . $sendmailEx->getMessage());
+        return [false, 'Email service is unreachable right now. (SMTP blocked and local MTA failed)'];
+      }
+    } catch (\Throwable $e) {
+      error_log('PHPMailer overall failure: ' . $e->getMessage());
+      return [false, 'Unexpected mailer error.'];
+    }
+  }
+
+  // -------------------- PHPMailer not available → PHP mail() plain text --------------------
+  $to   = $toEmail;
+  $subj = $subject;
+  $from = fallbackFromForLocal();
+  $headers  = "From: " . $CONFIG['from_name'] . " <{$from}>\r\n";
+  if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+    $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+    $headers .= 'Reply-To: ' . ($replyName ? "{$replyName} <{$post['email']}>" : $post['email']) . "\r\n";
+  }
+  $headers .= "MIME-Version: 1.0\r\n";
+  $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+  [, $plain] = buildBodies($post, (int)date('Y'));
+  $ok = @mail($to, $subj, $plain, $headers);
+  if ($ok) {
+    error_log('Mail sent via PHP mail() fallback (no PHPMailer available).');
+    return [true, ''];
+  }
+  return [false, 'Mail function failed on the server.'];
+}
+
+// -------------------- Handle POST --------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Honeypot
+  $honeypot = $_POST['website'] ?? '';
+
+  // CSRF
+  $csrf = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    $errors['general'] = 'Security verification failed. Please refresh and try again.';
+  }
+
+  if (!empty($honeypot)) {
+    // Silently succeed for bots (do not actually send)
+    $success = true;
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_POST = [];
+  } else {
+    // Gather
+    $firstName = clean($_POST['firstName'] ?? '');
+    $lastName  = clean($_POST['lastName']  ?? '');
+    $email     = clean($_POST['email']     ?? '');
+    $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
+    $topic     = clean($_POST['topic']     ?? '');
+    $message   = clean($_POST['message']   ?? '');
+
+    // Validate
+    if ($firstName === '' || mb_strlen($firstName) > 80) $errors['firstName'] = 'Please enter your first name (max 80 characters).';
+    if ($lastName === ''  || mb_strlen($lastName)  > 80) $errors['lastName']  = 'Please enter your last name (max 80 characters).';
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Please enter a valid email address.';
+    if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) $errors['phone'] = 'Please enter an 11-digit phone number.';
+    if ($topic === '' || !in_array($topic, $ALLOWED_TOPICS, true)) $errors['topic'] = 'Please select a topic.';
+    if ($message === '' || mb_strlen($message) > (int)$CONFIG['max_message']) $errors['message'] = 'Please enter your message (max ' . (int)$CONFIG['max_message'] . ' characters).';
+    if (empty($_POST['consent'])) $errors['consent'] = 'Consent is required.';
+
+    if (!$errors) {
+      [$ok, $err] = sendSmart($CONFIG, [
+        'firstName' => $firstName,
+        'lastName'  => $lastName,
+        'email'     => $email,
+        'phone'     => $phone,
+        'topic'     => $topic,
+        'message'   => $message,
+      ], $phpmailerLoaded);
+
+      if ($ok) {
+        $success = true;
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
+        $_POST = []; // clear form
+      } else {
+        $errors['general'] = $err ?: 'We could not send your message right now. Please try again later.';
+      }
+    }
+  }
+}
+?>
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSNK Manpower Agency</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
+
+  <style>
+    :root { --accent-red:#D72638; --ink:#111111; --muted-ink:#6c757d; --bg:#ffffff; --border:#e9ecef; --ring:rgba(215,38,56,.25); }
+    body{ background:var(--bg); " value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3">
               <div class="col-md-6">
