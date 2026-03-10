@@ -138,6 +138,73 @@ function safe(?string $s): string
         height: 1px;
         background: #eef2f7;
     }
+
+    /* Filter Tabs - Modern Pill Design */
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+        background: #f8fafc;
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        background: transparent;
+        border: 1px solid transparent;
+    }
+
+    .filter-tab:hover {
+        color: #334155;
+        background: #fff;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-tab.active {
+        color: #fff;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .filter-tab.active.on-process {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+    }
+
+    .filter-tab.active.approved {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+
+    .filter-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .filter-tab:not(.active) .filter-badge {
+        background: #e2e8f0;
+        color: #64748b;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -145,18 +212,17 @@ function safe(?string $s): string
         <h4 class="mb-1 fw-semibold">Client Management</h4>
         <small class="text-muted">Manage all client bookings and contracts</small>
     </div>
-    <div class="d-flex gap-2">
-        <a href="client-management.php"
-            class="btn btn-sm <?php echo $applicantStatus === 'all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
-            All <span class="badge bg-secondary"><?php echo $statusCounts['total']; ?></span>
+    <div class="filter-tabs">
+        <a href="client-management.php" class="filter-tab <?php echo $applicantStatus === 'all' ? 'active' : ''; ?>">
+            All <span class="filter-badge"><?php echo $statusCounts['total']; ?></span>
         </a>
         <a href="?status=on_process"
-            class="btn btn-sm <?php echo $applicantStatus === 'on_process' ? 'btn-info' : 'btn-outline-info'; ?>">
-            On Process <span class="badge bg-secondary"><?php echo $statusCounts['on_process']; ?></span>
+            class="filter-tab <?php echo $applicantStatus === 'on_process' ? 'active on-process' : ''; ?>">
+            On Process <span class="filter-badge"><?php echo $statusCounts['on_process']; ?></span>
         </a>
         <a href="?status=approved"
-            class="btn btn-sm <?php echo $applicantStatus === 'approved' ? 'btn-success' : 'btn-outline-success'; ?>">
-            Approved <span class="badge bg-secondary"><?php echo $statusCounts['approved']; ?></span>
+            class="filter-tab <?php echo $applicantStatus === 'approved' ? 'active approved' : ''; ?>">
+            Approved <span class="filter-badge"><?php echo $statusCounts['approved']; ?></span>
         </a>
     </div>
 </div>
@@ -206,14 +272,15 @@ function safe(?string $s): string
                 <table class="table  align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 18%;">Client</th>
-                            <th style="width: 18%;">Applicant</th>
-                            <th style="width: 14%;">Contact</th>
-                            <th style="width: 12%;">Appointment</th>
-                            <th style="width: 12%;">Schedule</th>
-                            <th style="width: 10%;">Status</th>
+                            <th style="width: 16%;">Client</th>
+                            <th style="width: 16%;">Applicant</th>
+                            <th style="width: 12%;">Contact</th>
+                            <th style="width: 10%;">Appointment</th>
+                            <th style="width: 10%;">Schedule</th>
+                            <th style="width: 8%;">Status</th>
                             <th style="width: 8%;">Agency</th>
                             <th style="width: 8%;">Booked Date</th>
+                            <th style="width: 6%;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -315,6 +382,12 @@ function safe(?string $s): string
                                 </td>
                                 <td>
                                     <span class="small text-muted"><?php echo safe($bookedDate); ?></span>
+                                </td>
+                                <td>
+                                    <a href="client-profile.php?id=<?php echo (int) ($booking['booking_id'] ?? 0); ?>"
+                                        class="btn btn-sm btn-outline-primary" title="View Client Profile">
+                                        <i class="bi bi-person-lines-fill"></i> View
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
