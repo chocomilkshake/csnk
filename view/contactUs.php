@@ -1,50 +1,62 @@
 <?php
-// contact.php
+// contactUs.php
 declare(strict_types=1);
 session_start();
 
-// Load PHPMailer (if available)
-$composer_autoload = __DIR__ . '/../vendor/autoload.php';
-$composer_autoload_missing = false;
-if (is_readable($composer_autoload)) {
-  require_once $composer_autoload;
-} else {
-  error_log('Composer autoload missing or unreadable: ' . $composer_autoload);
-  $composer_autoload_missing = true;
+/**
+ * CSNK Contact Form - resilient sender for shared hosting
+ * - Tries Gmail SMTP (587 STARTTLS → 465 SMTPS)
+ * - If blocked, falls back to local sendmail/Exim via PHPMailer::isMail()
+ * - If PHPMailer missing, falls back to PHP mail() (plain-text)
+ * - Never simulates success; UI only shows toast on real send
+ */
+
+// -------------------- Load PHPMailer (manual first, then Composer) --------------------
+$phpmailerLoaded = false;
+
+// 1) Manual PHPMailer (no Composer) — place files here if possible
+$phpmailerBase = __DIR__ . '/../lib/phpmailer/src';
+if (is_readable($phpmailerBase . '/PHPMailer.php')) {
+  require_once $phpmailerBase . '/Exception.php';
+  require_once $phpmailerBase . '/PHPMailer.php';
+  require_once $phpmailerBase . '/SMTP.php';
+  $phpmailerLoaded = class_exists(\PHPMailer\PHPMailer\PHPMailer::class);
+}
+
+// 2) Composer autoload (if present & readable). We don't gate on PHP version anymore.
+if (!$phpmailerLoaded) {
+  $composerAutoload = __DIR__ . '/../vendor/autoload.php';
+  if (is_readable($composerAutoload)) {
+    require_once $composerAutoload;
+    $phpmailerLoaded = class_exists(\PHPMailer\PHPMailer\PHPMailer::class);
+  }
 }
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// --------------------------------------------------
-// Configuration
-// --------------------------------------------------
+// -------------------- Config --------------------
 $CONFIG = [
   // ---- CHANGE THESE ----
-  'to_email' => 'csnkmanila@gmail.com',     // Destination email
-  'to_name' => 'CSNK Support',
-  'from_email' => 'csnkmanila@gmail.com',     // Gmail address (if using Gmail SMTP)
-  'from_name' => 'CSNK Manpower Agency',
-  'subject' => 'CSNK Contact Form Submission',
+  'to_email'    => 'csnkmanila@gmail.com',
+  'to_name'     => 'CSNK Support',
+  'from_email'  => 'csnkmanila@gmail.com',  // used only when sending via Gmail SMTP
+  'from_name'   => 'CSNK Manpower Agency',
+  'subject'     => 'CSNK Contact Form Submission',
   // ----------------------
   'max_message' => 500,
 
-  // PHPMailer Configuration
-  'smtp_host' => 'smtp.gmail.com',
-  'smtp_port' => 587,                        // 587 for TLS
-  'smtp_user' => 'csnkmanila@gmail.com',
-  'smtp_pass' => 'svmw uiwi vjvt hteu',          // Gmail App Password (16 chars, NO spaces)
-  'smtp_encrypt' => 'tls',                      // Overwritten below if PHPMailer is available
-  'smtp_debug' => 0,                          // 0=off; 2=verbose (logs to error_log)
-  'enable_mail' => true,                       // set false to skip email while testing
+  // Gmail SMTP (primary route)
+  'smtp_host'   => 'smtp.gmail.com',
+  'smtp_user'   => 'csnkmanila@gmail.com',
+  'smtp_pass'   => getenv('SMTP_APP_PASS') ?: 'svmw uiwi vjvt hteu', // App password (spaces removed at use)
+  'smtp_debug'  => 0,     // set 2 for verbose debug to error_log
 ];
 
-// Prefer PHPMailer constant if available
-if (!$composer_autoload_missing && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-  $CONFIG['smtp_encrypt'] = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-}
+// Allowed topics (also used in <select>)
+$ALLOWED_TOPICS = ['General Inquiry', 'Support', 'Sales', 'Partnerships'];
 
-// Generate CSRF token
+// -------------------- CSRF token --------------------
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -52,108 +64,190 @@ if (empty($_SESSION['csrf_token'])) {
 $errors = [];
 $success = false;
 
-// Helper: sanitize
-function clean(string $v): string
-{
+// -------------------- Helpers --------------------
+function clean(string $v): string {
   $v = trim($v);
   $v = str_replace(["\r\n", "\r"], "\n", $v);
   return preg_replace('/[\x00-\x1F\x7F]/', '', $v);
 }
+function h($s): string {
+  return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+function old(string $key, string $default = ''): string {
+  return htmlspecialchars($_POST[$key] ?? $default, ENT_QUOTES, 'UTF-8');
+}
+function invalidClass(array $errors, string $key): string {
+  return isset($errors[$key]) ? 'is-invalid' : '';
+}
 
-// On POST: validate + optionally send
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  // Honeypot (bots fill this)
-  $honeypot = $_POST['website'] ?? '';
-
-  // CSRF
-  $csrf = $_POST['csrf_token'] ?? '';
-  if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
-    $errors['general'] = 'Security verification failed. Please refresh and try again.';
+/**
+ * Derive a domain-based fallback From address for local sending (no Gmail)
+ * e.g., https://www.example.com -> no-reply@example.com
+ */
+function fallbackFromForLocal(): string {
+  $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+  $host = strtolower(preg_replace('/:\d+$/', '', $host)); // strip port
+  $host = preg_replace('/^www\./', '', $host);
+  if (!filter_var('no-reply@' . $host, FILTER_VALIDATE_EMAIL)) {
+    return 'no-reply@localhost.localdomain';
   }
+  return 'no-reply@' . $host;
+}
 
-  if (!empty($honeypot)) {
-    // Silently treat as success to avoid tipping off bots
-    $success = true;
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    $_POST = [];
-  } else {
-    // Gather & sanitize
-    $firstName = clean($_POST['firstName'] ?? '');
-    $lastName = clean($_POST['lastName'] ?? '');
-    $email = clean($_POST['email'] ?? '');
-    // UI forces 11 digits; keep server-side consistent
-    $phone = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
-    $topic = clean($_POST['topic'] ?? '');
-    $message = clean($_POST['message'] ?? '');
+/**
+ * Pick first readable file path from candidates
+ */
+function pickFirstReadable(array $paths): ?string {
+  foreach ($paths as $p) { if (is_readable($p)) return $p; }
+  return null;
+}
 
-    // Validate
-    if ($firstName === '' || mb_strlen($firstName) > 80) {
-      $errors['firstName'] = 'Please enter your first name (max 80 characters).';
-    }
-    if ($lastName === '' || mb_strlen($lastName) > 80) {
-      $errors['lastName'] = 'Please enter your last name (max 80 characters).';
-    }
-    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-      $errors['email'] = 'Please enter a valid email address.';
-    }
-    // If phone provided, require exactly 11 digits (PH mobile format like 09XXXXXXXXX)
-    if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) {
-      $errors['phone'] = 'Please enter an 11-digit phone number.';
-    }
-    if ($topic === '') {
-      $errors['topic'] = 'Please select a topic.';
-    }
-    if ($message === '' || mb_strlen($message) > $CONFIG['max_message']) {
-      $errors['message'] = 'Please enter your message (max ' . (int) $CONFIG['max_message'] . ' characters).';
-    }
-    if (empty($_POST['consent'])) {
-      $errors['consent'] = 'Consent is required.';
-    }
+/**
+ * Build HTML and plain text bodies
+ */
+function buildBodies(array $data, int $year): array {
+  $senderName  = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? ''));
+  $senderEmail = $data['email'] ?? '';
+  $senderPhone = $data['phone'] ?? '';
+  $topicSafe   = $data['topic'] ?? '';
+  $messageSafe = $data['message'] ?? '';
 
-    // If valid, send email with PHPMailer
-    if (!$errors) {
-      // Plain-text fallback (no submitted/IP/agent)
-      $textBody =
-        "You have a new CSNK contact form submission:\n\n" .
-        "Name: {$firstName} {$lastName}\n" .
-        "Email: {$email}\n" .
-        "Phone: {$phone}\n" .
-        "Topic: {$topic}\n\n" .
-        "Message:\n{$message}\n";
+  $text =
+    "You have a new CSNK contact form submission:\n\n" .
+    "Name: {$senderName}\n" .
+    "Email: {$senderEmail}\n" .
+    "Phone: {$senderPhone}\n" .
+    "Topic: {$topicSafe}\n\n" .
+    "Message:\n{$messageSafe}\n";
 
-      if ($CONFIG['enable_mail']) {
-        // If PHPMailer isn't available (missing composer autoload), avoid fatal error and fail gracefully.
-        if ($composer_autoload_missing || !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-          error_log('PHPMailer not available; skipping email send.');
-          $errors['general'] = 'Mail service is temporarily unavailable. Your message was saved but could not be sent. Please try again later.';
-          $CONFIG['enable_mail'] = false;
-        }
-      }
+  $html = '<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSNK Manpower Agency</title>
+</head>
+<body style="margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:40px 0;background:#f2f4f7;">
+    <tr><td align="center">
+      <table width="700" cellpadding="0" cellspacing="0" role="presentation" style="width:700px;max-width:95%;background:rgba(255,255,255,0.88);backdrop-filter:blur(14px);border-radius:24px;border:1px solid #e4e7eb;box-shadow:0 8px 28px rgba(0,0,0,0.08);overflow:hidden;">
+        <tr>
+          <td align="center" style="padding:20px 0 10px;">
+            <table cellspacing="0" cellpadding="0" role="presentation">
+              <tr>
+                <td style="padding:0 14px;">
+                  <img src="cid:whychoose_cid" style="max-width:150px;height:auto;display:block;" alt="">
+                </td>
+                <td style="padding:0 14px;">
+                  <img src="cid:secondary_logo_cid" style="max-width:150px;height:auto;display:block;" alt="">
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:linear-gradient(135deg,#d21f3c,#e63c43,#ff5a63);padding:26px 32px;border-top-left-radius:24px;border-top-right-radius:24px;">
+            <div style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">🌐 New Contact Message</div>
+            <div style="color:#ffecec;font-size:13px;margin-top:4px;">Received via the CSNK Website</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 34px 10px;">
+            <table width="100%" cellspacing="0" cellpadding="0" role="presentation" style="background:#ffffff;border-radius:18px;border:1px solid #e9ecef;padding:20px 24px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+              <tr>
+                <td style="width:140px;padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">👤 Name</td>
+                <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">' . h($senderName) . '</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">✉ Email</td>
+                <td style="padding:10px 0;">
+                  <a href="mailto:' . h($senderEmail) . '" style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">' . h($senderEmail) . '</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">📱 Phone</td>
+                <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">' . h($senderPhone) . '</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">🏷 Topic</td>
+                <td style="padding:10px 0;">
+                  <span style="display:inline-block;padding:6px 14px;background:#fff2f4;border:1px solid #f7cfd4;border-radius:999px;color:#d21f3c;font-size:13px;font-weight:700;">' . h($topicSafe) . '</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 34px 30px;">
+            <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">💬 Message</div>
+            <div style="background:#ffffff;border-radius:16px;padding:18px 22px;border:1px solid #f0c7cb;line-height:1.7;font-size:15px;color:#374151;white-space:pre-wrap;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+              ' . nl2br(h($messageSafe)) . '
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#faf6f7;padding:16px 26px;border-top:1px solid #e5d1d4;text-align:center;">
+            <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">This email was sent automatically from the CSNK website contact form.</div>
+            <div style="font-size:12px;color:#aaaaaa;">© ' . $year . ' CSNK. All rights reserved.</div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>';
 
-      if ($CONFIG['enable_mail']) {
+  return [$html, $text];
+}
+
+/**
+ * Try Gmail SMTP (587 → 465), else local sendmail, else PHP mail()
+ * Returns [bool $ok, string $err]
+ */
+function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
+  [$htmlBody, $textBody] = buildBodies($post, (int)date('Y'));
+
+  // Recipient and subject
+  $toEmail = $CONFIG['to_email'];
+  $toName  = $CONFIG['to_name'] ?? '';
+  $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
+  $topic  = trim($post['topic'] ?? '');
+  $subject = $subjectBase . ($topic !== '' ? ' - ' . $topic : '');
+
+  // If PHPMailer is available, use it
+  if ($phpmailerLoaded) {
+    try {
+      $mail = new PHPMailer(true);
+      $mail->CharSet = 'UTF-8';
+      $mail->SMTPDebug = (int)($CONFIG['smtp_debug'] ?? 0);
+      $mail->Debugoutput = function ($str, $level) { error_log("PHPMailer debug {$level}: {$str}"); };
+
+      // We'll attempt two SMTP profiles first:
+      $smtpProfiles = [
+        ['port' => 587, 'secure' => PHPMailer::ENCRYPTION_STARTTLS],
+        ['port' => 465, 'secure' => PHPMailer::ENCRYPTION_SMTPS],
+      ];
+
+      $connected = false;
+      $lastError = '';
+
+      foreach ($smtpProfiles as $p) {
         try {
-          // Instantiate PHPMailer via FQCN
-          $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-          $mail->CharSet = 'UTF-8';
+          $mail->clearAllRecipients();
+          $mail->clearAttachments();
+          $mail->clearCustomHeaders();
 
-          // Server settings
           $mail->isSMTP();
-
-          // Debug output level (0 = off). Set to 2 to log verbose debug to error_log.
-          $mail->SMTPDebug = $CONFIG['smtp_debug'] ?? 0;
-          $mail->Debugoutput = function ($str, $level) {
-            error_log("PHPMailer debug level {$level}: {$str}");
-          };
-
-          $mail->Host = $CONFIG['smtp_host'];
-          $mail->SMTPAuth = true;
-          $mail->Username = $CONFIG['smtp_user'];
-          $mail->Password = $CONFIG['smtp_pass'];
-          $mail->SMTPSecure = $CONFIG['smtp_encrypt']; // e.g., PHPMailer::ENCRYPTION_STARTTLS
+          $mail->Host       = $CONFIG['smtp_host'];
+          $mail->SMTPAuth   = true;
+          $mail->Username   = $CONFIG['smtp_user'];
+          $mail->Password   = str_replace(' ', '', (string)$CONFIG['smtp_pass']); // strip spaces
+          $mail->SMTPSecure = $p['secure'];
           $mail->SMTPAutoTLS = true;
-          $mail->Port = (int) $CONFIG['smtp_port'];
+          $mail->Port       = (int)$p['port'];
 
-          // For local development (XAMPP/localhost), allow self-signed certs to avoid TLS handshake failures
+          // Allow self-signed only on localhost dev
           $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
           if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
             $mail->SMTPOptions = [
@@ -165,294 +259,189 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
           }
 
-          // Recipients: send to company support and CC the client
+          // Recipients & headers
           $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
-          $mail->addAddress($CONFIG['to_email'], $CONFIG['to_name'] ?? '');
-          if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $mail->addCC($email);
-            $mail->addReplyTo($email, trim($firstName . ' ' . $lastName));
+          $mail->addAddress($toEmail, $toName);
+          if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+            $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+            $mail->addCC($post['email']);
+            $mail->addReplyTo($post['email'], $replyName);
           }
+          $mail->Subject = $subject;
 
-          // Subject (append topic if present)
-          $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
-          $mail->Subject = $subjectBase . (trim($topic) !== '' ? ' - ' . $topic : '');
-
-          // Helper escaper for HTML
-          $h = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-          $senderName = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
-          $senderEmail = $email ?? '';
-          $senderPhone = $phone ?? '';
-          $topicSafe = $topic ?? '';
-          $messageSafe = $message ?? '';
-
-          // Modern, clean HTML (slightly red theme, no submitted/IP/agent section)
-          $htmlBody =
-            $body = '
-                      <!DOCTYPE html>
-                      <html lang="en">
-                      <head>
-                      <meta charset="UTF-8">
-                      <meta name="x-apple-disable-message-reformatting">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <title>CSNK Manpower Agency</title>
-                      </head>
-
-                      <body style="margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;">
-
-                        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                              style="padding:40px 0;background:#f2f4f7;">
-                          <tr>
-                            <td align="center">
-
-                              <!-- CARD WRAPPER (glass effect + shadow) -->
-                              <table width="700" cellpadding="0" cellspacing="0" role="presentation"
-                                style="
-                                  width:700px;
-                                  max-width:95%;
-                                  background:rgba(255,255,255,0.88);
-                                  backdrop-filter:blur(14px);
-                                  border-radius:24px;
-                                  border:1px solid #e4e7eb;
-                                  box-shadow:0 8px 28px rgba(0,0,0,0.08);
-                                  overflow:hidden;
-                                ">
-
-                                <!-- LOGOS -->
-                                <tr>
-                                  <td align="center" style="padding:20px 0 10px;">
-                                    <table cellspacing="0" cellpadding="0" role="presentation">
-                                      <tr>
-                                        <td style="padding:0 14px;">
-                                          <img src="cid:whychoose_cid"
-                                              style="max-width:150px;height:auto;display:block;">
-                                        </td>
-                                        <td style="padding:0 14px;">
-                                          <img src="cid:secondary_logo_cid"
-                                              style="max-width:150px;height:auto;display:block;">
-                                        </td>
-                                      </tr>
-                                    </table>
-                                  </td>
-                                </tr>
-
-                                <!-- HEADER -->
-                                <tr>
-                                  <td style="
-                                    background:linear-gradient(135deg,#d21f3c,#e63c43,#ff5a63);
-                                    padding:26px 32px;
-                                    border-top-left-radius:24px;
-                                    border-top-right-radius:24px;
-                                  ">
-                                    <div style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">
-                                      🌐 New Contact Message
-                                    </div>
-                                    <div style="color:#ffecec;font-size:13px;margin-top:4px;">
-                                      Received via the CSNK Website
-                                    </div>
-                                  </td>
-                                </tr>
-
-                                <!-- MAIN BODY -->
-                                <tr>
-                                  <td style="padding:26px 34px 10px;">
-
-                                    <!-- Detail Listing Box -->
-                                    <table width="100%" cellspacing="0" cellpadding="0" role="presentation"
-                                          style="
-                                            background:#ffffff;
-                                            border-radius:18px;
-                                            border:1px solid #e9ecef;
-                                            padding:20px 24px;
-                                            box-shadow:0 2px 10px rgba(0,0,0,0.04);
-                                          ">
-
-                                      <!-- NAME -->
-                                      <tr>
-                                        <td style="width:140px;padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          👤 Name
-                                        </td>
-                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">
-                                          ' . $h($senderName) . '
-                                        </td>
-                                      </tr>
-
-                                      <!-- EMAIL -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          ✉ Email
-                                        </td>
-                                        <td style="padding:10px 0;">
-                                          <a href="mailto:' . $h($senderEmail) . '"
-                                            style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">
-                                            ' . $h($senderEmail) . '
-                                          </a>
-                                        </td>
-                                      </tr>
-
-                                      <!-- PHONE -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          📱 Phone
-                                        </td>
-                                        <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">
-                                          ' . $h($senderPhone) . '
-                                        </td>
-                                      </tr>
-
-                                      <!-- TOPIC -->
-                                      <tr>
-                                        <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">
-                                          🏷 Topic
-                                        </td>
-                                        <td style="padding:10px 0;">
-                                          <span style="
-                                            display:inline-block;
-                                            padding:6px 14px;
-                                            background:#fff2f4;
-                                            border:1px solid #f7cfd4;
-                                            border-radius:999px;
-                                            color:#d21f3c;
-                                            font-size:13px;
-                                            font-weight:700;">
-                                            ' . $h($topicSafe) . '
-                                          </span>
-                                        </td>
-                                      </tr>
-
-                                    </table>
-
-                                  </td>
-                                </tr>
-
-                                <!-- MESSAGE SECTION -->
-                                <tr>
-                                  <td style="padding:6px 34px 30px;">
-
-                                    <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">
-                                      💬 Message
-                                    </div>
-
-                                    <div style="
-                                      background:#ffffff;
-                                      border-radius:16px;
-                                      padding:18px 22px;
-                                      border:1px solid #f0c7cb;
-                                      line-height:1.7;
-                                      font-size:15px;
-                                      color:#374151;
-                                      white-space:pre-wrap;
-                                      box-shadow:0 2px 8px rgba(0,0,0,0.05);
-                                    ">
-                                      ' . nl2br($h($messageSafe)) . '
-                                    </div>
-
-                                  </td>
-                                </tr>
-
-                                <!-- FOOTER -->
-                                <tr>
-                                  <td style="
-                                    background:#faf6f7;
-                                    padding:16px 26px;
-                                    border-top:1px solid #e5d1d4;
-                                    text-align:center;
-                                  ">
-                                    <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">
-                                      This email was sent automatically from the CSNK website contact form.
-                                    </div>
-                                    <div style="font-size:12px;color:#aaaaaa;">
-                                      © ' . date("Y") . ' CSNK. All rights reserved.
-                                    </div>
-                                  </td>
-                                </tr>
-
-                              </table>
-
-                            </td>
-                          </tr>
-                        </table>
-
-                      </body>
-                      </html>';
-
-          // -------- Embed two logos (CID) --------
-          // #1 whychoose.png
-          $whychooseCandidates = [
+          // Embedded images (CID)
+          $whychoosePath = pickFirstReadable([
             __DIR__ . '/../resources/img/whychoose.png',
             __DIR__ . '/resources/img/whychoose.png',
             __DIR__ . '/public/resources/img/whychoose.png',
-          ];
-          // #2 secondary logo: try emailogo.png then crempco-logo.png
-          $secondaryCandidates = [
+          ]);
+          $secondaryPath = pickFirstReadable([
             __DIR__ . '/../resources/img/emailogo.png',
             __DIR__ . '/resources/img/emailogo.png',
             __DIR__ . '/public/resources/img/emailogo.png',
             __DIR__ . '/../resources/img/crempco-logo.png',
             __DIR__ . '/resources/img/crempco-logo.png',
             __DIR__ . '/public/resources/img/crempco-logo.png',
-          ];
-
-          $pickFirstReadable = function (array $paths): ?string {
-            foreach ($paths as $p) {
-              if (is_readable($p))
-                return $p;
-            }
-            return null;
-          };
-
-          $whychoosePath = $pickFirstReadable($whychooseCandidates);
-          $secondaryPath = $pickFirstReadable($secondaryCandidates);
-
+          ]);
           if ($whychoosePath) {
             $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
           } else {
-            error_log('Email embed: whychoose.png not found. Tried: ' . implode(', ', $whychooseCandidates));
+            error_log('Email embed: whychoose.png not found.');
           }
-
           if ($secondaryPath) {
-            $ext = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+            $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
             $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
             $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
           } else {
-            error_log('Email embed: secondary logo not found. Tried: ' . implode(', ', $secondaryCandidates));
+            error_log('Email embed: secondary logo not found.');
           }
-          // -------- End embed --------
 
-          // Body
           $mail->isHTML(true);
-          $mail->Body = $htmlBody;
+          $mail->Body    = $htmlBody;
           $mail->AltBody = $textBody;
 
-          // Send
           $mail->send();
-
-          $success = true;
-          $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
-          $_POST = []; // clear form
-        } catch (\Throwable $e) {
-          error_log('Mail Exception: ' . $e->getMessage());
-          if (isset($mail) && !empty($mail->ErrorInfo)) {
-            error_log('PHPMailer ErrorInfo: ' . $mail->ErrorInfo);
-          }
-          $errors['general'] = 'We could not send your message right now. Please try again later.';
+          $connected = true;
+          break; // success via SMTP
+        } catch (\Throwable $smtpEx) {
+          $lastError = $smtpEx->getMessage();
+          error_log('SMTP attempt failed on port ' . $p['port'] . ': ' . $lastError);
         }
+      }
+
+      if ($connected) {
+        return [true, ''];
+      }
+
+      // If we got here, SMTP failed (blocked/timeout/etc). Try local sendmail via PHPMailer.
+      try {
+        $mail = new PHPMailer(true);
+        $mail->CharSet = 'UTF-8';
+        $mail->isMail(); // local MTA (Exim/sendmail)
+        // Use domain-based From for SPF/DMARC alignment on local send
+        $localFrom = fallbackFromForLocal();
+        $mail->setFrom($localFrom, $CONFIG['from_name'] ?? 'Website');
+        $mail->addAddress($toEmail, $toName);
+        if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+          $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+          $mail->addReplyTo($post['email'], $replyName);
+        }
+        $mail->Subject = $subject;
+
+        // Note: Local mail can embed images, but if sendmail strips cids in some stacks, it still degrades safely.
+        $whychoosePath = pickFirstReadable([
+          __DIR__ . '/../resources/img/whychoose.png',
+          __DIR__ . '/resources/img/whychoose.png',
+          __DIR__ . '/public/resources/img/whychoose.png',
+        ]);
+        $secondaryPath = pickFirstReadable([
+          __DIR__ . '/../resources/img/emailogo.png',
+          __DIR__ . '/resources/img/emailogo.png',
+          __DIR__ . '/public/resources/img/emailogo.png',
+          __DIR__ . '/../resources/img/crempco-logo.png',
+          __DIR__ . '/resources/img/crempco-logo.png',
+          __DIR__ . '/public/resources/img/crempco-logo.png',
+        ]);
+        if ($whychoosePath) {
+          $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+        }
+        if ($secondaryPath) {
+          $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+          $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+          $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+        }
+
+        $mail->isHTML(true);
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = $textBody;
+
+        $mail->send();
+        error_log('Mail sent via local sendmail fallback.');
+        return [true, ''];
+      } catch (\Throwable $sendmailEx) {
+        error_log('Local sendmail fallback failed: ' . $sendmailEx->getMessage());
+        return [false, 'Email service is unreachable right now. (SMTP blocked and local MTA failed)'];
+      }
+    } catch (\Throwable $e) {
+      error_log('PHPMailer overall failure: ' . $e->getMessage());
+      return [false, 'Unexpected mailer error.'];
+    }
+  }
+
+  // -------------------- PHPMailer not available → PHP mail() plain text --------------------
+  $to   = $toEmail;
+  $subj = $subject;
+  $from = fallbackFromForLocal();
+  $headers  = "From: " . $CONFIG['from_name'] . " <{$from}>\r\n";
+  if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+    $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+    $headers .= 'Reply-To: ' . ($replyName ? "{$replyName} <{$post['email']}>" : $post['email']) . "\r\n";
+  }
+  $headers .= "MIME-Version: 1.0\r\n";
+  $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+  [, $plain] = buildBodies($post, (int)date('Y'));
+  $ok = @mail($to, $subj, $plain, $headers);
+  if ($ok) {
+    error_log('Mail sent via PHP mail() fallback (no PHPMailer available).');
+    return [true, ''];
+  }
+  return [false, 'Mail function failed on the server.'];
+}
+
+// -------------------- Handle POST --------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Honeypot
+  $honeypot = $_POST['website'] ?? '';
+
+  // CSRF
+  $csrf = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    $errors['general'] = 'Security verification failed. Please refresh and try again.';
+  }
+
+  if (!empty($honeypot)) {
+    // Silently succeed for bots (do not actually send)
+    $success = true;
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_POST = [];
+  } else {
+    // Gather
+    $firstName = clean($_POST['firstName'] ?? '');
+    $lastName  = clean($_POST['lastName']  ?? '');
+    $email     = clean($_POST['email']     ?? '');
+    $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
+    $topic     = clean($_POST['topic']     ?? '');
+    $message   = clean($_POST['message']   ?? '');
+
+    // Validate
+    if ($firstName === '' || mb_strlen($firstName) > 80) $errors['firstName'] = 'Please enter your first name (max 80 characters).';
+    if ($lastName === ''  || mb_strlen($lastName)  > 80) $errors['lastName']  = 'Please enter your last name (max 80 characters).';
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Please enter a valid email address.';
+    if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) $errors['phone'] = 'Please enter an 11-digit phone number.';
+    if ($topic === '' || !in_array($topic, $ALLOWED_TOPICS, true)) $errors['topic'] = 'Please select a topic.';
+    if ($message === '' || mb_strlen($message) > (int)$CONFIG['max_message']) $errors['message'] = 'Please enter your message (max ' . (int)$CONFIG['max_message'] . ' characters).';
+    if (empty($_POST['consent'])) $errors['consent'] = 'Consent is required.';
+
+    if (!$errors) {
+      [$ok, $err] = sendSmart($CONFIG, [
+        'firstName' => $firstName,
+        'lastName'  => $lastName,
+        'email'     => $email,
+        'phone'     => $phone,
+        'topic'     => $topic,
+        'message'   => $message,
+      ], $phpmailerLoaded);
+
+      if ($ok) {
+        $success = true;
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
+        $_POST = []; // clear form
       } else {
-        $success = true; // simulated success
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $_POST = [];
+        $errors['general'] = $err ?: 'We could not send your message right now. Please try again later.';
       }
     }
   }
-}
-
-// Helpers for repopulation & invalid class
-function old(string $key, string $default = ''): string
-{
-  return htmlspecialchars($_POST[$key] ?? $default, ENT_QUOTES, 'UTF-8');
-}
-function invalidClass(array $errors, string $key): string
-{
-  return isset($errors[$key]) ? 'is-invalid' : '';
 }
 ?>
 <!doctype html>
@@ -468,89 +457,25 @@ function invalidClass(array $errors, string $key): string
   <link rel="icon" type="image/png" href="/csnk/resources/img/csnk-icon.png">
 
   <style>
-    :root {
-      --accent-red: #D72638;
-      /* red hint */
-      --ink: #111111;
-      /* black hint */
-      --muted-ink: #6c757d;
-      /* Bootstrap gray-600 */
-      --bg: #ffffff;
-      /* white */
-      --border: #e9ecef;
-      --ring: rgba(215, 38, 56, .25);
-      /* red focus ring */
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-feature-settings: "kern" 1, "liga" 1;
-    }
-
-    .contact-card {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 6px 28px rgba(17, 17, 17, .04);
-      background: #fff;
-    }
-
-    .form-control,
-    .form-select {
-      border-radius: 10px;
-      border-color: var(--border);
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-      border-color: var(--accent-red);
-      box-shadow: 0 0 0 .25rem var(--ring);
-    }
-
-    .form-check-input:checked {
-      background-color: var(--accent-red);
-      border-color: var(--accent-red);
-    }
-
-    .btn-accent {
-      --bs-btn-color: #fff;
-      --bs-btn-bg: var(--accent-red);
-      --bs-btn-border-color: var(--accent-red);
-      --bs-btn-hover-bg: #b81f2f;
-      --bs-btn-hover-border-color: #b81f2f;
-      --bs-btn-focus-shadow-rgb: 215, 38, 56;
-    }
-
-    .text-accent {
-      color: var(--accent-red) !important;
-    }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-    }
-
-    .char-counter {
-      font-size: .85rem;
-      color: var(--muted-ink);
-    }
-
-    .char-counter.warning {
-      color: var(--accent-red);
-      font-weight: 600;
-    }
-
-    .is-invalid~.invalid-feedback {
-      display: block;
-    }
+    :root { --accent-red:#D72638; --ink:#111111; --muted-ink:#6c757d; --bg:#ffffff; --border:#e9ecef; --ring:rgba(215,38,56,.25); }
+    body{ background:var(--bg); color:var(--ink); font-feature-settings:"kern" 1, "liga" 1; }
+    .contact-card{ border:1px solid var(--border); border-radius:14px; box-shadow:0 6px 28px rgba(17,17,17,.04); background:#fff; }
+    .form-control,.form-select{ border-radius:10px; border-color:var(--border); }
+    .form-control:focus,.form-select:focus{ border-color:var(--accent-red); box-shadow:0 0 0 .25rem var(--ring); }
+    .form-check-input:checked{ background-color:var(--accent-red); border-color:var(--accent-red); }
+    .btn-accent{ --bs-btn-color:#fff; --bs-btn-bg:var(--accent-red); --bs-btn-border-color:var(--accent-red); --bs-btn-hover-bg:#b81f2f; --bs-btn-hover-border-color:#b81f2f; --bs-btn-focus-shadow-rgb:215,38,56; }
+    .text-accent{ color:var(--accent-red)!important; }
+    .divider{ height:1px; background:var(--border); }
+    .char-counter{ font-size:.85rem; color:var(--muted-ink); }
+    .char-counter.warning{ color:var(--accent-red); font-weight:600; }
+    .is-invalid~.invalid-feedback{ display:block; }
   </style>
 </head>
 
 <body>
   <!-- Header -->
   <header>
-    <?php $page = 'contact';
-    include __DIR__ . '/navbar.php'; ?>
+    <?php $page = 'contact'; include __DIR__ . '/navbar.php'; ?>
   </header>
 
   <!-- Hero -->
@@ -581,8 +506,7 @@ function invalidClass(array $errors, string $key): string
       <div class="col-lg-6">
         <div class="contact-card p-4 p-md-5">
           <form id="contactForm" method="post" action="" novalidate>
-            <input type="hidden" name="csrf_token"
-              value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3">
               <div class="col-md-6">
@@ -641,11 +565,10 @@ function invalidClass(array $errors, string $key): string
                 <div class="form-floating">
                   <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
                     <?php
-                    $topics = ['General Inquiry', 'Support', 'Sales', 'Partnerships'];
-                    foreach ($topics as $t) {
-                      $sel = (old('topic') === $t) ? 'selected' : '';
-                      echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
-                    }
+                      foreach ($ALLOWED_TOPICS as $t) {
+                        $sel = (old('topic') === $t) ? 'selected' : '';
+                        echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
+                      }
                     ?>
                   </select>
                   <label for="topic">Topic</label>
@@ -659,7 +582,7 @@ function invalidClass(array $errors, string $key): string
                 <div class="form-floating">
                   <textarea id="message" name="message" class="form-control <?= invalidClass($errors, 'message') ?>"
                     placeholder="Your message" style="height: 140px" required
-                    maxlength="<?= (int) $CONFIG['max_message'] ?>"><?= old('message') ?></textarea>
+                    maxlength="<?= (int)$CONFIG['max_message'] ?>"><?= old('message') ?></textarea>
                   <label for="message">Message</label>
                   <div class="invalid-feedback">
                     <?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?>
@@ -668,7 +591,7 @@ function invalidClass(array $errors, string $key): string
 
                 <div class="d-flex justify-content-end mt-1">
                   <span id="charCount" class="char-counter" aria-live="polite">
-                    0 / <?= (int) $CONFIG['max_message'] ?>
+                    0 / <?= (int)$CONFIG['max_message'] ?>
                   </span>
                 </div>
               </div>
@@ -826,28 +749,23 @@ function invalidClass(array $errors, string $key): string
   <script src="../resources/js/policy-modals.js"></script>
 
   <script>
-    // Character counter (handles emoji properly)
+    // Character counter (emoji-safe)
     const messageEl = document.getElementById('message');
     const counterEl = document.getElementById('charCount');
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
-
     function updateCounter() {
       const len = [...(messageEl.value || '')].length;
       counterEl.textContent = `${len} / ${limit}`;
       const threshold = Math.floor(limit * 0.9);
       counterEl.classList.toggle('warning', len >= threshold);
     }
-    if (messageEl) {
-      messageEl.addEventListener('input', updateCounter);
-      updateCounter();
-    }
+    if (messageEl) { messageEl.addEventListener('input', updateCounter); updateCounter(); }
 
     // Submit button loading UI
     const form = document.getElementById('contactForm');
     const submitBtn = document.getElementById('submitBtn');
     const submitText = submitBtn?.querySelector('.submit-text');
     const submitLoading = submitBtn?.querySelector('.submit-loading');
-
     form?.addEventListener('submit', () => {
       submitText?.classList.add('d-none');
       submitLoading?.classList.remove('d-none');
@@ -857,16 +775,12 @@ function invalidClass(array $errors, string $key): string
 
   <?php if ($success): ?>
     <script>
-      // Show success toast if PHP indicates success
+      // Show success toast on real success only
       (function () {
         const toastEl = document.getElementById('successToast');
-        if (toastEl) {
-          const toast = new bootstrap.Toast(toastEl);
-          toast.show();
-        }
+        if (toastEl) { new bootstrap.Toast(toastEl).show(); }
       })();
     </script>
   <?php endif; ?>
 </body>
-
 </html>
