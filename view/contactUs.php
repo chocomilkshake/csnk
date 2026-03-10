@@ -536,6 +536,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
               <div class="col-12">
                 <div class="form-floating">
+                  <!-- Email -->
+                  <input type="email" id="email" name="email" class="form-control <?= invalidClass($errors, 'email') ?>"
+                    placeholder="name@example.com" required autocomplete="email" inputmode="email"
+                    value="<?= old('email') ?>" />
+                  <label for="email">Email</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['email'] ?? 'Please enter a valid email address.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <!-- Phone (PH 11 digits) -->
+                  <input type="tel" id="phone" name="phone" class="form-control <?= invalidClass($errors, 'phone') ?>"
+                    placeholder="09XXXXXXXXX" autocomplete="tel-national" inputmode="tel" pattern="^\d{11}$"
+                    minlength="11" maxlength="11" value="<?= old('phone') ?>"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" />
+                  <label for="phone">Phone (optional)</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['phone'] ?? 'Please enter an 11-digit phone number.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-floating">
                   <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
                     <?php
                       foreach ($ALLOWED_TOPICS as $t) {
