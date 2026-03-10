@@ -479,6 +479,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </header>
 
   <!-- Hero -->
+  <section class="container py-5 py-md-6">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-6">
+        <h1 class="display-6 fw-bold mb-3">Contact <span class="text-accent">CSNK </span>Support</h1>
+        <p class="lead text-secondary mb-4">
+          We’re here to help. Send us a message and we’ll get back to you shortly.
+        </p>
+
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <span class="text-accent">●</span>
+          <span class="text-secondary">Average response time: within 24 hours</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-accent">●</span>
+          <span class="text-secondary">Support hours: Mon–Fri, 8:00 AM – 5:00 PM</span>
+        </div>
+
+        <?php if (!empty($errors['general'])): ?>
+          <div class="alert alert-danger mt-4" role="alert">
+            <?= htmlspecialchars($errors['general'], ENT_QUOTES, 'UTF-8') ?>
+          </div>
+        <?php endif; ?>
+      </div>
 
       <div class="col-lg-6">
         <div class="contact-card p-4 p-md-5">
