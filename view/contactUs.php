@@ -465,7 +465,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-floating">
                   <!-- First name -->
                   <input type="
-                  <select id="harCount');
+                  <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
+                    <?php
+                      foreach ($ALLOWED_TOPICS as $t) {
+                        $sel = (old('topic') === $t) ? 'selected' : '';
+                        echo '<o="char-counter" aria-live="polite">
+                    0 / <?= (int)$CONFIG['max_message'] ?>
+                  </span>
+                </div>
+              </div>t">Send message</span>
+                    <span class="submit-loading d-none">
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Sending…
+                    </span>
+                  </button>
+                </div>
+  <!-- Contact / Map -->er gap-2 mb-3">
+                <span class="badg
+                <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <div class="fw-semibold">Email</div>
+                  <div class="text-muted small">csnkmanila06@gmail.com</div>
+                </div>);
+    const counterEl = document.getElementById('charCount');
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
     function updateCounter() {
       const len = [...(messageEl.value || '')].length;
