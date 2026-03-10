@@ -906,18 +906,6 @@ if ($canViewReports && $conn instanceof mysqli) {
                 <span class="label"><span class="text">Profile</span></span>
             </a>
 
-            <?php if ($isAdmin || $isSuperAdmin): ?>
-                <!-- ===== NEW: Country Management (Admins only) ===== -->
-                <a href="country_management.php"
-                    class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
-                    aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Country Management">
-                    <i class="bi bi-flag"></i>
-                    <span class="label"><span class="text">Country Management</span></span>
-                </a>
-                <!-- ================================================ -->
-            <?php endif; ?>
-
             <div class="sidebar-divider"></div>
             <a href="logout.php" class="sidebar-item text-danger" data-bs-toggle="tooltip" data-bs-placement="right"
                 title="Logout">
