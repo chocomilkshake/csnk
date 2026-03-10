@@ -694,7 +694,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div>
                   <div class="fw-semibold">Email</div>
                   <div class="text-muted small">csnkmanila06@gmail.com</div>
-                </div>);
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-4">
+                <div class="text-danger fs-5"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                  <div class="fw-semibold">Office Hours</div>
+                  <div class="text-muted small">Mon to Sat, 8:00 AM to 5:00 PM</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-danger rounded-pill px-4" target="_blank" rel="noopener"
+                  href="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT">
+                  <i class="fa-solid fa-location-arrow me-2"></i>Get Directions
+                </a>
+
+                <a class="btn btn-outline-secondary rounded-pill px-4" href="#top">
+                  <i class="fa-solid fa-arrow-up me-2"></i>Back to Top
+                </a>
+              </div>
+
+            </div>
+  <script src="../resources/js/policy-modals.js"></script>
+
+  <script>
+    // Character counter (emoji-safe)
+    const messageEl = document.getElementById('message');
     const counterEl = document.getElementById('charCount');
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
     function updateCounter() {
