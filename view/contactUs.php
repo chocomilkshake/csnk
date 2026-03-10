@@ -512,7 +512,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="col-md-6">
                 <div class="form-floating">
                   <!-- First name -->
-                  <input type="
+                  <input type="text" id="firstName" name="firstName"
+                    class="form-control <?= invalidClass($errors, 'firstName') ?>" placeholder="First name" required
+                    maxlength="80" autocomplete="given-name" value="<?= old('firstName') ?>" />
+                  <label for="firstName">First name</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['firstName'] ?? 'Please enter your first name.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <!-- Last name -->
+                  <input type="text" id="lastName" name="lastName"
+                    class="form-control <?= invalidClass($errors, 'lastName') ?>" placeholder="Last name" required
+                    maxlength="80" autocomplete="family-name" value="<?= old('lastName') ?>" />
+                  <label for="lastName">Last name</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="form-floating">
                   <select id="topic" name="topic" class="form-select <?= invalidClass($errors, 'topic') ?>" required>
                     <?php
                       foreach ($ALLOWED_TOPICS as $t) {
