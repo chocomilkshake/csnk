@@ -26,24 +26,29 @@ if ($checkItem && $checkItem->num_rows === 0) {
 }
 $checkItem->close();
 
-// Get agencies for selector
+// Get agencies for selector (using numeric IDs: 1=CSNK, 2=SMC)
 $agencies = [];
 $res = $conn->query("SELECT id, code, name FROM agencies WHERE active = 1 ORDER BY id ASC");
 if ($res) {
     while ($row = $res->fetch_assoc()) {
-        $agencies[$row['code']] = ['id' => (int)$row['id'], 'name' => $row['name']];
+        $agencies[$row['id']] = ['code' => $row['code'], 'name' => $row['name']];
     }
 }
 
-// If no agencies, add default CSNK
+// If no agencies, add defaults
 if (empty($agencies)) {
-    $conn->query("INSERT INTO agencies (code, name, active) VALUES ('csnk', 'CSNK', 1)");
-    $agencies['csnk'] = ['id' => 1, 'name' => 'CSNK'];
+    $conn->query("INSERT INTO agencies (id, code, name, active) VALUES (1, 'csnk', 'CSNK', 1)");
+    $conn->query("INSERT INTO agencies (id, code, name, active) VALUES (2, 'smc', 'SMC', 1)");
+    $agencies[1] = ['code' => 'csnk', 'name' => 'CSNK'];
+    $agencies[2] = ['code' => 'smc', 'name' => 'SMC'];
 }
 
-// Get selected agency from query or default to first
-$activeAgencyCode = isset($_GET['agency']) && isset($agencies[$_GET['agency']]) ? $_GET['agency'] : array_key_first($agencies);
-$activeAgencyId = (int)$agencies[$activeAgencyCode]['id'];
+// Get selected agency from query (using numeric ID) or default to CSNK (1)
+$activeAgencyId = isset($_GET['agency']) ? (int)$_GET['agency'] : 1;
+if (!isset($agencies[$activeAgencyId])) {
+    $activeAgencyId = 1; // Default to CSNK
+}
+$activeAgencyCode = $agencies[$activeAgencyId]['code'];
 
 // Get business units for selected agency
 $businessUnits = [];
@@ -516,13 +521,13 @@ function scopeUrl($path, $agency, $bu) {
   </a>
 </div>
 
-<!-- Agency & BU Selector -->
-<form method="GET" class="row g-3 mb-4">
+<!-- Agency & Country Selector (Interactive) -->
+<form method="GET" class="row g-3 mb-4" id="selectorForm">
   <div class="col-md-3">
     <label class="form-label">Agency</label>
-    <select name="agency" class="form-select" onchange="this.form.submit()">
-      <?php foreach ($agencies as $code => $a): ?>
-        <option value="<?= htmlspecialchars($code) ?>" <?= $code === $activeAgencyCode ? 'selected' : '' ?>>
+    <select name="agency" id="agencySelect" class="form-select">
+      <?php foreach ($agencies as $agencyId => $a): ?>
+        <option value="<?= (int)$agencyId ?>" <?= (int)$agencyId === (int)$activeAgencyId ? 'selected' : '' ?>>
           <?= htmlspecialchars(strtoupper($a['name'])) ?>
         </option>
       <?php endforeach; ?>
@@ -530,9 +535,9 @@ function scopeUrl($path, $agency, $bu) {
   </div>
   <div class="col-md-4">
     <label class="form-label">Business Unit / Country</label>
-    <select name="bu" class="form-select" onchange="this.form.submit()">
+    <select name="bu" id="buSelect" class="form-select">
       <?php foreach ($businessUnits as $buid => $bu): ?>
-        <option value="<?= (int)$buid ?>" <?= (int)$buid === $activeBUId ? 'selected' : '' ?>>
+        <option value="<?= (int)$buid ?>" <?= (int)$buid === (int)$activeBUId ? 'selected' : '' ?>>
           <?= htmlspecialchars(($bu['country_name'] ?? '') . ' - ' . $bu['name']) ?>
         </option>
       <?php endforeach; ?>
@@ -544,6 +549,66 @@ function scopeUrl($path, $agency, $bu) {
     </button>
   </div>
 </form>
+
+<!-- JavaScript for Interactive Selector (like country_management.php) -->
+<script>
+(function() {
+  const agencySelect = document.getElementById('agencySelect');
+  const buSelect = document.getElementById('buSelect');
+  const selectorForm = document.getElementById('selectorForm');
+  
+  // Business Units data by agency (PHP-generated JavaScript)
+  const businessUnitsByAgency = {
+    <?php foreach ($agencies as $agencyId => $a): ?>
+    <?php 
+      // Get BUs for this agency
+      $buStmt = $conn->prepare("
+        SELECT bu.id, bu.code, bu.name, bu.country_id, c.name as country_name
+        FROM business_units bu
+        LEFT JOIN countries c ON c.id = bu.country_id
+        WHERE bu.agency_id = ? AND bu.active = 1
+        ORDER BY c.name, bu.name
+      ");
+      $buStmt->bind_param("i", $agencyId);
+      $buStmt->execute();
+      $buRes = $buStmt->get_result();
+      $buData = [];
+      while ($buRow = $buRes->fetch_assoc()) {
+        $buData[] = $buRow;
+      }
+      $buStmt->close();
+    ?>
+    <?= (int)$agencyId ?>: <?= json_encode(array_values($buData)) ?>,
+    <?php endforeach; ?>
+  };
+
+  // When agency changes, update the BU dropdown (user must click Filter manually)
+  agencySelect?.addEventListener('change', function() {
+    const agencyId = this.value;
+    const bus = businessUnitsByAgency[agencyId] || [];
+    
+    // Clear existing options
+    buSelect.innerHTML = '';
+    
+    if (bus.length > 0) {
+      // Add new options
+      bus.forEach(function(bu) {
+        const option = document.createElement('option');
+        option.value = bu.id;
+        option.textContent = (bu.country_name || '') + ' - ' + bu.name;
+        buSelect.appendChild(option);
+      });
+      // Note: Don't auto-submit - let user select BU first, then click Filter
+    } else {
+      // No BUs for this agency
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No Business Units available';
+      buSelect.appendChild(option);
+    }
+  });
+})();
+</script>
 
 <?php if (!empty($message)): ?>
   <div class="alert alert-<?= $messageType ?> alert-dismissible fade show" role="alert">
@@ -1078,7 +1143,7 @@ function scopeUrl($path, $agency, $bu) {
         fd.append('titles[]', title || '');
       });
 
-      const baseUrl = window.location.pathname + '?agency=<?= urlencode($activeAgencyCode) ?>&bu=<?= (int)$activeBUId ?>';
+      const baseUrl = window.location.pathname + '?agency=<?= (int)$activeAgencyId ?>&bu=<?= (int)$activeBUId ?>';
       await fetch(baseUrl, { method: 'POST', body: fd });
       window.location.reload();
     } catch (e) {
