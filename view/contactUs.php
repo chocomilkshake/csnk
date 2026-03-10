@@ -594,7 +594,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     0 / <?= (int)$CONFIG['max_message'] ?>
                   </span>
                 </div>
-              </div>t">Send message</span>
+              </div>
+
+              <!-- Honeypot (hidden) -->
+              <div class="visually-hidden" aria-hidden="true">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="form-check">
+                    <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1"
+                      id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
+                    <label class="form-check-label" for="consent">
+                      <a>I agree to the privacy policy. </a>
+                    </label>
+                    <div class="invalid-feedback">
+                      <?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
+                  </div>
+                  <button id="submitBtn" class="btn btn-accent px-4" type="submit">
+                    <span class="submit-text">Send message</span>
                     <span class="submit-loading d-none">
                       <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                       Sending…
