@@ -344,6 +344,11 @@ if ($canViewReports && $conn instanceof mysqli) {
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/csnk/resources/img/csnk-icon.png">
 
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
         crossorigin="anonymous">
@@ -430,9 +435,10 @@ if ($canViewReports && $conn instanceof mysqli) {
             padding: .75rem 1rem .35rem 1rem;
             color: var(--csnk-gray-600);
             text-transform: uppercase;
-            font-size: .72rem;
+            font-size: .70rem;
             letter-spacing: .08em;
-            font-weight: 700;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         .sidebar-section-label .region-icon {
@@ -457,6 +463,9 @@ if ($canViewReports && $conn instanceof mysqli) {
             transition: background .15s ease, color .15s ease, border-left-color .15s ease;
             border-left: 3px solid transparent;
             border-radius: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-weight: 500;
+            font-size: 0.875rem;
         }
 
         .sidebar-item:hover {
@@ -517,13 +526,14 @@ if ($canViewReports && $conn instanceof mysqli) {
             border-radius: 999px;
             background: var(--csnk-accent-bg);
             color: #fff;
-            font-weight: 900;
-            font-size: .78rem;
+            font-weight: 600;
+            font-size: .75rem;
             line-height: 1;
-            letter-spacing: .2px;
+            letter-spacing: 0;
             border: 1px solid rgba(0, 0, 0, .08);
             box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset, 0 1px 0 rgba(0, 0, 0, .05);
             font-variant-numeric: tabular-nums;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         .sidebar-item:hover .pill-count {
@@ -823,96 +833,90 @@ if ($canViewReports && $conn instanceof mysqli) {
             <?php endif; ?>
 
             <?php if ($canViewActivity): ?>
-    <div class="sidebar-divider"></div>
+                <div class="sidebar-divider"></div>
 
-    <!-- Section Label -->
-    <div class="sidebar-section-label text-uppercase fw-bold small text-muted mt-2 mb-1">
-        Monitoring
-    </div>
+                <!-- Section Label -->
+                <div class="sidebar-section-label text-uppercase fw-bold small text-muted mt-2 mb-1">
+                    Monitoring
+                </div>
 
-    <!-- Clients -->
-    <a href="client-management.php"
-       class="sidebar-item <?php echo $currentPage === 'client-management' ? 'active' : ''; ?>"
-       aria-current="<?php echo $currentPage === 'client-management' ? 'page' : 'false'; ?>"
-       data-bs-toggle="tooltip" data-bs-placement="right"
-       title="Manage Clients">
+                <!-- Clients -->
+                <a href="client-management.php"
+                    class="sidebar-item <?php echo $currentPage === 'client-management' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'client-management' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Manage Clients">
 
-        <i class="bi bi-people"></i>
-        <span class="label">
-            <span class="text fw-semibold">Clients</span>
-        </span>
-    </a>
+                    <i class="bi bi-people"></i>
+                    <span class="label">
+                        <span class="text fw-semibold">Clients</span>
+                    </span>
+                </a>
 
-    <!-- Content (Admins Only) -->
-    <?php if ($isAdmin || $isSuperAdmin): ?>
-        <a href="content_management.php"
-           class="sidebar-item <?php echo $currentPage === 'content_management' ? 'active' : ''; ?>"
-           aria-current="<?php echo $currentPage === 'content_management' ? 'page' : 'false'; ?>"
-           data-bs-toggle="tooltip" data-bs-placement="right"
-           title="Content">
+                <!-- Content (Admins Only) -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="content_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'content_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'content_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Content">
 
-            <i class="bi bi-collection"></i>
-            <span class="label">
-                <span class="text fw-semibold">Content</span>
-            </span>
-        </a>
-    <?php endif; ?>
+                        <i class="bi bi-collection"></i>
+                        <span class="label">
+                            <span class="text fw-semibold">Content</span>
+                        </span>
+                    </a>
+                <?php endif; ?>
 
-    <!-- Countries (Admins Only) -->
-    <?php if ($isAdmin || $isSuperAdmin): ?>
-        <a href="country_management.php"
-           class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
-           aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
-           data-bs-toggle="tooltip" data-bs-placement="right"
-           title="Countries">
+                <!-- Countries (Admins Only) -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="country_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'country_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'country_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Countries">
 
-            <i class="bi bi-flag"></i>
-            <span class="label">
-                <span class="text fw-semibold">Countries</span>
-            </span>
-        </a>
-    <?php endif; ?>
+                        <i class="bi bi-flag"></i>
+                        <span class="label">
+                            <span class="text fw-semibold">Countries</span>
+                        </span>
+                    </a>
+                <?php endif; ?>
 
-    <!-- System Activity -->
-    <a href="activity-logs.php"
-       class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
-       aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
-       data-bs-toggle="tooltip" data-bs-placement="right"
-       title="System Activity">
+                <!-- System Activity -->
+                <a href="activity-logs.php"
+                    class="sidebar-item <?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'activity-logs' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="System Activity">
 
-        <i class="bi bi-clipboard-data"></i>
-        <span class="label">
-            <span class="text fw-semibold">System Activity</span>
-        </span>
-    </a>
+                    <i class="bi bi-clipboard-data"></i>
+                    <span class="label">
+                        <span class="text fw-semibold">System Activity</span>
+                    </span>
+                </a>
 
-    <!-- Reports -->
-    <?php if ($canViewReports): ?>
-        <div class="sidebar-section-label text-uppercase fw-bold small text-muted mt-3 mb-1">
-            Reports
-        </div>
+                <!-- Reports -->
+                <?php if ($canViewReports): ?>
+                    <div class="sidebar-section-label text-uppercase fw-bold small text-muted mt-3 mb-1">
+                        Reports
+                    </div>
 
-        <a href="reports.php"
-           class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
-           aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>"
-           data-bs-toggle="tooltip" data-bs-placement="right"
-           title="Reports & Analytics">
+                    <a href="reports.php" class="sidebar-item <?php echo ($currentPage === 'reports') ? 'active' : ''; ?>"
+                        aria-current="<?php echo ($currentPage === 'reports') ? 'page' : 'false'; ?>" data-bs-toggle="tooltip"
+                        data-bs-placement="right" title="Reports & Analytics">
 
-            <i class="bi bi-journal-text"></i>
+                        <i class="bi bi-journal-text"></i>
 
-            <span class="label">
-                <span class="text fw-semibold">Reports & Analytics</span>
-            </span>
+                        <span class="label">
+                            <span class="text fw-semibold">Reports & Analytics</span>
+                        </span>
 
-            <span class="side-badge">
-                <span class="pill-count <?php echo ((int)($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>">
-                    <?php echo (int)($reportNotesCount ?? 0); ?>
-                </span>
-            </span>
-        </a>
-    <?php endif; ?>
+                        <span class="side-badge">
+                            <span class="pill-count <?php echo ((int) ($reportNotesCount ?? 0) === 0) ? 'is-zero' : ''; ?>">
+                                <?php echo (int) ($reportNotesCount ?? 0); ?>
+                            </span>
+                        </span>
+                    </a>
+                <?php endif; ?>
 
-<?php endif; ?>
+            <?php endif; ?>
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">Settings</div>
