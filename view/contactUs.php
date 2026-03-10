@@ -717,6 +717,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
 
             </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <?php include __DIR__ . '/footer.php'; ?>
+  </footer>
+
+  <!-- Toast (Success) -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="successToast" class="toast align-items-center text-bg-light border-0" role="status" aria-live="polite"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <span class="text-accent fw-semibold">Thanks!</span> Your message has been sent.
+        </div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Font Awesome & Bootstrap JS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler -->
   <script src="../resources/js/policy-modals.js"></script>
 
   <script>
