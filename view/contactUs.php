@@ -664,7 +664,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
 
               <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="badg
+                <span class="badge bg-danger rounded-pill px-3 py-2">CSNK Manpower Agency</span>
+              </div>
+
+              <h5 class="fw-bold mb-3">Office Information</h5>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <div class="fw-semibold">Address</div>
+                  <div class="text-muted small">
+                    Ground Floor Unit 1 Eden Townhouse<br>
+                    2001 Eden St. Cor Pedro Gil, Sta Ana<br>
+                    Barangay 866, City of Manila, NCR, Sixth District
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <div class="fw-semibold">Phone</div>
+                  <div class="text-muted small">0945 657 0878</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
                 <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
                 <div>
                   <div class="fw-semibold">Email</div>
