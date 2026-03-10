@@ -458,7 +458,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <style>
     :root { --accent-red:#D72638; --ink:#111111; --muted-ink:#6c757d; --bg:#ffffff; --border:#e9ecef; --ring:rgba(215,38,56,.25); }
-    body{ background:var(--bg); " value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+    body{ background:var(--bg); color:var(--ink); font-feature-settings:"kern" 1, "liga" 1; }
+    .contact-card{ border:1px solid var(--border); border-radius:14px; box-shadow:0 6px 28px rgba(17,17,17,.04); background:#fff; }
+    .form-control,.form-select{ border-radius:10px; border-color:var(--border); }
+    .form-control:focus,.form-select:focus{ border-color:var(--accent-red); box-shadow:0 0 0 .25rem var(--ring); }
+    .form-check-input:checked{ background-color:var(--accent-red); border-color:var(--accent-red); }
+    .btn-accent{ --bs-btn-color:#fff; --bs-btn-bg:var(--accent-red); --bs-btn-border-color:var(--accent-red); --bs-btn-hover-bg:#b81f2f; --bs-btn-hover-border-color:#b81f2f; --bs-btn-focus-shadow-rgb:215,38,56; }
+    .text-accent{ color:var(--accent-red)!important; }
+    .divider{ height:1px; background:var(--border); }
+    .char-counter{ font-size:.85rem; color:var(--muted-ink); }
+    .char-counter.warning{ color:var(--accent-red); font-weight:600; }
+    .is-invalid~.invalid-feedback{ display:block; }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <?php $page = 'contact'; include __DIR__ . '/navbar.php'; ?>
+  </header>
+
+  <!-- Hero -->
+
+      <div class="col-lg-6">
+        <div class="contact-card p-4 p-md-5">
+          <form id="contactForm" method="post" action="" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3">
               <div class="col-md-6">
