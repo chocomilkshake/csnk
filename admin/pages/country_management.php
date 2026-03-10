@@ -367,11 +367,11 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
                     data-active="<?php echo $isActive ? '1' : '0'; ?>"
                   ><i class="bi bi-pencil-square"></i></button>
 
-                  <!-- Delete -->
+<!-- Delete -->
                   <?php if ($canDelete): ?>
                     <a href="country_management.php?action=delete&id=<?php echo (int)$c['id']; ?>"
                        class="btn btn-danger btn-sm btn-action"
-                       onclick="return confirm('Permanently delete <?php echo h($c['name']); ?>? This cannot be undone.');"
+                       onclick="return confirm('Permanently delete <?php echo h($c['name']); ?>? This cannot be undone.')"
                        title="Delete"><i class="bi bi-trash"></i></a>
                   <?php else: ?>
                     <button type="button" class="btn btn-danger btn-sm btn-action" disabled
@@ -644,22 +644,10 @@ hr.hr-soft { border:0; height:1px; background:linear-gradient(90deg, #eef2f7, #e
 </div>
 
 <!-- ============================================================================
-     SMART AUTOFILL & UI BEHAVIOR
+     SMART AUTOFILL & UI BEHAVIOR — External country_ref.js loaded
 ============================================================================ -->
+<script src="../js/country_ref.js"></script>
 <script>
-/* --- Reference dataset (extend as you like) --- */
-const COUNTRY_REF = [
-  {name:'Bahrain',iso2:'BH',iso3:'BHR',phone:'+973',currency:'BHD',tz:'Asia/Bahrain',locale:'ar_BH'},
-  {name:'Cambodia',iso2:'KH',iso3:'KHM',phone:'+855',currency:'KHR',tz:'Asia/Phnom_Penh',locale:'km_KH'},
-  {name:'China',iso2:'CN',iso3:'CHN',phone:'+86',currency:'CNY',tz:'Asia/Shanghai',locale:'zh_CN'},
-  {name:'Japan',iso2:'JP',iso3:'JPN',phone:'+81',currency:'JPY',tz:'Asia/Tokyo',locale:'ja_JP'},
-  {name:'Philippines',iso2:'PH',iso3:'PHL',phone:'+63',currency:'PHP',tz:'Asia/Manila',locale:'en_PH'},
-  {name:'Turkey',iso2:'TR',iso3:'TUR',phone:'+90',currency:'TRY',tz:'Europe/Istanbul',locale:'tr_TR'},
-  {name:'United Arab Emirates',iso2:'AE',iso3:'ARE',phone:'+971',currency:'AED',tz:'Asia/Dubai',locale:'ar_AE'},
-  {name:'United Kingdom',iso2:'GB',iso3:'GBR',phone:'+44',currency:'GBP',tz:'Europe/London',locale:'en_GB'},
-  {name:'United States',iso2:'US',iso3:'USA',phone:'+1',currency:'USD',tz:'America/New_York',locale:'en_US'},
-  {name:'Vietnam',iso2:'VN',iso3:'VNM',phone:'+84',currency:'VND',tz:'Asia/Ho_Chi_Minh',locale:'vi_VN'},
-];
 
 const $  = (sel, root=document) => root.querySelector(sel);
 
