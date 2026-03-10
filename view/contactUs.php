@@ -755,7 +755,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
     function updateCounter() {
       const len = [...(messageEl.value || '')].length;
-      counterEl.textContent = `${len}
+      counterEl.textContent = `${len} / ${limit}`;
+      const threshold = Math.floor(limit * 0.9);
+      counterEl.classList.toggle('warning', len >= threshold);
+    }
+    if (messageEl) { messageEl.addEventListener('input', updateCounter); updateCounter(); }
+
+    // Submit button loading UI
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = submitBtn?.querySelector('.submit-text');
+    const submitLoading = submitBtn?.querySelector('.submit-loading');
+    form?.addEventListener('submit', () => {
+      submitText?.classList.add('d-none');
+      submitLoading?.classList.remove('d-none');
+      submitBtn.disabled = true;
+    });
+  </script>
+
+  <?php if ($success): ?>
+    <script>
+      // Show success toast on real success only
+      (function () {
+        const toastEl = document.getElementById('successToast');
+        if (toastEl) { new bootstrap.Toast(toastEl).show(); }
       })();
     </script>
   <?php endif; ?>
