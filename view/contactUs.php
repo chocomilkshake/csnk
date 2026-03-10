@@ -640,7 +640,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </section>
 
-  <!-- Contact / Map -->er gap-2 mb-3">
+  <!-- Contact / Map -->
+  <section id="contact" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-1">Contact and Location</h2>
+        <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
+      </div>
+
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="row g-0">
+
+          <!-- Map -->
+          <div class="col-lg-7">
+            <iframe style="width:100%; height:100%; min-height:420px; border:0;"
+              src="https://www.google.com/maps?q=2F%20UNIT%201%20EDEN%20TOWNHOUSE%202001%20EDEN%20ST.%20COR%20PEDRO%20GIL%20STA%20ANA%2C%20BARANGAY%20784%2C%20CITY%20OF%20MANILA%2C%20NCR%2C%20FIRST%20DISTRICT&output=embed"
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
+            </iframe>
+          </div>
+
+          <!-- Info -->
+          <div class="col-lg-5 bg-white">
+            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
+
+              <div class="d-flex align-items-center gap-2 mb-3">
                 <span class="badg
                 <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
                 <div>
