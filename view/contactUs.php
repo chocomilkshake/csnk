@@ -567,7 +567,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php
                       foreach ($ALLOWED_TOPICS as $t) {
                         $sel = (old('topic') === $t) ? 'selected' : '';
-                        echo '<o="char-counter" aria-live="polite">
+                        echo '<option ' . $sel . '>' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</option>';
+                      }
+                    ?>
+                  </select>
+                  <label for="topic">Topic</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['topic'] ?? 'Please select a topic.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="form-floating">
+                  <textarea id="message" name="message" class="form-control <?= invalidClass($errors, 'message') ?>"
+                    placeholder="Your message" style="height: 140px" required
+                    maxlength="<?= (int)$CONFIG['max_message'] ?>"><?= old('message') ?></textarea>
+                  <label for="message">Message</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['message'] ?? 'Please enter your message.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-1">
+                  <span id="charCount" class="char-counter" aria-live="polite">
                     0 / <?= (int)$CONFIG['max_message'] ?>
                   </span>
                 </div>
