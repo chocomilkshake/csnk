@@ -269,7 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'picture' => $picturePath,
             'status' => $status,
             'created_by' => $_SESSION['admin_id'],
-            'business_unit_id' => $dataBuId
+            'business_unit_id' => $dataBuId,
+            'branch_id' => isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null
         ];
 
         $applicantId = $applicant->create($data);
@@ -685,6 +686,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </select>
+                </div>
+
+                <!-- Branch (only for CSNK) -->
+                <div class="col-md-4">
+                    <label class="form-label">Branch <small class="text-muted">(CSNK only)</small></label>
+                    <select class="form-select" name="branch_id" id="branchSelect">
+                        <option value="">Select Branch...</option>
+                        <?php
+                        // Get branches for CSNK only
+                        $branches = $applicant->getAllBranches(true);
+                        if (!empty($branches)):
+                            foreach ($branches as $branch):
+                                $branchId = (int) $branch['id'];
+                                $branchName = htmlspecialchars($branch['name'], ENT_QUOTES, 'UTF-8');
+                                $branchCode = htmlspecialchars($branch['code'], ENT_QUOTES, 'UTF-8');
+                                $isDefault = (int) $branch['is_default'] === 1;
+                                ?>
+                                <option value="<?= $branchId ?>" <?= $isDefault ? 'data-default="1"' : '' ?>>
+                                    <?= $branchName ?> (<?= $branchCode ?>)
+                                </option>
+                                <?php
+                            endforeach;
+                        endif;
+                        ?>
+                    </select>
+                    <div class="form-text">Optional. Select a branch for CSNK applicants.</div>
                 </div>
 
                 <!-- Preferred Cities (tags) -->
