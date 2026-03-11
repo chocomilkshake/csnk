@@ -455,7 +455,7 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                                 $id = (int)$row['id'];
                                 $currentStatus = (string)($row['status'] ?? 'on_process');
                                 
-                                $viewUrl = 'view_onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $deleteUrl = 'turkey_on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 
