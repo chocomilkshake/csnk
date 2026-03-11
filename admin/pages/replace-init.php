@@ -1,5 +1,5 @@
 <?php
-// FILE: admin/pages/replace-init.php (MySQLi-only)
+// FILE: admin/pages/replace-init.php (MySQLi-only, FIXED)
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
@@ -21,6 +21,10 @@ $isAjax = (
     (isset($_POST['ajax']) && (string)$_POST['ajax'] === '1')
 );
 
+if ($isAjax) {
+    header('Content-Type: application/json; charset=UTF-8');
+}
+
 function json_out($ok, $payload = [], $http = 200) {
     http_response_code($http);
     header('Content-Type: application/json; charset=UTF-8');
@@ -34,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('approved.php'); exit;
 }
 
-// === REQUIRE CSRF for all POSTs ===
 if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
     || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
     if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
@@ -67,19 +70,8 @@ if ($reportText === '') {
     redirect('approved.php'); exit;
 }
 
-// Upload attachments (optional)
-$attachments = [];
-if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
-    $uploadDir = defined('REPLACEMENTS_UPLOAD_SUBDIR') ? REPLACEMENTS_UPLOAD_SUBDIR : 'replacements/';
-    // Ensure your uploadMultipleFiles() enforces MIME/size and randomizes file names
-    $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
-}
-
 // --- MySQLi connection ---
-$conn = null;
-if (method_exists($database, 'getConnection')) {
-    $conn = $database->getConnection();
-}
+$conn = method_exists($database, 'getConnection') ? $database->getConnection() : null;
 if (!($conn instanceof mysqli)) {
     if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
     setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
@@ -95,26 +87,34 @@ $sqlGetAgencyByApplicant = "
     WHERE a.id = ?
     LIMIT 1
 ";
+$s = $conn->prepare($sqlGetAgencyByApplicant);
+if (!$s) {
+    error_log('Prepare failed for agency check: ' . $conn->error);
+    if ($isAjax) json_out(false, ['message' => 'Internal error (agency check).'], 500);
+    setFlashMessage('error', 'Internal error (agency check).');
+    redirect('approved.php'); exit;
+}
+$s->bind_param('i', $originalId);
+$s->execute();
+$r = $s->get_result();
+$row = $r ? $r->fetch_assoc() : null;
+$s->close();
 
+if (!$row || strtolower((string)$row['agency_code']) !== CSNK_AGENCY_CODE) {
+    if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
+    setFlashMessage('error', 'Operation blocked: not CSNK.');
+    redirect('approved.php'); exit;
+}
+
+// Upload attachments (optional)
+$attachments = [];
+if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
+    $uploadDir = defined('REPLACEMENTS_UPLOAD_SUBDIR') ? REPLACEMENTS_UPLOAD_SUBDIR : 'replacements/';
+    $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
+}
+
+$applicant = new Applicant($database);
 try {
-    $okAgency = false;
-    $s = $conn->prepare($sqlGetAgencyByApplicant);
-    if ($s) {
-        $s->bind_param('i', $originalId);
-        $s->execute();
-        $r = $s->get_result();
-        $row = $r ? $r->fetch_assoc() : null;
-        $s->close();
-        $okAgency = $row && strtolower((string)$row['agency_code']) === CSNK_AGENCY_CODE;
-    }
-    if (!$okAgency) {
-        if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
-        setFlashMessage('error', 'Operation blocked: not CSNK.');
-        redirect('approved.php'); exit;
-    }
-
-    // Use your existing domain method to create the replacement record
-    $applicant = new Applicant($database);
     $replacementId = $applicant->createReplacementInit(
         $originalId,
         $reason,
@@ -124,8 +124,8 @@ try {
     );
 
     if (!$replacementId) {
-        if ($isAjax) json_out(false, ['message' => 'Failed to create replacement record. The applicant may not exist or may not be in approved status.'], 500);
-        setFlashMessage('error', 'Failed to start replacement.');
+        if ($isAjax) json_out(false, ['message' => 'Failed to create replacement (only allowed for Approved applicants).'], 422);
+        setFlashMessage('error', 'Failed to create replacement (allowed only for Approved applicants).');
         redirect('approved.php'); exit;
     }
 
