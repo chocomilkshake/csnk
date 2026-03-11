@@ -1,17 +1,8 @@
 <?php
-/* BLOCK SMC employees from accessing CSNK dashboard - must be before any output */
+/* SMC and CSNK employees both use client-profile.php with agency-based filtering */
 // Start session explicitly
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-}
-
-// Check if user agency is SMC
-$userAgencyCheck = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
-
-if ($userAgencyCheck === 'smc') {
-    // SMC employees should use turkey_dashboard.php - redirect immediately
-    header('Location: turkey_dashboard.php');
-    exit;
 }
 
 $pageTitle = 'Client Profile';
@@ -28,6 +19,9 @@ $currentRole = $currentUser['role'] ?? 'employee';
 $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $canSeeAdminUX = ($isAdmin || $isSuperAdmin);
+
+// Get user agency from session
+$userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
 
 // Get booking ID from URL
 $bookingId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -62,6 +56,37 @@ if ($conn instanceof mysqli) {
         exit;
     }
 
+    // Security check: Ensure the user has access to this booking based on agency
+    // Get the business_unit_id from the initial booking and check its agency
+    $initialBuId = $initialBooking['business_unit_id'] ?? null;
+    if ($initialBuId && $conn instanceof mysqli) {
+        // Get the agency_id of the business unit
+        $buSql = "SELECT agency_id FROM business_units WHERE id = ?";
+        $buStmt = $conn->prepare($buSql);
+        if ($buStmt) {
+            $buStmt->bind_param("i", $initialBuId);
+            $buStmt->execute();
+            $buResult = $buStmt->get_result();
+            $buInfo = $buResult->fetch_assoc();
+            $buStmt->close();
+
+            if ($buInfo) {
+                $bookingAgencyId = (int) $buInfo['agency_id'];
+
+                // Check if user has access to this agency's bookings
+                if ($userAgency === 'csnk' && $bookingAgencyId !== 1) {
+                    setFlashMessage('error', 'You do not have permission to view this client booking.');
+                    redirect('client-management.php');
+                    exit;
+                } elseif ($userAgency === 'smc' && $bookingAgencyId !== 2) {
+                    setFlashMessage('error', 'You do not have permission to view this client booking.');
+                    redirect('client-management.php');
+                    exit;
+                }
+            }
+        }
+    }
+
     // Get client identification details
     $clientFirstName = $initialBooking['client_first_name'];
     $clientMiddleName = $initialBooking['client_middle_name'] ?? '';
@@ -71,6 +96,15 @@ if ($conn instanceof mysqli) {
 
     // Now find all bookings for this client (same client name, phone, or email)
     // We'll use a combination approach - match by name + (phone OR email)
+
+    // Build agency filter based on user role
+    $agencyFilter = '';
+    if ($userAgency === 'csnk') {
+        $agencyFilter = " AND bu.agency_id = 1";
+    } elseif ($userAgency === 'smc') {
+        $agencyFilter = " AND bu.agency_id = 2";
+    }
+
     $searchSql = "
         SELECT 
             cb.id AS booking_id,
@@ -99,6 +133,7 @@ if ($conn instanceof mysqli) {
             (cb.client_first_name = ? AND cb.client_last_name = ?)
             AND (cb.client_phone = ? OR cb.client_email = ?)
         )
+        " . $agencyFilter . "
         ORDER BY cb.created_at DESC
     ";
 
@@ -140,6 +175,7 @@ if ($conn instanceof mysqli) {
             INNER JOIN applicants a ON a.id = cb.applicant_id
             LEFT JOIN business_units bu ON bu.id = cb.business_unit_id
             WHERE cb.client_first_name = ? AND cb.client_last_name = ?
+            " . $agencyFilter . "
             ORDER BY cb.created_at DESC
         ";
 
