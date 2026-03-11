@@ -43,6 +43,25 @@ class Applicant
         return $rows;
     }
 
+    /**
+     * Get all CSNK branches (for branch selection in applicant forms)
+     * Only returns active branches ordered by sort_order and name
+     */
+    public function getAllBranches(bool $activeOnly = true): array
+    {
+        $rows = [];
+        $where = $activeOnly ? " WHERE status = 'ACTIVE' " : "";
+        $sql = "SELECT id, code, name, is_default FROM csnk_branches {$where} ORDER BY sort_order ASC, name ASC";
+
+        $res = $this->db->query($sql);
+        if ($res) {
+            while ($r = $res->fetch_assoc()) {
+                $rows[] = $r;
+            }
+        }
+        return $rows;
+    }
+
     public function isApplicantInBusinessUnit(int $applicantId, int $businessUnitId): bool
     {
         $stmt = $this->db->prepare("SELECT business_unit_id FROM applicants WHERE id = ? LIMIT 1");
@@ -200,46 +219,84 @@ class Applicant
 
         $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
         $countryId = isset($data['country_id']) ? (int) $data['country_id'] : null;
+        $branchId = isset($data['branch_id']) && $data['branch_id'] !== '' ? (int) $data['branch_id'] : null;
 
         if ($dailyRate === null) {
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id, branch_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create NULL rate): ' . $this->db->error);
                 return false;
             }
             $stmt->bind_param(
-                "ssssssssssssssssssiiii",
-                $first, $middle, $last, $suffix,
-                $phone, $alt, $email, $dob, $addr,
-                $educA, $workH, $pref, $langs, $skills,
-                $pic, $status, $empTy, $eduLv, $years,
-                $createdBy, $businessUnitId, $countryId
+                "ssssssssssssssssssiiiii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $createdBy,
+                $businessUnitId,
+                $countryId,
+                $branchId
             );
         } else {
             $sql = "INSERT INTO applicants (
                     first_name, middle_name, last_name, suffix,
                     phone_number, alt_phone_number, email, date_of_birth, address,
                     educational_attainment, work_history, daily_rate, preferred_location, languages, specialization_skills,
-                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    picture, status, employment_type, education_level, years_experience, created_by, business_unit_id, country_id, branch_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 error_log('Prepare failed (create with rate): ' . $this->db->error);
                 return false;
             }
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "iiii",
-                $first, $middle, $last, $suffix,
-                $phone, $alt, $email, $dob, $addr,
-                $educA, $workH, $dailyRate, $pref, $langs, $skills,
-                $pic, $status, $empTy, $eduLv, $years,
-                $createdBy, $businessUnitId, $countryId
+                "sssssssssss" . "d" . "sssssss" . "iiiii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $dailyRate,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $createdBy,
+                $businessUnitId,
+                $countryId,
+                $branchId
             );
         }
 
@@ -281,15 +338,16 @@ class Applicant
         $eduLv = $data['education_level'] ?? null;
         $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
 
-        $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== '' ? (int)$data['business_unit_id'] : null;
-        $countryId      = isset($data['country_id']) && $data['country_id'] !== '' ? (int)$data['country_id']      : null;
+        $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== '' ? (int) $data['business_unit_id'] : null;
+        $countryId = isset($data['country_id']) && $data['country_id'] !== '' ? (int) $data['country_id'] : null;
+        $branchId = isset($data['branch_id']) && $data['branch_id'] !== '' ? (int) $data['branch_id'] : null;
 
         if ($dailyRate === null) {
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = NULL, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?, branch_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
@@ -297,19 +355,37 @@ class Applicant
                 return false;
             }
             $stmt->bind_param(
-                "ssssssssssssssssssiiii",
-                $first, $middle, $last, $suffix,
-                $phone, $alt, $email, $dob, $addr,
-                $educA, $workH, $pref, $langs, $skills,
-                $pic, $status, $empTy, $eduLv, $years,
-                $businessUnitId, $countryId, $id
+                "ssssssssssssssssssiiiii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $businessUnitId,
+                $countryId,
+                $branchId,
+                $id
             );
         } else {
             $sql = "UPDATE applicants SET
                     first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
                     phone_number = ?, alt_phone_number = ?, email = ?, date_of_birth = ?, address = ?,
                     educational_attainment = ?, work_history = ?, daily_rate = ?, preferred_location = ?, languages = ?, specialization_skills = ?,
-                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?
+                    picture = ?, status = ?, employment_type = ?, education_level = ?, years_experience = ?, business_unit_id = ?, country_id = ?, branch_id = ?
                 WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
@@ -317,12 +393,31 @@ class Applicant
                 return false;
             }
             $stmt->bind_param(
-                "sssssssssss" . "d" . "sssssss" . "iiii",
-                $first, $middle, $last, $suffix,
-                $phone, $alt, $email, $dob, $addr,
-                $educA, $workH, $dailyRate, $pref, $langs, $skills,
-                $pic, $status, $empTy, $eduLv, $years,
-                $businessUnitId, $countryId, $id
+                "sssssssssss" . "d" . "sssssss" . "iiiii",
+                $first,
+                $middle,
+                $last,
+                $suffix,
+                $phone,
+                $alt,
+                $email,
+                $dob,
+                $addr,
+                $educA,
+                $workH,
+                $dailyRate,
+                $pref,
+                $langs,
+                $skills,
+                $pic,
+                $status,
+                $empTy,
+                $eduLv,
+                $years,
+                $businessUnitId,
+                $countryId,
+                $branchId,
+                $id
             );
         }
 
@@ -567,7 +662,10 @@ class Applicant
           KEY `idx_ar_business_unit_id` (`business_unit_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         ";
-        try { $this->db->query($sql); } catch (\Throwable $e) { /* silent */ }
+        try {
+            $this->db->query($sql);
+        } catch (\Throwable $e) { /* silent */
+        }
     }
 
     /** Safe JSON decode */
@@ -651,15 +749,16 @@ class Applicant
     /** Map education level labels to ranks (higher is “better”) */
     private function getEducationRank(?string $label): int
     {
-        if (!$label) return 0;
+        if (!$label)
+            return 0;
         static $map = [
-            'Elementary Graduate' => 1,
-            'Secondary Level (Attended High School)' => 2,
-            'Secondary Graduate (Junior High School / Old Curriculum)' => 3,
-            'Senior High School Graduate (K-12 Curriculum)' => 4,
-            'Technical-Vocational / TESDA Graduate' => 5,
-            'Tertiary Level (College Undergraduate)' => 6,
-            'Tertiary Graduate (Bachelor’s Degree)' => 7,
+        'Elementary Graduate' => 1,
+        'Secondary Level (Attended High School)' => 2,
+        'Secondary Graduate (Junior High School / Old Curriculum)' => 3,
+        'Senior High School Graduate (K-12 Curriculum)' => 4,
+        'Technical-Vocational / TESDA Graduate' => 5,
+        'Tertiary Level (College Undergraduate)' => 6,
+        'Tertiary Graduate (Bachelor’s Degree)' => 7,
         ];
         return $map[$label] ?? 0;
         // Note: keep in sync with enum values in DB
@@ -680,34 +779,36 @@ class Applicant
     {
         $origSkills = $this->decodeJsonArray($original['specialization_skills'] ?? '[]');
         $origCities = $this->decodeJsonArray($original['preferred_location'] ?? '[]');
-        $origLangs  = $this->decodeJsonArray($original['languages'] ?? '[]');
+        $origLangs = $this->decodeJsonArray($original['languages'] ?? '[]');
         $candSkills = $this->decodeJsonArray($candidate['specialization_skills'] ?? '[]');
         $candCities = $this->decodeJsonArray($candidate['preferred_location'] ?? '[]');
-        $candLangs  = $this->decodeJsonArray($candidate['languages'] ?? '[]');
+        $candLangs = $this->decodeJsonArray($candidate['languages'] ?? '[]');
 
         $skillOverlap = $this->overlapCount($origSkills, $candSkills);
-        $cityOverlap  = $this->overlapCount($origCities, $candCities);
-        $langOverlap  = $this->overlapCount($origLangs, $candLangs);
+        $cityOverlap = $this->overlapCount($origCities, $candCities);
+        $langOverlap = $this->overlapCount($origLangs, $candLangs);
 
-        $score  = 0;
+        $score = 0;
         $score += $skillOverlap * 4;
-        $score += $cityOverlap  * 2;
-        $score += $langOverlap  * 1;
+        $score += $cityOverlap * 2;
+        $score += $langOverlap * 1;
 
-        $origEmp = strtolower(trim((string)($original['employment_type'] ?? '')));
-        $candEmp = strtolower(trim((string)($candidate['employment_type'] ?? '')));
-        if ($origEmp !== '' && $origEmp === $candEmp) $score += 2;
+        $origEmp = strtolower(trim((string) ($original['employment_type'] ?? '')));
+        $candEmp = strtolower(trim((string) ($candidate['employment_type'] ?? '')));
+        if ($origEmp !== '' && $origEmp === $candEmp)
+            $score += 2;
 
         $origEduRank = $this->getEducationRank($original['education_level'] ?? null);
         $candEduRank = $this->getEducationRank($candidate['education_level'] ?? null);
-        if ($candEduRank >= $origEduRank && $candEduRank > 0) $score += 1;
+        if ($candEduRank >= $origEduRank && $candEduRank > 0)
+            $score += 1;
 
-        $years = (int)($candidate['years_experience'] ?? 0);
+        $years = (int) ($candidate['years_experience'] ?? 0);
         $score += intdiv(max(0, min($years, 12)), 2); // 0..6
 
-        $score += min(max(0, (int)$docsCompleted), 3); // reward up to 3
+        $score += min(max(0, (int) $docsCompleted), 3); // reward up to 3
 
-        return (int)$score;
+        return (int) $score;
     }
 
     /**
@@ -722,7 +823,8 @@ class Applicant
     public function searchPendingCandidatesForReplacement(int $originalApplicantId, int $limit = 50): array
     {
         $original = $this->getById($originalApplicantId);
-        if (!$original) return [];
+        if (!$original)
+            return [];
 
         // Resolve BU + country for the ORIGINAL from business_units (more reliable than applicants.country_id)
         $origBuId = null;
@@ -739,13 +841,15 @@ class Applicant
             $stmt->execute();
             $res = $stmt->get_result();
             if ($res && ($row = $res->fetch_assoc())) {
-                $origBuId = (int)$row['bu_id'];
-                $origCountryId = (int)$row['country_id'];
+                $origBuId = (int) $row['bu_id'];
+                $origCountryId = (int) $row['country_id'];
             }
             $stmt->close();
         }
-        if (!$origBuId) $origBuId = (int)($original['business_unit_id'] ?? 0);
-        if (!$origCountryId) $origCountryId = (int)($original['country_id'] ?? 0);
+        if (!$origBuId)
+            $origBuId = (int) ($original['business_unit_id'] ?? 0);
+        if (!$origCountryId)
+            $origCountryId = (int) ($original['country_id'] ?? 0);
 
         // Helper to fetch candidates with required docs count
         $fetchCandidates = function (?int $buIdFilter, int $maxRows) use ($origCountryId): array {
@@ -811,31 +915,37 @@ class Applicant
 
         // Merge unique by id (phase1 priority)
         $byId = [];
-        foreach ($phase1 as $r) { $byId[(int)$r['id']] = $r; }
+        foreach ($phase1 as $r) {
+            $byId[(int) $r['id']] = $r;
+        }
         foreach ($phase2 as $r) {
-            $id = (int)$r['id'];
-            if (!isset($byId[$id])) $byId[$id] = $r;
+            $id = (int) $r['id'];
+            if (!isset($byId[$id]))
+                $byId[$id] = $r;
         }
         $rows = array_values($byId);
 
         // Score each candidate
         foreach ($rows as &$r) {
-            $docsCompleted = (int)($r['docs_completed'] ?? 0);
+            $docsCompleted = (int) ($r['docs_completed'] ?? 0);
             $r['_score'] = $this->computeSimilarityScore($original, $r, $docsCompleted);
         }
         unset($r);
 
         // Sort by: score DESC, docs_completed DESC, years_experience DESC, created_at ASC
         usort($rows, function ($x, $y) {
-            if (($y['_score'] ?? 0) !== ($x['_score'] ?? 0)) return ($y['_score'] ?? 0) <=> ($x['_score'] ?? 0);
-            $y_docs = (int)($y['docs_completed'] ?? 0);
-            $x_docs = (int)($x['docs_completed'] ?? 0);
-            if ($y_docs !== $x_docs) return $y_docs <=> $x_docs;
-            $y_exp = (int)($y['years_experience'] ?? 0);
-            $x_exp = (int)($x['years_experience'] ?? 0);
-            if ($y_exp !== $x_exp) return $y_exp <=> $x_exp;
+            if (($y['_score'] ?? 0) !== ($x['_score'] ?? 0))
+                return ($y['_score'] ?? 0) <=> ($x['_score'] ?? 0);
+            $y_docs = (int) ($y['docs_completed'] ?? 0);
+            $x_docs = (int) ($x['docs_completed'] ?? 0);
+            if ($y_docs !== $x_docs)
+                return $y_docs <=> $x_docs;
+            $y_exp = (int) ($y['years_experience'] ?? 0);
+            $x_exp = (int) ($x['years_experience'] ?? 0);
+            if ($y_exp !== $x_exp)
+                return $y_exp <=> $x_exp;
             // earlier created first (longer in pipeline)
-            return strcmp((string)($x['created_at'] ?? ''), (string)($y['created_at'] ?? ''));
+            return strcmp((string) ($x['created_at'] ?? ''), (string) ($y['created_at'] ?? ''));
         });
 
         if ($limit > 0 && count($rows) > $limit) {
@@ -851,7 +961,10 @@ class Applicant
         array $attachmentsPaths,
         int $adminId
     ): ?int {
-        try { $this->ensureApplicantReplacementsTable(); } catch (\Throwable $e) {}
+        try {
+            $this->ensureApplicantReplacementsTable();
+        } catch (\Throwable $e) {
+        }
 
         $allowedReasons = ['AWOL', 'Client Left', 'Not Finished Contract', 'Performance Issue', 'Other'];
         if (!in_array($reason, $allowedReasons, true)) {
@@ -859,11 +972,20 @@ class Applicant
         }
 
         $orig = $this->getById($originalApplicantId);
-        if (!$orig) { error_log('createReplacementInit: original not found'); return null; }
-        if (($orig['status'] ?? '') !== 'approved') { error_log('createReplacementInit: original not approved'); return null; }
+        if (!$orig) {
+            error_log('createReplacementInit: original not found');
+            return null;
+        }
+        if (($orig['status'] ?? '') !== 'approved') {
+            error_log('createReplacementInit: original not approved');
+            return null;
+        }
 
-        $businessUnitId = isset($orig['business_unit_id']) ? (int)$orig['business_unit_id'] : null;
-        if ($businessUnitId === null || $businessUnitId <= 0) { error_log('createReplacementInit: no BU'); return null; }
+        $businessUnitId = isset($orig['business_unit_id']) ? (int) $orig['business_unit_id'] : null;
+        if ($businessUnitId === null || $businessUnitId <= 0) {
+            error_log('createReplacementInit: no BU');
+            return null;
+        }
 
         $bookingId = $this->getLatestBookingIdForApplicant($originalApplicantId);
         $attachmentsJson = json_encode(array_values($attachmentsPaths), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -872,11 +994,18 @@ class Applicant
         (business_unit_id, original_applicant_id, client_booking_id, reason, report_text, attachments_json, status, created_by)
         VALUES (?, ?, ?, ?, ?, ?, 'selection', ?)";
         $stmt = $this->db->prepare($sql);
-        if (!$stmt) { error_log('createReplacementInit prepare error: ' . $this->db->error); return null; }
+        if (!$stmt) {
+            error_log('createReplacementInit prepare error: ' . $this->db->error);
+            return null;
+        }
         $bindBusinessUnit = ($businessUnitId !== null && $businessUnitId > 0) ? $businessUnitId : null;
         $bindBooking = $bookingId !== null ? $bookingId : null;
         $stmt->bind_param("iiisssi", $bindBusinessUnit, $originalApplicantId, $bindBooking, $reason, $reportText, $attachmentsJson, $adminId);
-        if (!$stmt->execute()) { error_log('createReplacementInit insert error: ' . $stmt->error); $stmt->close(); return null; }
+        if (!$stmt->execute()) {
+            error_log('createReplacementInit insert error: ' . $stmt->error);
+            $stmt->close();
+            return null;
+        }
         $replaceId = (int) $this->db->insert_id;
         $stmt->close();
 
@@ -884,17 +1013,29 @@ class Applicant
         $checkCol = $this->db->query("SHOW COLUMNS FROM applicant_reports LIKE 'business_unit_id'");
         if ($checkCol && $checkCol->num_rows > 0) {
             $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)");
-            if ($stmt2) { $stmt2->bind_param("iiis", $originalApplicantId, $businessUnitId, $adminId, $repNote); $stmt2->execute(); $stmt2->close(); }
+            if ($stmt2) {
+                $stmt2->bind_param("iiis", $originalApplicantId, $businessUnitId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();
+            }
         } else {
             $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
-            if ($stmt2) { $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote); $stmt2->execute(); $stmt2->close(); }
+            if ($stmt2) {
+                $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();
+            }
         }
 
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
         $action = 'Start Replacement';
         $desc = "Start replacement for Applicant ID {$originalApplicantId}; Reason: {$reason}";
         $stmt3 = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
-        if ($stmt3) { $stmt3->bind_param("isss", $adminId, $action, $desc, $ip); $stmt3->execute(); $stmt3->close(); }
+        if ($stmt3) {
+            $stmt3->bind_param("isss", $adminId, $action, $desc, $ip);
+            $stmt3->execute();
+            $stmt3->close();
+        }
 
         return $replaceId;
     }
@@ -932,49 +1073,61 @@ class Applicant
                 FOR UPDATE
             ";
             $stmt = $this->db->prepare($sqlLock);
-            if (!$stmt) throw new \RuntimeException('Failed to prepare replacement lock statement.');
+            if (!$stmt)
+                throw new \RuntimeException('Failed to prepare replacement lock statement.');
             $stmt->bind_param('i', $replaceId);
             $stmt->execute();
             $res = $stmt->get_result();
             $rep = $res ? $res->fetch_assoc() : null;
             $stmt->close();
 
-            if (!$rep) throw new \RuntimeException('Replacement record not found.');
-            if (!empty($rep['replacement_applicant_id'])) throw new \RuntimeException('This replacement is already assigned.');
-            if (strtolower((string)$rep['status']) !== 'selection') throw new \RuntimeException('Replacement not in selectable state.');
+            if (!$rep)
+                throw new \RuntimeException('Replacement record not found.');
+            if (!empty($rep['replacement_applicant_id']))
+                throw new \RuntimeException('This replacement is already assigned.');
+            if (strtolower((string) $rep['status']) !== 'selection')
+                throw new \RuntimeException('Replacement not in selectable state.');
 
-            $originalId = (int)$rep['original_applicant_id'];
-            $repBuId    = isset($rep['business_unit_id']) ? (int)$rep['business_unit_id'] : null;
-            if ($originalId <= 0) throw new \RuntimeException('Invalid original applicant link.');
+            $originalId = (int) $rep['original_applicant_id'];
+            $repBuId = isset($rep['business_unit_id']) ? (int) $rep['business_unit_id'] : null;
+            if ($originalId <= 0)
+                throw new \RuntimeException('Invalid original applicant link.');
 
             $origAgency = $this->getAgencyCodeByApplicantId($originalId);
-            if (strtolower((string)$origAgency) !== self::CSNK_AGENCY_CODE) throw new \RuntimeException('Operation blocked: original applicant is not CSNK.');
+            if (strtolower((string) $origAgency) !== self::CSNK_AGENCY_CODE)
+                throw new \RuntimeException('Operation blocked: original applicant is not CSNK.');
             $candAgency = $this->getAgencyCodeByApplicantId($replacementApplicantId);
-            if (strtolower((string)$candAgency) !== self::CSNK_AGENCY_CODE) throw new \RuntimeException('Candidate is not from CSNK.');
-            if ($replacementApplicantId === $originalId) throw new \RuntimeException('Cannot assign the same person as their own replacement.');
+            if (strtolower((string) $candAgency) !== self::CSNK_AGENCY_CODE)
+                throw new \RuntimeException('Candidate is not from CSNK.');
+            if ($replacementApplicantId === $originalId)
+                throw new \RuntimeException('Cannot assign the same person as their own replacement.');
 
             // Load statuses + BU
             $st = $this->db->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
-            if (!$st) throw new \RuntimeException('Failed to prepare original status check.');
+            if (!$st)
+                throw new \RuntimeException('Failed to prepare original status check.');
             $st->bind_param('i', $originalId);
             $st->execute();
             $ro = $st->get_result();
             $origRow = $ro ? $ro->fetch_assoc() : null;
             $st->close();
-            if (!$origRow) throw new \RuntimeException('Original applicant not found.');
-            $origStatus = strtolower((string)$origRow['status']);
-            $origBuId   = (int)($origRow['business_unit_id'] ?? $repBuId);
+            if (!$origRow)
+                throw new \RuntimeException('Original applicant not found.');
+            $origStatus = strtolower((string) $origRow['status']);
+            $origBuId = (int) ($origRow['business_unit_id'] ?? $repBuId);
 
             $st = $this->db->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
-            if (!$st) throw new \RuntimeException('Failed to prepare candidate status check.');
+            if (!$st)
+                throw new \RuntimeException('Failed to prepare candidate status check.');
             $st->bind_param('i', $replacementApplicantId);
             $st->execute();
             $rc = $st->get_result();
             $candRow = $rc ? $rc->fetch_assoc() : null;
             $st->close();
-            if (!$candRow) throw new \RuntimeException('Candidate not found.');
-            $candStatus = strtolower((string)$candRow['status']);
-            $candBuId   = (int)($candRow['business_unit_id'] ?? null);
+            if (!$candRow)
+                throw new \RuntimeException('Candidate not found.');
+            $candStatus = strtolower((string) $candRow['status']);
+            $candBuId = (int) ($candRow['business_unit_id'] ?? null);
 
             if (!in_array($candStatus, $allowedCandidateStatuses, true))
                 throw new \RuntimeException('Candidate not in assignable status (Pending/Approved/On-Process).');
@@ -988,12 +1141,14 @@ class Applicant
                   AND status IN ('selection')
                 LIMIT 1
             ");
-            if (!$stmt) throw new \RuntimeException('Failed to prepare assignment update.');
+            if (!$stmt)
+                throw new \RuntimeException('Failed to prepare assignment update.');
             $stmt->bind_param('ii', $replacementApplicantId, $replaceId);
             $stmt->execute();
             $affectedAssign = $stmt->affected_rows;
             $stmt->close();
-            if ($affectedAssign !== 1) throw new \RuntimeException('Failed to assign (already assigned?).');
+            if ($affectedAssign !== 1)
+                throw new \RuntimeException('Failed to assign (already assigned?).');
 
             // Candidate -> on_process (+ report)
             if (in_array($candStatus, ['pending', 'approved'], true)) {
@@ -1018,7 +1173,11 @@ class Applicant
             // Original -> on_hold (+ status + note)
             $fromOriginal = $origStatus ?: 'approved';
             $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_hold', updated_at = NOW() WHERE id = ? AND status <> 'on_hold' LIMIT 1");
-            if ($stmt) { $stmt->bind_param('i', $originalId); $stmt->execute(); $stmt->close(); }
+            if ($stmt) {
+                $stmt->bind_param('i', $originalId);
+                $stmt->execute();
+                $stmt->close();
+            }
 
             $origReport = "Replaced by Applicant ID {$replacementApplicantId}. Original moved to on_hold.";
             $stmt2 = $this->db->prepare("
@@ -1044,7 +1203,11 @@ class Applicant
             $action = 'Assign Replacement';
             $desc = "Assigned Applicant ID {$replacementApplicantId} as replacement for Original ID {$originalId}; original set to On Hold";
             $stmt = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
-            if ($stmt) { $stmt->bind_param("isss", $adminId, $action, $desc, $ip); $stmt->execute(); $stmt->close(); }
+            if ($stmt) {
+                $stmt->bind_param("isss", $adminId, $action, $desc, $ip);
+                $stmt->execute();
+                $stmt->close();
+            }
 
             $this->db->commit();
             return true;
@@ -1109,10 +1272,10 @@ class Applicant
         $result = [];
         foreach ($countries as $c) {
             $result[] = [
-                'id'   => (int) $c['id'],
+                'id' => (int) $c['id'],
                 'name' => $c['country_name'],
                 'iso2' => $c['iso2'],
-                'count'=> $counts[$c['id']] ?? 0
+                'count' => $counts[$c['id']] ?? 0
             ];
         }
 
