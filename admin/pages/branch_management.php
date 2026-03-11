@@ -34,23 +34,62 @@ if (isset($_GET['action'], $_GET['id'])) {
   if ($_GET['action'] === 'toggle_active') {
     $stmt = $conn->prepare("UPDATE csnk_branches SET status = CASE WHEN status = 'ACTIVE' THEN 'INACTIVE' ELSE 'ACTIVE' END WHERE id = ?");
     $stmt->bind_param('i', $targetId);
-    if ($stmt->execute())
+    if ($stmt->execute()) {
+      // Get branch info for logging
+      $infoStmt = $conn->prepare("SELECT code, name, status FROM csnk_branches WHERE id = ?");
+      $infoStmt->bind_param('i', $targetId);
+      $infoStmt->execute();
+      $infoResult = $infoStmt->get_result();
+      $branchInfo = $infoResult->fetch_assoc();
+      $infoStmt->close();
+
+      $newStatus = $branchInfo['status'] ?? 'UNKNOWN';
+      $branchName = $branchInfo['name'] ?? 'Unknown';
+      $branchCode = $branchInfo['code'] ?? 'Unknown';
+
+      if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+        $auth->logActivity(
+          (int) $_SESSION['admin_id'],
+          'Toggle Branch Status',
+          "Branch '{$branchName}' ({$branchCode}) status changed to {$newStatus}"
+        );
+      }
+
       setFlashMessage('success', 'Branch status updated.');
-    else
+    } else
       setFlashMessage('error', 'Failed to update branch status.');
     $stmt->close();
     redirect('branch_management.php');
   }
 
   if ($_GET['action'] === 'set_default') {
+    // First, get branch info before updating
+    $infoStmt = $conn->prepare("SELECT code, name FROM csnk_branches WHERE id = ?");
+    $infoStmt->bind_param('i', $targetId);
+    $infoStmt->execute();
+    $infoResult = $infoStmt->get_result();
+    $branchInfo = $infoResult->fetch_assoc();
+    $infoStmt->close();
+
+    $branchName = $branchInfo['name'] ?? 'Unknown';
+    $branchCode = $branchInfo['code'] ?? 'Unknown';
+
     // First, unset all defaults
     $conn->query("UPDATE csnk_branches SET is_default = 0");
     // Then set the selected one as default
     $stmt = $conn->prepare("UPDATE csnk_branches SET is_default = 1 WHERE id = ?");
     $stmt->bind_param('i', $targetId);
-    if ($stmt->execute())
+    if ($stmt->execute()) {
+      // Log activity
+      if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+        $auth->logActivity(
+          (int) $_SESSION['admin_id'],
+          'Set Default Branch',
+          "Branch '{$branchName}' ({$branchCode}) set as default branch"
+        );
+      }
       setFlashMessage('success', 'Default branch updated.');
-    else
+    } else
       setFlashMessage('error', 'Failed to set default branch.');
     $stmt->close();
     redirect('branch_management.php');
@@ -58,7 +97,7 @@ if (isset($_GET['action'], $_GET['id'])) {
 
   if ($_GET['action'] === 'delete') {
     // Check if branch is default - prevent deletion
-    $stmt = $conn->prepare("SELECT is_default FROM csnk_branches WHERE id = ?");
+    $stmt = $conn->prepare("SELECT is_default, code, name FROM csnk_branches WHERE id = ?");
     $stmt->bind_param('i', $targetId);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -68,11 +107,22 @@ if (isset($_GET['action'], $_GET['id'])) {
     if ($branch && $branch['is_default'] == 1) {
       setFlashMessage('error', 'Cannot delete the default branch. Set another branch as default first.');
     } else {
+      $branchName = $branch['name'] ?? 'Unknown';
+      $branchCode = $branch['code'] ?? 'Unknown';
+
       $stmt = $conn->prepare("DELETE FROM csnk_branches WHERE id = ?");
       $stmt->bind_param('i', $targetId);
-      if ($stmt->execute())
+      if ($stmt->execute()) {
+        // Log activity
+        if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+          $auth->logActivity(
+            (int) $_SESSION['admin_id'],
+            'Delete Branch',
+            "Deleted branch '{$branchName}' ({$branchCode})"
+          );
+        }
         setFlashMessage('success', 'Branch deleted.');
-      else
+      } else
         setFlashMessage('error', 'Failed to delete branch.');
       $stmt->close();
     }
@@ -130,9 +180,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_branch'])) {
                      WHERE id=?";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param('sssisi', $code, $name, $status, $sort_order, $currentUsername, $id);
-      if ($stmt->execute())
+      if ($stmt->execute()) {
         $ok = true;
-      else
+
+        // Log activity for update
+        if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+          $auth->logActivity(
+            (int) $_SESSION['admin_id'],
+            'Update Branch',
+            "Updated branch '{$name}' ({$code})"
+          );
+        }
+      } else
         $errors[] = "Database error (update): " . $conn->error;
       $stmt->close();
 
@@ -150,6 +209,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_branch'])) {
       if ($stmt->execute()) {
         $ok = true;
         $branchId = $conn->insert_id;
+
+        // Log activity for create
+        if (isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
+          $auth->logActivity(
+            (int) $_SESSION['admin_id'],
+            'Create Branch',
+            "Created branch '{$name}' ({$code})"
+          );
+        }
       } else
         $errors[] = "Database error (insert): " . $conn->error;
       $stmt->close();
