@@ -1,17 +1,8 @@
 <?php
-/* BLOCK SMC employees from accessing CSNK dashboard - must be before any output */
+/* SMC and CSNK employees both use client-management.php with agency-based filtering */
 // Start session explicitly
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-}
-
-// Check if user agency is SMC
-$userAgencyCheck = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
-
-if ($userAgencyCheck === 'smc') {
-    // SMC employees should use turkey_dashboard.php - redirect immediately (relative path for hosting compatibility)
-    header('Location: turkey_dashboard.php');
-    exit;
 }
 
 $pageTitle = 'Client Management';
@@ -29,6 +20,9 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $canSeeAdminUX = ($isAdmin || $isSuperAdmin);
 
+// Get user agency from session
+$userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
+
 /* ---------------------- Client Bookings (All Statuses) ---------------------- */
 $clientBookings = [];
 $bookingSearch = isset($_GET['booking_search']) ? trim($_GET['booking_search']) : '';
@@ -36,6 +30,18 @@ $applicantStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
 
 $conn = $database->getConnection();
 if ($conn instanceof mysqli) {
+    // Build agency filter based on user role
+    // CSNK employee -> agency_id = 1, SMC employee -> agency_id = 2, Admin/Super Admin -> all
+    $agencyFilter = '';
+    if ($userAgency === 'csnk') {
+        // Filter to CSNK agencies only (agency_id = 1)
+        $agencyFilter = " AND bu.agency_id = 1";
+    } elseif ($userAgency === 'smc') {
+        // Filter to SMC agencies only (agency_id = 2)
+        $agencyFilter = " AND bu.agency_id = 2";
+    }
+    // If admin/super_admin or no agency, show all (empty filter)
+
     $bookingSql = "
     SELECT 
       cb.id AS booking_id,
@@ -65,6 +71,9 @@ if ($conn instanceof mysqli) {
     WHERE 1=1
   ";
 
+    // Apply agency filter for employees
+    $bookingSql .= $agencyFilter;
+
     // Applicant status filter
     if ($applicantStatus !== 'all' && in_array($applicantStatus, ['on_process', 'approved'], true)) {
         $bookingSql .= " AND a.status = '" . $conn->real_escape_string($applicantStatus) . "'";
@@ -87,8 +96,17 @@ if ($conn instanceof mysqli) {
         $clientBookings = $bookingResult->fetch_all(MYSQLI_ASSOC);
     }
 
-    // Get counts for badges based on applicant status
-    $countSql = "SELECT a.status, COUNT(*) as count FROM client_bookings cb INNER JOIN applicants a ON a.id = cb.applicant_id GROUP BY a.status";
+    // Get counts for badges based on applicant status - with agency filter
+    $countSql = "SELECT a.status, COUNT(*) as count 
+                 FROM client_bookings cb 
+                 INNER JOIN applicants a ON a.id = cb.applicant_id
+                 LEFT JOIN business_units bu ON bu.id = cb.business_unit_id
+                 WHERE 1=1";
+
+    // Apply agency filter to counts as well
+    $countSql .= $agencyFilter;
+    $countSql .= " GROUP BY a.status";
+
     $statusCounts = ['on_process' => 0, 'approved' => 0, 'total' => 0];
     if ($countResult = $conn->query($countSql)) {
         while ($row = $countResult->fetch_assoc()) {
