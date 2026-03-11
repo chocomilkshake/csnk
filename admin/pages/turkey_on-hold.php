@@ -1,92 +1,97 @@
 <?php
-// FILE: admin/pages/turkey_on-hold.php (SMC Agency)
-$pageTitle = 'On Hold Applicants (SMC)';
-require_once '../includes/header.php';
-require_once '../includes/Applicant.php';
+// FILE: admin/pages/turkey_on-hold.php (SMC - Turkey On Hold Applicants)
+$pageTitle = 'SMC - On Hold Applicants';
 
-if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+$ADMIN_ROOT = dirname(__DIR__);
 
-// SMC agency constant
-const SMC_AGENCY_CODE = 'smc';
-
-// CSRF token (used by revert form)
-if (empty($_SESSION['csrf_token'])) {
-    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
-    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-$applicant = new Applicant($database);
+require_once $ADMIN_ROOT . '/includes/config.php';
+require_once $ADMIN_ROOT . '/includes/Database.php';
+require_once $ADMIN_ROOT . '/includes/Auth.php';
+require_once $ADMIN_ROOT . '/includes/functions.php';
 
-/**
- * --- Search Memory (same behavior as other lists) ---
- */
-if (isset($_GET['clear']) && $_GET['clear'] === '1') {
-    unset($_SESSION['turkey_onhold_q']);
-    redirect('turkey_on-hold.php'); exit;
-}
-$q = '';
-if (isset($_GET['q'])) {
-    $q = trim((string)$_GET['q']);
-    if (mb_strlen($q) > 100) $q = mb_substr($q, 0, 100);
-    $_SESSION['turkey_onhold_q'] = $q;
-} elseif (!empty($_SESSION['turkey_onhold_q'])) {
-    $q = (string)$_SESSION['turkey_onhold_q'];
+$database = new Database();
+$auth = new Auth($database);
+$auth->requireLogin();
+
+// Check if user has permission to view SMC data
+if (!$auth->canSeeSMC()) {
+    header('Location: applicants.php');
+    exit;
 }
 
-/**
- * Load list - Filter by SMC agency only
- */
-$applicants = [];
-if (method_exists($applicant, 'getAllByStatus')) {
-    // For getAllByStatus, we need to filter manually by SMC
-    $allOnHold = $applicant->getAllByStatus('on_hold');
-    // Filter to SMC only by checking business_unit_id
-    $conn = $database->getConnection();
-    $smcBuIds = [];
-    if ($conn instanceof mysqli) {
-        $sql = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1";
-        if ($res = $conn->query($sql)) {
-            while ($r = $res->fetch_assoc()) {
-                $smcBuIds[] = (int)$r['id'];
-            }
+$conn = $database->getConnection();
+
+// Find SMC BU ID
+$smcBuId = 0;
+if ($conn instanceof mysqli) {
+    $sqlFindSMCBu = "SELECT bu.id
+                     FROM business_units bu
+                     JOIN agencies ag ON ag.id = bu.agency_id
+                     WHERE ag.code = 'smc' AND bu.active = 1
+                     ORDER BY bu.id ASC
+                     LIMIT 1";
+    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!empty($row['id'])) {
+            $smcBuId = (int) $row['id'];
+            $_SESSION['smc_bu_id'] = $smcBuId;
         }
     }
-    $applicants = array_values(array_filter($allOnHold, function($app) use ($smcBuIds) {
-        $buId = (int)($app['business_unit_id'] ?? 0);
-        return in_array($buId, $smcBuIds, true);
-    }));
-} elseif (method_exists($applicant, 'getAll')) {
-    // fallback if your class uses getAll(status)
-    $applicants = $applicant->getAll('on_hold', null, SMC_AGENCY_CODE);
 }
 
-/**
- * Filter by search
- */
-if ($q !== '') {
-    $needle = mb_strtolower($q);
-    $applicants = array_values(array_filter($applicants, function(array $app) use ($needle) {
-        $first  = (string)($app['first_name']   ?? '');
-        $middle = (string)($app['middle_name']  ?? '');
-        $last   = (string)($app['last_name']    ?? '');
-        $suffix = (string)($app['suffix']       ?? '');
-        $email  = (string)($app['email']        ?? '');
-        $phone  = (string)($app['phone_number'] ?? '');
-        $loc    = (string)($app['preferred_location'] ?? '');
-
-        $fullName1 = trim($first . ' ' . $last);
-        $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
-        $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
-        $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
-
-        $stack = mb_strtolower(implode(' | ', [
-            $first, $middle, $last, $suffix,
-            $fullName1, $fullName2, $fullName3, $fullName4,
-            $email, $phone, $loc
-        ]));
-        return mb_strpos($stack, $needle) !== false;
-    }));
+if (empty($_SESSION['current_bu_id'])) {
+    header('Location: login.php');
+    exit;
 }
+
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+    } catch (Throwable $e) {
+        $_SESSION['csrf_token'] = bin2hex((string)mt_rand());
+    }
+}
+$csrf = $_SESSION['csrf_token'] ?? '';
+
+// Include the SMC Applicant class
+require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
+
+// Get current user data
+$currentUser = $auth->getCurrentUser();
+
+$applicant = new Applicant($database);
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+// Use SMC BU for SMC pages
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
+// Get current user role
+$currentRole = $currentUser['role'] ?? 'employee';
+
+// Roles
+$isSuperAdmin = ($currentRole === 'super_admin');
+$isAdmin = ($currentRole === 'admin');
+$isEmployee = ($currentRole === 'employee');
+
+// Search handling
+$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+$status = 'on_hold';
+
+// Get on_hold applicants for SMC
+$buScope = null; // SMC shows all SMC applicants
+$countryId = null;
+$notDeleted = true;
+$notBlacklisted = true;
+
+$applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, 1, 1000);
 
 /**
  * Helpers
@@ -108,10 +113,6 @@ function renderPreferredLocation(?string $json, int $maxLen = 34): string {
     return $full;
 }
 
-function getFullNameSafe($first, $middle, $last, $suffix) {
-    return getFullName($first, $middle, $last, $suffix);
-}
-
 function h($str) {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
@@ -119,6 +120,9 @@ function h($str) {
 // Preserve query in links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
+
+<?php require_once $ADMIN_ROOT . '/includes/header.php'; ?>
+
 <style>
   /* Keep dropdowns visible above table clipping */
   .table-card,
@@ -178,7 +182,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0 fw-semibold">On Hold Applicants (SMC)</h4>
+  <h4 class="mb-0 fw-semibold">SMC - On Hold Applicants</h4>
 </div>
 
 <!-- 🔎 Search -->
@@ -196,7 +200,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
         <i class="bi bi-search"></i>
       </button>
       <?php if ($q !== ''): ?>
-        <a href="turkey_on-hold.php?clear=1" class="btn btn-outline-secondary" title="Clear">
+        <a href="turkey_on-hold.php" class="btn btn-outline-secondary" title="Clear">
           <i class="bi bi-x-lg"></i>
         </a>
       <?php endif; ?>
@@ -228,7 +232,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                 No on hold applicants.
               <?php else: ?>
                 No results for "<strong><?php echo h($q); ?></strong>".
-                <a href="turkey_on-hold.php?clear=1" class="ms-1">Clear search</a>
+                <a href="turkey_on-hold.php" class="ms-1">Clear search</a>
               <?php endif; ?>
             </td>
           </tr>
@@ -236,7 +240,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
           <?php foreach ($applicants as $app): ?>
             <?php
               $id = (int)($app['id'] ?? 0);
-              $name = getFullNameSafe($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
+              $name = getFullName($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
               $viewUrl = 'turkey_view-applicant.php?id=' . $id . $preserveQ;
               $historyUrl = 'turkey_view-applicant-history.php?id=' . $id . $preserveQ;
               $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
@@ -287,7 +291,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
                       <li>
-                        <!-- Trigger single shared modal -->
+                        <!-- Revert to Pending -->
                         <a
                           class="dropdown-item js-open-revert"
                           href="#"
@@ -325,7 +329,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
      aria-labelledby="revertModalLabel" aria-hidden="true"
      data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-<form class="modal-content border-0 shadow-lg" method="POST" action="turkey_revert-onhold.php">
+    <form class="modal-content border-0 shadow-lg" method="POST" action="turkey_revert-onhold.php">
       <div class="modal-header bg-light border-0 pb-0">
         <div class="d-flex align-items-center gap-3">
           <div class="bg-warning bg-opacity-25 p-2 rounded-circle">
@@ -501,5 +505,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
 
