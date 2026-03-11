@@ -380,6 +380,157 @@ $exportUrl    = '../includes/excel_onprocess.php?type=on_process' . ($q !== '' ?
 ?>
 <!-- ===== Fix dropdown clipping & remove table scroll wrapper ===== -->
 <style>
+    /* === Light-Only Neo Modal Theme (Senior-Friendly) === */
+:root {
+  --neo-surface-bg: #ffffff;        /* Solid white for max clarity */
+  --neo-card-bg: #ffffff;
+  --neo-border: #d9dee6;            /* Softer than #ccc but visible */
+  --neo-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  --neo-primary: #1d4ed8;           /* Blue 700 for contrast */
+  --neo-primary-500: #2563eb;       /* Blue 600 hover */
+  --neo-accent: #06b6d4;            /* Cyan 500 (used subtly) */
+  --neo-text: #0f172a;              /* Slate 900 */
+  --neo-muted: #475569;             /* Slate 600 */
+  --neo-soft: #f8fafc;              /* Slate 50 */
+  --neo-focus: rgba(29, 78, 216, 0.25);
+}
+
+/* Container with clear surface and generous radius */
+.neo-surface {
+  background: var(--neo-surface-bg);
+  border: 1px solid var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Header / Footer with subtle separation */
+.neo-header {
+  background: linear-gradient(180deg, #ffffff, #f9fbfd);
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--neo-border) !important;
+}
+
+.neo-footer {
+  background: linear-gradient(0deg, #ffffff, #f9fbfd);
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--neo-border) !important;
+}
+
+/* Divider */
+.neo-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neo-border), transparent);
+}
+
+/* Icon bubble (no neon glow, just clean) */
+.neo-icon-wrap {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center;
+  color: var(--neo-primary);
+  background: var(--neo-soft);
+  border: 1px solid var(--neo-border);
+  font-size: 1.15rem;
+}
+
+/* Avatar styles */
+.neo-avatar, .neo-avatar-fallback {
+  width: 64px; height: 64px;
+  border: 1px solid var(--neo-border);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .08);
+}
+
+.neo-avatar-fallback {
+  display: grid; place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--neo-primary), var(--neo-accent));
+}
+
+/* Soft badge with clear text */
+.badge-soft {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .6rem; border-radius: .7rem; font-size: .95rem;
+  border: 1px solid var(--neo-border);
+  color: var(--neo-text);
+  background: #fff;
+}
+
+/* Card panel */
+.neo-card {
+  border-radius: 14px;
+  border: 1px solid var(--neo-border);
+  background: var(--neo-card-bg);
+}
+
+/* Inputs: larger size, stronger focus */
+.neo-input,
+.neo-input.form-control,
+.neo-input.form-select {
+  background: #ffffff;
+  border: 1px solid var(--neo-border);
+  border-radius: .9rem;
+  font-size: 1.05rem;
+  min-height: 48px;
+  color: var(--neo-text);
+}
+
+.neo-input:focus {
+  border-color: var(--neo-primary);
+  box-shadow: 0 0 0 .2rem var(--neo-focus);
+  outline: none;
+}
+
+/* Text & hint sizing for readability */
+.neo-modal .form-label { font-size: 1.05rem; color: var(--neo-text); }
+.neo-modal .form-text  { color: var(--neo-muted); }
+
+/* Buttons: bigger, high-contrast */
+.neo-btn-primary {
+  --bs-btn-bg: var(--neo-primary);
+  --bs-btn-border-color: var(--neo-primary);
+  --bs-btn-hover-bg: var(--neo-primary-500);
+  --bs-btn-hover-border-color: var(--neo-primary-500);
+  --bs-btn-color: #fff;
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  box-shadow: 0 10px 22px rgba(29, 78, 216, .18);
+}
+
+.neo-btn-secondary {
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  border-color: var(--neo-border);
+  color: var(--neo-text);
+  background: #fff;
+}
+.neo-btn-secondary:hover {
+  border-color: var(--neo-primary);
+  color: var(--neo-primary);
+}
+
+/* Info alert */
+.neo-info {
+  border: 1px solid var(--neo-border);
+  background: #f0f9ff;  /* Light blue background for information */
+  color: #0c4a6e;
+}
+
+/* Counter chip */
+.neo-counter {
+  border: 1px solid var(--neo-border);
+  font-size: .95rem;
+}
+
+/* Close button with clearer visibility */
+.neo-close { opacity: .8; }
+.neo-close:hover { opacity: 1; }
+
+/* Increase base sizes inside modal for older eyes */
+.neo-modal .modal-title { font-size: 1.25rem; }
+.neo-modal p, .neo-modal .small { font-size: 1rem; }
+.neo-modal .btn { line-height: 1.2; }
     .table-card, .table-card .card-body { overflow: visible !important; }
     .table-card .table-responsive { overflow: visible !important; }
     td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
@@ -649,47 +800,66 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
     </div>
 </div>
 
-<!-- === Status Change Report Modal (polished like On-Hold) === -->
-<div class="modal fade status-modal" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-    <form method="post" action="on-process.php" id="statusReportForm" class="modal-content border-0 shadow-lg">
-      <div class="modal-header bg-light border-0 pb-0">
+<!-- === Status Change Report Modal (Light-Only, Senior-Friendly) === -->
+<div class="modal fade status-modal neo-modal" id="statusReportModal" tabindex="-1"
+     aria-labelledby="statusReportModalLabel" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+    <form method="post" action="on-process.php" id="statusReportForm" class="modal-content neo-surface border-0">
+      <!-- Header -->
+      <div class="modal-header neo-header border-0">
         <div class="d-flex align-items-center gap-3">
-          <div class="bg-primary bg-opacity-25 p-2 rounded-circle">
-            <i class="bi bi-arrow-left-right text-primary fs-5"></i>
+          <div class="neo-icon-wrap" aria-hidden="true">
+            <i class="bi bi-arrow-left-right"></i>
           </div>
           <div>
-            <h5 class="modal-title fw-bold mb-0" id="statusReportModalLabel">Change Status &amp; Add Report</h5>
-            <p class="text-muted small mb-0">This change will be recorded in the reports log.</p>
+            <h5 class="modal-title fw-bold mb-0" id="statusReportModalLabel">
+              Change Status &amp; Add Report
+            </h5>
+            <p class="text-muted mb-0" style="font-size: .975rem;">This change will be recorded in the reports log.</p>
           </div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close neo-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
+      <!-- Body -->
       <div class="modal-body py-3">
-        <!-- Applicant header card (photo + name + badges) -->
-        <div class="card app-card mb-4">
-          <div class="card-body py-3">
-            <div class="d-flex align-items-center gap-3">
+        <!-- Applicant header card -->
+        <section class="neo-card app-card mb-4 p-0" aria-labelledby="sr-applicant">
+          <div class="p-3 p-md-4">
+            <div class="d-flex align-items-center gap-3 gap-md-4">
               <div class="photo-slot">
-                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none"
-                     id="srAvatarFallback" style="width:56px;height:56px;">
-                  <span class="fs-5 fw-bold" id="srAvatarLetter">A</span>
+                <div class="rounded-circle neo-avatar-fallback d-none"
+                     id="srAvatarFallback" aria-hidden="true">
+                  <span class="fw-bold" id="srAvatarLetter">A</span>
                 </div>
-                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56"
-                     style="object-fit: cover;" alt="Photo" id="srAvatarImg">
+                <img src="" class="rounded-circle neo-avatar d-none" width="64" height="64"
+                     style="object-fit: cover;" alt="Applicant photo" id="srAvatarImg">
               </div>
+
               <div class="flex-grow-1">
-                <div class="fw-bold fs-5" id="sr-applicant">Applicant Name</div>
-                <div class="d-flex align-items-center gap-2 mt-1">
-                  <span class="badge-soft"><i class="bi bi-hourglass-split"></i><span id="sr-from">on process</span></span>
-                  <i class="bi bi-arrow-right text-muted"></i>
-                  <span class="badge-soft"><i class="bi bi-check2"></i><span id="sr-to">approved</span></span>
+                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                  <div class="fw-bold fs-5" id="sr-applicant">Applicant Name</div>
+                  <div class="d-none d-md-inline flex-grow-1"></div>
+                  <!-- Status flow -->
+                  <div class="d-flex align-items-center gap-2" aria-label="Status change">
+                    <span class="badge-soft" aria-label="From status">
+                      <i class="bi bi-hourglass-split"></i>
+                      <span id="sr-from">on process</span>
+                    </span>
+                    <i class="bi bi-arrow-right text-muted" aria-hidden="true"></i>
+                    <span class="badge-soft" aria-label="To status">
+                      <i class="bi bi-check2"></i>
+                      <span id="sr-to">approved</span>
+                    </span>
+                  </div>
                 </div>
+                <div class="text-muted mt-1" style="font-size: .975rem;">Please provide a short reason and a brief description.</div>
               </div>
             </div>
           </div>
-        </div>
+          <div class="neo-divider"></div>
+        </section>
 
         <!-- Hidden fields -->
         <input type="hidden" name="action" value="update_status_report">
@@ -697,52 +867,63 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
         <input type="hidden" name="to" id="sr-to-val" value="">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
+        <!-- Form -->
         <div class="row g-4">
-          <div class="col-12 col-md-6">
-            <label class="form-label fw-semibold">Reason</label>
-            <select class="form-select form-select-lg" id="sr-reason">
+          <div class="col-12 col-md-5">
+            <label class="form-label fw-semibold" for="sr-reason">Reason</label>
+            <!-- 7-choice select -->
+            <select class="form-select form-select-lg neo-input" id="sr-reason" aria-describedby="reasonHelp">
               <option value="" selected>Select a reason (optional)</option>
-              <option value="Interview rescheduled">Interview rescheduled</option>
-              <option value="Client confirmed / Ready">Client confirmed / Ready</option>
-              <option value="Requirements complete">Requirements complete</option>
+              <option value="All requirements completed">All requirements completed</option>
               <option value="Passed interview / assessment">Passed interview / assessment</option>
+              <option value="Client confirmed approval">Client confirmed approval</option>
+              <option value="Qualified based on evaluation">Qualified based on evaluation</option>
+              <option value="Cleared for endorsement">Cleared for endorsement</option>
+              <option value="Ready for deployment / assignment">Ready for deployment / assignment</option>
               <option value="Other">Other</option>
             </select>
-            <div class="form-text mt-1">Pick a quick label; you can add details on the right.</div>
+            <div class="form-text mt-1" id="reasonHelp" style="font-size: .95rem;">
+              Pick a general label; you can add details on the right.
+            </div>
           </div>
 
-          <div class="col-12 col-md-6">
-            <label class="form-label fw-semibold d-flex justify-content-between">
+          <div class="col-12 col-md-7">
+            <label class="form-label fw-semibold d-flex justify-content-between align-items-center" for="sr-text">
               <span>Description <span class="text-danger">*</span></span>
-              <span class="counter badge bg-light text-secondary" id="sr-counter">0/1000</span>
+              <span class="counter badge bg-light text-secondary neo-counter" id="sr-counter">0/1000</span>
             </label>
             <textarea
-              class="form-control"
+              class="form-control neo-input"
               id="sr-text"
               name="report_text"
-              rows="4"
+              rows="6"
               maxlength="1000"
               required
-              placeholder="Write details for this status change (e.g., client confirmation, documents verified, interview result)..."></textarea>
-            <div class="form-text mt-1">Minimum 5 characters. This will be stored in the reports log.</div>
+              placeholder="Write concise details for this status change (e.g., documents verified, client confirmation date, deployment readiness)."
+              aria-describedby="descHelp"></textarea>
+            <div class="form-text mt-1" id="descHelp" style="font-size: .95rem;">
+              Minimum 5 characters. This will be stored in the reports log.
+            </div>
           </div>
         </div>
 
-        <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
+        <!-- Info note -->
+        <div class="alert alert-info neo-info mt-4 mb-0" role="alert">
           <div class="d-flex align-items-start gap-2">
-            <i class="bi bi-info-circle-fill text-info mt-1"></i>
-            <div class="small">
-              <strong>Note:</strong> The applicant's status will be updated and this action recorded in Reports.
+            <i class="bi bi-info-circle-fill mt-1" aria-hidden="true"></i>
+            <div class="small" style="font-size: .975rem;">
+              <strong>Note:</strong> The applicant’s status will be updated and this action recorded in Reports.
             </div>
           </div>
         </div>
       </div>
 
-      <div class="modal-footer bg-light border-0 pt-0">
-        <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+      <!-- Footer -->
+      <div class="modal-footer neo-footer border-0">
+        <button type="button" class="btn btn-outline-secondary btn-lg neo-btn-secondary" data-bs-dismiss="modal">
           <i class="bi bi-x-lg me-1"></i> Cancel
         </button>
-        <button type="submit" class="btn btn-primary btn-lg">
+        <button type="submit" class="btn btn-primary btn-lg neo-btn-primary">
           <i class="bi bi-check2-square me-2"></i> Save &amp; Update Status
         </button>
       </div>
@@ -750,14 +931,15 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
   </div>
 </div>
 
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Initialize Change Status dropdowns with stable positioning
+  // Initialize Bootstrap dropdowns for Change Status buttons
   var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
   btns.forEach(function(btn) {
-      if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-          new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
-      }
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+      new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+    }
   });
 
   var modalEl = document.getElementById('statusReportModal');
@@ -765,27 +947,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Modal elements
   var applicantNameEl = document.getElementById('sr-applicant');
-  var fromBadgeEl = document.getElementById('sr-from');
-  var toBadgeEl = document.getElementById('sr-to');
-  var idInput = document.getElementById('sr-id');
-  var toInput = document.getElementById('sr-to-val');
-  var reasonSelect = document.getElementById('sr-reason');
-  var descTA = document.getElementById('sr-text');
-  var counterEl = document.getElementById('sr-counter');
+  var fromBadgeEl     = document.getElementById('sr-from');
+  var toBadgeEl       = document.getElementById('sr-to');
+  var idInput         = document.getElementById('sr-id');
+  var toInput         = document.getElementById('sr-to-val');
+  var reasonSelect    = document.getElementById('sr-reason');
+  var descTA          = document.getElementById('sr-text');
+  var counterEl       = document.getElementById('sr-counter');
 
-  var avatarImg = document.getElementById('srAvatarImg');
-  var avatarFallback = document.getElementById('srAvatarFallback');
-  var avatarLetter = document.getElementById('srAvatarLetter');
+  var avatarImg       = document.getElementById('srAvatarImg');
+  var avatarFallback  = document.getElementById('srAvatarFallback');
+  var avatarLetter    = document.getElementById('srAvatarLetter');
 
-  // Counter
+  // Character counter
   var updateCounter = function() {
     var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
-    counterEl.textContent = (descTA.value.length) + '/' + max;
+    var len = descTA.value.length;
+    counterEl.textContent = len + '/' + max;
+    counterEl.classList.toggle('text-danger', len < 5);
   };
   descTA.addEventListener('input', updateCounter);
   updateCounter();
 
-  // Open modal (require report only when FROM on_process and TO != from)
+  // Enhanced open modal (report required when FROM on_process and TO != from)
   document.querySelectorAll('.change-status').forEach(function (el) {
     el.addEventListener('click', function (ev) {
       ev.preventDefault();
@@ -798,7 +982,6 @@ document.addEventListener('DOMContentLoaded', function () {
       var name   = el.dataset.applicant || '';
       var photo  = el.dataset.appPhoto || '';
 
-      // Require a report when changing FROM on_process
       if (fromSt === 'on_process' && toSt !== fromSt) {
         idInput.value = id;
         toInput.value = toSt;
@@ -812,6 +995,7 @@ document.addEventListener('DOMContentLoaded', function () {
           avatarImg.src = photo;
           avatarImg.classList.remove('d-none');
           avatarFallback.classList.add('d-none');
+          avatarImg.alt = name ? (name + ' photo') : 'Applicant photo';
         } else {
           var firstLetter = (name.trim().charAt(0) || 'A').toUpperCase();
           avatarLetter.textContent = firstLetter;
@@ -825,6 +1009,12 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCounter();
 
         if (modal) modal.show();
+
+        // Focus flow: reason → description
+        setTimeout(function() {
+          reasonSelect?.focus();
+        }, 150);
+
         return;
       }
 
@@ -833,15 +1023,55 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // When submitting, if a Reason is chosen and not already in the text, prefix it
-  document.getElementById('statusReportForm').addEventListener('submit', function() {
-    var reason = reasonSelect.value.trim();
-    var text = descTA.value.trim();
+  // Prefill description with reason (if chosen) as a prefix suggestion
+  reasonSelect.addEventListener('change', function() {
+    var reason = (reasonSelect.value || '').trim();
+    if (!reason || reason.toLowerCase() === 'other') return;
+    var text = (descTA.value || '').trim();
+
+    // If empty, start with reason:
+    if (!text) {
+      descTA.value = reason + ': ';
+    } else if (text.toLowerCase().indexOf(reason.toLowerCase()) !== 0) {
+      // If not prefixed, keep user's text but suggest
+      descTA.value = reason + ': ' + text;
+    }
+    updateCounter();
+    descTA.focus();
+    // Move caret to end
+    var len = descTA.value.length;
+    descTA.setSelectionRange(len, len);
+  });
+
+  // When submitting, ensure reason prefix is present unless "Other"
+  document.getElementById('statusReportForm').addEventListener('submit', function(e) {
+    var reason = (reasonSelect.value || '').trim();
+    var text = (descTA.value || '').trim();
+
+    if (text.length < 5) {
+      e.preventDefault();
+      descTA.focus();
+      return;
+    }
+
     if (reason && reason.toLowerCase() !== 'other') {
-      // Prepend reason label if not yet present
       if (text.toLowerCase().indexOf(reason.toLowerCase()) !== 0) {
         descTA.value = reason + (text ? ': ' + text : '');
       }
+    }
+  });
+
+  // Keyboard: Enter on reason will focus description; Ctrl/Cmd+Enter to submit
+  reasonSelect.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      descTA.focus();
+    }
+  });
+
+  descTA.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'enter') {
+      document.getElementById('statusReportForm').requestSubmit();
     }
   });
 
@@ -853,5 +1083,4 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-
 <?php require_once '../includes/footer.php'; ?>
