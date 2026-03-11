@@ -1,5 +1,5 @@
 <?php
-// FILE: admin/pages/replace-assign.php (MySQLi-only)
+// FILE: admin/pages/replace-assign.php (MySQLi-only, AUTO-HOLD ORIGINAL after assignment)
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
@@ -8,8 +8,7 @@ require_once '../includes/Applicant.php';
 
 // --- CONFIG ---
 const CSNK_AGENCY_CODE = 'csnk';
-// Auto-move candidate to on_process after a successful assignment?
-const AUTO_MOVE_CANDIDATE_TO_ON_PROCESS = true;
+const AUTO_MOVE_CANDIDATE_TO_ON_PROCESS = true; // keep your behavior
 
 // --- Bootstrap ---
 $database = new Database();
@@ -38,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('approved.php'); exit;
 }
 
-// === REQUIRE CSRF for all POSTs ===
+// === CSRF ===
 if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
     || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
     if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
@@ -56,10 +55,7 @@ if ($replacementId <= 0 || $candidateId <= 0 || $adminId === null) {
 }
 
 // --- Get mysqli connection ---
-$conn = null;
-if (method_exists($database, 'getConnection')) {
-    $conn = $database->getConnection();
-}
+$conn = method_exists($database, 'getConnection') ? $database->getConnection() : null;
 if (!($conn instanceof mysqli)) {
     if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
     setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
@@ -75,7 +71,7 @@ $sqlLockReplacement = "
 ";
 
 $sqlGetAgencyAndStatusByApplicant = "
-    SELECT ag.code AS agency_code, a.status
+    SELECT a.id, a.status, a.business_unit_id, ag.code AS agency_code
     FROM applicants a
     JOIN business_units bu ON bu.id = a.business_unit_id
     JOIN agencies ag ON ag.id = bu.agency_id
@@ -101,8 +97,65 @@ $sqlBumpCandidate = "
     LIMIT 1
 ";
 
+$sqlMoveOriginalToOnHold = "
+    UPDATE applicants
+    SET status = 'on_hold', updated_at = NOW()
+    WHERE id = ? AND status <> 'on_hold'
+    LIMIT 1
+";
+
+// Helpers to write status/applicant reports depending on schema
+function asr_has_bu_column(mysqli $conn): bool {
+    $res = $conn->query("SHOW COLUMNS FROM applicant_status_reports LIKE 'business_unit_id'");
+    return $res && $res->num_rows > 0;
+}
+
+function insert_status_report(mysqli $conn, int $applicantId, ?int $businessUnitId, string $from, string $to, string $text, int $adminId): void {
+    $hasBU = asr_has_bu_column($conn);
+    if ($hasBU) {
+        $stmt = $conn->prepare("
+            INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        if ($stmt) {
+            $stmt->bind_param('iisssi', $applicantId, $businessUnitId, $from, $to, $text, $adminId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        $stmt = $conn->prepare("
+            INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        if ($stmt) {
+            $stmt->bind_param('isssi', $applicantId, $from, $to, $text, $adminId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
+
+function insert_applicant_report(mysqli $conn, int $applicantId, ?int $businessUnitId, int $adminId, string $note): void {
+    $res = $conn->query("SHOW COLUMNS FROM applicant_reports LIKE 'business_unit_id'");
+    $hasBU = $res && $res->num_rows > 0;
+    if ($hasBU) {
+        $stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param('iiis', $applicantId, $businessUnitId, $adminId, $note);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        $stmt = $conn->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param('iis', $applicantId, $adminId, $note);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
+
 try {
-    // Allowed candidate statuses (align with your suggestions logic)
     $allowedCandidateStatuses = ['pending', 'approved', 'on_process'];
 
     $conn->begin_transaction();
@@ -136,6 +189,7 @@ try {
     }
 
     $originalId = (int)$rep['original_applicant_id'];
+    $repBuId    = isset($rep['business_unit_id']) ? (int)$rep['business_unit_id'] : null;
     if ($originalId <= 0) {
         $conn->rollback();
         if ($isAjax) json_out(false, ['message' => 'Invalid replacement link to original applicant.'], 422);
@@ -143,7 +197,7 @@ try {
         redirect('approved.php'); exit;
     }
 
-    // 2) Ensure original is CSNK
+    // 2) Ensure original is CSNK (and fetch original BU)
     $s = $conn->prepare($sqlGetAgencyAndStatusByApplicant);
     if (!$s) throw new Exception('Failed to prepare applicant agency check.');
     $s->bind_param('i', $originalId);
@@ -157,6 +211,8 @@ try {
         setFlashMessage('error', 'Operation blocked: not CSNK.');
         redirect('approved.php'); exit;
     }
+    $origStatus = strtolower((string)$orig['status']);
+    $origBuId   = isset($orig['business_unit_id']) ? (int)$orig['business_unit_id'] : $repBuId;
 
     // 3) Check candidate agency + status
     $s = $conn->prepare($sqlGetAgencyAndStatusByApplicant);
@@ -180,13 +236,14 @@ try {
         redirect('approved.php'); exit;
     }
     $candStatus = strtolower((string)$cand['status']);
+    $candBuId   = isset($cand['business_unit_id']) ? (int)$cand['business_unit_id'] : null;
+
     if (!in_array($candStatus, $allowedCandidateStatuses, true)) {
         $conn->rollback();
         if ($isAjax) json_out(false, ['message' => 'Candidate is not in an assignable status (Pending/Approved/On-Process).'], 422);
         setFlashMessage('error', 'Candidate not assignable (Pending/Approved/On-Process only).');
         redirect('approved.php'); exit;
     }
-
     if ($candidateId === $originalId) {
         $conn->rollback();
         if ($isAjax) json_out(false, ['message' => 'Cannot assign the same person as their own replacement.'], 422);
@@ -209,7 +266,7 @@ try {
         redirect('approved.php'); exit;
     }
 
-    // 4b) Optionally bump candidate to on_process
+    // 4b) Optionally bump candidate to on_process and write status report
     if (AUTO_MOVE_CANDIDATE_TO_ON_PROCESS && in_array($candStatus, ['pending', 'approved'], true)) {
         $bu = $conn->prepare($sqlBumpCandidate);
         if ($bu) {
@@ -217,20 +274,34 @@ try {
             $bu->execute();
             $bu->close();
         }
+        $reportText = "Replacement assignment — moved from {$candStatus} to on_process.";
+        insert_status_report($conn, $candidateId, $candBuId, $candStatus, 'on_process', $reportText, $adminId);
     }
 
-    // Optional activity log
+    // 4c) Move ORIGINAL to ON-HOLD and record status report + report note
+    $fromOriginal = $origStatus ?: 'approved';
+    $mh = $conn->prepare($sqlMoveOriginalToOnHold);
+    if ($mh) {
+        $mh->bind_param('i', $originalId);
+        $mh->execute();
+        $mh->close();
+    }
+    $origReport = "Replaced by Applicant ID {$candidateId}. Original moved to on_hold.";
+    insert_status_report($conn, $originalId, $origBuId, $fromOriginal, 'on_hold', $origReport, $adminId);
+    insert_applicant_report($conn, $originalId, $origBuId, $adminId, "Replaced by Applicant ID {$candidateId}. Status moved to On Hold.");
+
+    // Activity log (optional)
     if (method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
         $auth->logActivity((int)$_SESSION['admin_id'], 'Assign Replacement',
-            "Assigned Applicant ID {$candidateId} as replacement for Original ID {$originalId}");
+            "Assigned Applicant ID {$candidateId} as replacement for Original ID {$originalId}; original set to On Hold");
     }
 
     $conn->commit();
 
     if ($isAjax) {
-        json_out(true, ['message' => 'Replacement assigned successfully.']);
+        json_out(true, ['message' => 'Replacement assigned successfully. Original moved to On Hold.']);
     } else {
-        setFlashMessage('success', 'Replacement assigned successfully.');
+        setFlashMessage('success', 'Replacement assigned successfully. Original moved to On Hold.');
         redirect('approved.php');
     }
     exit;
