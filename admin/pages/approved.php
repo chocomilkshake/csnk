@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/approved.php  (CSNK-only Approved Applicants)
-// Purpose: List ONLY CSNK applicants, keep them scoped to their agency on all actions.
+// Purpose: List ONLY CSNK applicants; changes are hardened to CSNK scope. No deletions on this page.
 
 $pageTitle = 'Approved Applicants';
 require_once '../includes/header.php';
@@ -17,14 +17,23 @@ if (empty($_SESSION['csrf_token'])) {
 
 $applicant = new Applicant($database);
 
-// --- Hard scope this page to CSNK only ---
+// --- CSNK scope & statuses ---
 const CSNK_AGENCY_CODE = 'csnk';
-
-// Allowed statuses to transition to (this page is Approved but can move around)
-$allowedStatuses = ['pending', 'on_process', 'approved'];
+const ALLOWED_STATUSES = ['pending', 'on_process', 'approved'];
 
 /**
- * Helper: get applicant's agency code ("csnk" or "smc") by id
+ * Helper: build URL preserving q and adding optional params (e.g., csrf)
+ */
+function buildUrl(string $path, array $params = []): string {
+    if (!empty($_SESSION['approved_q']) && !isset($params['q'])) {
+        $params['q'] = (string)$_SESSION['approved_q'];
+    }
+    $qs = $params ? ('?' . http_build_query($params)) : '';
+    return $path . $qs;
+}
+
+/**
+ * Helper: get applicant's agency code by id
  */
 function getApplicantAgencyCode($database, int $applicantId): ?string {
     try {
@@ -69,9 +78,6 @@ function getApplicantAgencyCode($database, int $applicantId): ?string {
 
 /**
  * --- Search Memory Behavior ---
- * - If ?clear=1 → clear stored search and redirect to clean list
- * - If ?q=...  → store in session and use
- * - Else if session has last query → use it
  */
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
     unset($_SESSION['approved_q']);
@@ -82,109 +88,54 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string)$_GET['q']);
-    if (mb_strlen($q) > 100) {
-        $q = mb_substr($q, 0, 100);
-    }
+    if (mb_strlen($q) > 100) $q = mb_substr($q, 0, 100);
     $_SESSION['approved_q'] = $q;
 } elseif (!empty($_SESSION['approved_q'])) {
     $q = (string)$_SESSION['approved_q'];
 }
 
 /**
- * Handle delete (soft delete) — CSNK-ONLY
+ * DELETE action is disabled on Approved page (front-end button removed + backend blocked)
  */
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
-
-    // Enforce agency scope before modifying
-    $agency = getApplicantAgencyCode($database, $id);
-    if ($agency !== CSNK_AGENCY_CODE) {
-        if (function_exists('setFlashMessage')) {
-            setFlashMessage('error', 'Operation blocked: applicant does not belong to CSNK.');
-        }
-        $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
-        redirect('approved.php' . $qs);
-        exit;
-    }
-
-    $deleted = false;
-    if (method_exists($applicant, 'softDelete')) {
-        $deleted = (bool)$applicant->softDelete($id);
-    } elseif (method_exists($applicant, 'update')) {
-        $deleted = (bool)$applicant->update($id, ['status' => 'deleted']);
-    } else {
-        try {
-            if ($database instanceof PDO) {
-                $stmt = $database->prepare("UPDATE applicants SET status = 'deleted' WHERE id = :id");
-                $deleted = $stmt->execute([':id' => $id]);
-            } elseif (method_exists($database, 'getConnection') && $database->getConnection() instanceof mysqli) {
-                $m = $database->getConnection();
-                $stmt = $m->prepare("UPDATE applicants SET status = 'deleted' WHERE id = ?");
-                $stmt->bind_param('i', $id);
-                $deleted = $stmt->execute();
-                $stmt->close();
-            }
-        } catch (Throwable $e) {
-            $deleted = false;
-        }
-    }
-
+    // Intentionally disabled
     if (function_exists('setFlashMessage')) {
-        setFlashMessage($deleted ? 'success' : 'error', $deleted ? 'Applicant deleted successfully.' : 'Failed to delete applicant.');
+        setFlashMessage('error', 'Deletion is disabled on the Approved page.');
     }
-
-    if ($deleted && isset($auth) && isset($_SESSION['admin_id']) && method_exists($auth, 'logActivity')) {
-        $fullName = null;
-        if (method_exists($applicant, 'getById')) {
-            $row = $applicant->getById($id);
-            if (is_array($row)) {
-                $fullName = getFullName(
-                    $row['first_name'] ?? '',
-                    $row['middle_name'] ?? '',
-                    $row['last_name'] ?? '',
-                    $row['suffix'] ?? ''
-                );
-            }
-        }
-        $label = $fullName ?: "ID {$id}";
-        $auth->logActivity(
-            (int)$_SESSION['admin_id'],
-            'Delete Applicant',
-            "Deleted applicant {$label} (Approved list, CSNK)"
-        );
-    }
-
     $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
     redirect('approved.php' . $qs);
     exit;
 }
 
 /**
- * Handle status update (Change Status dropdown) — CSNK-ONLY
+ * Handle status update (Change Status dropdown) — CSNK-ONLY + CSRF
  */
-if (
-    isset($_GET['action'], $_GET['id'], $_GET['to']) &&
-    $_GET['action'] === 'update_status'
-) {
+if (isset($_GET['action'], $_GET['id'], $_GET['to']) && $_GET['action'] === 'update_status') {
     $id = (int)$_GET['id'];
     $to = strtolower(trim((string)$_GET['to']));
+    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
 
-    // Enforce agency scope before modifying
-    $agency = getApplicantAgencyCode($database, $id);
-    if ($agency !== CSNK_AGENCY_CODE) {
-        if (function_exists('setFlashMessage')) {
-            setFlashMessage('error', 'Operation blocked: applicant does not belong to CSNK.');
-        }
-        $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
+    // CSRF check
+    $csrfOK = isset($_GET['csrf'], $_SESSION['csrf_token']) &&
+              hash_equals((string)$_SESSION['csrf_token'], (string)$_GET['csrf']);
+    if (!$csrfOK) {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Invalid or missing security token.');
         redirect('approved.php' . $qs);
         exit;
     }
 
-    if (in_array($to, $allowedStatuses, true)) {
-        $updated = false;
+    // Enforce agency scope
+    $agency = getApplicantAgencyCode($database, $id);
+    if ($agency !== CSNK_AGENCY_CODE) {
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Operation blocked: applicant does not belong to CSNK.');
+        redirect('approved.php' . $qs);
+        exit;
+    }
 
+    if (in_array($to, ALLOWED_STATUSES, true)) {
+        $updated = false;
         if (method_exists($applicant, 'updateStatus')) {
-            $updated = (bool) $applicant->updateStatus($id, $to); // status-only; business_unit_id unchanged
+            $updated = (bool) $applicant->updateStatus($id, $to);
         } elseif (method_exists($applicant, 'update')) {
             $updated = (bool) $applicant->update($id, ['status' => $to]);
         } else {
@@ -205,8 +156,8 @@ if (
         }
 
         if (function_exists('setFlashMessage')) {
-            if ($updated) setFlashMessage('success', 'Status updated successfully.');
-            else setFlashMessage('error', 'Failed to update status. Please try again.');
+            $updated ? setFlashMessage('success', 'Status updated successfully.')
+                     : setFlashMessage('error', 'Failed to update status. Please try again.');
         }
 
         if ($updated && isset($auth) && method_exists($auth, 'logActivity') && isset($_SESSION['admin_id'])) {
@@ -214,27 +165,16 @@ if (
             if (method_exists($applicant, 'getById')) {
                 $row = $applicant->getById($id);
                 if (is_array($row)) {
-                    $fullName = getFullName(
-                        $row['first_name'] ?? '',
-                        $row['middle_name'] ?? '',
-                        $row['last_name'] ?? ''
-                    );
+                    $fullName = getFullName($row['first_name'] ?? '', $row['middle_name'] ?? '', $row['last_name'] ?? '');
                 }
             }
             $label = $fullName ?: "ID {$id}";
-            $auth->logActivity(
-                (int)$_SESSION['admin_id'],
-                'Update Applicant Status',
-                "Updated status for {$label} → {$to} (CSNK)"
-            );
+            $auth->logActivity((int)$_SESSION['admin_id'], 'Update Applicant Status', "Updated status for {$label} → {$to} (CSNK)");
         }
     } else {
-        if (function_exists('setFlashMessage')) {
-            setFlashMessage('error', 'Invalid status selected.');
-        }
+        if (function_exists('setFlashMessage')) setFlashMessage('error', 'Invalid status selected.');
     }
 
-    $qs = $q !== '' ? ('?q=' . urlencode($q)) : '';
     redirect('approved.php' . $qs);
     exit;
 }
@@ -247,24 +187,16 @@ $applicants = $applicant->getAll('approved', null, CSNK_AGENCY_CODE);
  */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) return 'N/A';
-
     $arr = json_decode($json, true);
     if (!is_array($arr)) {
         $fallback = trim($json);
         $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
         return $fallback !== '' ? $fallback : 'N/A';
     }
-
-    $cities = array_values(array_filter(array_map('trim', $arr), function($v){
-        return is_string($v) && $v !== '';
-    }));
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
     if (empty($cities)) return 'N/A';
-
     $full = implode(', ', $cities);
-    if (mb_strlen($full) > $maxLen) {
-        return $cities[0];
-    }
-    return $full;
+    return (mb_strlen($full) > $maxLen) ? $cities[0] : $full;
 }
 
 function filterRowsByQuery(array $rows, string $query): array {
@@ -300,9 +232,8 @@ if ($q !== '') {
     $applicants = filterRowsByQuery($applicants, $q);
 }
 
-// Preserve the search in action links and export URL
-$preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-$exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+// Export URL (search preserved automatically if present)
+$exportUrl = buildUrl('../includes/excel_approved.php', []);
 ?>
 <!-- ===== Fix dropdown clipping & remove table scroll wrapper ===== -->
 <style>
@@ -310,6 +241,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     .table-card .table-responsive { overflow: visible !important; }
     .table-card table, .table-card tbody, .table-card tr { overflow: visible !important; }
     td.actions-cell { position: relative; overflow: visible; z-index: 10; white-space: nowrap; }
+
     .dd-modern .dropdown-menu {
         border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         z-index: 9999 !important; min-width: 160px;
@@ -387,23 +319,30 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                         <?php
                             $id = (int)$row['id'];
                             $currentStatus = (string)($row['status'] ?? 'approved');
-
                             $fullName = getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']);
+                            $photoUrl = !empty($row['picture']) ? getFileUrl($row['picture']) : '';
 
-                            $viewUrl = 'view_approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                            $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                            $deleteUrl = 'approved.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-
-                            // Change Status target links (preserve q)
-                            $toPendingUrl    = 'approved.php?action=update_status&id=' . $id . '&to=pending'    . $preserveQ;
-                            $toOnProcessUrl  = 'approved.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
-                            $toApprovedUrl   = 'approved.php?action=update_status&id=' . $id . '&to=approved'   . $preserveQ;
+                            // Action URLs (with CSRF & q preserved)
+                            $viewUrl   = buildUrl('view_approved.php', ['id' => $id]);
+                            $editUrl   = buildUrl('edit-applicant.php', ['id' => $id]);
+                            $toPendingUrl   = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'pending',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
+                            $toOnProcessUrl = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'on_process',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
+                            $toApprovedUrl  = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'approved',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
                         ?>
                         <tr>
                             <td>
                                 <?php if (!empty($row['picture'])): ?>
                                     <img
-                                        src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        src="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                         alt="Photo"
                                         class="rounded"
                                         width="50"
@@ -440,7 +379,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
-                                    <!-- Replace -->
+                                    <!-- Replace (opens modal) -->
                                     <button class="btn btn-sm btn-danger"
                                             data-bs-toggle="modal"
                                             data-bs-target="#replaceModal"
@@ -463,29 +402,31 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                                             <i class="bi bi-arrow-left-right me-1"></i> Change Status
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-hourglass-split text-warning"></i>
-                                                <span>Pending</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-arrow-repeat text-info"></i>
-                                                <span>On-Process</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
-                                               href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="bi bi-check2-circle text-success"></i>
-                                                <span>Approved</span>
-                                            </a>
-                                        </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-hourglass-split text-warning"></i>
+                                                    <span>Pending</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-arrow-repeat text-info"></i>
+                                                    <span>On-Process</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-check2-circle text-success"></i>
+                                                    <span>Approved</span>
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
+
+                                    <!-- NOTE: Delete button intentionally removed on this page -->
                                 </div>
                             </td>
                         </tr>
@@ -496,48 +437,125 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
     </div>
 </div>
 
-<!-- ===== Replace Modal ===== -->
-<div class="modal fade" id="replaceModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <form id="replaceInitForm" enctype="multipart/form-data">
-        <div class="modal-header">
-          <h5 class="modal-title">Replace Applicant — <span id="replaceApplicantName"></span></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- ===== Replace Modal (Light-only, Senior-friendly) ===== -->
+<div class="modal fade rep-modal" id="replaceModal" tabindex="-1" aria-hidden="true" role="dialog" aria-labelledby="repModalTitle">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content rep-surface">
+      <form id="replaceInitForm" enctype="multipart/form-data" novalidate>
+        <!-- Header -->
+        <div class="modal-header rep-header border-0">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rep-icon" aria-hidden="true">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="repModalTitle">Replace Approved Applicant</h5>
+              <p class="text-muted mb-0" style="font-size: .975rem;">Start a replacement and get suggested candidates.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close rep-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
+        <!-- Body -->
         <div class="modal-body">
+          <!-- Hidden fields -->
           <input type="hidden" name="original_applicant_id" id="replaceOriginalId" value="">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Reason <span class="text-danger">*</span></label>
-                <select name="reason" class="form-select" required>
-                    <option value="AWOL">AWOL</option>
-                    <option value="Client Left">Client Left</option>
-                    <option value="Not Finished Contract">Not Finished Contract</option>
-                    <option value="Performance Issue">Performance Issue</option>
-                    <option value="Other">Other</option>
-                </select>
+          <!-- Applicant summary -->
+          <section class="rep-card mb-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+              <div class="text-muted">Replacing:</div>
+              <div class="fw-semibold fs-5" id="replaceApplicantName">Applicant Name</div>
             </div>
-            <div class="col-12">
-              <label class="form-label">Report / Note <span class="text-danger">*</span></label>
-              <textarea name="report_text" class="form-control" rows="4" required></textarea>
+          </section>
+
+          <!-- Form fields -->
+          <div class="row g-4">
+            <!-- Reason -->
+            <div class="col-12 col-md-5">
+              <label class="form-label fw-semibold" for="rep-reason">Reason <span class="text-danger">*</span></label>
+              <select name="reason" id="rep-reason" class="form-select form-select-lg rep-input" required aria-describedby="rep-reason-help">
+                <option value="" selected disabled>Select a reason</option>
+
+                <!-- Attendance / Conduct -->
+                <option value="AWOL">AWOL</option>
+                <option value="Habitual Absences">Habitual Absences</option>
+                <option value="Violation of Company Policies">Violation of Company Policies</option>
+
+                <!-- Client-Related -->
+                <option value="Client Left">Client Left</option>
+                <option value="Client Requested Replacement">Client Requested Replacement</option>
+                <option value="Client Feedback (Negative)">Client Feedback (Negative)</option>
+
+                <!-- Assignment / Contract -->
+                <option value="Not Finished Contract">Not Finished Contract</option>
+                <option value="Did Not Report to Client">Did Not Report to Client</option>
+                <option value="Mismatch to Client Requirements">Mismatch to Client Requirements</option>
+
+                <!-- Performance -->
+                <option value="Performance Issue">Performance Issue</option>
+                <option value="Failed to Meet Job Expectations">Failed to Meet Job Expectations</option>
+
+                <!-- Personal -->
+                <option value="Personal Concern / Personal Reason">Personal Concern / Personal Reason</option>
+
+                <!-- Fallback -->
+                <option value="Other">Other</option>
+              </select>
+              <div id="rep-reason-help" class="form-text" style="font-size:.95rem;">Choose the most appropriate reason.</div>
             </div>
+
+            <!-- Report / Note -->
+            <div class="col-12 col-md-7">
+              <label class="form-label fw-semibold d-flex justify-content-between align-items-center" for="rep-note">
+                <span>Report / Note <span class="text-danger">*</span></span>
+                <span class="badge bg-light text-secondary rep-counter" id="rep-note-counter">0/1000</span>
+              </label>
+              <textarea name="report_text" id="rep-note" class="form-control rep-input" rows="6" maxlength="1000" required
+                        placeholder="Provide a clear summary (e.g., reason details, date of incident, client remarks)."
+                        aria-describedby="rep-note-help"></textarea>
+              <div id="rep-note-help" class="form-text" style="font-size:.95rem;">Minimum 5 characters. This will be saved to the report log.</div>
+            </div>
+
+            <!-- Attachments -->
             <div class="col-12">
-              <label class="form-label">Attachments (optional)</label>
-              <input type="file" name="attachments[]" class="form-control" multiple>
-              <div class="form-text">You can upload images/documents/videos as evidence. (Up to 200MB per file)</div>
+              <label class="form-label fw-semibold" for="rep-files">Attachments (optional)</label>
+              <input type="file" name="attachments[]" id="rep-files" class="form-control rep-input" multiple aria-describedby="rep-files-help">
+              <div id="rep-files-help" class="form-text" style="font-size:.95rem;">You can upload images/documents/videos. <strong>Max 200MB per file.</strong></div>
+
+              <!-- File preview list -->
+              <div id="rep-files-list" class="rep-files mt-2"></div>
+              <div id="rep-files-warning" class="alert alert-warning mt-3 d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                One or more files exceed the 200MB limit. Please remove the highlighted files.
+              </div>
             </div>
           </div>
 
-          <hr class="my-3">
-          <h6 class="fw-semibold">Suggested Replacement Candidates</h6>
+          <!-- Info -->
+          <div class="alert alert-info rep-info mt-4 mb-0" role="alert">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-info-circle-fill mt-1" aria-hidden="true"></i>
+              <div class="small" style="font-size: .975rem;">
+                <strong>What happens next?</strong> We’ll log your reason and note, then suggest replacement candidates based on the client and role match.
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <!-- Suggestions -->
+          <h6 class="fw-semibold mb-2">Suggested Replacement Candidates</h6>
           <div id="replacementCandidates" class="mt-2"></div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-danger">
+
+        <!-- Footer -->
+        <div class="modal-footer rep-footer border-0">
+          <button type="button" class="btn btn-outline-secondary btn-lg rep-btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-danger btn-lg rep-btn-primary" id="rep-submit">
             <i class="bi bi-arrow-repeat me-1"></i> Start &amp; Suggest
           </button>
         </div>
@@ -546,33 +564,228 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
   </div>
 </div>
 
-<!-- Scripts for Replace Modal binding -->
+<!-- ===== Replace Modal Styles (Light-only, Senior-friendly) ===== -->
+<style>
+:root {
+  --rep-surface: #ffffff;
+  --rep-border: #d9dee6;
+  --rep-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  --rep-text: #0f172a;
+  --rep-muted: #475569;
+  --rep-soft: #f8fafc;
+  --rep-primary: #1d4ed8;
+  --rep-primary-500: #2563eb;
+  --rep-focus: rgba(29, 78, 216, 0.25);
+}
+
+.rep-modal .modal-content.rep-surface {
+  background: var(--rep-surface);
+  border: 1px solid var(--rep-border);
+  border-radius: 18px;
+  box-shadow: var(--rep-shadow);
+  overflow: hidden;
+}
+
+.rep-header, .rep-footer {
+  background: #fff;
+  padding: 1rem 1.25rem;
+  border-color: var(--rep-border) !important;
+}
+
+.rep-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center;
+  color: var(--rep-primary);
+  background: var(--rep-soft);
+  border: 1px solid var(--rep-border);
+  font-size: 1.15rem;
+}
+
+.rep-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--rep-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rep-input,
+.rep-input.form-control,
+.rep-input.form-select {
+  background: #fff;
+  border: 1px solid var(--rep-border);
+  border-radius: .9rem;
+  min-height: 48px;
+  font-size: 1.05rem;
+  color: var(--rep-text);
+}
+
+.rep-input:focus {
+  border-color: var(--rep-primary);
+  box-shadow: 0 0 0 .2rem var(--rep-focus);
+  outline: none;
+}
+
+.rep-close { opacity: .85; }
+.rep-close:hover { opacity: 1; }
+
+.rep-btn-primary {
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  box-shadow: 0 10px 22px rgba(185, 28, 28, 0.18);
+}
+
+.rep-btn-secondary {
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  border-color: var(--rep-border);
+  color: var(--rep-text);
+  background: #fff;
+}
+.rep-btn-secondary:hover {
+  border-color: var(--rep-primary);
+  color: var(--rep-primary);
+}
+
+.rep-info {
+  border: 1px solid var(--rep-border);
+  background: #f0f9ff;
+  color: #0c4a6e;
+}
+
+.rep-counter {
+  border: 1px solid var(--rep-border);
+  font-size: .95rem;
+}
+
+/* Files list */
+.rep-files .rep-file {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; padding: .6rem .75rem; border: 1px solid var(--rep-border);
+  border-radius: .7rem; background: #fff; margin-bottom: .5rem;
+  font-size: .975rem;
+}
+.rep-files .rep-file.bad {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+.rep-files .rep-file .meta { color: var(--rep-muted); }
+.rep-files .rep-file .size { color: var(--rep-muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<!-- ===== Scripts for Replace Modal binding & CSRF exposure ===== -->
 <script src="../js/replacements.js"></script>
 <script>
-  // expose CSRF to JS (used by replacements.js)
+  // Expose CSRF to replacements.js
   window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
 
-  // Fill hidden id + label when opening modal
-  document.getElementById('replaceModal')?.addEventListener('show.bs.modal', function (ev) {
-    const btn = ev.relatedTarget;
-    if (!btn) return;
-    const id   = btn.getAttribute('data-applicant-id') || '';
-    const name = btn.getAttribute('data-applicant-name') || '';
-    document.getElementById('replaceOriginalId').value = id;
-    document.getElementById('replaceApplicantName').textContent = name;
-    // Clear previous results
-    const wrap = document.getElementById('replacementCandidates');
-    if (wrap) wrap.innerHTML = '';
-  });
+  (function() {
+    const modalEl   = document.getElementById('replaceModal');
+    const formEl    = document.getElementById('replaceInitForm');
+    const nameEl    = document.getElementById('replaceApplicantName');
+    const idInput   = document.getElementById('replaceOriginalId');
+    const reasonSel = document.getElementById('rep-reason');
+    const noteTA    = document.getElementById('rep-note');
+    const counterEl = document.getElementById('rep-note-counter');
+    const filesIn   = document.getElementById('rep-files');
+    const filesList = document.getElementById('rep-files-list');
+    const warnEl    = document.getElementById('rep-files-warning');
+    const suggestEl = document.getElementById('replacementCandidates');
 
-  // Bind the form to the helper
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.Replacements) {
-      Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+    const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200MB
+
+    function fmtSize(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, val = bytes;
+      while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+      return (Math.round(val * 10) / 10) + ' ' + units[i];
     }
-  });
 
-  // Dropdown popper fix
+    function updateCounter() {
+      const max = parseInt(noteTA.getAttribute('maxlength') || '1000', 10);
+      const len = noteTA.value.length;
+      counterEl.textContent = `${len}/${max}`;
+      counterEl.classList.toggle('text-danger', len < 5);
+    }
+
+    function renderFiles() {
+      filesList.innerHTML = '';
+      let anyTooBig = false;
+
+      if (!filesIn.files || filesIn.files.length === 0) {
+        warnEl.classList.add('d-none');
+        return;
+      }
+
+      Array.from(filesIn.files).forEach((file) => {
+        const tooBig = file.size > MAX_FILE_BYTES;
+        anyTooBig = anyTooBig || tooBig;
+
+        const row = document.createElement('div');
+        row.className = 'rep-file' + (tooBig ? ' bad' : '');
+        row.innerHTML = `
+          <div class="meta">
+            <i class="bi bi-paperclip me-1"></i>
+            <strong>${file.name}</strong>
+          </div>
+          <div class="size">${fmtSize(file.size)}${tooBig ? ' • too large' : ''}</div>
+        `;
+        filesList.appendChild(row);
+      });
+
+      warnEl.classList.toggle('d-none', !anyTooBig);
+    }
+
+    // On modal open: fill data & reset state
+    modalEl?.addEventListener('show.bs.modal', function (ev) {
+      const btn = ev.relatedTarget;
+      const id   = btn?.getAttribute('data-applicant-id') || '';
+      const name = btn?.getAttribute('data-applicant-name') || '';
+
+      idInput.value = id;
+      nameEl.textContent = name || 'Applicant';
+
+      formEl.reset();
+      filesList.innerHTML = '';
+      warnEl.classList.add('d-none');
+      suggestEl.innerHTML = '';
+      updateCounter();
+
+      // Focus first field after short delay
+      setTimeout(() => reasonSel?.focus(), 120);
+    });
+
+    // Counter and file preview
+    noteTA.addEventListener('input', updateCounter);
+    filesIn.addEventListener('change', renderFiles);
+
+    // === NEW: Reason -> Report/Note auto-prefix (like On-Process modal) ===
+    reasonSel.addEventListener('change', function () {
+      const reason = (reasonSel.value || '').trim();
+      if (!reason || reason.toLowerCase() === 'other') return;
+      const text = (noteTA.value || '').trim();
+
+      if (!text) {
+        noteTA.value = reason + ': ';
+      } else if (text.toLowerCase().indexOf(reason.toLowerCase()) !== 0) {
+        noteTA.value = reason + ': ' + text;
+      }
+      updateCounter();
+      noteTA.focus();
+      const len = noteTA.value.length;
+      if (noteTA.setSelectionRange) noteTA.setSelectionRange(len, len);
+    });
+
+    // Bind replacements helper (handles submission and suggestions)
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.Replacements) {
+        Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+      }
+    });
+  })();
+
+  // Dropdown popper fix for Change Status buttons
   document.addEventListener('DOMContentLoaded', function() {
       var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
       btns.forEach(function(btn) {
