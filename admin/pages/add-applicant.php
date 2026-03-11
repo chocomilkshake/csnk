@@ -691,7 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Branch (only for CSNK) -->
                 <div class="col-md-4">
                     <label class="form-label">Branch <small class="text-muted">(CSNK only)</small></label>
-                    <select class="form-select" name="branch_id" id="branchSelect">
+                    <select class="form-select" name="branch_id" id="branchSelect" disabled>
                         <option value="">Select Branch...</option>
                         <?php
                         // Get branches for CSNK only
@@ -1219,6 +1219,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 displayVideo(files[0]);
             }
         });
+
+        // ---------- Branch Enable/Disable based on Country (CSNK only) ----------
+        const countrySelect = document.querySelector('select[name="business_unit_id"]');
+        const branchSelect = document.getElementById('branchSelect');
+
+        function updateBranchState() {
+            if (!countrySelect || !branchSelect) return;
+            const selectedOption = countrySelect.options[countrySelect.selectedIndex];
+            const isCSNK = selectedOption.text.toLowerCase().includes('csnk');
+
+            if (isCSNK) {
+                branchSelect.disabled = false;
+            } else {
+                branchSelect.disabled = true;
+                branchSelect.value = ''; // Clear selection when disabled
+            }
+        }
+
+        if (countrySelect) {
+            countrySelect.addEventListener('change', updateBranchState);
+            // Run on page load to handle pre-selected values
+            updateBranchState();
+        }
 
     })();
 </script>
