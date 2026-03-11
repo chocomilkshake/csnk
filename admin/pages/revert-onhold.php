@@ -86,62 +86,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$applicant) {
                 $errors[] = 'Applicant not found or is not on hold status.';
             } else {
-                $businessUnitId = $applicant['business_unit_id'] ?? null;
-                $conn->begin_transaction();
+                $businessUnitId = (int)($applicant['business_unit_id'] ?? 0);
+                
+                if ($businessUnitId <= 0) {
+                    $errors[] = 'Applicant does not have a valid business unit assigned.';
+                } else {
+                    $conn->begin_transaction();
 
-                try {
-                    // Update applicant status to pending
-                    $sqlUpdate = "UPDATE applicants SET status = 'pending', updated_at = NOW() WHERE id = ? AND status = 'on_hold'";
-                    $stmtUpdate = $conn->prepare($sqlUpdate);
-                    $stmtUpdate->bind_param("i", $applicantId);
-                    $stmtUpdate->execute();
-                    
-                    if ($conn->affected_rows < 1) {
-                        throw new Exception('Failed to update applicant status.');
-                    }
-                    $stmtUpdate->close();
+                    try {
+                        // Update applicant status to pending
+                        $sqlUpdate = "UPDATE applicants SET status = 'pending', updated_at = NOW() WHERE id = ? AND status = 'on_hold'";
+                        $stmtUpdate = $conn->prepare($sqlUpdate);
+                        $stmtUpdate->bind_param("i", $applicantId);
+                        $stmtUpdate->execute();
+                        
+                        if ($conn->affected_rows < 1) {
+                            throw new Exception('Failed to update applicant status.');
+                        }
+                        $stmtUpdate->close();
 
-                    // Insert status report (include business_unit_id)
-                    $fullName = getFullName(
-                        $applicant['first_name'] ?? '',
-                        $applicant['middle_name'] ?? '',
-                        $applicant['last_name'] ?? '',
-                        $applicant['suffix'] ?? ''
-                    );
-                    $reportText = "Reverted from On Hold to Pending. Reason: {$reason}. Description: {$description}";
-                    
-                    $sqlReport = "INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, 'on_hold', 'pending', ?, ?)";
-                    $stmtReport = $conn->prepare($sqlReport);
-                    $stmtReport->bind_param("iissi", $applicantId, $businessUnitId, $reportText, $adminId);
-                    $stmtReport->execute();
-                    $stmtReport->close();
-
-                    // Also add to applicant_reports
-                    $sqlAppReport = "INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)";
-                    $stmtAppReport = $conn->prepare($sqlAppReport);
-                    $fullReportText = "Revert to Pending - Reason: {$reason}. Description: {$description}";
-                    $stmtAppReport->bind_param("iis", $applicantId, $adminId, $fullReportText);
-                    $stmtAppReport->execute();
-                    $stmtAppReport->close();
-
-                    $conn->commit();
-
-                    // Log activity
-                    if (method_exists($auth, 'logActivity')) {
-                        $auth->logActivity(
-                            $adminId,
-                            'Revert On Hold Applicant',
-                            "Reverted applicant {$fullName} (ID: {$applicantId}) from On Hold to Pending. Reason: {$reason}"
+                        // Insert status report (include business_unit_id)
+                        $fullName = getFullName(
+                            $applicant['first_name'] ?? '',
+                            $applicant['middle_name'] ?? '',
+                            $applicant['last_name'] ?? '',
+                            $applicant['suffix'] ?? ''
                         );
+                        $reportText = "Reverted from On Hold to Pending. Reason: {$reason}. Description: {$description}";
+                        
+                        $sqlReport = "INSERT INTO applicant_status_reports (applicant_id, from_status, to_status, report_text, admin_id) VALUES (?, 'on_hold', 'pending', ?, ?)";
+                        $stmtReport = $conn->prepare($sqlReport);
+                        $stmtReport->bind_param("isi", $applicantId, $reportText, $adminId);
+                        $stmtReport->execute();
+                        $stmtReport->close();
+
+                        // Also add to applicant_reports
+                        $sqlAppReport = "INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)";
+                        $stmtAppReport = $conn->prepare($sqlAppReport);
+                        $fullReportText = "Revert to Pending - Reason: {$reason}. Description: {$description}";
+                        $stmtAppReport->bind_param("iiis", $applicantId, $businessUnitId, $adminId, $fullReportText);
+                        $stmtAppReport->execute();
+                        $stmtAppReport->close();
+
+                        $conn->commit();
+
+                        // Log activity
+                        if (method_exists($auth, 'logActivity')) {
+                            $auth->logActivity(
+                                $adminId,
+                                'Revert On Hold Applicant',
+                                "Reverted applicant {$fullName} (ID: {$applicantId}) from On Hold to Pending. Reason: {$reason}"
+                            );
+                        }
+
+                        setFlashMessage('success', 'Applicant has been reverted to Pending status.');
+                        redirect('on-hold.php');
+                        exit;
+
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        $errors[] = 'Failed to revert applicant: ' . $e->getMessage();
                     }
-
-                    setFlashMessage('success', 'Applicant has been reverted to Pending status.');
-                    redirect('on-hold.php');
-                    exit;
-
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $errors[] = 'Failed to revert applicant: ' . $e->getMessage();
                 }
             }
         }
@@ -156,3 +161,4 @@ if (!empty($errors)) {
 
 redirect('on-hold.php');
 exit;
+
