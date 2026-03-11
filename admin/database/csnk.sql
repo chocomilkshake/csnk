@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 11, 2026 at 07:06 AM
+-- Generation Time: Mar 11, 2026 at 07:37 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -88,7 +88,10 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (822, 12, 'Revert On Hold Applicant (SMC/TR)', 'Reverted applicant Charmaine Rose Dimapilis Jimenez (ID: 29) from On Hold to Pending. Reason: Ready to Work', '::1', '2026-03-11 05:51:56'),
 (823, 12, 'Update Applicant Status', 'Updated status for Lea Catherine Fernandez Rivera → on_process (SMC)', '::1', '2026-03-11 05:58:12'),
 (824, 12, 'Start Replacement', 'Start replacement for Applicant ID 31; Reason: Other', '::1', '2026-03-11 05:58:35'),
-(825, 12, 'Assign Replacement (Turkey/SMC)', 'Assigned Applicant ID 30 as replacement for Original ID 31; original set to On Hold', '::1', '2026-03-11 05:58:38');
+(825, 12, 'Assign Replacement (Turkey/SMC)', 'Assigned Applicant ID 30 as replacement for Original ID 31; original set to On Hold', '::1', '2026-03-11 05:58:38'),
+(826, 5, 'Toggle Branch Status', 'Branch \'CSNK Philippines\' (CSNK-PH) status changed to INACTIVE', '::1', '2026-03-11 06:33:35'),
+(827, 5, 'Toggle Branch Status', 'Branch \'CSNK Philippines\' (CSNK-PH) status changed to ACTIVE', '::1', '2026-03-11 06:33:38'),
+(828, 5, 'Toggle Branch Status', 'Branch \'CSNK Davao\' (CSNK-DAVAO) status changed to INACTIVE', '::1', '2026-03-11 06:33:40');
 
 -- --------------------------------------------------------
 
@@ -928,6 +931,33 @@ INSERT INTO `countries` (`id`, `iso2`, `iso3`, `name`, `default_tz`, `phone_coun
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `csnk_branches`
+--
+
+CREATE TABLE `csnk_branches` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `code` varchar(50) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'ACTIVE',
+  `is_default` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` varchar(100) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
+  `updated_by` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `csnk_branches`
+--
+
+INSERT INTO `csnk_branches` (`id`, `code`, `name`, `status`, `is_default`, `sort_order`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'CSNK-PH', 'CSNK Philippines', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-11 06:33:38', NULL),
+(2, 'CSNK-DAVAO', 'CSNK Davao', 'INACTIVE', 0, 0, '2026-03-11 06:23:08', 'elliadmin', '2026-03-11 06:33:40', 'elliadmin');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `document_types`
 --
 
@@ -1131,6 +1161,16 @@ ALTER TABLE `countries`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `csnk_branches`
+--
+ALTER TABLE `csnk_branches`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `code` (`code`),
+  ADD KEY `idx_csnk_branches_status` (`status`),
+  ADD KEY `idx_csnk_branches_sort` (`sort_order`),
+  ADD KEY `idx_csnk_branches_code` (`code`);
+
+--
 -- Indexes for table `session_logs`
 --
 ALTER TABLE `session_logs`
@@ -1146,7 +1186,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=826;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=829;
 
 --
 -- AUTO_INCREMENT for table `applicant_replacements`
@@ -1189,6 +1229,12 @@ ALTER TABLE `content_items`
 --
 ALTER TABLE `countries`
   MODIFY `id` smallint(5) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `csnk_branches`
+--
+ALTER TABLE `csnk_branches`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
