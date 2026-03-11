@@ -74,6 +74,17 @@ if ($currentPage === 'country_management' && !($isAdmin || $isSuperAdmin)) {
 }
 /* ============================================================================== */
 
+/* ===== RBAC HARD-BLOCK: Branch Management is only for Admin / Super Admin ===== */
+if ($currentPage === 'branch_management' && !($isAdmin || $isSuperAdmin)) {
+    // Block access for employees (CSNK or SMC) and any non-admin roles
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage('error', 'You do not have permission to access Branch Management.');
+    }
+    header('Location: dashboard.php');
+    exit;
+}
+/* ============================================================================== */
+
 /* Allow Activity section for admin/super_admin/employee (restored from old) */
 $canViewActivity = ($isAdmin || $isSuperAdmin || $isEmployee);
 
@@ -878,6 +889,20 @@ if ($canViewReports && $conn instanceof mysqli) {
                         <i class="bi bi-flag"></i>
                         <span class="label">
                             <span class="text fw-semibold">Countries</span>
+                        </span>
+                    </a>
+                <?php endif; ?>
+
+                <!-- Branches (Admins Only - CSNK) -->
+                <?php if ($isAdmin || $isSuperAdmin): ?>
+                    <a href="branch_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'branch_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'branch_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="Branches">
+
+                        <i class="bi bi-diagram-3"></i>
+                        <span class="label">
+                            <span class="text fw-semibold">Branches</span>
                         </span>
                     </a>
                 <?php endif; ?>
