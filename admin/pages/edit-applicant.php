@@ -398,6 +398,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'education_level' => $educationLevel,
             'years_experience' => $yearsExperience,
             'business_unit_id' => $businessUnitId,
+            'branch_id' => isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null,
         ];
 
         $ok = $applicant->update($id, $data);
@@ -894,6 +895,34 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                             <?php endforeach; ?>
                         </select>
                     </label>
+                </div>
+
+                <!-- Branch (only for CSNK) -->
+                <?php
+                // Get branches for CSNK
+                $branches = $applicant->getAllBranches(true);
+                $currentBranchId = isset($applicantData['branch_id']) ? (int) $applicantData['branch_id'] : null;
+                ?>
+                <div class="col-md-4">
+                    <label class="form-label">Branch <small class="text-muted">(CSNK only)</small>
+                        <select class="form-select" name="branch_id" id="branchSelect">
+                            <option value="">Select Branch...</option>
+                            <?php if (!empty($branches)): ?>
+                                <?php foreach ($branches as $branch): ?>
+                                    <?php
+                                    $branchId = (int) $branch['id'];
+                                    $branchName = htmlspecialchars($branch['name'], ENT_QUOTES, 'UTF-8');
+                                    $branchCode = htmlspecialchars($branch['code'], ENT_QUOTES, 'UTF-8');
+                                    $selected = $currentBranchId === $branchId ? 'selected' : '';
+                                    ?>
+                                    <option value="<?= $branchId ?>" <?= $selected ?>>
+                                        <?= $branchName ?> (<?= $branchCode ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </label>
+                    <div class="form-text">Optional. Select a branch for CSNK applicants.</div>
                 </div>
 
                 <div class="col-md-4">
