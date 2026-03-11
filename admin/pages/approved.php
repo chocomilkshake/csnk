@@ -583,7 +583,12 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   border: 1px solid var(--rep-border);
   border-radius: 18px;
   box-shadow: var(--rep-shadow);
-  overflow: hidden;
+  /* overflow: hidden;  Removed to enable scrolling */
+}
+
+.rep-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .rep-header, .rep-footer {
