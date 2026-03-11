@@ -312,7 +312,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                             $currentStatus = (string)($row['status'] ?? 'approved');
                             $fullName = getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']);
 
-                            $viewUrl = 'view-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                            $viewUrl = 'turkey_view-approved.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                             $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
                             // Change Status target links (preserve q)
