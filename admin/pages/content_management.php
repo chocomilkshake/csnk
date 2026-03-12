@@ -395,6 +395,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
                     $messageType = 'danger';
                 }
                 $stmt->close();= $item['id'] ?>">
+                              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                              <div class="mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" name="content_title" value="<?= htmlspecialchars($item['title'] ?? '') ?>">
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="content_description" rows="2"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Replace Image</label>
+                                <input type="file" class="form-control" name="content_image" accept="image/*">
+                                <div class="form-text">Leave empty to keep current image</div>
+                                <?php if (!empty($item['image_path'])): ?>
+                                  <div class="mt-2">
+                                    <img src="<?= getFileUrl($item['image_path']) ?>" class="img-thumbnail" style="max-height: 100px;">
+                                  </div>
+                                <?php endif; ?>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                          </form>
                         </div>
                       </div>
                     </div>
