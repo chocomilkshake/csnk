@@ -410,7 +410,165 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             $stmt->close();
 
             $stmt = $conn->prepare("DELETE FROM content_items WHERE id = ? AND business_unit_id = ?");
-            $stmt->bind_param("ii", $id, $
+            $stmt->bind_param("ii", $id, $activeBUId);
+            if ($stmt->execute()) {
+                if ($item && !empty($item['image_path'])) {
+                    deleteFile($item['image_path']);
+                }
+                $message = 'Content deleted successfully!';
+                $messageType = 'success';
+                $auth->logActivity($_SESSION['admin_id'], 'Delete Content Item', "Deleted content ID: $id");
+            } else {
+                $message = 'Failed to delete content.';
+                $messageType = 'danger';
+            }
+            $stmt->close();
+        }
+    } elseif ($action === 'toggle_content') {
+        $id = (int) ($_POST['content_id'] ?? 0);
+
+        if ($id > 0) {
+            $stmt = $conn->prepare("UPDATE content_items SET is_active = NOT is_active WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
+            if ($stmt->execute()) {
+                $message = 'Content visibility toggled!';
+                $messageType = 'success';
+            } else {
+                $message = 'Failed to toggle content.';
+                $messageType = 'danger';
+            }
+            $stmt->close();
+        }
+    }
+}
+
+// =========================
+// Fetch for display
+// =========================
+$categories = [];
+$contentItems = [];
+$categoryCounts = [];
+
+if (!$showNoBUMessage) {
+    // Categories for current BU
+    $stmt = $conn->prepare("SELECT * FROM content_categories WHERE business_unit_id = ? ORDER BY display_order ASC, id ASC");
+    $stmt->bind_param("i", $activeBUId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $categories[] = $row;
+    }
+    $stmt->close();
+
+    // Content items for current BU
+    $stmt = $conn->prepare("
+        SELECT ci.*, cc.name as category_name 
+        FROM content_items ci 
+        LEFT JOIN content_categories cc ON ci.category_id = cc.id 
+        WHERE ci.business_unit_id = ?
+        ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC
+    ");
+    $stmt->bind_param("i", $activeBUId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $contentItems[] = $row;
+    }
+    $stmt->close();
+
+    // Counts per category
+    foreach ($contentItems as $itm) {
+        $cid = (int)$itm['category_id'];
+        $categoryCounts[$cid] = ($categoryCounts[$cid] ?? 0) + 1;
+    }
+}
+
+// Helper function for scope URLs
+function scopeUrl($path, $agency, $bu) {
+    return $path . '?agency=' . urlencode($agency) . '&bu=' . urlencode($bu);
+}
+?>
+
+<!-- Tailwind (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: { DEFAULT: '#b42a00', dark: '#8d2100', light: '#ffede6' },
+          ink: '#101320',
+          soft: '#f7f9fb'
+        }
+      }
+    }
+  }
+</script>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-0 fw-semibold">Content Management</h4>
+    <?php if (!$showNoBUMessage && isset($businessUnits[$activeBUId])): ?>
+    <small class="text-muted">
+      Agency: <strong><?= strtoupper($activeAgencyCode) ?></strong> | 
+      Country: <strong><?= htmlspecialchars($businessUnits[$activeBUId]['country_name'] ?? '') ?></strong> - 
+      <?= htmlspecialchars($businessUnits[$activeBUId]['name'] ?? '') ?>
+    </small>
+    <?php endif; ?>
+  </div>s country_name
+        FROM business_units bu
+        LEFT JOIN countries c ON c.id = bu.country_id
+        WHERE bu.agency_id = ? AND bu.active = 1
+        ORDER BY c.name, bu.name
+      ");
+      $buStmt->bind_param("i", $agencyId);
+      $buStmt->execute();
+      $buRes = $buStmt->get_result();
+      $buData = [];
+      while ($buRow = $buRes->fetch_assoc()) {
+        $buData[] = $buRow;
+      }
+      $buStmt->close();
+    ?>
+    <?= (int)$agencyId ?>: <?= json_encode(array_values($buData)) ?>,
+    <?php endforeach; ?>
+  };
+
+  // When agency changes, update the BU dropdown (user must click Filter manually)
+  agencySelect?.addEventListener('change', function() {
+    const agencyId = this.value;
+    const bus = businessUnitsByAgency[agencyId] || [];
+    
+    // Clear existing options
+    buSelect.innerHTML = '';
+    
+    if (bus.length > 0) {
+      // Add new options
+      bus.forEach(function(bu) {
+        const option = document.createElement('option');
+        option.value = bu.id;
+        option.textContent = (bu.country_name || '') + ' - ' + bu.name;
+        buSelect.appendChild(option);
+      });
+      // Note: Don't auto-submit - let user select BU first, then click Filter
+    } else {
+      // No BUs for this agency
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No Business Units available';
+      buSelect.appendChild(option);
+    }
+  });
+})();
+</script>
+
+<?php if (!empty($message)): ?>
+  <div class="alert alert-<?= $messageType ?> alert-dismissible fade show" role="alert">
+    <?= htmlspecialchars($message) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<?php endif; ?>
+
 <?php if ($showNoBUMessage): ?>
   <div class="alert alert-warning">
     <i class="bi bi-exclamation-triangle me-2"></i>
@@ -418,7 +576,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
     Please add a Business Unit first in Country Management.
   </div>
 <?php else: ?>
->
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="p-3 rounded-3" style="background:#ffede6"><i class="bi bi-folder2-open fs-4 text-danger"></i></div>
+        <div>
+          <div class="text-muted small">Categories</div>
+          <div class="h5 mb-0"><?= count($categories) ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="p-3 rounded-3" style="background:#e8f5e9"><i class="bi bi-images fs-4 text-success"></i></div>
+        <div>
+          <div class="text-muted small">Images</div>
+          <div class="h5 mb-0"><?= count($contentItems) ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="contentTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button class="nav-link active" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
       <i class="bi bi-folder me-2"></i>Categories
