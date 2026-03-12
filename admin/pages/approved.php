@@ -615,6 +615,34 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   --rep-primary-500: #2563eb;
   --rep-focus: rgba(29, 78, 216, 0.25);
 }
+
+.rep-modal .modal-content.rep-surface {
+  background: var(--rep-surface);
+  border: 1px solid var(--rep-border);
+  border-radius: 18px;
+}
+
+.rep-close { opacity: .85; }
+.rep-close:hover { opacity: 1; }
+
+.rep-btn-primary {
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  box-shadow: 0 10px 22px rgba(185, 28, 28, 0.18);
+}
+
+.rep-btn-secondary {
+  border-radius: .9rem;
+  padding: .7rem 1.1rem;
+  font-size: 1.05rem;
+  border-color: var(--rep-border);
+  color: var(--rep-text);
+  background: #fff;
+}
+.rep-btn-secondary:hover {
+  border-color: var(--rep-primary);
+  color: var(--rep-primary);
 }
 
 .rep-info {
