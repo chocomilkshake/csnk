@@ -624,6 +624,29 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   /* overflow: hidden;  Removed to enable scrolling */
 }
 
+.rep-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.rep-header, .rep-footer {
+  background: #fff;
+  padding: 1rem 1.25rem;
+  border-color: var(--rep-border) !important;
+}
+
+.rep-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center;
+  color: var(--rep-primary);
+  background: var(--rep-soft);
+  border: 1px solid var(--rep-border);
+  font-size: 1.15rem;
+}
+
+.rep-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--rep-border);
   border-radius: 14px;
   background: #fff;
 }
