@@ -620,6 +620,29 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   background: var(--rep-surface);
   border: 1px solid var(--rep-border);
   border-radius: 18px;
+  box-shadow: var(--rep-shadow);
+  /* overflow: hidden;  Removed to enable scrolling */
+}
+
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rep-input,
+.rep-input.form-control,
+.rep-input.form-select {
+  background: #fff;
+  border: 1px solid var(--rep-border);
+  border-radius: .9rem;
+  min-height: 48px;
+  font-size: 1.05rem;
+  color: var(--rep-text);
+}
+
+.rep-input:focus {
+  border-color: var(--rep-primary);
+  box-shadow: 0 0 0 .2rem var(--rep-focus);
+  outline: none;
 }
 
 .rep-close { opacity: .85; }
