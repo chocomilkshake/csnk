@@ -795,4 +795,27 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
       suggestEl.innerHTML = '';
       updateCounter();
 
+      // Focus first field after short delay
+      setTimeout(() => reasonSel?.focus(), 120);
+    });
+
+    // Counter and fi
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.Replacements) {
+        Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
+      }
+    });
+  })();
+
+  // Dropdown popper fix for Change Status buttons
+  document.addEventListener('DOMContentLoaded', function() {
+      var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+      btns.forEach(function(btn) {
+          if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+              new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+          }
+      });
+  });
+</script>
+
 <?php require_once '../includes/footer.php'; ?>
