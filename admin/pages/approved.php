@@ -616,7 +616,31 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   --rep-focus: rgba(29, 78, 216, 0.25);
 }
 }
-ariant-numeric: tabular-nums; }
+
+.rep-info {
+  border: 1px solid var(--rep-border);
+  background: #f0f9ff;
+  color: #0c4a6e;
+}
+
+.rep-counter {
+  border: 1px solid var(--rep-border);
+  font-size: .95rem;
+}
+
+/* Files list */
+.rep-files .rep-file {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; padding: .6rem .75rem; border: 1px solid var(--rep-border);
+  border-radius: .7rem; background: #fff; margin-bottom: .5rem;
+  font-size: .975rem;
+}
+.rep-files .rep-file.bad {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+.rep-files .rep-file .meta { color: var(--rep-muted); }
+.rep-files .rep-file .size { color: var(--rep-muted); font-variant-numeric: tabular-nums; }
 </style>
 
 <!-- ===== Scripts for Replace Modal binding & CSRF exposure ===== -->
