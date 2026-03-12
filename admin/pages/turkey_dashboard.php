@@ -26,8 +26,27 @@ $role = isset($currentUser['role']) ? (string) $currentUser['role'] : 'employee'
 $isSuperAdmin = ($role === 'super_admin');
 $isAdmin = ($role === 'admin');
 $canSeeAdminUX = ($isAdmin || $isSuperAdmin);
+$canSwitchAgency = $isSuperAdmin || $isAdmin;
 
 $conn = $database->getConnection();
+
+
+if (isset($_GET['switch_agency']) && $canSwitchAgency) {
+  $switchTo = strtolower($_GET['switch_agency']);
+  if (in_array($switchTo, ['csnk', 'smc'])) {
+    $_SESSION['current_agency_view'] = $switchTo;
+    $currentAgencyView = $switchTo;
+  }
+  // Remove the switch param from URL and redirect
+  $redirectUrl = strtok($_SERVER['REQUEST_URI'], '?');
+  $params = $_GET;
+  unset($params['switch_agency']);
+  if (!empty($params)) {
+    $redirectUrl .= '?' . http_build_query($params);
+  }
+  header('Location: ' . $redirectUrl);
+  exit;
+}
 
 // Get SMC business unit IDs
 $smcBuIds = [];
@@ -206,6 +225,52 @@ require_once $ADMIN_ROOT . '/includes/header.php';
     opacity: .85;
   }
 
+    /* Agency Switcher Styles */
+  .agency-switcher {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+    .agency-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* CSNK Button - Red Theme */
+  .agency-btn-csnk {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+  }
+
+  /* SMC Button - Navy Blue with Yellow Text */
+  .agency-btn-smc {
+    background: #4d286c;
+    color: #FFD84D;
+  }
+
+  .agency-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .agency-btn.active {
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  }
+
+  .agency-btn:not(.active) {
+    opacity: 0.7;
+  }
+
   .stat-card .icon-faint {
     color: #d4af37;
     opacity: .9;
@@ -249,6 +314,26 @@ require_once $ADMIN_ROOT . '/includes/header.php';
     border: 1px solid rgba(220, 53, 69, .18) !important;
   }
 </style>
+
+<?php if ($canSwitchAgency): ?>
+<div class="agency-switcher">
+  <a href="./dashboard.php" class="agency-btn agency-btn-csnk <?php echo ($currentAgencyView === 'csnk') ? 'active' : ''; ?>">
+    <i class="bi bi-building"></i> CSNK Dashboard
+  </a>
+  <a href="./turkey_dashboard.php" class="agency-btn agency-btn-smc <?php echo ($currentAgencyView === 'smc') ? 'active' : ''; ?>">
+    <i class="bi bi-globe"></i> SMC Dashboard
+  </a>
+</div>
+<?php endif; ?>
+
+<!-- ======= STATS GRID (CSNK or SMC based on view) ======= -->
+<?php 
+// Determine which data to display
+$displayStats = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcStats : $stats;
+$displayRecentApplicants = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcRecentApplicants : $recentApplicants;
+$displayAdminCount = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcAdminCount : $adminCount;
+$dashboardLabel = ($currentAgencyView === 'smc' && $canSwitchAgency) ? 'SMC' : 'CSNK';
+?>
 
 <!-- ======= STATS GRID (SMC counts only) ======= -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
