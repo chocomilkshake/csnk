@@ -617,6 +617,37 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
 }
     }
 
+    function updateCounter() {
+      const max = parseInt(noteTA.getAttribute('maxlength') || '1000', 10);
+      const len = noteTA.value.length;
+      counterEl.textContent = `${len}/${max}`;
+      counterEl.classList.toggle('text-danger', len < 5);
+    }
+
+    function renderFiles() {
+      filesList.innerHTML = '';
+      let anyTooBig = false;
+
+      if (!filesIn.files || filesIn.files.length === 0) {
+        warnEl.classList.add('d-none');
+        return;
+      }
+
+      Array.from(filesIn.files).forEach((file) => {
+        const tooBig = file.size > MAX_FILE_BYTES;
+        anyTooBig = anyTooBig || tooBig;
+
+        const row = document.createElement('div');
+        row.className = 'rep-file' + (tooBig ? ' bad' : '');
+        row.innerHTML = `
+          <div class="meta">
+            <i class="bi bi-paperclip me-1"></i>
+            <strong>${file.name}</strong>
+          </div>
+          <div class="size">${fmtSize(file.size)}${tooBig ? ' • too large' : ''}</div>
+        `;
+        filesList.appendChild(row);
+      });
 
       warnEl.classList.toggle('d-none', !anyTooBig);
     }
