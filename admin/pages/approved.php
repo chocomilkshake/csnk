@@ -512,7 +512,41 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
           <div class="row g-4">
             <!-- Reason -->
             <div class="col-12 col-md-5">
-              <label class="form-la
+              <label class="form-label fw-semibold" for="rep-reason">Reason <span class="text-danger">*</span></label>
+              <select name="reason" id="rep-reason" class="form-select form-select-lg rep-input" required aria-describedby="rep-reason-help">
+                <option value="" selected disabled>Select a reason</option>
+
+                <!-- Attendance / Conduct -->
+                <option value="AWOL">AWOL</option>
+                <option value="Habitual Absences">Habitual Absences</option>
+                <option value="Violation of Company Policies">Violation of Company Policies</option>
+
+                <!-- Client-Related -->
+                <option value="Client Left">Client Left</option>
+                <option value="Client Requesteeason details, date of incident, client remarks)."
+                        aria-describedby="rep-note-help"></textarea>
+              <div id="rep-note-help" class="form-text" style="font-size:.95rem;">Minimum 5 characters. This will be saved to the report log.</div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="rep-files">Attachments (optional)</label>
+              <input type="file" name="attachments[]" id="rep-files" class="form-control rep-input" multiple aria-describedby="rep-files-help">
+              <div id="rep-files-help" class="form-text" style="font-size:.95rem;">You can upload images/documents/videos. <strong>Max 200MB per file.</strong></div>
+
+              <!-- File preview list -->
+              <div id="rep-files-list" class="rep-files mt-2"></div>
+              <div id="rep-files-warning" class="alert alert-warning mt-3 d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                One or more files exceed the 200MB limit. Please remove the highlighted files.
+              </div>
+            </div>
+          </div>
+
+          <!-- Info -->
+</div>
+
+<!-- ===== Replace Modal Styles (Light-only, Senior-friendly) ===== -->
 <style>
 :root {
   --rep-surface: #ffffff;
