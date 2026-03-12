@@ -334,7 +334,31 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
     <div class="modal-content rep-surface">
       <form id="replaceInitForm" enctype="multipart/form-data" novalidate>
         <!-- Header -->
-        <div class="modal-header rep-
+        <div class="modal-header rep-header border-0">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rep-icon" aria-hidden="true">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="repModalTitle">Replace Approved Applicant</h5>
+              <p class="text-muted mb-0" style="font-size: .975rem;">Start a replacement and get suggested candidates.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close rep-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+          <!-- Hidden fields -->
+          <input type="hidden" name="original_applicant_id" id="replaceOriginalId" value="">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+
+          <!-- Applicant summary -->
+          <section class="rep-card mb-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+              <div class="text-muted">Replacing:</div>
+              <div class="fw-semibold fs-5" id="replaceApplicantName">Applicant Name</div>
+            </div>
           </section>
 
           <!-- Form fields -->
