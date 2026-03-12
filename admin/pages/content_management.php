@@ -406,7 +406,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
                           </form>
-                          <form method="POST" class="d-inline"
+                          <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure? This will also delete all images in this category.');">
+                            <input type="hidden" name="action" value="delete_category">
+                            <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                            <button type="submit" class="btn btn-outline-danger" title="Delete">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Edit Category Modal -->
+                    <div class="modal fade" id="editCategoryModal<?= $cat['id'] ?>" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Edit Category</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <form method="POST">
+                            <div class="modal-body">
+                              <input type="hidden" name="action" value="update_category">
+                              <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                              <div class="mb-3">
+                                <label class="form-label">Category Name</label>
+                                <input type="text" class="form-control" name="category_name" value="<?= htmlspecialchars($cat['name']) ?>" required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Description</label>
                                 <textarea class="form-control" name="category_description" rows="2"><?= htmlspecialchars($cat['description'] ?? '') ?></textarea>
                               </div>
                             </div>
