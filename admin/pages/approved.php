@@ -799,7 +799,28 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
       setTimeout(() => reasonSel?.focus(), 120);
     });
 
-    // Counter and fi
+    // Counter and file preview
+    noteTA.addEventListener('input', updateCounter);
+    filesIn.addEventListener('change', renderFiles);
+
+    // === NEW: Reason -> Report/Note auto-prefix (like On-Process modal) ===
+    reasonSel.addEventListener('change', function () {
+      const reason = (reasonSel.value || '').trim();
+      if (!reason || reason.toLowerCase() === 'other') return;
+      const text = (noteTA.value || '').trim();
+
+      if (!text) {
+        noteTA.value = reason + ': ';
+      } else if (text.toLowerCase().indexOf(reason.toLowerCase()) !== 0) {
+        noteTA.value = reason + ': ' + text;
+      }
+      updateCounter();
+      noteTA.focus();
+      const len = noteTA.value.length;
+      if (noteTA.setSelectionRange) noteTA.setSelectionRange(len, len);
+    });
+
+    // Bind replacements helper (handles submission and suggestions)
     document.addEventListener('DOMContentLoaded', function() {
       if (window.Replacements) {
         Replacements.bindInit('#replaceInitForm', '#replacementCandidates');
