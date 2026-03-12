@@ -401,7 +401,34 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
                             </td>
                             <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars(renderP
+                            <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="actions-cell">
+                                <div class="btn-group dd-modern dropup">
+                                    <!-- View -->
+                                    <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="btn btn-sm btn-info" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                                <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'pending' ? '#' : htmlspecialchars($toPendingUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-hourglass-split text-warning"></i>
+                                                    <span>Pending</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-arrow-repeat text-info"></i>
+                                                    <span>On-Process</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
+                                                   href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-check2-circle text-success"></i>
+                                                    <span>Approved</span>
                                                 </a>
                                             </li>
                                         </ul>
