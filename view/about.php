@@ -456,9 +456,73 @@ if (!$conn) {
       overflow-y: hidden;
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
       scrollbar-width: thin;
       scrollbar-color: #ccc #f5f5f5;
       padding-bottom: 10px;
+      position: relative;
+    }
+
+    /* Swipe indicators (mobile/tablet only) */
+    .gallery-swipe-indicators {
+      display: none;
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 4px;
+      z-index: 10;
+    }
+
+    @media (max-width: 991px) {
+      .gallery-swipe-indicators {
+        display: flex;
+      }
+    }
+
+    .swipe-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .swipe-dot.active {
+      background: #dc3545;
+      box-shadow: 0 0 4px rgba(220, 53, 69, 0.8);
+    }
+
+    /* Touch feedback arrows */
+    .swipe-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .gallery-scroll-container.swiping .swipe-arrow {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    @media (hover: hover) {
+      .swipe-arrow {
+        display: none;
+      }
     }
 
     .gallery-scroll-container::-webkit-scrollbar {
@@ -1028,7 +1092,10 @@ if (!$conn) {
 
       <!-- Thumbnails Grid (CMS-driven) with row limiter -->
       <div class="gallery-wrapper">
-        <div id="galleryScrollContainer" class="gallery-scroll-container">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
           <div id="galleryGrid" class="gallery-grid">
             <?php if (!empty($contentItems)): ?>
               <?php foreach ($contentItems as $item):
@@ -1151,8 +1218,8 @@ if (!$conn) {
 
       const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
 
-      // Configuration: Max rows to show (2 rows)
-      const MAX_VISIBLE_ROWS = 2;
+      // Configuration: Max rows to show (4 rows - shows rest of pictures)
+      const MAX_VISIBLE_ROWS = 4;
       const COLS_DESKTOP = 4;
       const COLS_TABLET = 3;
       const COLS_MOBILE = 2;
@@ -1256,6 +1323,59 @@ if (!$conn) {
 
       // Initial setup
       updateGallery();
+
+      // Enhanced swipe logic (preserves existing)
+      if (scrollContainer.dataset.indicators === 'true') {
+        const indicators = document.getElementById('swipeIndicators');
+        const leftBtn = document.getElementById('swipeLeft');
+        const rightBtn = document.getElementById('swipeRight');
+
+        function updateIndicators() {
+          const scrollLeft = scrollContainer.scrollLeft;
+          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
+          const index = Math.round(progress * (tiles.length - 1)) || 0;
+
+          // Dots
+          indicators.innerHTML = '';
+          for (let i = 0; i < Math.min(5, tiles.length); i++) {
+            const dot = document.createElement('div');
+            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
+            dot.addEventListener('click', () => {
+              const tileWidth = tiles[i]?.offsetWidth || 0;
+              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
+            });
+            indicators.appendChild(dot);
+          }
+        }
+
+        // Scroll events
+        let scrollTimeout;
+        scrollContainer.addEventListener('scroll', () => {
+          scrollContainer.classList.add('swiping');
+          updateIndicators();
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            scrollContainer.classList.remove('swiping');
+          }, 1500);
+        }, { passive: true });
+
+        // Arrow buttons (touch only)
+        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+
+        // Snap to tile edges on scroll end
+        scrollContainer.addEventListener('scrollend', () => {
+          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
+          const scrollLeft = scrollContainer.scrollLeft;
+          const closest = tilesInView.reduce((prev, curr) =>
+            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
+          );
+          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
+        });
+
+        updateIndicators();
+      }
 
       // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
       // Create modal HTML once
