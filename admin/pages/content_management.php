@@ -403,6 +403,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
   </div>
 
   <!-- Content Tab -->
+  <div class="tab-pane fade" id="content" role="tabpanel">
+    <div class="row">
+
+      <!-- Bulk Uploader -->
+      <div class="col-lg-5 mb-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Add Images (Bulk)</h5>
+            <span class="badge rounded-pill text-bg-light">Drag &amp; drop</span>
+          </div>
+
+          <div class="card-body">
+            <form id="bulkForm" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+              <input type="hidden" name="action" value="add_content_bulk">
+              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+
+              <div class="mb-3">
+                <label class="form-label">Category <span class="text-danger">*</span></label>
+                <select class="form-select" name="category_id" id="bulkCategory" required>
+                  <option value="">Select Category</option>
+                  <?php foreach ($categories as $cat): ?>
+                    <?php if (!empty($cat['is_active'])): ?>
+                      <option value="<?= $cat['id'] ?>">
+                        <?= htmlspecialchars($cat['name']) ?>
+                        <?= isset($categoryCounts[$cat['id']]) ? ' ('.$categoryCounts[$cat['id']].')' : '' ?>
+                      </option>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div class="mb-3">
                 <label class="form-label">Description (applies to all)</label>
                 <textarea class="form-control" name="content_description" id="bulkDesc" rows="2" placeholder="Optional description for all uploads"></textarea>
               </div>
