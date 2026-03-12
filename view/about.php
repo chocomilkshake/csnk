@@ -664,18 +664,21 @@ if (!$conn) {
     }
 
     /* ====================== */
-    /* FINAL CTA (Hire Now!)  */
+    /* FINAL CTA: Hire Now!   */
     /* ====================== */
+
     .cta-hire {
       background:
         radial-gradient(800px 260px at 8% 5%, rgba(255, 170, 120, .18), rgba(255, 170, 120, 0) 60%),
         radial-gradient(1000px 320px at 92% 110%, rgba(12, 32, 76, .08), rgba(12, 32, 76, 0) 60%),
         linear-gradient(180deg, #ffffff 0%, #fbfcff 60%, #f7f9fc 100%);
-      border-radius: 1.25rem;
+
+      border-radius: 20px;
       padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3.5vw, 2rem);
+
       box-shadow:
-        0 20px 40px rgba(13, 29, 54, 0.06),
-        0 1px 0 rgba(255, 255, 255, 0.6) inset;
+        0 20px 40px rgba(13, 29, 54, .06),
+        0 1px 0 rgba(255, 255, 255, .6) inset;
     }
 
     .cta-row {

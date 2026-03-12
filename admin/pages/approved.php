@@ -134,6 +134,26 @@ if (isset($_GET['action'], $_GET['id'], $_GET['to']) && $_GET['action'] === 'upd
 
     if (in_array($to, ALLOWED_STATUSES, true)) {
         $updated = false;
+        // capture previous status & business unit for logging
+        $fromStatus = '';
+        $businessUnitId = null;
+        if (isset($database) && method_exists($database, 'getConnection')) {
+            $conn2 = $database->getConnection();
+            if ($conn2 instanceof mysqli) {
+                $stmtChk = $conn2->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
+                if ($stmtChk) {
+                    $stmtChk->bind_param('i', $id);
+                    $stmtChk->execute();
+                    $resChk = $stmtChk->get_result();
+                    if ($resChk && ($rowChk = $resChk->fetch_assoc())) {
+                        $fromStatus = $rowChk['status'];
+                        $businessUnitId = $rowChk['business_unit_id'];
+                    }
+                    $stmtChk->close();
+                }
+            }
+        }
+
         if (method_exists($applicant, 'updateStatus')) {
             $updated = (bool) $applicant->updateStatus($id, $to);
         } elseif (method_exists($applicant, 'update')) {
@@ -170,6 +190,24 @@ if (isset($_GET['action'], $_GET['id'], $_GET['to']) && $_GET['action'] === 'upd
             }
             $label = $fullName ?: "ID {$id}";
             $auth->logActivity((int)$_SESSION['admin_id'], 'Update Applicant Status', "Updated status for {$label} → {$to} (CSNK)");
+        }
+        
+        // insert status report if change actually occurred
+        if ($updated && $fromStatus !== '' && $fromStatus !== $to) {
+            $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+            $reportText = "Status changed from " . ucfirst(str_replace('_', ' ', $fromStatus))
+                        . " to " . ucfirst(str_replace('_', ' ', $to));
+            $buIdForReport = $businessUnitId !== null ? $businessUnitId : 1;
+            if (isset($database) && method_exists($database, 'getConnection')) {
+                $conn2 = $database->getConnection();
+                if ($conn2 instanceof mysqli) {
+                    if ($stmtR = $conn2->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)") ) {
+                        $stmtR->bind_param('iisssi', $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
+                        $stmtR->execute();
+                        $stmtR->close();
+                    }
+                }
+            }
         }
     } else {
         if (function_exists('setFlashMessage')) setFlashMessage('error', 'Invalid status selected.');
