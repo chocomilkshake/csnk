@@ -12,7 +12,8 @@ $BASE = '/csnk';
 /**
  * Build absolute URL for assets (css, js, images)
  */
-function asset(string $path): string {
+function asset(string $path): string
+{
   global $BASE;
   $path = '/' . ltrim($path, '/');
   return rtrim($BASE, '/') . $path;
@@ -21,7 +22,8 @@ function asset(string $path): string {
 /**
  * Get database connection using config
  */
-function getDbConnection() {
+function getDbConnection()
+{
   // Defaults
   $dbHost = 'localhost';
   $dbUser = 'root';
@@ -32,10 +34,14 @@ function getDbConnection() {
   $configFile = __DIR__ . '/admin/includes/config.php';
   if (file_exists($configFile)) {
     include $configFile;
-    if (defined('DB_HOST')) $dbHost = DB_HOST;
-    if (defined('DB_USER')) $dbUser = DB_USER;
-    if (defined('DB_PASS')) $dbPass = DB_PASS;
-    if (defined('DB_NAME')) $dbName = DB_NAME;
+    if (defined('DB_HOST'))
+      $dbHost = DB_HOST;
+    if (defined('DB_USER'))
+      $dbUser = DB_USER;
+    if (defined('DB_PASS'))
+      $dbPass = DB_PASS;
+    if (defined('DB_NAME'))
+      $dbName = DB_NAME;
   }
 
   $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
@@ -48,13 +54,15 @@ function getDbConnection() {
 /**
  * Helper: slugify label for safe filtering (EXACT match)
  */
-function slugify(string $text): string {
+function slugify(string $text): string
+{
   $text = trim($text);
   $text = mb_strtolower($text, 'UTF-8');
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   if (function_exists('iconv')) {
     $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
-    if ($trans !== false) $text = $trans;
+    if ($trans !== false)
+      $text = $trans;
   }
   $text = preg_replace('~[^-\w]+~', '', $text);
   $text = trim($text, '-');
@@ -66,9 +74,11 @@ function slugify(string $text): string {
  * Helper: build content image URL (uploaded via admin)
  * Your admin uploads are under: /csnk/admin/uploads/<path>
  */
-function getContentImageUrl($path) {
+function getContentImageUrl($path)
+{
   global $BASE;
-  if (empty($path)) return '';
+  if (empty($path))
+    return '';
   $base = rtrim($BASE, '/');
   return $base . '/admin/uploads/' . ltrim($path, '/');
 }
@@ -140,263 +150,835 @@ if (!$conn) {
   <!-- ===================== -->
 
   <style>
-    /* ====================== */
-    /* Modern Training Gallery */
-    /* ====================== */
-
-    .training-gallery{
-      background:linear-gradient(180deg,#ffffff,#f8fafc);
+    /* ---------- Base / utilities applicable to this page ---------- */
+    img,
+    svg {
+      max-width: 100%;
+      height: auto;
     }
 
-    /* FILTER BUTTONS */
-
-    #galleryFilters{
-      gap:.5rem;
+    /* ---------- HERO SECTION ---------- */
+    .hero-section {
+      background-color: #f8f9fb;
+      position: relative;
+      isolation: isolate;
+      padding: clamp(2rem, 6vw, 5rem) 0;
     }
 
-    #galleryFilters .btn{
-      border-radius:999px;
-      font-weight:600;
-      padding:.45rem 1rem;
-      font-size:.9rem;
-      transition:all .2s ease;
+    .hero-grid,
+    .hero-gradient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
 
-    #galleryFilters .btn:hover{
-      transform:translateY(-1px);
+    .hero-grid {
+      opacity: .22;
+      background-image:
+        linear-gradient(to right, rgba(0, 0, 0, .06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, .06) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, 0) 100%);
     }
 
-    #galleryFilters .btn.active{
-      background:#b42a00;
-      border-color:#b42a00;
-      color:#fff;
-      box-shadow:0 6px 14px rgba(180,42,0,.25);
+    .hero-gradient {
+      background:
+        radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
+        radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17, 17, 17, 0) 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .25) 60%, rgba(255, 84, 84, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 10%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
     }
 
-    /* GRID */
-
-    .gallery-grid{
-      display:grid;
-      gap:16px;
-      grid-template-columns:repeat(2,1fr);
-      margin-top:20px;
+    .hero-section .container {
+      position: relative;
+      z-index: 1;
     }
 
-    @media(min-width:576px){
-      .gallery-grid{
-        grid-template-columns:repeat(3,1fr);
+    @media (min-width: 992px) {
+      .hero-section .display-4 {
+        font-size: 3rem;
+        line-height: 1.1;
       }
     }
 
-    @media(min-width:992px){
-      .gallery-grid{
-        grid-template-columns:repeat(4,1fr);
+    .fade-swap {
+      transition: opacity .22s ease, transform .22s ease;
+    }
+
+    .is-swapping {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    /* ---------- PILL BAR ---------- */
+    .hero-pills-abs-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #heroPills {
+      display: inline-flex;
+      width: max-content;
+      max-width: 100%;
+      gap: .5rem;
+      align-items: center;
+      padding: .5rem .6rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, .08);
+      overflow: visible;
+      flex-wrap: nowrap;
+      scroll-snap-type: x proximity;
+      background: #fff;
+    }
+
+    #heroPills .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
+    .hero-section .btn-light.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* ===== ENHANCED HERO IMAGE STYLES ===== */
+    .hero-image-container {
+      position: relative;
+      width: clamp(280px, 42vw, 540px);
+      padding: 20px;
+    }
+
+    /* Floating decorative shapes */
+    .hero-float-shape {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-float-shape-1 {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+      top: -10px;
+      right: 5%;
+      opacity: 0.7;
+      animation: floatPulse 4s ease-in-out infinite;
+    }
+
+    .hero-float-shape-2 {
+      width: 35px;
+      height: 35px;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      bottom: 15%;
+      left: -5%;
+      opacity: 0.6;
+      animation: floatPulse 5s ease-in-out infinite 0.5s;
+    }
+
+    .hero-float-shape-3 {
+      width: 25px;
+      height: 25px;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      top: 30%;
+      right: -8%;
+      opacity: 0.8;
+      animation: floatPulse 6s ease-in-out infinite 1s;
+    }
+
+    @keyframes floatPulse {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-12px) scale(1.05);
       }
     }
 
-    /* TILE CARD */
-
-    .gallery-tile{
-      position:relative;
-      border:0;
-      padding:0;
-      overflow:hidden;
-      border-radius:16px;
-      background:#fff;
-      cursor:pointer;
-
+    /* Layered frame effect */
+    .hero-frame {
+      position: relative;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+      padding: 8px;
       box-shadow:
-      0 4px 12px rgba(0,0,0,.05),
-      0 1px 0 rgba(255,255,255,.6) inset;
-
-      transition:
-      transform .25s ease,
-      box-shadow .25s ease;
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    /* IMAGE */
-
-    .gallery-tile img{
-      width:100%;
-      height:100%;
-      aspect-ratio:1/1;
-      object-fit:cover;
-
-      transition:transform .5s ease;
+    .hero-frame::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #ff6b6b, #ffa500, #4ecdc4, #a8edea);
+      z-index: -1;
+      opacity: 0.5;
+      filter: blur(8px);
     }
 
-    /* HOVER EFFECT */
-
-    .gallery-tile:hover{
-      transform:translateY(-6px);
-      box-shadow:
-      0 16px 30px rgba(0,0,0,.12);
+    .hero-image-wrap {
+      background: transparent;
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     }
 
-    .gallery-tile:hover img{
-      transform:scale(1.08);
+    .hero-image-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      transition: transform 0.5s ease;
     }
 
-    /* OVERLAY */
-
-    .gallery-overlay{
-      position:absolute;
-      inset:0;
-
-      background:linear-gradient(
-        to top,
-        rgba(0,0,0,.55),
-        rgba(0,0,0,.2),
-        rgba(0,0,0,0)
-      );
-
-      display:flex;
-      align-items:flex-end;
-      padding:12px;
-
-      opacity:0;
-      transition:opacity .25s ease;
+    /* Entrance animation */
+    .hero-image-wrap {
+      animation: heroImgEntrance 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
     }
 
-    .gallery-tile:hover .gallery-overlay{
-      opacity:1;
+    @keyframes heroImgEntrance {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    /* TITLE */
-
-    .gallery-title{
-      color:#fff;
-      font-weight:600;
-      font-size:.85rem;
+    .hero-image-wrap:hover img {
+      transform: scale(1.03);
     }
 
-    /* CATEGORY BADGE */
-
-    .gallery-badge{
-      position:absolute;
-      top:10px;
-      left:10px;
-
-      background:#b42a00;
-      color:#fff;
-
-      font-size:.65rem;
-      font-weight:700;
-
-      padding:.25rem .55rem;
-      border-radius:999px;
-
-      letter-spacing:.03em;
+    /* Corner accent */
+    .hero-corner-accent {
+      position: absolute;
+      bottom: -5px;
+      right: -5px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+      border-radius: 0 0 14px 0;
+      z-index: 2;
     }
 
-    /* MOBILE TAP EFFECT */
+    .hero-corner-accent::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-radius: 50%;
+    }
 
-    @media(max-width:768px){
-
-      .gallery-overlay{
-        opacity:1;
-        background:linear-gradient(
-          to top,
-          rgba(0,0,0,.6),
-          rgba(0,0,0,.2),
-          rgba(0,0,0,0)
-        );
+    @media (max-width: 575.98px) {
+      .hero-section {
+        overflow: visible !important;
       }
 
+      .hero-title-wrap .display-4 {
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+
+      .hero-lead-wrap .lead {
+        font-size: 1rem;
+      }
+
+      .hero-pills-abs-wrapper {
+        margin-bottom: .5rem;
+      }
+
+      .hero-pills-spacer {
+        height: 0;
+      }
+
+      .hero-image-container {
+        width: min(85vw, 420px);
+        padding: 15px;
+      }
+
+      .hero-float-shape-1 {
+        width: 45px;
+        height: 45px;
+      }
+
+      .hero-float-shape-2 {
+        width: 28px;
+        height: 28px;
+      }
+
+      .hero-float-shape-3 {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .hero-image-container {
+        margin: 0 auto !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .hero-float-shape,
+      .hero-image-wrap {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+    /* ====================== */
+    /* Gallery with Category  */
+    /* ====================== */
+    .gallery-wrapper {
+      position: relative;
+    }
+
+    .gallery-scroll-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f5f5;
+      padding-bottom: 10px;
+      position: relative;
+    }
+
+    /* Swipe indicators (mobile/tablet only) */
+    .gallery-swipe-indicators {
+      display: none;
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 4px;
+      z-index: 10;
+    }
+
+    @media (max-width: 991px) {
+      .gallery-swipe-indicators {
+        display: flex;
+      }
+    }
+
+    .swipe-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .swipe-dot.active {
+      background: #dc3545;
+      box-shadow: 0 0 4px rgba(220, 53, 69, 0.8);
+    }
+
+    /* Touch feedback arrows */
+    .swipe-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .gallery-scroll-container.swiping .swipe-arrow {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    @media (hover: hover) {
+      .swipe-arrow {
+        display: none;
+      }
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-track {
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+    .gallery-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      padding: 4px;
+    }
+
+    @media (min-width: 992px) {
+      .gallery-grid {
+        flex-wrap: wrap;
+      }
+    }
+
+    .gallery-tile {
+      flex: 0 0 auto;
+      width: calc(50% - 8px);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    @media (min-width: 576px) {
+      .gallery-tile {
+        width: calc(33.333% - 11px);
+      }
+    }
+
+    @media (min-width: 992px) {
+      .gallery-tile {
+        width: calc(25% - 12px);
+        flex: none;
+      }
+    }
+
+    .gallery-tile img {
+      display: block;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .gallery-tile:hover img {
+      transform: scale(1.1);
+    }
+
+    /* Overlay with title */
+    .gallery-tile-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .gallery-tile:hover .gallery-tile-overlay {
+      opacity: 1;
+    }
+
+    .gallery-tile-title {
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0;
+      transform: translateY(10px);
+      transition: transform 0.3s ease;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .gallery-tile:hover .gallery-tile-title {
+      transform: translateY(0);
+    }
+
+    .gallery-tile[hidden] {
+      display: none !important;
+    }
+
+    /* View more indicator */
+    .gallery-view-more {
+      flex: 0 0 auto;
+      width: calc(50% - 8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 180px;
+    }
+
+    @media (min-width: 576px) {
+      .gallery-view-more {
+        width: calc(33.333% - 11px);
+      }
+    }
+
+    @media (min-width: 992px) {
+      .gallery-view-more {
+        width: calc(25% - 12px);
+        flex: none;
+      }
+    }
+
+    .gallery-view-more:hover {
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .gallery-view-more-content {
+      text-align: center;
+      color: #6c757d;
+    }
+
+    .gallery-view-more-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .gallery-view-more-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* Enhanced filter buttons */
+    .gallery-filters-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .gallery-filters-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    #galleryFilters {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      padding: 6px;
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #eee;
+    }
+
+    .btn-outline-secondary {
+      height: 42px;
+      width: auto;
+      padding: 0 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 999px;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline-secondary.active {
+      background: linear-gradient(135deg, #b42a00 0%, #d63318 100%);
+      color: #fff;
+      border-color: #b42a00;
+      box-shadow: 0 4px 15px rgba(180, 42, 0, 0.3);
+    }
+
+    .btn-outline-secondary:hover:not(.active) {
+      background: #f8f9fa;
+      color: #333;
+      border-color: #ccc;
     }
 
     /* ====================== */
     /* FINAL CTA: Hire Now!   */
     /* ====================== */
 
-    .cta-hire{
+    .cta-hire {
       background:
-        radial-gradient(800px 260px at 8% 5%, rgba(255,170,120,.18), rgba(255,170,120,0) 60%),
-        radial-gradient(1000px 320px at 92% 110%, rgba(12,32,76,.08), rgba(12,32,76,0) 60%),
-        linear-gradient(180deg,#ffffff 0%,#fbfcff 60%,#f7f9fc 100%);
+        radial-gradient(800px 260px at 8% 5%, rgba(255, 170, 120, .18), rgba(255, 170, 120, 0) 60%),
+        radial-gradient(1000px 320px at 92% 110%, rgba(12, 32, 76, .08), rgba(12, 32, 76, 0) 60%),
+        linear-gradient(180deg, #ffffff 0%, #fbfcff 60%, #f7f9fc 100%);
 
-      border-radius:20px;
-      padding:clamp(1rem,3vw,2rem) clamp(1rem,3.5vw,2rem);
+      border-radius: 20px;
+      padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3.5vw, 2rem);
 
       box-shadow:
-      0 20px 40px rgba(13,29,54,.06),
-      0 1px 0 rgba(255,255,255,.6) inset;
+        0 20px 40px rgba(13, 29, 54, .06),
+        0 1px 0 rgba(255, 255, 255, .6) inset;
     }
 
-    /* layout */
-
-    .cta-row{
-      display:grid;
-      grid-template-columns:1fr;
-      align-items:center;
-      gap:1rem;
+    .cta-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+      gap: clamp(.75rem, 2vw, 1rem);
     }
 
-    @media(min-width:768px){
-      .cta-row{
-        grid-template-columns:1fr auto;
+    @media (min-width: 768px) {
+      .cta-row {
+        grid-template-columns: 1fr auto;
       }
     }
 
-    /* text */
-
-    .cta-title{
-      font-weight:800;
-      font-size:clamp(1.1rem,2vw,1.35rem);
-      color:#1b1d22;
-      margin:0;
-      line-height:1.4;
+    .cta-title {
+      font-weight: 800;
+      font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+      color: #1b1d22;
+      margin: 0;
+      line-height: 1.35;
     }
 
-    /* button area */
-
-    .cta-actions{
-      display:flex;
-      justify-content:flex-start;
+    .cta-actions {
+      display: flex;
+      justify-content: flex-start;
     }
 
-    @media(min-width:768px){
-      .cta-actions{
-        justify-content:flex-end;
+    @media (min-width: 768px) {
+      .cta-actions {
+        justify-content: flex-end;
       }
     }
 
-    /* CTA BUTTON */
-
-    .cta-btn{
-
-      background:linear-gradient(90deg,#ff7a3d,#ffb04a);
-
-      color:#fff;
-      border:none;
-
-      border-radius:999px;
-
-      padding:.85rem 1.6rem;
-
-      font-weight:700;
-      text-decoration:none;
-
-      display:inline-flex;
-      align-items:center;
-      gap:.6rem;
-
-      box-shadow:0 12px 26px rgba(255,122,61,.28);
-
-      transition:
-      transform .18s ease,
-      box-shadow .18s ease,
-      filter .18s ease;
+    .cta-btn {
+      --grad-a: #ff7a3d;
+      --grad-b: #ffb04a;
+      background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: .85rem 1.5rem;
+      font-weight: 700;
+      letter-spacing: .2px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      box-shadow: 0 12px 26px rgba(255, 122, 61, .28);
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      position: relative;
+      isolation: isolate;
+      white-space: nowrap;
     }
 
-    .cta-btn:hover{
-      transform:translateY(-2px);
+    .cta-btn:hover,
+    .cta-btn:focus {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 34px rgba(255, 122, 61, .34);
+      filter: brightness(1.03);
+      color: #fff;
+    }
 
-      box-shadow:0 16px 34px rgba(255,122,61,.34);
+    .cta-btn::after {
+      content: "✦ ✦ ✦";
+      font-size: .85rem;
+      color: #ffa95a;
+      position: absolute;
+      right: -2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: .95;
+      pointer-events: none;
+    }
 
-      filter:brightness(1.05);
+    @media (max-width: 575.98px) {
+      .cta-btn::after {
+        right: -1.6rem;
+        font-size: .8rem;
+      }
+    }
 
-      color:#fff;
+    @media (prefers-reduced-motion: reduce) {
+      .cta-btn {
+        transition: none !important;
+      }
+    }
+
+    /* ===== ENHANCED LIGHTBOX ===== */
+    #lightboxModal .modal-dialog {
+      max-width: 900px;
+    }
+
+    #lightboxModal .modal-content {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    #lightboxModal .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    #lightboxModal .modal-body {
+      padding: 0;
+      position: relative;
+    }
+
+    #lightboxModal .btn-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    #lightboxModal .btn-close:hover {
+      background: #fff;
+      transform: scale(1.1);
+    }
+
+    #lightboxModal .btn-close::after {
+      content: '\f00d';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      color: #333;
+      font-size: 1rem;
+    }
+
+    #lightboxModal .btn-close span {
+      display: none;
+    }
+
+    #lightboxImg {
+      max-height: calc(100vh - 12rem);
+      width: auto;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    #lightboxCaption {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #fff;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      padding: 12px 24px;
+      border-radius: 999px;
+    }
+
+    #lbPrev,
+    #lbNext {
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      color: #333;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    #lbPrev:hover,
+    #lbNext:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    #lbPrev i,
+    #lbNext i {
+      font-size: 0.9rem;
+    }
+
+    /* Lightbox navigation arrows on image */
+    .lightbox-nav-overlay {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+    }
+
+    .lightbox-nav-overlay:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .lightbox-nav-overlay.prev {
+      left: 10px;
+    }
+
+    .lightbox-nav-overlay.next {
+      right: 10px;
+    }
+
+    .lightbox-nav-overlay i {
+      color: #333;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 767px) {
+      .lightbox-nav-overlay {
+        width: 40px;
+        height: 40px;
+      }
+
+      .lightbox-nav-overlay.prev {
+        left: 5px;
+      }
+
+      .lightbox-nav-overlay.next {
+        right: 5px;
+      }
     }
   </style>
 
@@ -429,8 +1011,7 @@ if (!$conn) {
               aria-label="Hero options">
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
-                data-title="Get to know CSNK"
-                data-lead="CSNK Manpower Agency is dedicated to providing families with reliable 
+                data-title="Get to know CSNK" data-lead="CSNK Manpower Agency is dedicated to providing families with reliable 
                     and compassionate household assistance. Beyond offering quality domestic help, we 
                     are a full‑service manpower agency committed to supporting and empowering Filipino 
                     women by connecting them with safe, legitimate, and rewarding employment opportunities. 
@@ -453,10 +1034,23 @@ if (!$conn) {
           <div class="hero-pills-spacer"></div>
         </div>
 
-        <!-- RIGHT: Image -->
+        <!-- RIGHT: Enhanced Image -->
         <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4">
-            <img id="heroImg" src="<?= asset('resources/img/hero1.jpg') ?>" alt="Hero visual" class="img-fluid fade-swap">
+          <div class="hero-image-container">
+            <!-- Floating decorative shapes -->
+            <div class="hero-float-shape hero-float-shape-1"></div>
+            <div class="hero-float-shape hero-float-shape-2"></div>
+            <div class="hero-float-shape hero-float-shape-3"></div>
+
+            <!-- Layered frame -->
+            <div class="hero-frame">
+              <div class="hero-image-wrap rounded-4">
+                <img id="heroImg" src="<?= asset('resources/img/hero1.jpg') ?>" alt="Hero visual"
+                  class="img-fluid fade-swap">
+                <!-- Corner accent -->
+                <div class="hero-corner-accent"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -486,67 +1080,49 @@ if (!$conn) {
               $catName = $cat['name'] ?? 'Category';
               $catSlug = slugify($catName);
               $cnt = $categoryCounts[$catSlug] ?? 0;
-            ?>
-              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>" aria-pressed="false">
-                <?= htmlspecialchars($catName) ?><?= $cnt > 0 ? " ($cnt)" : "" ?>
+              ?>
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+                aria-pressed="false">
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
             <?php endforeach; ?>
           <?php endif; ?>
         </div>
       </div>
 
-      <!-- Thumbnails Grid (CMS-driven) -->
-<div id="galleryGrid" class="gallery-grid">
-
-<?php if (!empty($contentItems)): ?>
-
-<?php foreach ($contentItems as $item):
-
-$itemTitle = $item['title'] ?: 'Training image';
-$catName   = $item['category_name'] ?? '';
-$catSlug   = slugify($catName);
-$imgUrl    = getContentImageUrl($item['image_path']);
-
-?>
-
-<button class="gallery-tile"
-        data-category-slug="<?= htmlspecialchars($catSlug) ?>"
-        data-full="<?= htmlspecialchars($imgUrl) ?>"
-        data-caption="<?= htmlspecialchars($itemTitle) ?>"
-        aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
-
-    <img src="<?= htmlspecialchars($imgUrl) ?>"
-         alt="<?= htmlspecialchars($itemTitle) ?>">
-
-    <!-- category badge -->
-    <?php if($catName): ?>
-    <div class="gallery-badge">
-        <?= htmlspecialchars($catName) ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- overlay -->
-    <div class="gallery-overlay">
-        <div class="gallery-title">
-            <?= htmlspecialchars($itemTitle) ?>
+      <!-- Thumbnails Grid (CMS-driven) with row limiter -->
+      <div class="gallery-wrapper">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
+          <div id="galleryGrid" class="gallery-grid">
+            <?php if (!empty($contentItems)): ?>
+              <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName = $item['category_name'] ?? '';
+                $catSlug = slugify($catName);
+                $imgUrl = getContentImageUrl($item['image_path']);
+                ?>
+                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+                  <div class="gallery-tile-overlay">
+                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
+                  </div>
+                </button>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div class="col-12">
+                <div class="text-center py-5 bg-white rounded-3 border">
+                  <p class="text-muted mb-0">Contents and Blogs soon!</p>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
-    </div>
-
-</button>
-
-<?php endforeach; ?>
-
-<?php else: ?>
-
-<div class="col-12">
-  <div class="text-center py-5 bg-white rounded-3 border">
-    <p class="text-muted mb-0">Contents and Blogs soon!</p>
-  </div>
-</div>
-
-<?php endif; ?>
-
-</div>
+      </div>
     </div>
   </section>
 
@@ -632,21 +1208,94 @@ $imgUrl    = getContentImageUrl($item['image_path']);
     })();
   </script>
 
-  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev -->
+  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev + Row Limiter -->
   <script>
     (function () {
       const grid = document.getElementById('galleryGrid');
       const filters = document.getElementById('galleryFilters');
+      const scrollContainer = document.getElementById('galleryScrollContainer');
       if (!grid || !filters) return;
 
       const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
+
+      // Configuration: Max rows to show (4 rows - shows rest of pictures)
+      const MAX_VISIBLE_ROWS = 4;
+      const COLS_DESKTOP = 4;
+      const COLS_TABLET = 3;
+      const COLS_MOBILE = 2;
+
+      let currentFilter = 'all';
+      let hasMoreItems = false;
+      let hiddenTiles = [];
+
+      // Function to get columns based on viewport
+      function getColumns() {
+        if (window.innerWidth >= 992) return COLS_DESKTOP;
+        if (window.innerWidth >= 576) return COLS_TABLET;
+        return COLS_MOBILE;
+      }
+
+      // Function to calculate max visible items
+      function getMaxVisible() {
+        return MAX_VISIBLE_ROWS * getColumns();
+      }
+
+      // Function to update gallery based on filter and row limit
+      function updateGallery() {
+        const maxVisible = getMaxVisible();
+
+        // Get visible tiles based on filter
+        const filteredTiles = tiles.map((tile, idx) => ({
+          tile,
+          cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(),
+          originalIndex: idx
+        })).filter(item => {
+          if (currentFilter === 'all') return true;
+          return item.cat === currentFilter;
+        });
+
+        // Reset all tiles first
+        tiles.forEach(t => t.classList.remove('limited'));
+
+        if (filteredTiles.length > maxVisible) {
+          // Hide tiles beyond the limit
+          filteredTiles.forEach((item, idx) => {
+            if (idx >= maxVisible) {
+              item.tile.classList.add('limited');
+              item.tile.hidden = true;
+            } else {
+              item.tile.classList.remove('limited');
+              item.tile.hidden = false;
+            }
+          });
+          hasMoreItems = true;
+        } else {
+          // Show all if within limit
+          filteredTiles.forEach(item => {
+            item.tile.classList.remove('limited');
+            item.tile.hidden = false;
+          });
+          hasMoreItems = false;
+        }
+
+        // Update scroll container behavior
+        if (scrollContainer) {
+          if (hasMoreItems && window.innerWidth < 992) {
+            scrollContainer.style.overflowX = 'auto';
+            scrollContainer.style.overflowY = 'hidden';
+          } else {
+            scrollContainer.style.overflowX = '';
+            scrollContainer.style.overflowY = '';
+          }
+        }
+      }
 
       // Filter buttons (All + dynamic categories)
       filters.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-filter]');
         if (!btn) return;
 
-        const filter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+        currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
 
         // Update active state
         filters.querySelectorAll('button[data-filter]').forEach(b => {
@@ -657,10 +1306,76 @@ $imgUrl    = getContentImageUrl($item['image_path']);
         // Show/hide tiles based on slug (strict match)
         tiles.forEach(tile => {
           const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
-          const show = (filter === 'all') ? true : (cat === filter);
+          const show = (currentFilter === 'all') ? true : (cat === currentFilter);
           tile.hidden = !show;
         });
+
+        // Apply row limiter
+        updateGallery();
       });
+
+      // Handle window resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateGallery, 150);
+      });
+
+      // Initial setup
+      updateGallery();
+
+      // Enhanced swipe logic (preserves existing)
+      if (scrollContainer.dataset.indicators === 'true') {
+        const indicators = document.getElementById('swipeIndicators');
+        const leftBtn = document.getElementById('swipeLeft');
+        const rightBtn = document.getElementById('swipeRight');
+
+        function updateIndicators() {
+          const scrollLeft = scrollContainer.scrollLeft;
+          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
+          const index = Math.round(progress * (tiles.length - 1)) || 0;
+
+          // Dots
+          indicators.innerHTML = '';
+          for (let i = 0; i < Math.min(5, tiles.length); i++) {
+            const dot = document.createElement('div');
+            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
+            dot.addEventListener('click', () => {
+              const tileWidth = tiles[i]?.offsetWidth || 0;
+              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
+            });
+            indicators.appendChild(dot);
+          }
+        }
+
+        // Scroll events
+        let scrollTimeout;
+        scrollContainer.addEventListener('scroll', () => {
+          scrollContainer.classList.add('swiping');
+          updateIndicators();
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            scrollContainer.classList.remove('swiping');
+          }, 1500);
+        }, { passive: true });
+
+        // Arrow buttons (touch only)
+        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+
+        // Snap to tile edges on scroll end
+        scrollContainer.addEventListener('scrollend', () => {
+          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
+          const scrollLeft = scrollContainer.scrollLeft;
+          const closest = tilesInView.reduce((prev, curr) =>
+            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
+          );
+          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
+        });
+
+        updateIndicators();
+      }
 
       // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
       // Create modal HTML once
@@ -753,4 +1468,5 @@ $imgUrl    = getContentImageUrl($item['image_path']);
   </script>
 
 </body>
+
 </html>
