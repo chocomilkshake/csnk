@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/reports.php
-$pageTitle = 'Reports - All Applicants';
+$pageTitle = 'Reports & Updates - All Applicants';
 
 /* -----------------------------------------------------------
    INLINE JSON ENDPOINT (NO LAYOUT): Full history for applicant
@@ -234,7 +234,10 @@ if (
 -------------------------------------------------------------------- */
 $conn = $database->getConnection(); // mysqli
 
-$whereStatus = "a.deleted_at IS NULL AND (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0";
+$whereStatus = "a.deleted_at IS NULL AND (
+    (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0
+    OR (SELECT COUNT(*) FROM applicant_status_reports s2 WHERE s2.applicant_id = a.id) > 0
+)";
 $params = [];
 $types = '';
 
@@ -245,13 +248,19 @@ if ($status !== 'all') {
 }
 
 // Sorting
-$orderSql = " ORDER BY lr.id DESC, a.id DESC"; // newest note first
+// "latest" should mean newest activity (note or status change)
+// compute a timestamp expression that picks the later of the two join dates
+$activityExpr = "GREATEST(
+    COALESCE(lr.created_at,'0000-00-00 00:00:00'),
+    COALESCE(lsr.created_at,'0000-00-00 00:00:00')
+)";
+$orderSql = " ORDER BY {$activityExpr} DESC, a.id DESC";
 if ($sort === 'reports') {
-  $orderSql = " ORDER BY report_count DESC, lr.id DESC, a.id DESC";
+  $orderSql = " ORDER BY report_count DESC, {$activityExpr} DESC, a.id DESC";
 } elseif ($sort === 'name') {
   $orderSql = " ORDER BY a.last_name ASC, a.first_name ASC, a.id ASC";
 } elseif ($sort === 'status') {
-  $orderSql = " ORDER BY a.status ASC, lr.id DESC, a.id DESC";
+  $orderSql = " ORDER BY a.status ASC, {$activityExpr} DESC, a.id DESC";
 }
 
 $sql = "
@@ -266,6 +275,7 @@ SELECT
   lsr.from_status      AS last_from_status,
   lsr.to_status        AS last_to_status,
   lsr.created_at       AS last_status_at,
+  COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS last_status_admin,
   /* Total NOTE count */
   (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) AS report_count
 FROM applicants a
@@ -290,6 +300,7 @@ LEFT JOIN (
     GROUP BY applicant_id
   ) ts ON ts.applicant_id = asr1.applicant_id AND ts.max_sid = asr1.id
 ) lsr ON lsr.applicant_id = a.id
+LEFT JOIN admin_users au2 ON au2.id = lsr.admin_id
 WHERE {$whereStatus}
 {$orderSql}
 ";
@@ -313,6 +324,25 @@ try {
   $rows = [];
 }
 
+// post‑process rows to pick latest activity text/admin
+foreach ($rows as &$r) {
+  $noteAt = $r['latest_note_at'] ?? '';
+  $statusAt = $r['last_status_at'] ?? '';
+  if ($statusAt !== '' && $statusAt > $noteAt) {
+    // status change is newest
+    $r['latest_activity_at'] = $statusAt;
+    $r['latest_activity_text'] = 'Status: ' . humanizeStatus($r['last_from_status'] ?? '')
+                                . ' → ' . humanizeStatus($r['last_to_status'] ?? '');
+    // use admin name from status record if available
+    $r['latest_activity_admin'] = (string) ($r['last_status_admin'] ?? '');
+  } else {
+    $r['latest_activity_at'] = $noteAt;
+    $r['latest_activity_text'] = $r['latest_note'] ?? '';
+    $r['latest_activity_admin'] = $r['latest_note_admin'] ?? '';
+  }
+}
+unset($r);
+
 /* ---------------- Filter in PHP (search) ---------------- */
 function filterRowsByQuery(array $rows, string $query): array
 {
@@ -326,8 +356,9 @@ function filterRowsByQuery(array $rows, string $query): array
     $suffix = (string) ($row['suffix'] ?? '');
     $email = (string) ($row['email'] ?? '');
     $phone = (string) ($row['phone_number'] ?? '');
-    $latest = (string) ($row['latest_note'] ?? '');
-    $admin = (string) ($row['latest_note_admin'] ?? '');
+    // include aggregated activity values if available
+    $latest = (string) ($row['latest_activity_text'] ?? ($row['latest_note'] ?? ''));
+    $admin = (string) ($row['latest_activity_admin'] ?? ($row['latest_note_admin'] ?? ''));
 
     $fullName = trim("$first $middle $last $suffix");
     $hay = mb_strtolower(implode(' | ', [$first, $middle, $last, $suffix, $fullName, $email, $phone, $latest, $admin]));
@@ -375,7 +406,7 @@ function statusBadgeClass(string $status): string
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h4 class="mb-0 fw-semibold">Reports</h4>
-    <div class="text-muted small">Applicants with at least one report</div>
+    <div class="text-muted small">Applicants with recent updates (reports/status changes)</div>
   </div>
   <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
     <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
@@ -428,7 +459,7 @@ function statusBadgeClass(string $status): string
         <select name="sort" class="form-select" onchange="this.form.submit()">
           <?php
           $sortOptions = [
-            'latest' => 'Newest report',
+            'latest' => 'Newest update',
             'reports' => 'Most reports',
             'name' => 'Name (A–Z)',
             'status' => 'Status'
@@ -453,7 +484,7 @@ function statusBadgeClass(string $status): string
             <th style="width:64px;">Photo</th>
             <th>Applicant</th>
             <th style="width:260px;">Status</th>
-            <th>Latest Report</th>
+            <th>Latest Update</th>
             <th class="text-center" style="width:90px;">Count</th>
             <th style="width:200px, fit-content;">Reported By</th>
             <th style="width:170px;">Reported At</th>
@@ -466,7 +497,7 @@ function statusBadgeClass(string $status): string
               <td colspan="8" class="text-center text-muted py-5">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                 <?php if ($q === '' && $status === 'all'): ?>
-                  No applicants with reports found.
+                  No applicants with updates found.
                 <?php else: ?>
                   No results for your current filters.
                   <a href="reports.php?clear=1" class="ms-1">Clear filters</a>
@@ -479,9 +510,16 @@ function statusBadgeClass(string $status): string
               $id = (int) $r['id'];
               $name = getFullName($r['first_name'], $r['middle_name'], $r['last_name'], $r['suffix']);
               $latestNote = (string) ($r['latest_note'] ?? '');
-              $latestAdmin = (string) ($r['latest_note_admin'] ?? '—');
               $latestAt = (string) ($r['latest_note_at'] ?? '');
               $reportCount = (int) ($r['report_count'] ?? 0);
+
+              // new aggregated activity values computed earlier
+              $latestActivity = (string) ($r['latest_activity_text'] ?? $latestNote);
+              $latestActivityAdmin = trim((string) ($r['latest_activity_admin'] ?? ''));
+              $latestActivityAt = (string) ($r['latest_activity_at'] ?? $latestAt);
+              if ($latestActivityAdmin === '') {
+                $latestActivityAdmin = '—';
+              }
 
               // Status logic
               $tableCurrent = (string) ($r['status'] ?? '');
@@ -534,8 +572,8 @@ function statusBadgeClass(string $status): string
                   <?php endif; ?>
                 </td>
 
-                <td class="text-truncate" title="<?php echo htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8'); ?>">
-                  <?php echo $latestNote !== '' ? nl2br(htmlspecialchars($latestNote, ENT_QUOTES, 'UTF-8')) : '<span class="text-muted">—</span>'; ?>
+                <td class="text-truncate" title="<?php echo htmlspecialchars($latestActivity, ENT_QUOTES, 'UTF-8'); ?>">
+                  <?php echo $latestActivity !== '' ? nl2br(htmlspecialchars($latestActivity, ENT_QUOTES, 'UTF-8')) : '<span class="text-muted">—</span>'; ?>
                 </td>
 
                 <td class="text-center">
@@ -545,11 +583,11 @@ function statusBadgeClass(string $status): string
                 </td>
 
                 <td class="text-secondary">
-                  <?php echo htmlspecialchars($latestAdmin ?: '—', ENT_QUOTES, 'UTF-8'); ?>
+                  <?php echo htmlspecialchars($latestActivityAdmin ?: '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
 
                 <td class="text-secondary">
-                  <?php echo htmlspecialchars($latestAt !== '' ? formatDateTime($latestAt) : '—', ENT_QUOTES, 'UTF-8'); ?>
+                  <?php echo htmlspecialchars($latestActivityAt !== '' ? formatDateTime($latestActivityAt) : '—', ENT_QUOTES, 'UTF-8'); ?>
                 </td>
 
                 <td class="text-nowrap">
