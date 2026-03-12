@@ -86,7 +86,7 @@ if ($currentPage === 'branch_management' && !($isAdmin || $isSuperAdmin)) {
 /* ============================================================================== */
 
 /* Allow Activity section for admin/super_admin/employee (restored from old) */
-$canViewActivity = ($isAdmin || $isSuperAdmin || $isEmployee);
+$canViewActivity = ($isAdmin || $isSuperAdmin);
 
 /* Agency flags (employees only; admins are global) */
 $agency = $currentUser['agency'] ?? null; // 'csnk' | 'smc' | null
