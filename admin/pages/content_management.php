@@ -399,6 +399,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
         }
     } elseif ($action === 'delete_content') {
                       <td>
+                        <?php if (!empty($item['image_path'])): ?>
+                          <img src="<?= getFileUrl($item['image_path']) ?>" alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                        <?php else: ?>
+                          <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-image text-muted"></i>
+                          </div>
+                        <?php endif; ?>
+                      </td>
+                      <td><?= htmlspecialchars($item['category_name'] ?? '-') ?></td>
+                      <td><?= htmlspecialchars($item['title'] ?? '-') ?></td>
+                      <td>
+                        <?php if (!empty($item['is_active'])): ?>
+                          <span class="badge bg-success">Active</span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary">Hidden</span>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editContentModal<?= $item['id'] ?>" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <form method="POST" class="d-inline">
+                            <input type="hidden" name="action" value="toggle_content">
+                            <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                            <button type="submit" class="btn btn-outline-<?= !empty($item['is_active']) ? 'warning' : 'success' ?>" title="<?= !empty($item['is_active']) ? 'Hide' : 'Show' ?>">
+                              <i class="bi bi-<?= !empty($item['is_active']) ? 'eye-slash' : 'eye' ?>"></i>
+                            </button>
                           </form>
                           <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this content?');">
                             <input type="hidden" name="action" value="delete_content">
