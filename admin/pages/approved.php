@@ -572,6 +572,34 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
           </div>
 
           <!-- Info -->
+          <div class="alert alert-info rep-info mt-4 mb-0" role="alert">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-info-circle-fill mt-1" aria-hidden="true"></i>
+              <div class="small" style="font-size: .975rem;">
+                <strong>What happens next?</strong> We’ll log your reason and note, then suggest replacement candidates based on the client and role match.
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <!-- Suggestions -->
+          <h6 class="fw-semibold mb-2">Suggested Replacement Candidates</h6>
+          <div id="replacementCandidates" class="mt-2"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer rep-footer border-0">
+          <button type="button" class="btn btn-outline-secondary btn-lg rep-btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-danger btn-lg rep-btn-primary" id="rep-submit">
+            <i class="bi bi-arrow-repeat me-1"></i> Start &amp; Suggest
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- ===== Replace Modal Styles (Light-only, Senior-friendly) ===== -->
