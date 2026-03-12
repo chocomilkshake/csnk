@@ -405,6 +405,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ? AND business_unit_id = ?");
             $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
+            $result = $stmt->get_result();
+                      $cid = (int)$cat['id'];
+                      $itemCount = $categoryCounts[$cid] ?? 0;
+                  ?>
+                    <tr>
+                      <td><?= (int) $cat['display_order'] ?></td>
+                      <td><strong><?= htmlspecialchars($cat['name']) ?></strong></td>
+                      <td><?= htmlspecialchars($cat['description'] ?? '-') ?></td>
+                      <td>
+                        <?php if (!empty($cat['is_active'])): ?>
+                          <span class="badge bg-success">Active</span>
+                        <?php else: ?>
+                          <span class="badge bg-secondary">Inactive</span>
+                        <?php endif; ?>
+                      </td>
+                      <td><span class="badge bg-primary"><?= $itemCount ?></span></td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editCategoryModal<?= $cat['id'] ?>" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <form method="POST" class="d-inline">
+                            <input type="hidden" name="action" value="toggle_category">
+                            <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                            <input type="hidden" name="is_active" value="<?= (int)$cat['is_active'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                            <button type="submit" class="btn btn-outline-<?= !empty($cat['is_active']) ? 'warning' : 'success' ?>" title="<?= !empty($cat['is_active']) ? 'Deactivate' : 'Activate' ?>">
+                              <i class="bi bi-<?= !empty($cat['is_active']) ? 'eye-slash' : 'eye' ?>"></i>
+                            </button>
                           </form>
                           <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure? This will also delete all images in this category.');">
                             <input type="hidden" name="action" value="delete_category">
