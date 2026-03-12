@@ -334,7 +334,31 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
                     <th>Applicant</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Preferr
+                    <th>Preferred Location</th>
+                    <th>Date 
+                            // Action URLs (with CSRF & q preserved)
+                            $viewUrl   = buildUrl('view_approved.php', ['id' => $id]);
+                            $editUrl   = buildUrl('edit-applicant.php', ['id' => $id]);
+                            $toPendingUrl   = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'pending',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
+                            $toOnProcessUrl = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'on_process',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
+                            $toApprovedUrl  = buildUrl('approved.php', [
+                                'action' => 'update_status', 'id' => $id, 'to' => 'approved',
+                                'csrf'   => $_SESSION['csrf_token'] ?? ''
+                            ]);
+                        ?>
+                        <tr>
+                            <td>
+                                <?php if (!empty($row['picture'])): ?>
+                                    <img
+                                        src="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                        alt="Photo"
+                                        class="rounded"
                                         width="50"
                                         height="50"
                                         style="object-fit: cover;"
