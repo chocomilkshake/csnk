@@ -523,7 +523,35 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
 
                 <!-- Client-Related -->
                 <option value="Client Left">Client Left</option>
-                <option value="Client Requesteeason details, date of incident, client remarks)."
+                <option value="Client Requested Replacement">Client Requested Replacement</option>
+                <option value="Client Feedback (Negative)">Client Feedback (Negative)</option>
+
+                <!-- Assignment / Contract -->
+                <option value="Not Finished Contract">Not Finished Contract</option>
+                <option value="Did Not Report to Client">Did Not Report to Client</option>
+                <option value="Mismatch to Client Requirements">Mismatch to Client Requirements</option>
+
+                <!-- Performance -->
+                <option value="Performance Issue">Performance Issue</option>
+                <option value="Failed to Meet Job Expectations">Failed to Meet Job Expectations</option>
+
+                <!-- Personal -->
+                <option value="Personal Concern / Personal Reason">Personal Concern / Personal Reason</option>
+
+                <!-- Fallback -->
+                <option value="Other">Other</option>
+              </select>
+              <div id="rep-reason-help" class="form-text" style="font-size:.95rem;">Choose the most appropriate reason.</div>
+            </div>
+
+            <!-- Report / Note -->
+            <div class="col-12 col-md-7">
+              <label class="form-label fw-semibold d-flex justify-content-between align-items-center" for="rep-note">
+                <span>Report / Note <span class="text-danger">*</span></span>
+                <span class="badge bg-light text-secondary rep-counter" id="rep-note-counter">0/1000</span>
+              </label>
+              <textarea name="report_text" id="rep-note" class="form-control rep-input" rows="6" maxlength="1000" required
+                        placeholder="Provide a clear summary (e.g., reason details, date of incident, client remarks)."
                         aria-describedby="rep-note-help"></textarea>
               <div id="rep-note-help" class="form-text" style="font-size:.95rem;">Minimum 5 characters. This will be saved to the report log.</div>
             </div>
