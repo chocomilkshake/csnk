@@ -27,6 +27,13 @@ $userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
 $clientBookings = [];
 $bookingSearch = isset($_GET['booking_search']) ? trim($_GET['booking_search']) : '';
 $applicantStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
+$sortBy = isset($_GET['sort']) ? strtolower(trim($_GET['sort'])) : 'latest';
+
+// Validate sort option
+$allowedSorts = ['latest', 'oldest', 'agency_asc', 'agency_desc'];
+if (!in_array($sortBy, $allowedSorts, true)) {
+    $sortBy = 'latest';
+}
 
 $conn = $database->getConnection();
 if ($conn instanceof mysqli) {
@@ -90,7 +97,17 @@ if ($conn instanceof mysqli) {
     )";
     }
 
-    $bookingSql .= " ORDER BY cb.created_at DESC";
+    // Sorting - build ORDER BY clause based on sort parameter
+    $orderBy = 'cb.created_at DESC'; // default: newest first
+    if ($sortBy === 'oldest') {
+        $orderBy = 'cb.created_at ASC';
+    } elseif ($sortBy === 'agency_asc') {
+        $orderBy = 'bu.name ASC, cb.created_at DESC';
+    } elseif ($sortBy === 'agency_desc') {
+        $orderBy = 'bu.name DESC, cb.created_at DESC';
+    }
+
+    $bookingSql .= " ORDER BY " . $orderBy;
 
     if ($bookingResult = $conn->query($bookingSql)) {
         $clientBookings = $bookingResult->fetch_all(MYSQLI_ASSOC);
@@ -469,18 +486,30 @@ function safe(?string $s): string
                 <input type="hidden" name="status"
                     value="<?php echo htmlspecialchars($applicantStatus, ENT_QUOTES, 'UTF-8'); ?>">
             <?php endif; ?>
-            <div class="input-group" style="max-width: 500px;">
+            <div class="input-group" style="max-width: 400px;">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                 <input type="text" name="booking_search" class="form-control"
                     placeholder="Search by client name, applicant, email or phone..."
                     value="<?php echo htmlspecialchars($bookingSearch, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php if (!empty($bookingSearch)): ?>
-                    <a href="?<?php echo !empty($applicantStatus) && $applicantStatus !== 'all' ? 'status=' . htmlspecialchars($applicantStatus) : ''; ?>"
+                    <a href="?<?php echo !empty($applicantStatus) && $applicantStatus !== 'all' ? 'status=' . htmlspecialchars($applicantStatus) : ''; ?><?php echo !empty($applicantStatus) && $applicantStatus !== 'all' ? '&' : ''; ?>sort=<?php echo htmlspecialchars($sortBy); ?>"
                         class="btn btn-outline-secondary">
                         <i class="bi bi-x-lg"></i>
                     </a>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+            <!-- Sorting Dropdown -->
+            <div class="input-group" style="max-width: 220px;">
+                <span class="input-group-text bg-white"><i class="bi bi-sort-down"></i></span>
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="latest" <?php echo $sortBy === 'latest' ? 'selected' : ''; ?>>Newest First</option>
+                    <option value="oldest" <?php echo $sortBy === 'oldest' ? 'selected' : ''; ?>>Oldest First</option>
+                    <option value="agency_asc" <?php echo $sortBy === 'agency_asc' ? 'selected' : ''; ?>>Agency (A-Z)
+                    </option>
+                    <option value="agency_desc" <?php echo $sortBy === 'agency_desc' ? 'selected' : ''; ?>>Agency (Z-A)
+                    </option>
+                </select>
             </div>
         </form>
     </div>
