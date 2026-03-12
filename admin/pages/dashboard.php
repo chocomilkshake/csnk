@@ -5,17 +5,128 @@ if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
 
-// Check if user agency is SMC
-$userAgencyCheck = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
+// Get user role and agency from session
+$userRole = isset($_SESSION['role']) ? strtolower($_SESSION['role']) : '';
+$userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
 
-if ($userAgencyCheck === 'smc') {
-  // SMC employees should use turkey_dashboard.php - redirect immediately (relative path for hosting compatibility)
-  header('Location: turkey_dashboard.php');
+// Check if user is super_admin or admin
+$isSuperAdmin = ($userRole === 'super_admin');
+$isAdmin = ($userRole === 'admin');
+$isEmployee = ($userRole === 'employee');
+$canSwitchAgency = $isSuperAdmin || $isAdmin;
+
+// Handle agency switch from URL parameter (for Admin/Super Admin)
+$currentAgencyView = $_SESSION['current_agency_view'] ?? $userAgency;
+if (!in_array($currentAgencyView, ['csnk', 'smc'])) {
+  $currentAgencyView = 'csnk';
+}
+
+if (isset($_GET['switch_agency']) && $canSwitchAgency) {
+  $switchTo = strtolower($_GET['switch_agency']);
+  if (in_array($switchTo, ['csnk', 'smc'])) {
+    $_SESSION['current_agency_view'] = $switchTo;
+    $currentAgencyView = $switchTo;
+  }
+  // Remove the switch param from URL and redirect
+  $redirectUrl = strtok($_SERVER['REQUEST_URI'], '?');
+  $params = $_GET;
+  unset($params['switch_agency']);
+  if (!empty($params)) {
+    $redirectUrl .= '?' . http_build_query($params);
+  }
+  header('Location: ' . $redirectUrl);
   exit;
+}
+
+// For employees, determine their agency dashboard
+if ($isEmployee) {
+  if ($userAgency === 'smc') {
+    // SMC employees should use turkey_dashboard.php - redirect immediately
+    header('Location: turkey_dashboard.php');
+    exit;
+  }
+  // CSNK employees stay on dashboard.php (CSNK view)
 }
 
 $pageTitle = 'CSNK Dashboard';
 require_once '../includes/header.php';
+
+// Get agency-specific data based on current view
+$viewingAgency = ($isEmployee && $userAgency === 'csnk') ? 'csnk' : $currentAgencyView;
+
+// Fetch SMC data if viewing SMC
+$smcStats = ['total' => 0, 'pending' => 0, 'on_process' => 0, 'deleted' => 0];
+$smcRecentApplicants = [];
+$smcAdminCount = 0;
+
+if ($currentAgencyView === 'smc' && $canSwitchAgency) {
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        // Get SMC business unit IDs
+        $smcBuIds = [];
+        $sqlSmcBus = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1";
+        if ($res = $conn->query($sqlSmcBus)) {
+            while ($r = $res->fetch_assoc()) {
+                $smcBuIds[] = (int) $r['id'];
+            }
+        }
+        
+        if (!empty($smcBuIds)) {
+            $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+            
+            // SMC Total
+            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+                $stmt->execute();
+                $smcStats['total'] = (int) $stmt->get_result()->fetch_row()[0];
+                $stmt->close();
+            }
+            
+            // SMC Pending
+            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'pending' AND deleted_at IS NULL";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+                $stmt->execute();
+                $smcStats['pending'] = (int) $stmt->get_result()->fetch_row()[0];
+                $stmt->close();
+            }
+            
+            // SMC On Process
+            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'on_process' AND deleted_at IS NULL";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+                $stmt->execute();
+                $smcStats['on_process'] = (int) $stmt->get_result()->fetch_row()[0];
+                $stmt->close();
+            }
+            
+            // SMC Deleted
+            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NOT NULL";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+                $stmt->execute();
+                $smcStats['deleted'] = (int) $stmt->get_result()->fetch_row()[0];
+                $stmt->close();
+            }
+            
+            // SMC Recent Applicants
+            $sql = "SELECT * FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 5";
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+                $stmt->execute();
+                $smcRecentApplicants = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                $stmt->close();
+            }
+        }
+        
+        // SMC Admin Count
+        $sql = "SELECT COUNT(*) FROM admin_users WHERE agency = 'smc' AND status = 'active'";
+        if ($res = $conn->query($sql)) {
+            $smcAdminCount = (int) $res->fetch_row()[0];
+        }
+    }
+}
 
 require_once '../includes/Applicant.php';
 require_once '../includes/Admin.php';
@@ -162,19 +273,84 @@ function safe(?string $s): string
     height: 1px;
     background: #eef2f7;
   }
+
+  /* Agency Switcher Styles */
+  .agency-switcher {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .agency-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* CSNK Button - Red Theme */
+  .agency-btn-csnk {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+  }
+
+  /* SMC Button - Navy Blue with Yellow Text */
+  .agency-btn-smc {
+    background: #4d286c;
+    color: #FFD84D;
+  }
+
+  .agency-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .agency-btn.active {
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  }
+
+  .agency-btn:not(.active) {
+    opacity: 0.7;
+  }
 </style>
 
-<!-- ======= STATS GRID ======= -->
+<!-- Agency Switcher for Super Admin / Admin -->
+<?php if ($canSwitchAgency): ?>
+<div class="agency-switcher">
+  <a href="./dashboard.php" class="agency-btn agency-btn-csnk <?php echo ($currentAgencyView === 'csnk') ? 'active' : ''; ?>">
+    <i class="bi bi-building"></i> CSNK Dashboard
+  </a>
+  <a href="./turkey_dashboard.php" class="agency-btn agency-btn-smc <?php echo ($currentAgencyView === 'smc') ? 'active' : ''; ?>">
+    <i class="bi bi-globe"></i> SMC Dashboard
+  </a>
+</div>
+<?php endif; ?>
+
+<!-- ======= STATS GRID (CSNK or SMC based on view) ======= -->
+<?php 
+// Determine which data to display
+$displayStats = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcStats : $stats;
+$displayRecentApplicants = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcRecentApplicants : $recentApplicants;
+$displayAdminCount = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcAdminCount : $adminCount;
+$dashboardLabel = ($currentAgencyView === 'smc' && $canSwitchAgency) ? 'SMC' : 'CSNK';
+?>
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
   <!-- Total Applicants -->
   <div class="relative overflow-hidden rounded-2xl shadow-soft"
-    style="background: radial-gradient(1200px 300px at -20% -20%, #60a5fa 0%, #1d4ed8 45%, #111827 100%);">
+    style="background: radial-gradient(1200px 300px at -20% -20%, <?php echo ($currentAgencyView === 'smc') ? '#fde68a' : '#60a5fa'; ?> 0%, <?php echo ($currentAgencyView === 'smc') ? '#d97706' : '#1d4ed8'; ?> 45%, #111827 100%);">
     <div class="p-5 text-white">
       <div class="flex items-center justify-between">
         <h6 class="uppercase tracking-wider opacity-80">Total Applicants</h6>
         <i class="bi bi-people text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['total']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $displayStats['total']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Active pool</span>
       </div>
@@ -189,7 +365,7 @@ function safe(?string $s): string
         <h6 class="uppercase tracking-wider opacity-80">Pending</h6>
         <i class="bi bi-clock-history text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['pending']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $displayStats['pending']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Awaiting review</span>
       </div>
@@ -204,7 +380,7 @@ function safe(?string $s): string
         <h6 class="uppercase tracking-wider opacity-80">On Process</h6>
         <i class="bi bi-hourglass-split text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['on_process']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $displayStats['on_process']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Actively handled</span>
       </div>
@@ -219,7 +395,7 @@ function safe(?string $s): string
         <h6 class="uppercase tracking-wider opacity-80">Deleted</h6>
         <i class="bi bi-trash text-3xl opacity-75"></i>
       </div>
-      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $stats['deleted']; ?></div>
+      <div class="mt-3 text-4xl font-extrabold"><?php echo (int) $displayStats['deleted']; ?></div>
       <div class="mt-4">
         <span class="stat-chip"><span class="w-2 h-2 rounded-full bg-white"></span> Soft removed</span>
       </div>
@@ -234,7 +410,7 @@ function safe(?string $s): string
       <div class="flex items-center justify-between">
         <div>
           <h3 class="mb-1 fw-semibold">Recent Applicants</h3>
-          <small class="text-muted">Latest profiles created in the system.</small>
+          <small class="text-muted">Latest profiles created in <?php echo $dashboardLabel; ?> system.</small>
         </div>
       </div>
     </div>
@@ -251,12 +427,12 @@ function safe(?string $s): string
             </tr>
           </thead>
           <tbody>
-            <?php if (empty($recentApplicants)): ?>
+            <?php if (empty($displayRecentApplicants)): ?>
               <tr>
                 <td colspan="4" class="text-center text-muted py-4">No applicants yet</td>
               </tr>
             <?php else: ?>
-              <?php foreach ($recentApplicants as $applicantData): ?>
+              <?php foreach ($displayRecentApplicants as $applicantData): ?>
                 <?php
                 $statusColors = ['pending' => 'warning', 'on_process' => 'info', 'approved' => 'success'];
                 $badgeColor = $statusColors[$applicantData['status']] ?? 'secondary';
@@ -314,12 +490,12 @@ function safe(?string $s): string
       <div class="soft-divider"></div>
       <div class="p-5 pt-4">
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-          <span class="text-muted">Staff (Admin &amp; Employee)</span>
-          <strong><?php echo (int) $adminCount; ?></strong>
+          <span class="text-muted">Staff (<?php echo $dashboardLabel; ?>)</span>
+          <strong><?php echo (int) $displayAdminCount; ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <span class="text-muted">Active Applicants</span>
-          <strong><?php echo (int) $stats['total']; ?></strong>
+          <strong><?php echo (int) $displayStats['total']; ?></strong>
         </div>
         <div class="d-flex justify-content-between align-items-center py-2">
           <span class="text-muted">System Status</span>
@@ -335,12 +511,21 @@ function safe(?string $s): string
       </div>
       <div class="soft-divider"></div>
       <div class="p-5 pt-4">
-        <a href="add-applicant.php" class="btn btn-primary w-100 mb-2">
-          <i class="bi bi-plus-circle me-2"></i>Add New Applicant
-        </a>
-        <a href="applicants.php" class="btn btn-outline-primary w-100 mb-2">
-          <i class="bi bi-people me-2"></i>View All Applicants
-        </a>
+        <?php if ($currentAgencyView === 'smc'): ?>
+          <a href="add-applicant.php" class="btn btn-primary w-100 mb-2">
+            <i class="bi bi-plus-circle me-2"></i>Add New Applicant
+          </a>
+          <a href="turkey_applicants.php" class="btn btn-outline-primary w-100 mb-2">
+            <i class="bi bi-people me-2"></i>View All Applicants
+          </a>
+        <?php else: ?>
+          <a href="add-applicant.php" class="btn btn-primary w-100 mb-2">
+            <i class="bi bi-plus-circle me-2"></i>Add New Applicant
+          </a>
+          <a href="applicants.php" class="btn btn-outline-primary w-100 mb-2">
+            <i class="bi bi-people me-2"></i>View All Applicants
+          </a>
+        <?php endif; ?>
         <a href="accounts.php" class="btn btn-outline-secondary w-100">
           <i class="bi bi-person-plus me-2"></i>Add New Account
         </a>
