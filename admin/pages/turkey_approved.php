@@ -144,8 +144,20 @@ if (
 
     if (in_array($to, $allowedStatuses, true)) {
         $updated = false;
-        
+        $fromStatus = '';
+        $businessUnitId = null;
         if ($conn instanceof mysqli) {
+            // grab previous status & BU id
+            if ($stmtChk = $conn->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1")) {
+                $stmtChk->bind_param('i', $id);
+                $stmtChk->execute();
+                $resChk = $stmtChk->get_result();
+                if ($resChk && ($rowChk = $resChk->fetch_assoc())) {
+                    $fromStatus = $rowChk['status'];
+                    $businessUnitId = $rowChk['business_unit_id'];
+                }
+                $stmtChk->close();
+            }
             if ($stmt = $conn->prepare("UPDATE applicants SET status = ? WHERE id = ?")) {
                 $stmt->bind_param("si", $to, $id);
                 $updated = $stmt->execute();
@@ -177,6 +189,20 @@ if (
                 'Update Applicant Status',
                 "Updated status for {$label} → {$to} (SMC)"
             );
+        }
+        // log to status reports table
+        if ($updated && $fromStatus !== '' && $fromStatus !== $to) {
+            $adminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+            $reportText = "Status changed from " . ucfirst(str_replace('_',' ',$fromStatus))
+                        . " to " . ucfirst(str_replace('_',' ',$to));
+            $buIdForReport = $businessUnitId !== null ? $businessUnitId : 1;
+            if ($conn instanceof mysqli) {
+                if ($stmtRep = $conn->prepare("INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id) VALUES (?, ?, ?, ?, ?, ?)") ) {
+                    $stmtRep->bind_param('iisssi', $id, $buIdForReport, $fromStatus, $to, $reportText, $adminId);
+                    $stmtRep->execute();
+                    $stmtRep->close();
+                }
+            }
         }
     } else {
         if (function_exists('setFlashMessage')) {
