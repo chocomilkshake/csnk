@@ -515,7 +515,55 @@ function scopeUrl($path, $agency, $bu) {
       <?= htmlspecialchars($businessUnits[$activeBUId]['name'] ?? '') ?>
     </small>
     <?php endif; ?>
-  </div>s country_name
+  </div>
+  <a href="dashboard.php" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+  </a>
+</div>
+
+<!-- Agency & Country Selector (Interactive) -->
+<form method="GET" class="row g-3 mb-4" id="selectorForm">
+  <div class="col-md-3">
+    <label class="form-label">Agency</label>
+    <select name="agency" id="agencySelect" class="form-select">
+      <?php foreach ($agencies as $agencyId => $a): ?>
+        <option value="<?= (int)$agencyId ?>" <?= (int)$agencyId === (int)$activeAgencyId ? 'selected' : '' ?>>
+          <?= htmlspecialchars(strtoupper($a['name'])) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Business Unit / Country</label>
+    <select name="bu" id="buSelect" class="form-select">
+      <?php foreach ($businessUnits as $buid => $bu): ?>
+        <option value="<?= (int)$buid ?>" <?= (int)$buid === (int)$activeBUId ? 'selected' : '' ?>>
+          <?= htmlspecialchars(($bu['country_name'] ?? '') . ' - ' . $bu['name']) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-filter me-1"></i>Filter
+    </button>
+  </div>
+</form>
+
+<!-- JavaScript for Interactive Selector (like country_management.php) -->
+<script>
+(function() {
+  const agencySelect = document.getElementById('agencySelect');
+  const buSelect = document.getElementById('buSelect');
+  const selectorForm = document.getElementById('selectorForm');
+  
+  // Business Units data by agency (PHP-generated JavaScript)
+  const businessUnitsByAgency = {
+    <?php foreach ($agencies as $agencyId => $a): ?>
+    <?php 
+      // Get BUs for this agency
+      $buStmt = $conn->prepare("
+        SELECT bu.id, bu.code, bu.name, bu.country_id, c.name as country_name
         FROM business_units bu
         LEFT JOIN countries c ON c.id = bu.country_id
         WHERE bu.agency_id = ? AND bu.active = 1
