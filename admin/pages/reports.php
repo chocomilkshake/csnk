@@ -1,6 +1,6 @@
 <?php
 // FILE: pages/reports.php
-$pageTitle = 'Reports & Updates - All Applicants';
+$pageTitle = 'Reports and Activity';
 
 /* -----------------------------------------------------------
    INLINE JSON ENDPOINT (NO LAYOUT): Full history for applicant
@@ -123,6 +123,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'history' && isset($_GET['id']
    NORMAL PAGE
 ------------------------------------------------------------ */
 require_once '../includes/header.php';
+require_once '../includes/Auth.php';
+$auth = new Auth($database);
+$auth->requireLogin();
+
+$currentRole = $_SESSION['admin_role'] ?? 'employee';
+$currentAgency = $auth->getAgency();  // null for admin/super, 'csnk'/'smc' for employee
+$isAdminView = $auth->isAdmin() || $auth->isSuperAdmin();
+
 require_once '../includes/Applicant.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
   @session_start();
@@ -141,6 +149,8 @@ if (empty($_SESSION['csrf_token'])) {
 /* ---------------- Search memory ---------------- */
 if (isset($_GET['clear']) && $_GET['clear'] === '1') {
   unset($_SESSION['reports_q']);
+  unset($_SESSION['reports_agency']);
+  unset($_SESSION['reports_country']);
   redirect('reports.php');
   exit;
 }
@@ -154,6 +164,18 @@ if (isset($_GET['q'])) {
 } elseif (!empty($_SESSION['reports_q'])) {
   $q = (string) $_SESSION['reports_q'];
 }
+
+// Agency filter: csnk|smc|all (admin only)
+$agencyFilter = isset($_GET['agency']) ? strtolower(trim((string)$_GET['agency'])) : ($_SESSION['reports_agency'] ?? 'all');
+if (!$isAdminView || !in_array($agencyFilter, ['csnk', 'smc', 'all'], true)) {
+  $agencyFilter = 'all';
+}
+$_SESSION['reports_agency'] = $agencyFilter;
+
+// Country filter (SMC only, from DB reference)
+$countryFilter = isset($_GET['country']) && $agencyFilter === 'smc' ? max(0, (int)$_GET['country']) : 0;
+if ($countryFilter > 0) $_SESSION['reports_country'] = $countryFilter;
+$smcCountries = [2 => 'Turkey', 3 => 'Bahrain'];
 
 /* ---------------- Status filter & Sort ---------------- */
 $allowedStatuses = ['all', 'pending', 'on_process', 'approved', 'on_hold', 'deleted'];
@@ -238,6 +260,7 @@ $whereStatus = "a.deleted_at IS NULL AND (
     (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0
     OR (SELECT COUNT(*) FROM applicant_status_reports s2 WHERE s2.applicant_id = a.id) > 0
 )";
+
 $params = [];
 $types = '';
 
@@ -246,6 +269,27 @@ if ($status !== 'all') {
   $params[] = $status;
   $types .= 's';
 }
+
+// Agency filter
+if (!$isAdminView && $currentAgency) {
+  // Employee: ONLY their agency
+  $whereStatus .= " AND ag.code = ?";
+  $params[] = $currentAgency;
+  $types .= 's';
+} elseif ($isAdminView && $agencyFilter !== 'all') {
+  // Admin filtering
+  $whereStatus .= " AND ag.code = ?";
+  $params[] = $agencyFilter;
+  $types .= 's';
+}
+
+// Country filter (SMC only)
+if ($countryFilter > 0 && $agencyFilter === 'smc') {
+  $whereStatus .= " AND bu.country_id = ?";
+  $params[] = $countryFilter;
+  $types .= 'i';
+}
+
 
 // Sorting
 // "latest" should mean newest activity (note or status change)
@@ -266,6 +310,7 @@ if ($sort === 'reports') {
 $sql = "
 SELECT
   a.*,
+  ag.code AS agency_code,
   /* Latest NOTE per applicant - by MAX(id) to avoid duplicate ties */
   lr.note_text         AS latest_note,
   lr.created_at        AS latest_note_at,
@@ -279,6 +324,8 @@ SELECT
   /* Total NOTE count */
   (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) AS report_count
 FROM applicants a
+LEFT JOIN business_units bu ON bu.id = a.business_unit_id
+LEFT JOIN agencies ag ON ag.id = bu.agency_id
 /* latest note */
 LEFT JOIN (
   SELECT ar1.*
@@ -304,6 +351,7 @@ LEFT JOIN admin_users au2 ON au2.id = lsr.admin_id
 WHERE {$whereStatus}
 {$orderSql}
 ";
+
 
 $rows = [];
 try {
@@ -370,14 +418,14 @@ if ($q !== '') {
 }
 
 /* ---------------- Export link ---------------- */
-$qParams = [];
-if ($q !== '')
-  $qParams['q'] = $q;
-if ($status !== 'all')
-  $qParams['status'] = $status;
-if ($sort !== 'latest')
-  $qParams['sort'] = $sort;
-$exportUrl = '../includes/excel_reports.php' . ($qParams ? ('?' . http_build_query($qParams)) : '');
+$qParams = [
+  'q' => $q,
+  'status' => $status,
+  'sort' => $sort
+];
+if ($isAdminView) $qParams['agency'] = $agencyFilter;
+if ($countryFilter > 0) $qParams['country'] = $countryFilter;
+$exportUrl = '../includes/excel_reports.php?' . http_build_query($qParams);
 
 /* ---------------- Helpers ---------------- */
 function humanizeStatus(string $s): string
@@ -472,10 +520,45 @@ function statusBadgeClass(string $status): string
         </select>
       </div>
     </div>
+
+    <?php if ($isAdminView): ?>
+    <div class="col-12 col-lg-3">
+      <label class="text-muted small mb-1 d-block">Agency Filter</label>
+      <div class="btn-group w-100" role="group">
+        <a href="?<?php echo http_build_query(['q'=>$q, 'status'=>$status, 'sort'=>$sort, 'agency'=>'csnk']); ?>" 
+           class="btn <?php echo $agencyFilter==='csnk' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+          CSNK
+        </a>
+        <a href="?<?php echo http_build_query(['q'=>$q, 'status'=>$status, 'sort'=>$sort, 'agency'=>'smc']); ?>" 
+           class="btn <?php echo $agencyFilter==='smc' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+          SMC
+        </a>
+        <a href="?<?php echo http_build_query(['q'=>$q, 'status'=>$status, 'sort'=>$sort, 'agency'=>'all']); ?>" 
+           class="btn <?php echo $agencyFilter==='all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+          All
+        </a>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($isAdminView && $agencyFilter === 'smc'): ?>
+    <div class="col-12 col-lg-3">
+      <label class="text-muted small mb-1 d-block">SMC Country</label>
+      <select name="country" class="form-select" onchange="this.form.submit()">
+        <option value="">All SMC</option>
+        <?php foreach ($smcCountries as $id => $name): ?>
+          <option value="<?php echo $id; ?>" <?php echo $countryFilter==$id ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($name); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <?php endif; ?>
   </div>
 </form>
 
 <div class="card">
+
   <div class="card-body">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
