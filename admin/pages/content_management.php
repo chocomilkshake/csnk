@@ -399,6 +399,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
         }
     } elseif ($action === 'delete_content') {
         $id = (int) ($_POST['content_id'] ?? 0);
+
+  </div>
+
+  <!-- Content Tab -->
+                <label class="form-label">Description (applies to all)</label>
+                <textarea class="form-control" name="content_description" id="bulkDesc" rows="2" placeholder="Optional description for all uploads"></textarea>
+              </div>
+
+              <!-- Dropzone -->
+              <div id="dropzone" class="border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative" style="border-color:#cbd5e1;">
+                <div class="py-4">
+                  <div class="mb-2">
+                    <i class="bi bi-cloud-arrow-up fs-1 text-secondary"></i>
+                  </div>
+                  <p class="mb-1 fw-semibold">Drop images here or click to browse</p>
+                  <p class="text-muted small mb-0">Supports JPG, PNG, GIF, WebP</p>
+                </div>
+                <input id="fileInput" type="file" accept="image/*" multiple class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor:pointer;">
+              </div>
+
+              <!-- Previews -->
+              <div id="previewGrid" class="mt-3 row g-3"></div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button id="btnClearAll" type="button" class="btn btn-outline-secondary btn-sm" disabled>Clear All</button>
+                <button id="btnUpload" type="button" class="btn btn-primary ms-auto" disabled>
+                  <i class="bi bi-cloud-arrow-up me-1"></i>Upload All
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
