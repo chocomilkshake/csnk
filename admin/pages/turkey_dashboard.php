@@ -232,6 +232,12 @@ require_once $ADMIN_ROOT . '/includes/header.php';
     margin-bottom: 1rem;
   }
 
+  :root {
+    --smc-navy: #0B1F3A;
+    --smc-navy-2: #132A4A;
+    --smc-gold: #FFD84D;
+  }
+
     .agency-btn {
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -253,8 +259,8 @@ require_once $ADMIN_ROOT . '/includes/header.php';
 
   /* SMC Button - Navy Blue with Yellow Text */
   .agency-btn-smc {
-    background: #4d286c;
-    color: #FFD84D;
+    background: linear-gradient(135deg, var(--smc-navy) 0%, var(--smc-navy-2) 100%);
+    color: var(--smc-gold);
   }
 
   .agency-btn:hover {
