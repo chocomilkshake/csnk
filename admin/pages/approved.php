@@ -616,3 +616,24 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   --rep-focus: rgba(29, 78, 216, 0.25);
 }
     }
+
+
+      warnEl.classList.toggle('d-none', !anyTooBig);
+    }
+
+    // On modal open: fill data & reset state
+    modalEl?.addEventListener('show.bs.modal', function (ev) {
+      const btn = ev.relatedTarget;
+      const id   = btn?.getAttribute('data-applicant-id') || '';
+      const name = btn?.getAttribute('data-applicant-name') || '';
+
+      idInput.value = id;
+      nameEl.textContent = name || 'Applicant';
+
+      formEl.reset();
+      filesList.innerHTML = '';
+      warnEl.classList.add('d-none');
+      suggestEl.innerHTML = '';
+      updateCounter();
+
+<?php require_once '../includes/footer.php'; ?>
