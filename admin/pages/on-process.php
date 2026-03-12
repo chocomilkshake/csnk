@@ -871,16 +871,9 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
         <div class="row g-4">
           <div class="col-12 col-md-5">
             <label class="form-label fw-semibold" for="sr-reason">Reason</label>
-            <!-- 7-choice select -->
+            <!-- Dynamic reason select populated by JS -->
             <select class="form-select form-select-lg neo-input" id="sr-reason" aria-describedby="reasonHelp">
-              <option value="" selected>Select a reason (optional)</option>
-              <option value="All requirements completed">All requirements completed</option>
-              <option value="Passed interview / assessment">Passed interview / assessment</option>
-              <option value="Client confirmed approval">Client confirmed approval</option>
-              <option value="Qualified based on evaluation">Qualified based on evaluation</option>
-              <option value="Cleared for endorsement">Cleared for endorsement</option>
-              <option value="Ready for deployment / assignment">Ready for deployment / assignment</option>
-              <option value="Other">Other</option>
+              <option value="" selected disabled>Select reason based on status change</option>
             </select>
             <div class="form-text mt-1" id="reasonHelp" style="font-size: .95rem;">
               Pick a general label; you can add details on the right.
@@ -899,7 +892,7 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
               rows="6"
               maxlength="1000"
               required
-              placeholder="Write concise details for this status change (e.g., documents verified, client confirmation date, deployment readiness)."
+              placeholder="Enter details (prefill with selected reason)" id="sr-placeholder"
               aria-describedby="descHelp"></textarea>
             <div class="form-text mt-1" id="descHelp" style="font-size: .95rem;">
               Minimum 5 characters. This will be stored in the reports log.
@@ -934,6 +927,42 @@ $printReportsUrl  = 'reports-print.php' . $preserveQQ;
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Reason options by target status
+  const approvalReasons = [
+    { value: 'All requirements completed', label: 'All requirements completed', icon: 'bi-check-all' },
+    { value: 'Passed interview / assessment', label: 'Passed interview/assessment', icon: 'bi-mic-fill' },
+    { value: 'Client confirmed approval', label: 'Client confirmed approval', icon: 'bi-person-check-fill' },
+    { value: 'Qualified based on evaluation', label: 'Qualified on evaluation', icon: 'bi-star-fill' },
+    { value: 'Cleared for endorsement', label: 'Cleared for endorsement', icon: 'bi-hand-thumbs-up-fill' },
+    { value: 'Ready for deployment / assignment', label: 'Ready for deployment', icon: 'bi-rocket-takeoff-fill' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  const pendingReasons = [
+    { value: 'Client request / feedback', label: 'Client request/feedback', icon: 'bi-chat-heart' },
+    { value: 'Documents incomplete / pending', label: 'Docs incomplete/pending', icon: 'bi-file-earmark-x' },
+    { value: 'Interview reschedule needed', label: 'Interview reschedule', icon: 'bi-calendar-x' },
+    { value: 'Needs further evaluation', label: 'Needs more evaluation', icon: 'bi-search' },
+    { value: 'Applicant availability issue', label: 'Applicant availability', icon: 'bi-clock' },
+    { value: 'Compliance / verification pending', label: 'Compliance pending', icon: 'bi-shield-check' },
+    { value: 'Client decision delayed', label: 'Client decision delayed', icon: 'bi-pause-circle' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  // Function to populate reason select
+  function populateReasons(options) {
+    const select = document.getElementById('sr-reason');
+    select.innerHTML = '<option value="" selected disabled>Select a reason</option>';
+    options.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      el.dataset.icon = opt.icon;  // For potential styling
+      select.appendChild(el);
+    });
+    select.value = options[0]?.value || '';
+  }
+
   // Initialize Bootstrap dropdowns for Change Status buttons
   var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
   btns.forEach(function(btn) {
@@ -1003,10 +1032,20 @@ document.addEventListener('DOMContentLoaded', function () {
           avatarFallback.classList.remove('d-none');
         }
 
-        // Reset reason + description
+        // Reset and populate based on target status
         reasonSelect.value = '';
         descTA.value = '';
+        descTA.placeholder = toSt === 'approved' ? 
+          'Write concise details for approval (e.g., documents verified, client confirmation date, deployment readiness).' : 
+          'Write concise details for reverting to pending (e.g., missing docs, client feedback, needs reschedule).';
         updateCounter();
+
+        // Populate appropriate reasons
+        if (toSt === 'approved') {
+          populateReasons(approvalReasons);
+        } else if (toSt === 'pending') {
+          populateReasons(pendingReasons);
+        }
 
         if (modal) modal.show();
 
