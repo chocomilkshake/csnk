@@ -400,6 +400,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
     } elseif ($action === 'delete_content') {
         $id = (int) ($_POST['content_id'] ?? 0);
 
+        if ($id > 0) {
+            // Get image path before deleting
+            $stmt = $conn->prepare("SELECT image_path FROM content_items WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $activeBUId);
+            $stmt->execute();
+                          </form>
+                          <form method="POST" class="d-inline"
+                                <textarea class="form-control" name="category_description" rows="2"><?= htmlspecialchars($cat['description'] ?? '') ?></textarea>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Content Tab -->
