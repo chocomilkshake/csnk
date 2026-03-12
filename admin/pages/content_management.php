@@ -394,7 +394,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
                     $message = 'Failed to update content.';
                     $messageType = 'danger';
                 }
-                $stmt->close();= $item['id'] ?>">
+                $stmt->close();
+            }
+        }
+    } elseif ($action === 'delete_content') {
+                      <td>
+                          </form>
+                          <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this content?');">
+                            <input type="hidden" name="action" value="delete_content">
+                            <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+                            <button type="submit" class="btn btn-outline-danger" title="Delete">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Edit Content Modal -->
+                    <div class="modal fade" id="editContentModal<?= $item['id'] ?>" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Edit Content</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <form method="POST" enctype="multipart/form-data">
+                            <div class="modal-body">
+                              <input type="hidden" name="action" value="update_content">
+                              <input type="hidden" name="content_id" value="<?= $item['id'] ?>">
                               <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
                               <div class="mb-3">
                                 <label class="form-label">Title</label>
