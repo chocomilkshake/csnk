@@ -64,6 +64,9 @@ function clean_str(string $v): string {
 }
 $q  = isset($_GET['q']) ? clean_str((string)$_GET['q']) : '';
 $id = isset($_GET['id']) ? max(0, (int)$_GET['id']) : 0;
+$status = isset($_GET['status']) ? strtolower(trim((string)$_GET['status'])) : 'all';
+$agencyFilter = isset($_GET['agency']) ? strtolower(trim((string)$_GET['agency'])) : 'all';
+$countryFilter = isset($_GET['country']) ? max(0, (int)$_GET['country']) : 0;
 if ($q === '' && !empty($_SESSION['reports_q'])) $q = (string)$_SESSION['reports_q'];
 
 /* ------ Helpers ------ */
@@ -242,70 +245,162 @@ if ($id > 0) {
 /* ======================================================================
  * MODE A: All approved applicants + all reports (your original)
  * ====================================================================*/
-$qEsc   = $q !== '' ? addcslashes($q, '%_') : '';
-$rows   = [];
-$types  = '';
+$whereStatus = "a.deleted_at IS NULL AND (
+    (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) > 0
+    OR (SELECT COUNT(*) FROM applicant_status_reports s2 WHERE s2.applicant_id = a.id) > 0
+)";
+
 $params = [];
+$types = '';
+
+$allowedStatuses = ['all', 'pending', 'on_process', 'approved', 'on_hold', 'deleted'];
+if (!in_array($status, $allowedStatuses, true)) $status = 'all';
+
+if ($status !== 'all') {
+  $whereStatus .= " AND a.status = ?";
+  $params[] = $status;
+  $types .= 's';
+}
+
+// Agency filter (match reports.php logic)
+$currentAgency = isset($_SESSION['agency']) ? $_SESSION['agency'] : null;
+$isAdminView = isset($_SESSION['admin_role']) && ($_SESSION['admin_role'] === 'admin' || $_SESSION['admin_role'] === 'super');
+if (!$isAdminView && $currentAgency) {
+  $whereStatus .= " AND ag.code = ?";
+  $params[] = $currentAgency;
+  $types .= 's';
+} elseif ($isAdminView && $agencyFilter !== 'all') {
+  $whereStatus .= " AND ag.code = ?";
+  $params[] = $agencyFilter;
+  $types .= 's';
+}
+
+// Country filter (SMC only)
+if ($countryFilter > 0 && $agencyFilter === 'smc') {
+  $whereStatus .= " AND bu.country_id = ?";
+  $params[] = $countryFilter;
+  $types .= 'i';
+}
+
+$activityExpr = "GREATEST(
+    COALESCE(lr.created_at,'0000-00-00 00:00:00'),
+    COALESCE(lsr.created_at,'0000-00-00 00:00:00')
+)";
+$orderSql = " ORDER BY {$activityExpr} DESC, a.id DESC";
+
 $sql = "
 SELECT
-  a.id,
-  a.first_name, a.middle_name, a.last_name, a.suffix,
-  a.email, a.phone_number,
-  a.created_at                    AS approved_at,
-  ar.note_text                    AS report_text,
-  ar.created_at                   AS report_created_at,
-  COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS admin_name
+  a.*,
+  ag.code AS agency_code,
+  lr.note_text         AS latest_note,
+  lr.created_at        AS latest_note_at,
+  COALESCE(NULLIF(au.full_name,''), NULLIF(au.username,''), NULLIF(au.email,'')) AS latest_note_admin,
+  lsr.from_status      AS last_from_status,
+  lsr.to_status        AS last_to_status,
+  lsr.created_at       AS last_status_at,
+  COALESCE(NULLIF(au2.full_name,''), NULLIF(au2.username,''), NULLIF(au2.email,'')) AS last_status_admin,
+  (SELECT COUNT(*) FROM applicant_reports r2 WHERE r2.applicant_id = a.id) AS report_count
 FROM applicants a
-LEFT JOIN applicant_reports ar ON ar.applicant_id = a.id
-LEFT JOIN admin_users     au ON au.id = ar.admin_id
-WHERE a.deleted_at IS NULL AND a.status = 'approved'
+LEFT JOIN business_units bu ON bu.id = a.business_unit_id
+LEFT JOIN agencies ag ON ag.id = bu.agency_id
+/* latest note */
+LEFT JOIN (
+  SELECT ar1.*
+  FROM applicant_reports ar1
+  INNER JOIN (
+    SELECT applicant_id, MAX(id) AS max_id
+    FROM applicant_reports
+    GROUP BY applicant_id
+  ) t ON t.applicant_id = ar1.applicant_id AND t.max_id = ar1.id
+) lr ON lr.applicant_id = a.id
+LEFT JOIN admin_users au ON au.id = lr.admin_id
+/* latest status change */
+LEFT JOIN (
+  SELECT asr1.*
+  FROM applicant_status_reports asr1
+  INNER JOIN (
+    SELECT applicant_id, MAX(id) AS max_sid
+    FROM applicant_status_reports
+    GROUP BY applicant_id
+  ) ts ON ts.applicant_id = asr1.applicant_id AND ts.max_sid = asr1.id
+) lsr ON lsr.applicant_id = a.id
+LEFT JOIN admin_users au2 ON au2.id = lsr.admin_id
+WHERE {$whereStatus}
+{$orderSql}
 ";
-if ($q !== '') {
-    $like = '%' . $qEsc . '%';
-    $sql .= " AND (
-        CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name, a.suffix) LIKE ?
-        OR a.email LIKE ?
-        OR a.phone_number LIKE ?
-        OR ar.note_text LIKE ?
-        OR au.full_name LIKE ?
-        OR au.username LIKE ?
-        OR au.email LIKE ?
-    )";
-    $params = [$like,$like,$like,$like,$like,$like,$like];
-    $types  = 'sssssss';
-}
-$sql .= " ORDER BY a.created_at DESC, ar.created_at DESC, ar.id DESC";
 
-$stmt = $conn->prepare($sql);
-if ($stmt) {
-    if (!empty($params)) {
-        $refs=[]; foreach ($params as $k=>$v){ $refs[$k]=&$params[$k]; }
-        array_unshift($refs, $types);
-        call_user_func_array([$stmt,'bind_param'], $refs);
-    }
-    $stmt->execute();
-    $res = $stmt->get_result();
-    if ($res) { while ($row = $res->fetch_assoc()) $rows[] = $row; $res->free(); }
-    $stmt->close();
+$qEsc   = $q !== '' ? addcslashes($q, '%_') : '';
+$rows   = [];
+if ($q !== '') {
+  $like = '%' . $qEsc . '%';
+  $sql .= " HAVING (
+    CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name, a.suffix) LIKE ?
+    OR a.email LIKE ?
+    OR a.phone_number LIKE ?
+    OR lr.note_text LIKE ?
+    OR au.full_name LIKE ?
+    OR au.username LIKE ?
+    OR au.email LIKE ?
+    OR au2.full_name LIKE ?
+    OR au2.username LIKE ?
+    OR au2.email LIKE ?
+  )";
+  $params = array_merge($params, [$like,$like,$like,$like,$like,$like,$like,$like,$like,$like]);
+  $types .= str_repeat('s', 10);
 }
+
+try {
+  if ($types !== '') {
+    if ($stmt = $conn->prepare($sql)) {
+      $stmt->bind_param($types, ...$params);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+      $stmt->close();
+    }
+  } else {
+    if ($res = $conn->query($sql)) {
+      $rows = $res->fetch_all(MYSQLI_ASSOC);
+    }
+  }
+} catch (Throwable $e) {
+  $rows = [];
+}
+
+// Post-process to match reports.php (latest activity)
+foreach ($rows as &$r) {
+  $noteAt = $r['latest_note_at'] ?? '';
+  $statusAt = $r['last_status_at'] ?? '';
+  if ($statusAt !== '' && $statusAt > $noteAt) {
+    $r['latest_activity_at'] = $statusAt;
+    $r['latest_activity_text'] = 'Status: ' . str_replace('_', ' ', $r['last_from_status'] ?? '') 
+                                . ' → ' . str_replace('_', ' ', $r['last_to_status'] ?? '');
+    $r['latest_activity_admin'] = $r['last_status_admin'] ?? '';
+  } else {
+    $r['latest_activity_at'] = $noteAt;
+    $r['latest_activity_text'] = $r['latest_note'] ?? '';
+    $r['latest_activity_admin'] = $r['latest_note_admin'] ?? '';
+  }
+}
+unset($r);
 
 /* ------ Build spreadsheet with SAME DESIGN as your file ------ */
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
-$sheet->setTitle('Approved + Reports');
+$sheet->setTitle('Activity Reports');
 
 $spreadsheet->getProperties()
     ->setCreator('CSNK Manpower Agency')->setLastModifiedBy('CSNK Manpower Agency')
-    ->setTitle('Approved Applicants with Reports')->setSubject('Reports')
-    ->setDescription('Approved applicants and their admin reports (all entries)')->setCategory('Export');
+    ->setTitle('Activity Reports')->setSubject('Reports')
+    ->setDescription('Filtered applicants with recent activity/reports/status changes')->setCategory('Export');
 
 $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(11);
 
-// Columns/headers
+// Columns/headers (9 cols)
 $headerRow=4; $dataStart=$headerRow+1;
-$cols=['A','B','C','D','E','F','G','H'];
-$headers=['#','Name','Phone','Email','Report','Reported By','Reported At','Date Approved'];
-$lastHeaderCol=end($cols);
+$cols=['A','B','C','D','E','F','G','H','I'];
+$headers=['#','Name','Phone','Email','Status','Latest Activity','Latest By','Latest At','Reports'];
+$lastHeaderCol='I';
 
 // Optional logo
 $logoPath = realpath(__DIR__ . '/../resources/img/whychoose.png');
@@ -317,9 +412,10 @@ if ($logoPath && is_readable($logoPath)) {
     $drawing->setWorksheet($sheet);
 }
 
-$title='Approved Applicants + All Reports';
-$subtitle='Exported on ' . date('M j, Y') . ' | ' . date('h:i A');
-if ($q !== '') { $subtitle .= ' — Filter: '.$q; }
+$title = 'Activity Reports (Status: ' . ucfirst(str_replace('_', ' ', $status)) . ', Agency: ' . ucfirst($agencyFilter) . ')';
+$subtitle = 'Exported on ' . date('M j, Y') . ' | ' . date('h:i A');
+if ($q !== '') $subtitle .= ' — Search: ' . $q;
+if ($countryFilter > 0) $subtitle .= ' — Country ID: ' . $countryFilter;
 
 $sheet->setCellValue('B1', $title);
 $sheet->mergeCells('B1:H1');
@@ -394,6 +490,7 @@ $sheet->getStyle("A{$headerRow}:{$lastHeaderCol}{$lastDataRow}")->getBorders()->
 $sheet->freezePane("A{$dataStart}");
 $sheet->setAutoFilter("A{$headerRow}:{$lastHeaderCol}{$headerRow}");
 foreach ($cols as $c){ $sheet->getColumnDimension($c)->setAutoSize(true); }
+$sheet->getColumnDimension('F')->setWidth(50);  // Extra for Latest Activity wrap
 
 // Footer spacer
 $footerRow = $lastDataRow + 2;
@@ -402,7 +499,7 @@ $sheet->mergeCells("A{$footerRow}:{$lastHeaderCol}{$footerRow}");
 
 // Download
 while (ob_get_level() > 0) { ob_end_clean(); }
-$filename = 'approved_with_reports_' . date('Ymd_His') . '.xlsx';
+$filename = 'activity_reports_' . date('Ymd_His') . '.xlsx';
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="'.$filename.'"');
 header('Cache-Control: max-age=0');
