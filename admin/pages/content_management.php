@@ -398,6 +398,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             }
         }
     } elseif ($action === 'delete_content') {
+        $id = (int) ($_POST['content_id'] ?? 0);
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing Items -->
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Content Items</h5>
+            <div class="text-muted small"><?= count($contentItems) ?> item(s)</div>
+          </div>
+          <div class="card-body">
+            <?php if (empty($contentItems)): ?>
+              <p class="text-muted mb-0">No content yet. Add images to see them here.</p>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Category</th>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php foreach ($contentItems as $item): ?>
+                    <tr>
                       <td>
                         <?php if (!empty($item['image_path'])): ?>
                           <img src="<?= getFileUrl($item['image_path']) ?>" alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
