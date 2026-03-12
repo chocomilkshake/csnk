@@ -327,7 +327,31 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
 <div class="card table-card">
     <div class="card-body">
         <!-- Removed .table-responsive to avoid scroll/clipping -->
-        <table class="table table-b
+        <table class="table table-bordered table-striped table-hover table-styled align-middle">
+            <thead>
+                <tr>
+                    <th>Photo</th>lchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(renderP
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- NOTE: Delete button intentionally removed on this page -->
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- ===== Replace Modal (Light-only, Senior-friendly) ===== -->
 <div class="modal fade rep-modal" id="replaceModal" tabindex="-1" aria-hidden="true" role="dialog" aria-labelledby="repModalTitle">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
