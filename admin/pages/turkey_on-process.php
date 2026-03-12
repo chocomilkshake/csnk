@@ -531,7 +531,13 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
 
                                         <!-- Change Status Dropdown -->
                                         <div class="dropdown dropup">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" title="Change Status" id="changeStatusBtn-<?php echo $id; ?>">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-auto-close="false"
+                                                    aria-expanded="false"
+                                                    title="Change Status"
+                                                    id="changeStatusBtn-<?php echo $id; ?>">
                                                 <i class="bi bi-arrow-left-right me-1"></i> Change Status
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
@@ -612,13 +618,9 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
         <div class="row g-4">
           <div class="col-12 col-md-6">
             <label class="form-label fw-semibold">Reason</label>
+            <!-- Dynamic reason select populated by JS -->
             <select class="form-select form-select-lg" id="sr-reason">
-              <option value="" selected>Select a reason (optional)</option>
-              <option value="Interview rescheduled">Interview rescheduled</option>
-              <option value="Client confirmed / Ready">Client confirmed / Ready</option>
-              <option value="Requirements complete">Requirements complete</option>
-              <option value="Passed interview / assessment">Passed interview / assessment</option>
-              <option value="Other">Other</option>
+              <option value="" selected disabled>Select reason based on status change</option>
             </select>
             <div class="form-text mt-1">Pick a quick label; you can add details on the right.</div>
           </div>
@@ -676,6 +678,42 @@ document.addEventListener('DOMContentLoaded', function() {
     var avatarLetter = document.getElementById('srAvatarLetter');
 
     // Counter
+    // Reason options by target status
+  const approvalReasons = [
+    { value: 'All requirements completed', label: 'All requirements completed', icon: 'bi-check-all' },
+    { value: 'Passed interview / assessment', label: 'Passed interview/assessment', icon: 'bi-mic-fill' },
+    { value: 'Client confirmed approval', label: 'Client confirmed approval', icon: 'bi-person-check-fill' },
+    { value: 'Qualified based on evaluation', label: 'Qualified on evaluation', icon: 'bi-star-fill' },
+    { value: 'Cleared for endorsement', label: 'Cleared for endorsement', icon: 'bi-hand-thumbs-up-fill' },
+    { value: 'Ready for deployment / assignment', label: 'Ready for deployment', icon: 'bi-rocket-takeoff-fill' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  const pendingReasons = [
+    { value: 'Client request / feedback', label: 'Client request/feedback', icon: 'bi-chat-heart' },
+    { value: 'Documents incomplete / pending', label: 'Docs incomplete/pending', icon: 'bi-file-earmark-x' },
+    { value: 'Interview reschedule needed', label: 'Interview reschedule', icon: 'bi-calendar-x' },
+    { value: 'Needs further evaluation', label: 'Needs more evaluation', icon: 'bi-search' },
+    { value: 'Applicant availability issue', label: 'Applicant availability', icon: 'bi-clock' },
+    { value: 'Compliance / verification pending', label: 'Compliance pending', icon: 'bi-shield-check' },
+    { value: 'Client decision delayed', label: 'Client decision delayed', icon: 'bi-pause-circle' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  // Function to populate reason select
+  function populateReasons(options) {
+    const select = document.getElementById('sr-reason');
+    select.innerHTML = '<option value="" selected disabled>Select a reason</option>';
+    options.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      el.dataset.icon = opt.icon;
+      select.appendChild(el);
+    });
+    select.value = options[0]?.value || '';
+  }
+
     var updateCounter = function() {
         var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
         counterEl.textContent = (descTA.value.length) + '/' + max;
@@ -716,9 +754,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     avatarFallback.classList.remove('d-none');
                 }
 
+                // Reset and populate based on target status
                 reasonSelect.value = '';
                 descTA.value = '';
+                descTA.placeholder = toSt === 'approved' ? 
+                  'Write concise details for approval (e.g., documents verified, client confirmation date, deployment readiness).' : 
+                  'Write concise details for reverting to pending (e.g., missing docs, client feedback, needs reschedule).';
                 updateCounter();
+
+                // Populate appropriate reasons
+                if (toSt === 'approved') {
+                  populateReasons(approvalReasons);
+                } else if (toSt === 'pending') {
+                  populateReasons(pendingReasons);
+                }
 
                 if (modal) modal.show();
                 return;
