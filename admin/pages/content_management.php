@@ -409,6 +409,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             $item = $result->fetch_assoc();
             $stmt->close();
 
+            $stmt = $conn->prepare("DELETE FROM content_items WHERE id = ? AND business_unit_id = ?");
+            $stmt->bind_param("ii", $id, $
+<?php if ($showNoBUMessage): ?>
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    No Business Units found for agency <strong><?= strtoupper($activeAgencyCode) ?></strong>. 
+    Please add a Business Unit first in Country Management.
+  </div>
+<?php else: ?>
+>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+      <i class="bi bi-folder me-2"></i>Categories
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
+      <i class="bi bi-images me-2"></i>Content / Images
+    </button>
+  </li>
+</ul>
+
 <div class="tab-content" id="contentTabContent">
 
   <!-- Categories Tab -->
