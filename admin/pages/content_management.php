@@ -406,6 +406,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
             $stmt->bind_param("ii", $id, $activeBUId);
             $stmt->execute();
             $result = $stmt->get_result();
+            $item = $result->fetch_assoc();
+            $stmt->close();
+
+<div class="tab-content" id="contentTabContent">
+
+  <!-- Categories Tab -->
+  <div class="tab-pane fade show active" id="ca
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold">Categories</h5>
+          </div>
+          <div class="card-body">
+            <?php if (empty($categories)): ?>
+              <p class="text-muted mb-0">No categories yet. Add one to get started.</p>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                      <th>Items</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php foreach ($categories as $cat): 
                       $cid = (int)$cat['id'];
                       $itemCount = $categoryCounts[$cid] ?? 0;
                   ?>
