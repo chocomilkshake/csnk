@@ -303,10 +303,6 @@ $totalBookings = count($clientBookings);
         transition: all 0.3s ease;
     }
 
-    .glass-card:hover {
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-    }
 
     .soft-divider {
         height: 1px;
@@ -332,11 +328,6 @@ $totalBookings = count($clientBookings);
         right: 0;
         height: 4px;
         background: linear-gradient(90deg, var(--stat-color-start), var(--stat-color-end));
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
     }
 
     .stat-card.pending {
@@ -787,7 +778,8 @@ $totalBookings = count($clientBookings);
                                     <div class="fw-bold text-primary"><?php echo safe($applicantFullName); ?></div>
                                 </a>
                                 <div class="text-muted small"><i class="bi bi-hash me-1"></i>ID:
-                                    <?php echo (int) ($booking['applicant_id'] ?? 0); ?></div>
+                                    <?php echo (int) ($booking['applicant_id'] ?? 0); ?>
+                                </div>
                             </td>
                             <td>
                                 <?php
