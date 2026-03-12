@@ -615,6 +615,36 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
   --rep-primary-500: #2563eb;
   --rep-focus: rgba(29, 78, 216, 0.25);
 }
+}
+ariant-numeric: tabular-nums; }
+</style>
+
+<!-- ===== Scripts for Replace Modal binding & CSRF exposure ===== -->
+<script src="../js/replacements.js"></script>
+<script>
+  // Expose CSRF to replacements.js
+  window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
+
+  (function() {
+    const modalEl   = document.getElementById('replaceModal');
+    const formEl    = document.getElementById('replaceInitForm');
+    const nameEl    = document.getElementById('replaceApplicantName');
+    const idInput   = document.getElementById('replaceOriginalId');
+    const reasonSel = document.getElementById('rep-reason');
+    const noteTA    = document.getElementById('rep-note');
+    const counterEl = document.getElementById('rep-note-counter');
+    const filesIn   = document.getElementById('rep-files');
+    const filesList = document.getElementById('rep-files-list');
+    const warnEl    = document.getElementById('rep-files-warning');
+    const suggestEl = document.getElementById('replacementCandidates');
+
+    const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200MB
+
+    function fmtSize(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, val = bytes;
+      while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+      return (Math.round(val * 10) / 10) + ' ' + units[i];
     }
 
     function updateCounter() {
