@@ -412,7 +412,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
 <div class="tab-content" id="contentTabContent">
 
   <!-- Categories Tab -->
-  <div class="tab-pane fade show active" id="ca
+  <div class="tab-pane fade show active" id="categories" role="tabpanel">
+    <div class="row">
+      <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold">Add Category</h5>
+          </div>
+          <div class="card-body">
+            <form method="POST">
+              <input type="hidden" name="action" value="add_category">
+              <input type="hidden" name="business_unit_id" value="<?= (int)$activeBUId ?>">
+              <div class="mb-3">
+                <label class="form-label">Category Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="category_name" required placeholder="e.g., About Us">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" name="category_description" rows="2" placeholder="Optional description"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Add Category
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white py-3">
             <h5 class="mb-0 fw-semibold">Categories</h5>
