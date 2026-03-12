@@ -1143,7 +1143,8 @@ function scopeUrl($path, $agency, $bu) {
         fd.append('titles[]', title || '');
       });
 
-      const baseUrl = window.location.pathname + '?agency=<?= (int)$activeAgencyId ?>&bu=<?= (int)$activeBUId ?>';
+      // Use window.location.origin to get the full URL including hostname
+      const baseUrl = window.location.origin + window.location.pathname + '?agency=<?= (int)$activeAgencyId ?>&bu=<?= (int)$activeBUId ?>';
       await fetch(baseUrl, { method: 'POST', body: fd });
       window.location.reload();
     } catch (e) {
