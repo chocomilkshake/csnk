@@ -330,7 +330,25 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
         <table class="table table-bordered table-striped table-hover table-styled align-middle">
             <thead>
                 <tr>
-                    <th>Photo</th>lchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
+                    <th>Photo</th>
+                    <th>Applicant</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Preferr
+                                        width="50"
+                                        height="50"
+                                        style="object-fit: cover;"
+                                    >
+                                <?php else: ?>
+                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                         style="width: 50px; height: 50px;">
+                                        <?php echo strtoupper(substr((string)$row['first_name'], 0, 1)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">
+                                    <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                             </td>
                             <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
