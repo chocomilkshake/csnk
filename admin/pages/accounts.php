@@ -788,4 +788,11 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             </span>
           </td>
 
-          <td><small class="te
+          <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
+
+          <td class="text-end">
+            <div class="action-buttons btn-group btn-group-sm">
+              
+            <label class="form-label">Agency</label>
+            <select class="form-select" name="agency" id="addAgency" required>
+              <?php foreach ($agencies as $ag): ?>
