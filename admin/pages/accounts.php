@@ -884,7 +884,31 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             </td>
             <td>
               <span class="status-badge status-<?= $acc['status'] ?>">
-                <?= ucfirst($acc['sta
+                <?= ucfirst($acc['status']) ?>
+              </span>
+            </td>
+            <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
+            <td class="text-end">
+              <div class="action-buttons btn-group btn-group-sm">
+                <button type="button" class="btn btn-warning"
+                        data-bs-toggle="modal" data-bs-target="#editAccountModal"
+                        data-user-id="<?= (int)$acc['id'] ?>"
+                        data-username="<?= htmlspecialchars($acc['username']) ?>"
+                        data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
+                        data-email="<?= htmlspecialchars($acc['email']) ?>"
+                        data-status="<?= htmlspecialchars($acc['status']) ?>"
+                        data-branch-id="<?= (int)($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
+                        data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
+                        data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
+                        data-role="<?= htmlspecialchars($acc['role']) ?>">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
+                <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" class="btn btn-danger"
+                   onclick="return confirm('Delete this super admin?')">
+                  <i class="bi bi-trash"></i>
+                </a>
+                <?php endif; ?>
               </div>
             </td>
           </tr>
