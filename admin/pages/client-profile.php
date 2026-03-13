@@ -618,9 +618,8 @@ $totalBookings = count($clientBookings);
         </div>
     </div>
     <div class="d-flex gap-2 align-items-center">
-        <a href="../includes/excel_client_profile.php?id=<?php echo (int) $bookingId; ?>" class="btn-export"
-            target="_blank">
-            <i class="bi bi-file-earmark-excel"></i> Export to Excel
+        <a href="../includes/excel_client_profile.php?id=<?php echo (int) $bookingId; ?>" class="btn-export"">
+            <i class=" bi bi-file-earmark-excel"></i> Export to Excel
         </a>
         <span class="badge"
             style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); color: #475569; font-weight: 600; padding: 10px 16px; border-radius: 10px;">
