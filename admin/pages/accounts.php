@@ -946,3 +946,26 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             <label class="form-label">Agency</label>
             <select class="form-select" name="agency" id="addAgency" required>
               <?php foreach ($agencies as $ag): ?>
+                <option value="<?= htmlspecialchars($ag['code']) ?>" <?= $ag['code'] === ($agencies[0]['code'] ?? '') ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($ag['name']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          
+          <!-- Agency-specific content -->
+          <div class="tab-content">
+            <?php foreach ($agencies as $i => $ag): ?>
+              <div class="tab-pane fade <?= $i === 0 ? 'show active' : '' ?>" id="agency-<?= htmlspecialchars($ag['code']) ?>-tab">
+                <div class="mb-3">
+                  <label class="form-label">Username <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" name="username" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" name="full_name" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-
