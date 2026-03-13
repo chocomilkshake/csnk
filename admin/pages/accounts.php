@@ -756,4 +756,36 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           <th>Email</th>
           <th>Status</th>
           <th>Created</th>
-          <th class="
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <?php foreach ($adminAccounts as $acc): ?>
+        <tr>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="account-avatar flex-shrink-0">
+                <?= strtoupper(substr($acc['username'], 0, 1)) ?>
+              </div>
+              <div class="ms-3">
+                <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
+              </div>
+            </div>
+          </td>
+
+          <td><?= htmlspecialchars($acc['full_name']) ?></td>
+
+          <td>
+            <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
+              <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
+            </a>
+          </td>
+
+          <td>
+            <span class="status-badge status-<?= $acc['status'] ?>">
+              <?= ucfirst($acc['status']) ?>
+            </span>
+          </td>
+
+          <td><small class="te
