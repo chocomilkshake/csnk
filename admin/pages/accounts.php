@@ -1039,6 +1039,39 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           <h5 class="modal-title">Edit Account</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          <input type="hidden" name="edit_user_id" id="editUserId">
+          <input type="hidden" id="editRoleHidden" value="">
+          <div class="mb-3">
+            <label class="form-label">Username <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="edit_username" id="editUsername" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="edit_full_name" id="editFullName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" name="edit_email" id="editEmail" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="edit_status" id="editStatus">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div class="mb-3 d-none" id="editBranchWrapper">
+            <label class="form-label">Branch (Employee)</label>
+            <select class="form-select" name="edit_business_unit_id" id="editBranch">
+              <option value="0">-- Select branch --</option>
+              <?php foreach ($branches as $branch): ?>
+                <option value="<?= (int)$branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?> (<?= htmlspecialchars($branch['code']) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
           <small class="text-muted">Role is not changed here.</small>
         </div>
         <div class="modal-footer">
