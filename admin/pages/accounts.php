@@ -1000,3 +1000,23 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                         <option value="employee" selected>Employee</option>
                         <option value="admin">Admin</option>
                       <?php endif; ?>
+                    </select>
+                  </div>
+
+                  <div class="mb-3" id="branchWrapper">
+                    <label class="form-label">Branch (for Employee) <span class="text-danger">*</span></label>
+                    <select class="forr, lower, number, special).</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="reset_password" class="btn btn-secondary">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+
+<script>
+(function(){
