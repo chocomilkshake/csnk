@@ -968,4 +968,35 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-
+                  <label class="form-label">Email <span class="text-danger">*</span></label>
+                  <input type="email" class="form-control" name="email" id="emailInput" required placeholder="name@gmail.com">
+                  <div class="form-text" id="emailHint"></div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Password <span class="text-danger">*</span></label>
+                  <input type="password" class="form-control" name="password" id="pwdInput" required minlength="10" placeholder="Strong password">
+                  <div class="progress mt-2" style="height:8px;">
+                    <div id="pwdBar" class="progress-bar" role="progressbar" style="width:0%"></div>
+                  </div>
+                  <small class="text-muted">Min 10 chars with uppercase, lowercase, number, and special character.</small>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                  <input type="password" class="form-control" name="password2" id="pwdInput2" required minlength="10" placeholder="Confirm password">
+                  <div class="form-text" id="pwdMatchHint"></div>
+                </div>
+
+                <?php if ($ag['code'] === 'csnk'): ?>
+                  <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" name="role" id="roleSelect">
+                      <?php if ($isSuperAdmin): ?>
+                        <option value="employee" selected>Employee</option>
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                      <?php else: ?>
+                        <option value="employee" selected>Employee</option>
+                        <option value="admin">Admin</option>
+                      <?php endif; ?>
