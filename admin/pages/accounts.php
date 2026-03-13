@@ -793,6 +793,38 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           <td class="text-end">
             <div class="action-buttons btn-group btn-group-sm">
               
+<button type="button" class="btn btn-warning"
+                data-bs-toggle="modal" data-bs-target="#editAccountModal"
+                data-user-id="<?= (int)$acc['id'] ?>"
+                data-username="<?= htmlspecialchars($acc['username']) ?>"
+                data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
+                data-email="<?= htmlspecialchars($acc['email']) ?>"
+                data-status="<?= htmlspecialchars($acc['status']) ?>"
+                data-branch-id="<?= (int)($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
+                data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
+                data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
+                data-role="<?= htmlspecialchars($acc['role']) ?>">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+
+              <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
+              <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" 
+                 class="btn btn-danger"
+                 onclick="return confirm('Delete this admin?')">
+                <i class="bi bi-trash"
+        <!-- Agency Tabs (generated from database) -->
+        <ul class="nav nav-tabs border-0 mb-0" id="agencyTabs">
+          <?php foreach ($agencies as $i => $ag): ?>
+            <li class="nav-item">
+              <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#agency-<?= htmlspecialchars($ag['code']) ?>-tab" data-agency="<?= htmlspecialchars($ag['code']) ?>">
+                <?= htmlspecialchars($ag['name']) ?> Accounts
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+<div class="modal-body">
+          <!-- visible agency selector so user knows which agency is being created -->
+          <div class="mb-3">
             <label class="form-label">Agency</label>
             <select class="form-select" name="agency" id="addAgency" required>
               <?php foreach ($agencies as $ag): ?>
