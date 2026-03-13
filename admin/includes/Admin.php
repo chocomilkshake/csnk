@@ -31,43 +31,91 @@ class Admin {
     }
 
     /**
-     * Normalize/validate agency by role.
-     * - For 'employee': must be 'csnk' or 'smc'.
-     * - For 'admin'/'super_admin': must be null.
+     * Get active agencies (used for account creation/filtering).
      *
-     * @return string|null normalized agency or null
+     * Returns array of ['code'=>..., 'name'=>...] rows from agencies table.
      */
-    private function computeAgencyForRole(string $role, ?string $agency): ?string {
+    public function getAgencies(): array {
+        $sql = "SELECT code, name FROM agencies WHERE active = 1 ORDER BY name ASC";
+        $result = $this->db->query($sql);
+        return $result ? ($result->fetch_all(MYSQLI_ASSOC) ?: []) : [];
+    }
+
+    /**
+     * Get active branches for dropdown.
+     */
+    public function getActiveBranches(): array {
+        $sql = "SELECT id, code, name FROM csnk_branches WHERE status = 'ACTIVE' ORDER BY sort_order ASC, name ASC";
+        $result = $this->db->query($sql);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    /**
+     * Validate branch_id for role.
+     * Employee: must be valid active branch ID.
+     * Admin/Super Admin: NULL or valid branch ID.
+     */
+    private function validateBranchIdForRole(string $role, ?int $branchId): bool {
         $role = $this->normalizeRole($role);
         if ($role === 'employee') {
-            $ag = strtolower((string)$agency);
-            if (in_array($ag, ['csnk','smc'], true)) {
-                return $ag;
-            }
-            // invalid for employee -> caller should catch this and fail
-            return null;
+            if ($branchId === null || $branchId <= 0) return false;
+            // Check exists and active
+            $stmt = $this->db->prepare("SELECT id FROM csnk_branches WHERE id = ? AND status = 'ACTIVE'");
+            $stmt->bind_param("i", $branchId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            return $result->num_rows > 0;
         }
-        // admin/super_admin => global scope
-        return null;
+        // admin/super_admin: optional
+        return true;
     }
 
     /**
      * Get all admin users.
      * @param bool $excludeSuperAdmins If true, exclude users with role 'super_admin'
      */
-    public function getAll(bool $excludeSuperAdmins = false): array {
+    /**
+     * Get all admin users with agency.
+     */
+    public function getAll(bool $excludeSuperAdmins = true): array {
+        $sql = "SELECT au.id, au.username, au.email, au.full_name, au.avatar, au.role, au.status, au.agency, au.created_at,
+                b.id as branch_id, b.code as branch_code, b.name as branch_name, au.business_unit_id
+                FROM admin_users au
+                LEFT JOIN csnk_branches b ON au.business_unit_id = b.id";
         if ($excludeSuperAdmins) {
-            $sql = "SELECT id, username, email, full_name, avatar, role, status, agency, created_at
-                    FROM admin_users
-                    WHERE role <> 'super_admin'
-                    ORDER BY created_at DESC";
-        } else {
-            $sql = "SELECT id, username, email, full_name, avatar, role, status, agency, created_at
-                    FROM admin_users
-                    ORDER BY created_at DESC";
+            $sql .= " WHERE au.role <> 'super_admin'";
         }
+        $sql .= " ORDER BY au.agency ASC, au.role DESC, au.created_at DESC";
         $result = $this->db->query($sql);
         return $result ? ($result->fetch_all(MYSQLI_ASSOC) ?: []) : [];
+    }
+
+    /**
+     * Get users by agency.
+     */
+    public function getByAgency(?string $agency = null, string $role = 'employee'): array {
+        $role = $this->normalizeRole($role);
+        $sql = "SELECT au.id, au.username, au.email, au.full_name, au.avatar, au.role, au.status, au.agency, au.created_at,
+                b.id as branch_id, b.code as branch_code, b.name as branch_name, au.business_unit_id
+                FROM admin_users au
+                LEFT JOIN csnk_branches b ON au.business_unit_id = b.id
+                WHERE au.role = ?";
+        $params = [$role];
+        $types = "s";
+
+        if ($agency && in_array($agency, ['csnk', 'smc'], true)) {
+            $sql .= " AND au.agency = ?";
+            $params[] = $agency;
+            $types .= "s";
+        }
+
+        $sql .= " ORDER BY au.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res ? ($res->fetch_all(MYSQLI_ASSOC) ?: []) : [];
     }
 
     /**
@@ -76,12 +124,33 @@ class Admin {
     public function getByRole(string $role): array {
         $role = $this->normalizeRole($role);
         $stmt = $this->db->prepare(
-            "SELECT id, username, email, full_name, avatar, role, status, agency, created_at
-             FROM admin_users
-             WHERE role = ?
-             ORDER BY created_at DESC"
+            "SELECT au.id, au.username, au.email, au.full_name, au.avatar, au.role, au.status, au.agency, au.created_at,
+             b.id as branch_id, b.code as branch_code, b.name as branch_name
+             FROM admin_users au
+             LEFT JOIN csnk_branches b ON au.business_unit_id = b.id
+             WHERE au.role = ?
+             ORDER BY au.created_at DESC"
         );
         $stmt->bind_param("s", $role);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res ? ($res->fetch_all(MYSQLI_ASSOC) ?: []) : [];
+    }
+
+    /**
+     * Get users by role and branch filter.
+     */
+    public function getByRoleAndBranch(string $role, int $branchId): array {
+        $role = $this->normalizeRole($role);
+        $stmt = $this->db->prepare(
+            "SELECT au.id, au.username, au.email, au.full_name, au.avatar, au.role, au.status, au.agency, au.created_at,
+             b.id as branch_id, b.code as branch_code, b.name as branch_name
+             FROM admin_users au
+             INNER JOIN csnk_branches b ON au.business_unit_id = b.id
+             WHERE au.role = ? AND b.id = ?
+             ORDER BY au.created_at DESC"
+        );
+        $stmt->bind_param("si", $role, $branchId);
         $stmt->execute();
         $res = $stmt->get_result();
         return $res ? ($res->fetch_all(MYSQLI_ASSOC) ?: []) : [];
@@ -111,36 +180,41 @@ class Admin {
         $role      = $this->normalizeRole((string)($data['role'] ?? 'employee'));
         $status    = in_array(($data['status'] ?? 'active'), ['active','inactive'], true) ? (string)$data['status'] : 'active';
         $plainPwd  = (string)($data['password'] ?? '');
+        $branchId  = isset($data['business_unit_id']) ? (int)$data['business_unit_id'] : null;
+        $agency    = isset($data['agency']) ? (string)$data['agency'] : null;
 
         if ($username === '' || $email === '' || $fullName === '' || $plainPwd === '') {
             return false;
         }
 
-        // Compute/validate agency by role
-        $agencyInput = $data['agency'] ?? null;
-        $agency = $this->computeAgencyForRole($role, $agencyInput);
-        if ($role === 'employee' && $agency === null) {
-            // agency required for employees
-            return false;
+        // If this is an employee from a non‑CSNK agency we do not require a branch
+        if (!($role === 'employee' && $agency !== 'csnk')) {
+            // Validate branch_id for role (CSNK employees require a valid branch)
+            if (!$this->validateBranchIdForRole($role, $branchId)) {
+                return false;
+            }
         }
 
         $hashedPassword = $this->hashPassword($plainPwd);
 
-        // Insert includes agency column
+        // Insert with business_unit_id (agency kept for legacy)
         $stmt = $this->db->prepare(
-            "INSERT INTO admin_users (username, email, password, full_name, role, status, agency)
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO admin_users (username, email, password, full_name, role, status, business_unit_id, agency)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
-        // agency can be null for admin/super_admin
+$agencyValue = $role === 'employee' ? ($data['agency'] ?? 'csnk') : null;
+        // types: username (s), email (s), password (s), full_name (s),
+        // role (s), status (s), business_unit_id (i), agency (s|null)
         $stmt->bind_param(
-            "sssssss",
+            "ssssssis",
             $username,
             $email,
             $hashedPassword,
             $fullName,
             $role,
             $status,
-            $agency
+            $branchId,
+            $agencyValue
         );
 
         return $stmt->execute();
@@ -164,40 +238,26 @@ class Admin {
         $newFullName  = (string)($data['full_name'] ?? $existing['full_name']);
         $newRole      = $this->normalizeRole((string)($data['role'] ?? $existing['role']));
         $newStatus    = in_array(($data['status'] ?? $existing['status']), ['active','inactive'], true) ? (string)$data['status'] : $existing['status'];
+        $newBranchId  = isset($data['business_unit_id']) ? (int)$data['business_unit_id'] : ($existing['business_unit_id'] ?? null);
 
-        // Determine new agency based on final role
-        $newAgency = $existing['agency'] ?? null;
-        if ($newRole === 'employee') {
-            if (array_key_exists('agency', $data)) {
-                $candidate = $this->computeAgencyForRole('employee', (string)$data['agency']);
-                if ($candidate === null) {
-                    // invalid agency for employee
-                    return false;
-                }
-                $newAgency = $candidate;
-            } else {
-                // If not provided, keep what exists; but ensure it is valid
-                $newAgency = $this->computeAgencyForRole('employee', (string)$newAgency);
-                if ($newAgency === null) return false; // ensure invariant
-            }
-        } else {
-            // admin/super_admin => force null
-            $newAgency = null;
+        // Validate new branch_id for role
+        if (!$this->validateBranchIdForRole($newRole, $newBranchId)) {
+            return false;
         }
 
         $stmt = $this->db->prepare(
             "UPDATE admin_users
-             SET username = ?, email = ?, full_name = ?, role = ?, status = ?, agency = ?
+             SET username = ?, email = ?, full_name = ?, role = ?, status = ?, business_unit_id = ?
              WHERE id = ?"
         );
         $stmt->bind_param(
-            "ssssssi",
+            "sssssii",
             $newUsername,
             $newEmail,
             $newFullName,
             $newRole,
             $newStatus,
-            $newAgency,
+            $newBranchId,
             $id
         );
 
