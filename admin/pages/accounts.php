@@ -1123,3 +1123,28 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 
 <script>
 (function(){
+  // Enhanced role switching
+  ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn?.addEventListener('click', () => {
+      document.querySelectorAll('[id^="section"]').forEach(sec => sec.classList.add('d-none'));
+      const targetSection = document.getElementById('section' + btn.id.replace('btnView', ''));
+      targetSection?.classList.remove('d-none');
+      
+      document.querySelectorAll('.filter-btn, .btn-outline-primary').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+      if (branchWrapper) branchWrapper.classList.add('d-none');
+    }
+  }
+
+  // if user manually selects agency from dropdown, switch to corresponding tab
+  const visibleAgencySelect = document.getElementById('addAgency');
+  if (visibleAgencySelect) {
+    visibleAgencySelect.addEventListener('change', () => {
+      const code = visibleAgencySelect.value;
+      const tabLink = document.querySelector(`#agencyTabs a[data-agency="${code}"]`);
+      if (tabLink) {
+        new bootstrap.Tab(tabLink).show();
+      }
