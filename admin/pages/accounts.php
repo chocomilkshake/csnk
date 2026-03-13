@@ -713,4 +713,6 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                         onclick="return confirm('Delete this account?')" title="Delete">
                         <i class="bi bi-trash"></i>
                       </a>
-                    <
+                    <?php endif; ?>
+                  </div>
+              
