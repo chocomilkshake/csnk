@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 12, 2026 at 09:12 AM
+-- Generation Time: Mar 13, 2026 at 07:45 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -169,7 +169,42 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (903, 12, 'Logout', 'User logged out', '::1', '2026-03-12 08:07:25'),
 (904, 20, 'Login', 'User logged in successfully', '::1', '2026-03-12 08:07:30'),
 (905, 20, 'Logout', 'User logged out', '::1', '2026-03-12 08:07:34'),
-(906, 12, 'Login', 'User logged in successfully', '::1', '2026-03-12 08:07:38');
+(906, 12, 'Login', 'User logged in successfully', '::1', '2026-03-12 08:07:38'),
+(907, 12, 'Toggle Branch Status', 'Branch \'CSNK Davao\' (CSNK-DAVAO) status changed to ACTIVE', '::1', '2026-03-12 08:31:26'),
+(908, 12, 'Logout', 'User logged out', '::1', '2026-03-12 08:54:04'),
+(909, 4, 'Login', 'User logged in successfully', '::1', '2026-03-12 08:54:13'),
+(910, 12, 'Login', 'User logged in successfully', '::1', '2026-03-13 00:28:10'),
+(911, 12, 'Create Account', 'Created employee davao001 (Branch ID:2)', '::1', '2026-03-13 02:08:18'),
+(912, 12, 'Delete Account', 'Deleted ID 18', '::1', '2026-03-13 02:12:52'),
+(913, 12, 'Delete Account', 'Deleted ID 20', '::1', '2026-03-13 02:12:56'),
+(914, 12, 'Delete Account', 'Deleted ID 0', '::1', '2026-03-13 02:12:58'),
+(915, 12, 'Delete Branch', 'Deleted branch \'CSNK Davao\' (CSNK-DAVAO)', '::1', '2026-03-13 02:13:33'),
+(916, 12, 'Update Branch', 'Updated branch \'CSNK Manila\' (CSNK-PH)', '::1', '2026-03-13 02:13:57'),
+(917, 12, 'Update Branch', 'Updated branch \'CSNK Manila\' (CSNK-MNL)', '::1', '2026-03-13 02:14:11'),
+(918, 12, 'Create Branch', 'Created branch \'CSNK Alaminos\' (CSNK-ALAMINOS)', '::1', '2026-03-13 02:22:43'),
+(919, 12, 'Update Branch', 'Updated branch \'CSNK Alaminos\' (CSNK-ALAMINOS)', '::1', '2026-03-13 02:22:54'),
+(920, 12, 'Create Branch', 'Created branch \'CSNK Nasugbu\' (CSNK-NASUGBU)', '::1', '2026-03-13 02:23:16'),
+(921, 12, 'Create Account', 'Created employee csnk001 (Branch ID:1)', '::1', '2026-03-13 03:26:44'),
+(922, 12, 'Update Branch', 'Updated branch \'CSNK Nasugbu\' (CSNK-NASUGBU)', '::1', '2026-03-13 03:27:52'),
+(923, 12, 'Update Branch', 'Updated branch \'CSNK Manila\' (CSNK-MNL)', '::1', '2026-03-13 03:28:04'),
+(924, 12, 'Update Branch', 'Updated branch \'CSNK Manila\' (CSNK-MNL)', '::1', '2026-03-13 03:28:24'),
+(925, 12, 'Update Branch', 'Updated branch \'CSNK Alaminos\' (CSNK-ALAMINOS)', '::1', '2026-03-13 03:28:29'),
+(926, 12, 'Logout', 'User logged out', '::1', '2026-03-13 03:29:24'),
+(927, 12, 'Login', 'User logged in successfully', '::1', '2026-03-13 03:29:29'),
+(928, 12, 'Logout', 'User logged out', '::1', '2026-03-13 03:29:43'),
+(929, 12, 'Login', 'User logged in successfully', '::1', '2026-03-13 03:29:48'),
+(930, 12, 'Create Account', 'Created employee smc003', '::1', '2026-03-13 03:57:55'),
+(931, 12, 'Logout', 'User logged out', '::1', '2026-03-13 03:58:59'),
+(932, 22, 'Login', 'User logged in successfully', '::1', '2026-03-13 03:59:04'),
+(933, 22, 'Logout', 'User logged out', '::1', '2026-03-13 03:59:25'),
+(934, 12, 'Login', 'User logged in successfully', '::1', '2026-03-13 03:59:29'),
+(935, 12, 'Create Account', 'Created employee csnk001 (Branch ID:4)', '::1', '2026-03-13 04:04:40'),
+(936, 12, 'Logout', 'User logged out', '::1', '2026-03-13 06:26:18'),
+(937, 17, 'Login', 'User logged in successfully', '::1', '2026-03-13 06:26:28'),
+(938, 17, 'Logout', 'User logged out', '::1', '2026-03-13 06:26:35'),
+(939, 12, 'Login', 'User logged in successfully', '::1', '2026-03-13 06:28:45'),
+(940, 12, 'Logout', 'User logged out', '::1', '2026-03-13 06:30:00'),
+(941, 4, 'Login', 'User logged in successfully', '::1', '2026-03-13 06:30:11');
 
 -- --------------------------------------------------------
 
@@ -197,7 +232,6 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `avatar`, `role`, `agency`, `business_unit_id`, `status`, `created_at`, `updated_at`) VALUES
-(0, 'csnk002', 'csnk002@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$VUEwT2xYUk5tOWpIUmtBTw$e7rNZv+gBxGfZ/5Fbk72d+XQ7q0bvw23dI2OBt6UQXA', 'csnk002', NULL, 'employee', 'csnk', NULL, 'active', '2026-03-12 08:00:02', '2026-03-12 08:00:02'),
 (4, 'renzadmin', 'renzdiaz.contact@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$US9RRDloSHR3MGlzeUdGdw$cjNozvyDewv1phUaRVyn/6zcDKOdoSGJp1fBt5MABFE', 'Renz Diaz', 'avatars/699556f4c657c_1771394804.jpg', 'super_admin', NULL, NULL, 'active', '2026-02-07 10:20:55', '2026-02-18 06:06:44'),
 (5, 'elliadmin', 'elli@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cFZvOHZCckJkcDd4a0Y1cA$d+28H23RKZagXG81OSdY8xWa8x2KNSFuHip8xsxI2No', 'John Ellijah', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-07 10:21:28', '2026-02-26 08:05:17'),
 (6, 'andreiadmin', 'andrei@gmail.com', '$2y$10$ROQGHUJso58ON6NCsv2PRO14x3Nviq3fZrkEU8KLne6BTEbVuhSq2', 'Andrei Javillo', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-07 10:22:05', '2026-02-07 10:22:05'),
@@ -205,9 +239,7 @@ INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `
 (8, 'cabritoadmin', 'cabs@gmail.com', '$2y$10$AbWEDXv5fqBAkhk1quS.7.eJKD2uyUyenhinmN906bbJlePsxOlSq', 'John Adrian Cabrito', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-10 00:32:53', '2026-02-10 00:32:53'),
 (12, 'jmpogi', 'jm@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QkMvd1FUc2Q0bnBjWHB0Uw$kltUwYy7N9gm+yGcuxlWqQFXnwD/EPRKRexQ1sDBYQM', 'John Michael Masmela', 'avatars/699c53d80ff2a_1771852760.png', 'admin', NULL, NULL, 'active', '2026-02-12 02:33:42', '2026-02-23 13:19:20'),
 (17, 'smc001', 'smc001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$S3BRVFB6YjIxcC5nUDI0Tw$BVJWYVKCIl952PAdRuNwYf4ovRdfKmpAOptWrOu6kvU', 'smc001', NULL, 'super_admin', 'smc', NULL, 'active', '2026-02-25 01:05:52', '2026-02-26 06:10:58'),
-(18, 'csnk001', 'csnk001@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cTRHa1lhLkJvQjYwWlFpYg$7QXiD7qZtT316LFZErAQBtqSLkiorr/BSe2rZGecD58', 'csnk001', NULL, 'employee', 'csnk', NULL, 'active', '2026-02-25 01:06:21', '2026-02-25 01:06:21'),
-(19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06'),
-(20, 'smc002', 'email@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$QVdrUHpVbXhidG1vVDJWaQ$qq73QsWG6b7zMiGpLVARRGXOg7JiFXDiMjmxAti34lc', 'smc', NULL, 'employee', 'smc', NULL, 'active', '2026-03-03 06:49:59', '2026-03-03 06:49:59');
+(19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06');
 
 -- --------------------------------------------------------
 
@@ -1063,8 +1095,9 @@ CREATE TABLE `csnk_branches` (
 --
 
 INSERT INTO `csnk_branches` (`id`, `code`, `name`, `status`, `is_default`, `sort_order`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'CSNK-PH', 'CSNK Philippines', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-11 06:33:38', NULL),
-(2, 'CSNK-DAVAO', 'CSNK Davao', 'INACTIVE', 0, 0, '2026-03-11 06:23:08', 'elliadmin', '2026-03-11 06:33:40', 'elliadmin');
+(1, 'CSNK-MNL', 'CSNK Manila', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-13 03:28:24', 'jmpogi'),
+(3, 'CSNK-ALAMINOS', 'CSNK Alaminos', 'ACTIVE', 0, 2, '2026-03-13 02:22:43', 'jmpogi', '2026-03-13 03:28:29', 'jmpogi'),
+(4, 'CSNK-NASUGBU', 'CSNK Nasugbu', 'ACTIVE', 0, 1, '2026-03-13 02:23:16', 'jmpogi', '2026-03-13 03:27:52', 'jmpogi');
 
 -- --------------------------------------------------------
 
@@ -1120,47 +1153,6 @@ CREATE TABLE `session_logs` (
   `login_time` datetime NOT NULL DEFAULT current_timestamp(),
   `logout_time` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `session_logs`
---
-
-INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
-(184, 5, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 09:28:49', NULL),
-(185, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:09', '2026-03-07 11:42:14'),
-(186, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 11:42:26', NULL),
-(187, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 15:02:03', '2026-03-07 16:01:07'),
-(188, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 16:01:14', '2026-03-07 16:01:42'),
-(189, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-07 16:01:49', NULL),
-(190, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-10 08:56:04', NULL),
-(191, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-11 09:39:44', '2026-03-11 15:28:53'),
-(192, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-11 15:28:58', '2026-03-11 15:32:13'),
-(193, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-11 15:32:20', '2026-03-11 15:35:44'),
-(194, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-11 15:36:02', NULL),
-(195, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 08:37:43', NULL),
-(196, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 08:58:52', '2026-03-12 09:03:10'),
-(197, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 09:03:15', '2026-03-12 09:03:19'),
-(198, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 09:03:24', '2026-03-12 09:03:26'),
-(199, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 09:03:30', NULL),
-(200, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:07:03', '2026-03-12 11:07:07'),
-(201, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:07:13', '2026-03-12 11:23:50'),
-(202, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:23:54', '2026-03-12 11:24:02'),
-(203, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:24:18', '2026-03-12 11:26:13'),
-(204, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:26:18', '2026-03-12 11:29:54'),
-(205, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:29:58', '2026-03-12 11:30:14'),
-(206, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:30:21', NULL),
-(207, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 11:40:28', NULL),
-(208, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 14:37:45', '2026-03-12 15:53:35'),
-(209, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 15:53:41', '2026-03-12 15:53:57'),
-(210, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 15:54:02', '2026-03-12 15:54:26'),
-(211, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 15:54:30', '2026-03-12 15:54:42'),
-(212, 18, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 15:56:26', '2026-03-12 15:58:52'),
-(213, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 15:59:14', '2026-03-12 16:00:06'),
-(214, 0, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 16:00:11', '2026-03-12 16:00:20'),
-(215, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 16:00:25', '2026-03-12 16:06:57'),
-(216, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 16:07:02', '2026-03-12 16:07:25'),
-(217, 20, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 16:07:30', '2026-03-12 16:07:34'),
-(218, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-12 16:07:38', NULL);
 
 --
 -- Indexes for dumped tables
@@ -1326,7 +1318,13 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=907;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=942;
+
+--
+-- AUTO_INCREMENT for table `admin_users`
+--
+ALTER TABLE `admin_users`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `applicant_replacements`
@@ -1374,13 +1372,13 @@ ALTER TABLE `countries`
 -- AUTO_INCREMENT for table `csnk_branches`
 --
 ALTER TABLE `csnk_branches`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=219;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=228;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
