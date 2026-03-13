@@ -7,238 +7,289 @@ $admin = new Admin($database);
 
 $role = $currentUser['role'] ?? 'employee';
 $isSuperAdmin = ($role === 'super_admin');
-$isAdmin      = ($role === 'admin');
-$isEmployee   = ($role === 'employee');
+$isAdmin = ($role === 'admin');
+$isEmployee = ($role === 'employee');
 
 $currentAgency = $currentUser['agency'] ?? null;
 
- // Branch loading + filters
+// Branch loading + filters
 $branches = $admin->getActiveBranches();
 $allBranches = [0 => 'All Branches'] + $branches;
 
 // load agency list from db (codes like 'csnk','smc' with human name)
 $agencies = $admin->getAgencies();
 $filterAgency = sanitizeInput($_GET['agency'] ?? '');
-$filterBranch = (int)($_GET['branch'] ?? 0);
+$filterBranch = (int) ($_GET['branch'] ?? 0);
 $filterStatus = sanitizeInput($_GET['status'] ?? '');
 $filterSearch = sanitizeInput($_GET['search'] ?? '');
 $errors = [];
 
-function validateStrongPassword(string $pwd): ?string {
-    if (mb_strlen($pwd) < 10) return 'Password must be at least 10 characters.';
-    if (!preg_match('/[A-Z]/', $pwd)) return 'Password must include at least one uppercase letter.';
-    if (!preg_match('/[a-z]/', $pwd)) return 'Password must include at least one lowercase letter.';
-    if (!preg_match('/\d/', $pwd)) return 'Password must include at least one number.';
-    if (!preg_match('/[\W_]/', $pwd)) return 'Password must include at least one special character.';
-    if (preg_match('/(.)\1{3,}/', $pwd)) return 'Password should not contain repeated characters.';
-    return null;
+function validateStrongPassword(string $pwd): ?string
+{
+  if (mb_strlen($pwd) < 10)
+    return 'Password must be at least 10 characters.';
+  if (!preg_match('/[A-Z]/', $pwd))
+    return 'Password must include at least one uppercase letter.';
+  if (!preg_match('/[a-z]/', $pwd))
+    return 'Password must include at least one lowercase letter.';
+  if (!preg_match('/\d/', $pwd))
+    return 'Password must include at least one number.';
+  if (!preg_match('/[\W_]/', $pwd))
+    return 'Password must include at least one special character.';
+  if (preg_match('/(.)\1{3,}/', $pwd))
+    return 'Password should not contain repeated characters.';
+  return null;
 }
 
-function validateEmailStrictDetectTypos(string $email): array {
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return [false, 'Invalid email format.', null];
-    [$local, $domain] = explode('@', $email, 2);
-    $domain = strtolower($domain);
-    if (!preg_match('/^[a-z0-9.-]+\.[a-z]{2,10}$/i', $domain)) return [false, 'Email domain looks invalid.', null];
+function validateEmailStrictDetectTypos(string $email): array
+{
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+    return [false, 'Invalid email format.', null];
+  [$local, $domain] = explode('@', $email, 2);
+  $domain = strtolower($domain);
+  if (!preg_match('/^[a-z0-9.-]+\.[a-z]{2,10}$/i', $domain))
+    return [false, 'Email domain looks invalid.', null];
 
-    $known = ['gmail.com','yahoo.com','outlook.com','hotmail.com'];
-    $closest = null; $minDist = PHP_INT_MAX;
-    foreach ($known as $k) {
-        $d = levenshtein($domain, $k);
-        if ($d < $minDist) { $minDist = $d; $closest = $k; }
+  $known = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
+  $closest = null;
+  $minDist = PHP_INT_MAX;
+  foreach ($known as $k) {
+    $d = levenshtein($domain, $k);
+    if ($d < $minDist) {
+      $minDist = $d;
+      $closest = $k;
     }
-    if ($minDist === 1 && $closest === 'gmail.com') {
-        return [false, 'Did you mean @gmail.com?', $local.'@gmail.com'];
-    }
-    return [true, null, null];
+  }
+  if ($minDist === 1 && $closest === 'gmail.com') {
+    return [false, 'Did you mean @gmail.com?', $local . '@gmail.com'];
+  }
+  return [true, null, null];
 }
 
-function forbidAndBack(string $msg = 'You do not have permission.') {
-    setFlashMessage('error', $msg);
-    redirect('accounts.php'); exit;
+function forbidAndBack(string $msg = 'You do not have permission.')
+{
+  setFlashMessage('error', $msg);
+  redirect('accounts.php');
+  exit;
 }
 
 /* DELETE */
 if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete') {
-    $targetId = (int)$_GET['id'];
-    if ($targetId === (int)$_SESSION['admin_id']) {
-        setFlashMessage('error', 'You cannot delete your own account.');
-        redirect('accounts.php'); exit;
-    }
+  $targetId = (int) $_GET['id'];
+  if ($targetId === (int) $_SESSION['admin_id']) {
+    setFlashMessage('error', 'You cannot delete your own account.');
+    redirect('accounts.php');
+    exit;
+  }
 
-    $target = $admin->getById($targetId);
-    if (!$target) { setFlashMessage('error','Account not found.'); redirect('accounts.php'); exit; }
+  $target = $admin->getById($targetId);
+  if (!$target) {
+    setFlashMessage('error', 'Account not found.');
+    redirect('accounts.php');
+    exit;
+  }
 
-    if ($isSuperAdmin) {
-        // super admin can delete any
-    } elseif ($isAdmin) {
-        if (!in_array($target['role'], ['employee', 'admin'], true)) {
-            forbidAndBack('Admins can delete only Employee/Admin accounts.');
-        }
-    } else {
-        forbidAndBack();
+  if ($isSuperAdmin) {
+    // super admin can delete any
+  } elseif ($isAdmin) {
+    if (!in_array($target['role'], ['employee', 'admin'], true)) {
+      forbidAndBack('Admins can delete only Employee/Admin accounts.');
     }
+  } else {
+    forbidAndBack();
+  }
 
-    if ($admin->delete($targetId)) {
-        $auth->logActivity($_SESSION['admin_id'], 'Delete Account', "Deleted ID {$targetId}");
-        setFlashMessage('success', 'Account deleted successfully.');
-    } else {
-        setFlashMessage('error', 'Failed to delete account.');
-    }
-    redirect('accounts.php'); exit;
+  if ($admin->delete($targetId)) {
+    $auth->logActivity($_SESSION['admin_id'], 'Delete Account', "Deleted ID {$targetId}");
+    setFlashMessage('success', 'Account deleted successfully.');
+  } else {
+    setFlashMessage('error', 'Failed to delete account.');
+  }
+  redirect('accounts.php');
+  exit;
 }
 
 /* ADD */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_account'])) {
-    if (!($isSuperAdmin || $isAdmin)) forbidAndBack('Only Admins or Super Admins can add accounts.');
+  if (!($isSuperAdmin || $isAdmin))
+    forbidAndBack('Only Admins or Super Admins can add accounts.');
 
-    $username  = sanitizeInput($_POST['username'] ?? '');
-    $fullName  = sanitizeInput($_POST['full_name'] ?? '');
-    $email     = sanitizeInput($_POST['email'] ?? '');
-    $password  = $_POST['password'] ?? '';
-    $password2 = $_POST['password2'] ?? '';
-    $roleNew   = sanitizeInput($_POST['role'] ?? 'employee');
-    $branchIdNew = (int)($_POST['business_unit_id'] ?? 0);
-    // agency comes from hidden field set by JS/tabs
-    $agencyNew = sanitizeInput($_POST['agency'] ?? '');
-    $validCodes = array_column($agencies, 'code');
-    if (!in_array($agencyNew, $validCodes, true)) {
-        // fallback to first agency or empty
-        $agencyNew = $agencies[0]['code'] ?? '';
-    }
+  $username = sanitizeInput($_POST['username'] ?? '');
+  $fullName = sanitizeInput($_POST['full_name'] ?? '');
+  $email = sanitizeInput($_POST['email'] ?? '');
+  $password = $_POST['password'] ?? '';
+  $password2 = $_POST['password2'] ?? '';
+  $roleNew = sanitizeInput($_POST['role'] ?? 'employee');
+  $branchIdNew = (int) ($_POST['business_unit_id'] ?? 0);
+  // agency comes from hidden field set by JS/tabs
+  $agencyNew = sanitizeInput($_POST['agency'] ?? '');
+  $validCodes = array_column($agencies, 'code');
+  if (!in_array($agencyNew, $validCodes, true)) {
+    // fallback to first agency or empty
+    $agencyNew = $agencies[0]['code'] ?? '';
+  }
 
-    $allowedRoles = $isSuperAdmin ? ['employee','admin','super_admin'] : ['employee','admin'];
-    if (!in_array($roleNew, $allowedRoles, true)) $roleNew = 'employee';
-    // non-CSNK agencies are always employee accounts
-    if ($agencyNew !== 'csnk') {
-        $roleNew = 'employee';
-        // branch doesn't apply for other agencies
-        $branchIdNew = null;
-    }
+  $allowedRoles = $isSuperAdmin ? ['employee', 'admin', 'super_admin'] : ['employee', 'admin'];
+  if (!in_array($roleNew, $allowedRoles, true))
+    $roleNew = 'employee';
+  // non-CSNK agencies are always employee accounts
+  if ($agencyNew !== 'csnk') {
+    $roleNew = 'employee';
+    // branch doesn't apply for other agencies
+    $branchIdNew = null;
+  }
 
-    if ($username === '') $errors[] = 'Username is required.';
-    if ($fullName === '') $errors[] = 'Full name is required.';
-    if ($email === '')    $errors[] = 'Email is required.';
-    if ($password === '') $errors[] = 'Password is required.';
-    if ($password !== $password2) $errors[] = 'Passwords do not match.';
+  if ($username === '')
+    $errors[] = 'Username is required.';
+  if ($fullName === '')
+    $errors[] = 'Full name is required.';
+  if ($email === '')
+    $errors[] = 'Email is required.';
+  if ($password === '')
+    $errors[] = 'Password is required.';
+  if ($password !== $password2)
+    $errors[] = 'Passwords do not match.';
 
-    if ($email !== '') {
-        [$ok, $err, $suggest] = validateEmailStrictDetectTypos($email);
-        if (!$ok) $errors[] = $err . ($suggest ? ' Suggested: '.htmlspecialchars($suggest) : '');
-    }
-    if ($password !== '') {
-        $pwdErr = validateStrongPassword($password);
-        if ($pwdErr) $errors[] = $pwdErr;
-    }
-    if ($username !== '' && $admin->usernameExists($username)) $errors[] = 'Username already exists.';
-    if ($email !== '' && $admin->emailExists($email)) $errors[] = 'Email already exists.';
+  if ($email !== '') {
+    [$ok, $err, $suggest] = validateEmailStrictDetectTypos($email);
+    if (!$ok)
+      $errors[] = $err . ($suggest ? ' Suggested: ' . htmlspecialchars($suggest) : '');
+  }
+  if ($password !== '') {
+    $pwdErr = validateStrongPassword($password);
+    if ($pwdErr)
+      $errors[] = $pwdErr;
+  }
+  if ($username !== '' && $admin->usernameExists($username))
+    $errors[] = 'Username already exists.';
+  if ($email !== '' && $admin->emailExists($email))
+    $errors[] = 'Email already exists.';
 
-    // branch requirement only enforced for csnk agency employees
-    if ($roleNew === 'employee' && $agencyNew === 'csnk' && $branchIdNew <= 0) {
-        $errors[] = 'Branch is required for Employee accounts.';
-    }
+  // branch requirement only enforced for csnk agency employees
+  if ($roleNew === 'employee' && $agencyNew === 'csnk' && $branchIdNew <= 0) {
+    $errors[] = 'Branch is required for Employee accounts.';
+  }
 
-    if (empty($errors)) {
-        $data = [
-            'username'  => $username,
-            'email'     => $email,
-            'full_name' => $fullName,
-            'password'  => $password,
-            'role'      => $roleNew,
-            'status'    => 'active',
-            'business_unit_id' => $branchIdNew ?: null,
-            'agency'    => $agencyNew,
-        ];
-        if ($admin->create($data)) {
-            $branchLabel = $branchIdNew > 0 ? " (Branch ID:{$branchIdNew})" : '';
-            $auth->logActivity($_SESSION['admin_id'], 'Create Account', "Created {$roleNew} {$username}{$branchLabel}");
-            setFlashMessage('success','Account created successfully.');
-            redirect('accounts.php'); exit;
-        } else {
-            $errors[] = 'Failed to create account.';
-        }
+  if (empty($errors)) {
+    $data = [
+      'username' => $username,
+      'email' => $email,
+      'full_name' => $fullName,
+      'password' => $password,
+      'role' => $roleNew,
+      'status' => 'active',
+      'business_unit_id' => $branchIdNew ?: null,
+      'agency' => $agencyNew,
+    ];
+    if ($admin->create($data)) {
+      $branchLabel = $branchIdNew > 0 ? " (Branch ID:{$branchIdNew})" : '';
+      $auth->logActivity($_SESSION['admin_id'], 'Create Account', "Created {$roleNew} {$username}{$branchLabel}");
+      setFlashMessage('success', 'Account created successfully.');
+      redirect('accounts.php');
+      exit;
+    } else {
+      $errors[] = 'Failed to create account.';
     }
+  }
 }
 
 /* RESET PASSWORD */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password'])) {
-    if (!$isSuperAdmin) forbidAndBack('Only Super Admin can recover accounts.');
+  if (!$isSuperAdmin)
+    forbidAndBack('Only Super Admin can recover accounts.');
 
-    $userId = (int)($_POST['user_id'] ?? 0);
-    $newPwd = $_POST['new_password'] ?? '';
-    $conf = $_POST['confirm_password'] ?? '';
+  $userId = (int) ($_POST['user_id'] ?? 0);
+  $newPwd = $_POST['new_password'] ?? '';
+  $conf = $_POST['confirm_password'] ?? '';
 
-    if ($userId <= 0) $errors[] = 'Invalid account.';
-    if ($newPwd === '') $errors[] = 'New password is required.';
-    if ($newPwd !== $conf) $errors[] = 'Passwords do not match.';
-    $pwdErr = validateStrongPassword($newPwd);
-    if ($pwdErr) $errors[] = $pwdErr;
+  if ($userId <= 0)
+    $errors[] = 'Invalid account.';
+  if ($newPwd === '')
+    $errors[] = 'New password is required.';
+  if ($newPwd !== $conf)
+    $errors[] = 'Passwords do not match.';
+  $pwdErr = validateStrongPassword($newPwd);
+  if ($pwdErr)
+    $errors[] = $pwdErr;
 
-    $target = $admin->getById($userId);
-    if (!$target) $errors[] = 'Account not found.';
+  $target = $admin->getById($userId);
+  if (!$target)
+    $errors[] = 'Account not found.';
 
-    if (empty($errors)) {
-        if ($admin->updatePassword($userId, $newPwd)) {
-            $auth->logActivity($_SESSION['admin_id'], 'Recover Account', "Reset password ID {$userId}");
-            setFlashMessage('success', 'Password reset successfully.');
-            redirect('accounts.php'); exit;
-        } else {
-            $errors[] = 'Failed to reset password.';
-        }
+  if (empty($errors)) {
+    if ($admin->updatePassword($userId, $newPwd)) {
+      $auth->logActivity($_SESSION['admin_id'], 'Recover Account', "Reset password ID {$userId}");
+      setFlashMessage('success', 'Password reset successfully.');
+      redirect('accounts.php');
+      exit;
+    } else {
+      $errors[] = 'Failed to reset password.';
     }
+  }
 }
 
 /* EDIT */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_account'])) {
-    $userId   = (int)($_POST['edit_user_id'] ?? 0);
-    $username = sanitizeInput($_POST['edit_username'] ?? '');
-    $fullName = sanitizeInput($_POST['edit_full_name'] ?? '');
-    $email    = sanitizeInput($_POST['edit_email'] ?? '');
-    $status   = $_POST['edit_status'] ?? 'active';
+  $userId = (int) ($_POST['edit_user_id'] ?? 0);
+  $username = sanitizeInput($_POST['edit_username'] ?? '');
+  $fullName = sanitizeInput($_POST['edit_full_name'] ?? '');
+  $email = sanitizeInput($_POST['edit_email'] ?? '');
+  $status = $_POST['edit_status'] ?? 'active';
 
-    if ($userId <= 0)    $errors[] = 'Invalid account.';
-    if ($username === '') $errors[] = 'Username is required.';
-    if ($fullName === '') $errors[] = 'Full name is required.';
-    if ($email === '')    $errors[] = 'Email is required.';
-    if (!in_array($status, ['active','inactive'], true)) $status = 'active';
+  if ($userId <= 0)
+    $errors[] = 'Invalid account.';
+  if ($username === '')
+    $errors[] = 'Username is required.';
+  if ($fullName === '')
+    $errors[] = 'Full name is required.';
+  if ($email === '')
+    $errors[] = 'Email is required.';
+  if (!in_array($status, ['active', 'inactive'], true))
+    $status = 'active';
 
-    $target = $admin->getById($userId);
-    if (!$target) $errors[] = 'Account not found.';
+  $target = $admin->getById($userId);
+  if (!$target)
+    $errors[] = 'Account not found.';
 
-    if ($isSuperAdmin) {
-        // can edit all
-    } elseif ($isAdmin) {
-        if (!in_array($target['role'], ['employee','admin'], true)) {
-            forbidAndBack('Admins can edit only Employee/Admin accounts.');
-        }
+  if ($isSuperAdmin) {
+    // can edit all
+  } elseif ($isAdmin) {
+    if (!in_array($target['role'], ['employee', 'admin'], true)) {
+      forbidAndBack('Admins can edit only Employee/Admin accounts.');
+    }
+  } else {
+    forbidAndBack('Employees cannot edit accounts.');
+  }
+
+  if ($email !== '') {
+    [$ok, $err, $suggest] = validateEmailStrictDetectTypos($email);
+    if (!$ok)
+      $errors[] = $err . ($suggest ? ' Suggested: ' . htmlspecialchars($suggest) : '');
+  }
+  if ($username !== '' && $admin->usernameExists($username, $userId))
+    $errors[] = 'Username already in use.';
+  if ($email !== '' && $admin->emailExists($email, $userId))
+    $errors[] = 'Email already in use.';
+
+  $data = [
+    'username' => $username,
+    'email' => $email,
+    'full_name' => $fullName,
+    'role' => $target['role'],
+    'status' => $status,
+    'business_unit_id' => $target['business_unit_id'] ?? null,
+  ];
+
+  if (empty($errors)) {
+    if ($admin->update($userId, $data)) {
+      $auth->logActivity($_SESSION['admin_id'], 'Edit Account', "Edited ID {$userId}");
+      setFlashMessage('success', 'Account updated successfully.');
+      redirect('accounts.php');
+      exit;
     } else {
-        forbidAndBack('Employees cannot edit accounts.');
+      $errors[] = 'Failed to update account.';
     }
-
-    if ($email !== '') {
-        [$ok, $err, $suggest] = validateEmailStrictDetectTypos($email);
-        if (!$ok) $errors[] = $err . ($suggest ? ' Suggested: '.htmlspecialchars($suggest) : '');
-    }
-    if ($username !== '' && $admin->usernameExists($username, $userId)) $errors[] = 'Username already in use.';
-    if ($email !== '' && $admin->emailExists($email, $userId)) $errors[] = 'Email already in use.';
-
-    $data = [
-        'username'  => $username,
-        'email'     => $email,
-        'full_name' => $fullName,
-        'role'      => $target['role'],
-        'status'    => $status,
-        'business_unit_id' => $target['business_unit_id'] ?? null,
-    ];
-
-    if (empty($errors)) {
-        if ($admin->update($userId, $data)) {
-            $auth->logActivity($_SESSION['admin_id'], 'Edit Account', "Edited ID {$userId}");
-            setFlashMessage('success', 'Account updated successfully.');
-            redirect('accounts.php'); exit;
-        } else {
-            $errors[] = 'Failed to update account.';
-        }
-    }
+  }
 }
 
 /* ============================
@@ -246,272 +297,382 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_account'])) {
 ============================= */
 
 $rawEmployees = $admin->getByAgency($filterAgency ?: null, 'employee');
-$rawAdmins    = $admin->getByAgency($filterAgency ?: null, 'admin');
+$rawAdmins = $admin->getByAgency($filterAgency ?: null, 'admin');
 // super-admin accounts are global; ignore agency filter when fetching
-$rawSupers    = $isSuperAdmin ? $admin->getByAgency(null, 'super_admin') : [];
+$rawSupers = $isSuperAdmin ? $admin->getByAgency(null, 'super_admin') : [];
 
 // Hide branch filters for SMC
 if ($filterAgency === 'smc') {
-    $filterBranch = 0;
+  $filterBranch = 0;
 }
 
 /* Helper to apply filters + RBAC */
 function applyAccountFilters(
-    array $accounts,
-    int $filterBranch,
-    string $filterStatus,
-    string $filterSearch,
-    bool $isSuperAdmin,
-    bool $isAdmin,
-    ?string $currentAgency
+  array $accounts,
+  int $filterBranch,
+  string $filterStatus,
+  string $filterSearch,
+  bool $isSuperAdmin,
+  bool $isAdmin,
+  ?string $currentAgency
 ): array {
 
-    return array_values(array_filter($accounts, function($acc)
-        use ($filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency) {
+  return array_values(array_filter($accounts, function ($acc) use ($filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency) {
 
-        // Branch filter (skip for admins and super admins)
-        $branchId = (int)($acc['business_unit_id'] ?? ($acc['branch_id'] ?? 0));
-        if ($filterBranch > 0) {
-            if (($acc['role'] ?? '') !== 'super_admin' && $branchId !== $filterBranch) {
-                return false;
-            }
-        }
+    // Branch filter (skip for admins and super admins)
+    $branchId = (int) ($acc['business_unit_id'] ?? ($acc['branch_id'] ?? 0));
+    if ($filterBranch > 0) {
+      if (($acc['role'] ?? '') !== 'super_admin' && $branchId !== $filterBranch) {
+        return false;
+      }
+    }
 
-        // Status filter
-        if ($filterStatus !== '' && $acc['status'] !== $filterStatus) {
-            return false;
-        }
+    // Status filter
+    if ($filterStatus !== '' && $acc['status'] !== $filterStatus) {
+      return false;
+    }
 
-        // Search filter
-        if ($filterSearch !== '') {
-            $term = strtolower($filterSearch);
-            if (
-                !str_contains(strtolower($acc['username'] ?? ''), $term) &&
-                !str_contains(strtolower($acc['full_name'] ?? ''), $term) &&
-                !str_contains(strtolower($acc['email'] ?? ''), $term)
-            ) {
-                return false;
-            }
-        }
+    // Search filter
+    if ($filterSearch !== '') {
+      $term = strtolower($filterSearch);
+      if (
+        !str_contains(strtolower($acc['username'] ?? ''), $term) &&
+        !str_contains(strtolower($acc['full_name'] ?? ''), $term) &&
+        !str_contains(strtolower($acc['email'] ?? ''), $term)
+      ) {
+        return false;
+      }
+    }
 
-        // RBAC (employees only)
-        if (!$isSuperAdmin && !$isAdmin && $currentAgency && ($acc['agency'] ?? null) !== $currentAgency) {
-            return false;
-        }
+    // RBAC (employees only)
+    if (!$isSuperAdmin && !$isAdmin && $currentAgency && ($acc['agency'] ?? null) !== $currentAgency) {
+      return false;
+    }
 
-        return true;
-    }));
+    return true;
+  }));
 }
 
 $employeeAccounts = applyAccountFilters($rawEmployees, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency);
-$adminAccounts    = applyAccountFilters($rawAdmins, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
-$superAccounts    = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
+$adminAccounts = applyAccountFilters($rawAdmins, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
+$superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
 ?>
 <style>
+  .modern-accounts {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
 
-.modern-accounts {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
+  .hero-section {
+    background: linear-gradient(135deg, var(--csnk-gray-50, #f8fafc) 0%, var(--csnk-gray-100, #f1f5f9) 100%);
+    color: #1e293b;
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
 
-.hero-section {
-background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #1e293b;
-  padding: 3rem 0;
-  border-radius: 24px;
-  margin-bottom: 2rem;
-  text-align: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-}
+  .hero-section h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+  }
 
-.hero-section h1 {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
-}
+  .hero-section .lead {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    color: #64748b;
+  }
 
-.hero-section .lead {
-  font-size: 1.2rem;
-  opacity: 0.95;
-}
+  .filter-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--csnk-gray-200, #e5e7eb);
+  }
 
-.filter-container {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  backdrop-filter: blur(10px);
-}
+  .filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
 
-.filter-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
+  .filter-btn {
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #374151;
+  }
 
-.filter-btn {
-  border-radius: 50px;
-  padding: 0.75rem 1.5rem;
-  border: 2px solid #e5e7eb;
-  background: white;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  color: #374151;
-}
+  .filter-btn:hover {
+    border-color: #6b7280;
+    color: #374151;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 
-.filter-btn:hover {
-  border-color: #6b7280;
-  color: #374151;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+  .filter-btn.active {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #1f2937;
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 
-.filter-btn.active {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  color: #1f2937;
-  border-color: #d1d5db;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+  .accounts-grid {
+    display: grid;
+    gap: 1.25rem;
+  }
 
-.accounts-grid {
-  display: grid;
-  gap: 1.5rem;
-}
+  .modern-table {
+    --bs-table-bg: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--csnk-gray-200, #e5e7eb);
+  }
 
-.account-card {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid #f1f5f9;
-  transition: all 0.3s ease;
-}
+  .modern-table thead th {
+    background: var(--csnk-gray-50, #f8fafc);
+    border-bottom: 2px solid var(--csnk-gray-200, #e5e7eb);
+    font-weight: 600;
+    color: #374151;
+    padding: 1rem 1.25rem;
+    white-space: nowrap;
+  }
+
+  .modern-table tbody tr {
+    transition: background 0.2s ease;
+  }
+
+  .modern-table tbody tr:hover {
+    background: var(--csnk-gray-50, #f9fafb);
+  }
+
+  .modern-table td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    border-color: var(--csnk-gray-200, #e5e7eb);
+  }
+
+  .account-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--csnk-gray-200, #e5e7eb);
+    transition: all 0.2s ease;
+  }
+
   .account-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-}
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 
-.account-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
+  .account-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
 
-.account-info {
-  flex: 1;
-  margin-left: 1rem;
-}
+  .account-info {
+    flex: 1;
+    margin-left: 1rem;
+  }
 
-.account-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 0.25rem;
-  color: #1e293b;
-}
+  .account-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+    color: #1e293b;
+  }
 
-.account-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
+  .account-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
 
-.status-badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid transparent;
+  }
 
-.status-active {
-  background: rgba(16,185,129,0.15);
-  color: #059669;
-  border: 1px solid rgba(16,185,129,0.3);
-}
+  .status-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border-color: rgba(16, 185, 129, 0.2);
+  }
 
-.status-inactive {
-  background: rgba(107,114,128,0.15);
-  color: #6b7280;
-  border: 1px solid rgba(107,114,128,0.3);
-}
+  .status-inactive {
+    background: rgba(107, 114, 128, 0.08);
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.2);
+  }
 
-.branch-tag {
-  padding: 0.3rem 0.8rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #374151;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border: 1px solid #e2e8f0;
-}
+  .branch-tag {
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+  }
 
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
 
-.btn-action {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  transition: all 0.2s ease;
-  font-size: 1rem;
-}
+  .btn-action {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+  }
 
-.btn-action:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-}
+  .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
 
-.btn-edit { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-.btn-reset { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
-.btn-delete { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+  .btn-edit {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+  }
 
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #6b7280;
-}
+  .btn-reset {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+  }
 
-.empty-state-icon {
-  font-size: 4rem;
-  opacity: 0.5;
-  margin-bottom: 1rem;
-}
+  .btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+  }
 
-@media (max-width: 768px) {
-  .hero-section { padding: 2rem 1rem; }
-  .filter-container { padding: 1rem; }
-  .accounts-grid { grid-template-columns: 1fr; }
-}
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+  }
 
-@media (min-width: 1200px) {
-  .accounts-grid { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
-}
+  .empty-state-icon {
+    font-size: 4rem;
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 1.5rem 1rem;
+    }
+
+    .filter-container {
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .modern-table {
+      font-size: 0.875rem;
+      border: none;
+    }
+
+    .modern-table thead {
+      display: none;
+    }
+
+    .modern-table tbody,
+    .modern-table tr,
+    .modern-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .modern-table tr {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 1rem;
+      border: 1px solid #f1f5f9;
+    }
+
+    .modern-table td {
+      padding: 0.5rem 0;
+      border: none;
+      position: relative;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modern-table td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #64748b;
+      flex: 0 0 120px;
+      min-width: 120px;
+    }
+
+    .modern-table .account-avatar {
+      margin-right: 0.75rem;
+    }
+
+    .modern-table .action-buttons {
+      margin-top: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .accounts-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .action-buttons .btn {
+      width: 36px;
+      height: 36px;
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .accounts-grid {
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    }
+  }
 </style>
 
 
-<button
-  class="btn btn-primary shadow-lg"
-  style="
+<button class="btn btn-primary shadow-lg" style="
     position: fixed;
     bottom: 25px;
     right: 25px;
@@ -519,9 +680,7 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     padding: 14px 28px;
     font-weight: 600;
     z-index: 1000;
-  "
-  data-bs-toggle="modal"
-  data-bs-target="#addAccountModal">
+  " data-bs-toggle="modal" data-bs-target="#addAccountModal">
 
   <i class="bi bi-plus-circle me-2"></i>Create Account
 </button>
@@ -532,11 +691,11 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       <div class="filter-tabs">
         <!-- Agency Filter Tabs -->
         <div class="btn-group mb-2 me-3" role="group">
-          <a href="accounts.php?agency=&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>" 
-             class="btn filter-btn <?= empty($filterAgency) ? 'active' : '' ?>">🏢 All</a>
+          <a href="accounts.php?agency=&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>"
+            class="btn filter-btn <?= empty($filterAgency) ? 'active' : '' ?>">🏢 All</a>
           <?php foreach ($agencies as $ag): ?>
-            <a href="accounts.php?agency=<?= urlencode($ag['code']) ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>" 
-               class="btn filter-btn <?= $filterAgency === $ag['code'] ? 'active' : '' ?>"><?= htmlspecialchars($ag['name']) ?></a>
+            <a href="accounts.php?agency=<?= urlencode($ag['code']) ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>"
+              class="btn filter-btn <?= $filterAgency === $ag['code'] ? 'active' : '' ?>"><?= htmlspecialchars($ag['name']) ?></a>
           <?php endforeach; ?>
         </div>
 
@@ -553,49 +712,25 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             <button type="button" class="filter-btn" id="btnViewAdmins">⚙️ Admins</button>
           </div>
         <?php endif; ?>
-        
-        <!-- Branch Filter -->
-        <!-- Quick branch buttons (CSNK only) -->
-        <?php if ($filterAgency === 'csnk'): ?>
-          <?php foreach ($branches as $branch): ?>
-            <a href="accounts.php?agency=csnk&branch=<?= (int)$branch['id'] ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>" 
-               class="btn btn-outline-primary btn-sm ms-2 <?= $filterBranch === (int)$branch['id'] ? 'active' : '' ?>">
-              <?= htmlspecialchars($branch['code']) ?>
-            </a>
-          <?php endforeach; ?>
-          <a href="accounts.php?agency=csnk&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>" 
-             class="btn btn-secondary btn-sm ms-2 <?= $filterBranch === 0 ? 'active' : '' ?>">All CSNK</a>
-        <?php endif; ?>
+
+
       </div>
     </div>
-    <div class="col-lg-4 text-end">
-      <!-- Filter form - preserve all GET params -->
-      <form method="GET" class="d-flex gap-2">
-        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search..." value="<?= htmlspecialchars($filterSearch) ?>">
-        <select name="status" class="form-select form-select-sm">
-          <option value="">All Status</option>
-          <option value="active" <?= $filterStatus === 'active' ? 'selected' : '' ?>>Active</option>
-          <option value="inactive" <?= $filterStatus === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-        </select>
-        <select name="agency" class="form-select form-select-sm">
-          <option value="">All Agencies</option>
-          <option value="csnk" <?= $filterAgency === 'csnk' ? 'selected' : '' ?>>CSNK</option>
-          <option value="smc" <?= $filterAgency === 'smc' ? 'selected' : '' ?>>SMC</option>
-        </select>
-        <?php if ($filterAgency === 'csnk'): ?>
-          <select name="branch" class="form-select form-select-sm" id="branchSelectFilter">
-            <option value="0">All CSNK Branches</option>
-            <?php foreach ($branches as $b): ?>
-              <option value="<?= (int)$b['id'] ?>" <?= $filterBranch === (int)$b['id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($b['name']) ?> (<?= htmlspecialchars($b['code']) ?>)
-              </option>
-            <?php endforeach; ?>
-          </select>
-        <?php endif; ?>
-        <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
-        <a href="accounts.php" class="btn btn-outline-secondary btn-sm">Clear</a>
-      </form>
-    </div>
+
+    <!-- Branch Filters (CSNK only) - Directly Below -->
+    <?php if ($filterAgency === 'csnk'): ?>
+      <div class="filter-tabs mt-2">
+        <?php foreach ($branches as $branch): ?>
+          <a href="accounts.php?agency=csnk&branch=<?= (int) $branch['id'] ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+            class="btn btn-outline-primary btn-sm <?= $filterBranch === (int) $branch['id'] ? 'active' : '' ?>">
+            <?= htmlspecialchars($branch['code']) ?>
+          </a>
+        <?php endforeach; ?>
+        <a href="accounts.php?agency=csnk&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+          class="btn btn-secondary btn-sm <?= $filterBranch === 0 ? 'active' : '' ?>">All CSNK</a>
+      </div>
+    <?php endif; ?>
+
   </div>
 </div>
 
@@ -634,7 +769,8 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         <h4 class="mb-2">No Employee Accounts</h4>
         <p class="mb-4">Get started by adding your first employee account.</p>
         <?php if ($isSuperAdmin || $isAdmin): ?>
-          <button type="button" class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+          <button type="button" class="btn btn-primary btn-lg px-4" data-bs-toggle="modal"
+            data-bs-target="#addAccountModal">
             <i class="bi bi-plus-circle me-2"></i>Add Employee
           </button>
         <?php endif; ?>
@@ -656,14 +792,14 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           <tbody>
             <?php foreach ($employeeAccounts as $acc): ?>
               <tr>
-                <td>
+                <td data-label="Account">
                   <div class="d-flex align-items-center">
                     <div class="account-avatar flex-shrink-0">
                       <?= strtoupper(substr($acc['username'], 0, 1)) ?>
                     </div>
-                    <div class="ms-3">
+                    <div>
                       <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
-                      <?php if ((int)$acc['id'] === (int)$_SESSION['admin_id']): ?>
+                      <?php if ((int) $acc['id'] === (int) $_SESSION['admin_id']): ?>
                         <small class="text-success">This is you</small>
                       <?php endif; ?>
                     </div>
@@ -677,7 +813,8 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                 </td>
                 <td>
                   <?php if (!empty($acc['branch_code'])): ?>
-                    <span class="branch-tag"><?= htmlspecialchars($acc['branch_code']) ?> - <?= htmlspecialchars($acc['branch_name']) ?></span>
+                    <span class="branch-tag"><?= htmlspecialchars($acc['branch_code']) ?> -
+                      <?= htmlspecialchars($acc['branch_name']) ?></span>
                   <?php elseif (!empty($acc['branch_name'])): ?>
                     <span class="branch-tag"><?= htmlspecialchars($acc['branch_name']) ?></span>
                   <?php else: ?>
@@ -692,24 +829,24 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                 <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
                 <td class="text-end">
                   <div class="action-buttons btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn-action btn-reset" data-bs-toggle="modal" data-bs-target="#resetPasswordModal"
-                      data-user-id="<?= (int)$acc['id'] ?>" data-user-name="<?= htmlspecialchars($acc['full_name']) ?>" title="Reset Password">
+                    <button type="button" class="btn-action btn-reset" data-bs-toggle="modal"
+                      data-bs-target="#resetPasswordModal" data-user-id="<?= (int) $acc['id'] ?>"
+                      data-user-name="<?= htmlspecialchars($acc['full_name']) ?>" title="Reset Password">
                       <i class="bi bi-key-fill"></i>
                     </button>
-<button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAccountModal"
-                      data-user-id="<?= (int)$acc['id'] ?>"
-                      data-username="<?= htmlspecialchars($acc['username']) ?>"
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAccountModal"
+                      data-user-id="<?= (int) $acc['id'] ?>" data-username="<?= htmlspecialchars($acc['username']) ?>"
                       data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
                       data-email="<?= htmlspecialchars($acc['email']) ?>"
                       data-status="<?= htmlspecialchars($acc['status']) ?>"
-                      data-branch-id="<?= (int)($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
+                      data-branch-id="<?= (int) ($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
                       data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
                       data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
                       data-role="<?= htmlspecialchars($acc['role']) ?>" title="Edit">
                       <i class="bi bi-pencil-square"></i>
                     </button>
-                    <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
-                      <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" class="btn btn-danger"
+                    <?php if ((int) $acc['id'] !== (int) $_SESSION['admin_id']): ?>
+                      <a href="accounts.php?action=delete&id=<?= (int) $acc['id'] ?>" class="btn btn-danger"
                         onclick="return confirm('Delete this account?')" title="Delete">
                         <i class="bi bi-trash"></i>
                       </a>
@@ -724,507 +861,511 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     <?php endif; ?>
   </div>
 
-<?php if ($isSuperAdmin || $isAdmin): ?>
-<div class="account-card d-none" id="sectionAdmins">
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="account-card d-none" id="sectionAdmins">
 
-  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-    <h5 class="mb-0 fw-bold">
-      <i class="bi bi-shield-check me-2"></i>Admin Accounts
-    </h5>
-    <span class="status-badge"><?= count($adminAccounts) ?> users</span>
-  </div>
-
-  <?php if (empty($adminAccounts)): ?>
-    <div class="empty-state">
-      <div class="empty-state-icon">
-        <i class="bi bi-shield"></i>
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h5 class="mb-0 fw-bold">
+          <i class="bi bi-shield-check me-2"></i>Admin Accounts
+        </h5>
+        <span class="status-badge"><?= count($adminAccounts) ?> users</span>
       </div>
-      <h4 class="mb-2">No Admin Accounts</h4>
-      <p class="mb-4">Create a new admin account to get started.</p>
-      <button class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#addAccountModal">
-        <i class="bi bi-plus-circle me-2"></i>Create Admin
-      </button>
-    </div>
-    
-  <?php else: ?>
-  <div class="table-responsive">
-    <table class="table table-hover modern-table">
-      <thead class="table-light">
-        <tr>
-          <th>Account</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Status</th>
-          <th>Created</th>
-          <th class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
 
-        <?php foreach ($adminAccounts as $acc): ?>
-        <tr>
-          <td>
-            <div class="d-flex align-items-center">
-              <div class="account-avatar flex-shrink-0">
-                <?= strtoupper(substr($acc['username'], 0, 1)) ?>
-              </div>
-              <div class="ms-3">
-                <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
-              </div>
-            </div>
-          </td>
+      <?php if (empty($adminAccounts)): ?>
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="bi bi-shield"></i>
+          </div>
+          <h4 class="mb-2">No Admin Accounts</h4>
+          <p class="mb-4">Create a new admin account to get started.</p>
+          <button class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+            <i class="bi bi-plus-circle me-2"></i>Create Admin
+          </button>
+        </div>
 
-          <td><?= htmlspecialchars($acc['full_name']) ?></td>
+      <?php else: ?>
+        <div class="table-responsive">
+          <table class="table table-hover modern-table">
+            <thead class="table-light">
+              <tr>
+                <th>Account</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
 
-          <td>
-            <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
-              <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
-            </a>
-          </td>
+              <?php foreach ($adminAccounts as $acc): ?>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="account-avatar flex-shrink-0">
+                        <?= strtoupper(substr($acc['username'], 0, 1)) ?>
+                      </div>
+                      <div class="ms-3">
+                        <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
+                      </div>
+                    </div>
+                  </td>
 
-          <td>
-            <span class="status-badge status-<?= $acc['status'] ?>">
-              <?= ucfirst($acc['status']) ?>
-            </span>
-          </td>
+                  <td><?= htmlspecialchars($acc['full_name']) ?></td>
 
-          <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
+                  <td>
+                    <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
+                      <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
+                    </a>
+                  </td>
 
-          <td class="text-end">
-            <div class="action-buttons btn-group btn-group-sm">
-              
-<button type="button" class="btn btn-warning"
-                data-bs-toggle="modal" data-bs-target="#editAccountModal"
-                data-user-id="<?= (int)$acc['id'] ?>"
-                data-username="<?= htmlspecialchars($acc['username']) ?>"
-                data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
-                data-email="<?= htmlspecialchars($acc['email']) ?>"
-                data-status="<?= htmlspecialchars($acc['status']) ?>"
-                data-branch-id="<?= (int)($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
-                data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
-                data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
-                data-role="<?= htmlspecialchars($acc['role']) ?>">
-                <i class="bi bi-pencil-square"></i>
-              </button>
+                  <td>
+                    <span class="status-badge status-<?= $acc['status'] ?>">
+                      <?= ucfirst($acc['status']) ?>
+                    </span>
+                  </td>
 
-              <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
-              <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" 
-                 class="btn btn-danger"
-                 onclick="return confirm('Delete this admin?')">
-                <i class="bi bi-trash"></i>
-              </a>
-              <?php endif; ?>
+                  <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
 
-            </div>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+                  <td class="text-end">
+                    <div class="action-buttons btn-group btn-group-sm">
 
-      </tbody>
-    </table>
-  </div>
-  <?php endif; ?>
-
-</div>
-<?php endif; ?>
-
-
-
-
-
-<?php if ($isSuperAdmin): ?>
-<!-- Super Admin Section -->
-<div class="account-card d-none" id="sectionSupers">
-  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-    <h5 class="mb-0 fw-bold">
-      <i class="bi bi-crown-fill text-warning me-2"></i>Super Admin Accounts
-    </h5>
-    <span class="status-badge"><?= count($superAccounts) ?> users</span>
-  </div>
-
-  <?php if (empty($superAccounts)): ?>
-    <div class="empty-state">
-      <div class="empty-state-icon">
-        <i class="bi bi-crown"></i>
-      </div>
-      <h4 class="mb-2">No Super Admin Accounts</h4>
-      <p class="mb-4">Only a super admin can create other super admins.</p>
-    </div>
-  <?php else: ?>
-    <div class="table-responsive">
-      <table class="table table-hover modern-table">
-        <thead class="table-light">
-          <tr>
-            <th>Account</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($superAccounts as $acc): ?>
-          <tr>
-            <td>
-              <div class="d-flex align-items-center">
-                <div class="account-avatar flex-shrink-0">
-                  <?= strtoupper(substr($acc['username'], 0, 1)) ?>
-                </div>
-                <div class="ms-3">
-                  <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
-                </div>
-              </div>
-            </td>
-            <td><?= htmlspecialchars($acc['full_name']) ?></td>
-            <td>
-              <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
-                <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
-              </a>
-            </td>
-            <td>
-              <span class="status-badge status-<?= $acc['status'] ?>">
-                <?= ucfirst($acc['status']) ?>
-              </span>
-            </td>
-            <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
-            <td class="text-end">
-              <div class="action-buttons btn-group btn-group-sm">
-                <button type="button" class="btn btn-warning"
-                        data-bs-toggle="modal" data-bs-target="#editAccountModal"
-                        data-user-id="<?= (int)$acc['id'] ?>"
-                        data-username="<?= htmlspecialchars($acc['username']) ?>"
+                      <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAccountModal"
+                        data-user-id="<?= (int) $acc['id'] ?>" data-username="<?= htmlspecialchars($acc['username']) ?>"
                         data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
                         data-email="<?= htmlspecialchars($acc['email']) ?>"
                         data-status="<?= htmlspecialchars($acc['status']) ?>"
-                        data-branch-id="<?= (int)($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
+                        data-branch-id="<?= (int) ($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
                         data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
                         data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
                         data-role="<?= htmlspecialchars($acc['role']) ?>">
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-                <?php if ((int)$acc['id'] !== (int)$_SESSION['admin_id']): ?>
-                <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" class="btn btn-danger"
-                   onclick="return confirm('Delete this super admin?')">
-                  <i class="bi bi-trash"></i>
-                </a>
-                <?php endif; ?>
-              </div>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+
+                      <?php if ((int) $acc['id'] !== (int) $_SESSION['admin_id']): ?>
+                        <a href="accounts.php?action=delete&id=<?= (int) $acc['id'] ?>" class="btn btn-danger"
+                          onclick="return confirm('Delete this admin?')">
+                          <i class="bi bi-trash"></i>
+                        </a>
+                      <?php endif; ?>
+
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+
     </div>
   <?php endif; ?>
-</div>
-<?php endif; ?>
 
-<?php if ($isSuperAdmin || $isAdmin): ?>
-<!-- Add Account Modal -->
-<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" id="addAccountForm" novalidate>
-<div class="modal-header">
-          <h5 class="modal-title" id="addModalTitle">Add Account</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <!-- Agency Tabs (generated from database) -->
-        <ul class="nav nav-tabs border-0 mb-0" id="agencyTabs">
-          <?php foreach ($agencies as $i => $ag): ?>
-            <li class="nav-item">
-              <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#agency-<?= htmlspecialchars($ag['code']) ?>-tab" data-agency="<?= htmlspecialchars($ag['code']) ?>">
-                <?= htmlspecialchars($ag['name']) ?> Accounts
-              </a>
-            </li>
-          <?php endforeach; ?>
-        </ul>
-<div class="modal-body">
-          <!-- visible agency selector so user knows which agency is being created -->
-          <div class="mb-3">
-            <label class="form-label">Agency</label>
-            <select class="form-select" name="agency" id="addAgency" required>
-              <?php foreach ($agencies as $ag): ?>
-                <option value="<?= htmlspecialchars($ag['code']) ?>" <?= $ag['code'] === ($agencies[0]['code'] ?? '') ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($ag['name']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+
+
+
+
+  <?php if ($isSuperAdmin): ?>
+    <!-- Super Admin Section -->
+    <div class="account-card d-none" id="sectionSupers">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h5 class="mb-0 fw-bold">
+          <i class="bi bi-crown-fill text-warning me-2"></i>Super Admin Accounts
+        </h5>
+        <span class="status-badge"><?= count($superAccounts) ?> users</span>
+      </div>
+
+      <?php if (empty($superAccounts)): ?>
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="bi bi-crown"></i>
           </div>
-          
-          <!-- Agency-specific content -->
-          <div class="tab-content">
-            <?php foreach ($agencies as $i => $ag): ?>
-              <div class="tab-pane fade <?= $i === 0 ? 'show active' : '' ?>" id="agency-<?= htmlspecialchars($ag['code']) ?>-tab">
-                <div class="mb-3">
-                  <label class="form-label">Username <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" name="username" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" name="full_name" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Email <span class="text-danger">*</span></label>
-                  <input type="email" class="form-control" name="email" id="emailInput" required placeholder="name@gmail.com">
-                  <div class="form-text" id="emailHint"></div>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Password <span class="text-danger">*</span></label>
-                  <input type="password" class="form-control" name="password" id="pwdInput" required minlength="10" placeholder="Strong password">
-                  <div class="progress mt-2" style="height:8px;">
-                    <div id="pwdBar" class="progress-bar" role="progressbar" style="width:0%"></div>
-                  </div>
-                  <small class="text-muted">Min 10 chars with uppercase, lowercase, number, and special character.</small>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
-                  <input type="password" class="form-control" name="password2" id="pwdInput2" required minlength="10" placeholder="Confirm password">
-                  <div class="form-text" id="pwdMatchHint"></div>
-                </div>
-
-                <?php if ($ag['code'] === 'csnk'): ?>
-                  <div class="mb-3">
-                    <label class="form-label">Role</label>
-                    <select class="form-select" name="role" id="roleSelect">
-                      <?php if ($isSuperAdmin): ?>
-                        <option value="employee" selected>Employee</option>
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                      <?php else: ?>
-                        <option value="employee" selected>Employee</option>
-                        <option value="admin">Admin</option>
+          <h4 class="mb-2">No Super Admin Accounts</h4>
+          <p class="mb-4">Only a super admin can create other super admins.</p>
+        </div>
+      <?php else: ?>
+        <div class="table-responsive">
+          <table class="table table-hover modern-table">
+            <thead class="table-light">
+              <tr>
+                <th>Account</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($superAccounts as $acc): ?>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="account-avatar flex-shrink-0">
+                        <?= strtoupper(substr($acc['username'], 0, 1)) ?>
+                      </div>
+                      <div class="ms-3">
+                        <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><?= htmlspecialchars($acc['full_name']) ?></td>
+                  <td>
+                    <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
+                      <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="status-badge status-<?= $acc['status'] ?>">
+                      <?= ucfirst($acc['status']) ?>
+                    </span>
+                  </td>
+                  <td><small class="text-muted"><?= formatDate($acc['created_at']) ?></small></td>
+                  <td class="text-end">
+                    <div class="action-buttons btn-group btn-group-sm">
+                      <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAccountModal"
+                        data-user-id="<?= (int) $acc['id'] ?>" data-username="<?= htmlspecialchars($acc['username']) ?>"
+                        data-fullname="<?= htmlspecialchars($acc['full_name']) ?>"
+                        data-email="<?= htmlspecialchars($acc['email']) ?>"
+                        data-status="<?= htmlspecialchars($acc['status']) ?>"
+                        data-branch-id="<?= (int) ($acc['branch_id'] ?? ($acc['business_unit_id'] ?? 0)) ?>"
+                        data-branch-name="<?= htmlspecialchars($acc['branch_name'] ?? '') ?>"
+                        data-branch-code="<?= htmlspecialchars($acc['branch_code'] ?? '') ?>"
+                        data-role="<?= htmlspecialchars($acc['role']) ?>">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <?php if ((int) $acc['id'] !== (int) $_SESSION['admin_id']): ?>
+                        <a href="accounts.php?action=delete&id=<?= (int) $acc['id'] ?>" class="btn btn-danger"
+                          onclick="return confirm('Delete this super admin?')">
+                          <i class="bi bi-trash"></i>
+                        </a>
                       <?php endif; ?>
-                    </select>
-                  </div>
-
-                  <div class="mb-3" id="branchWrapper">
-                    <label class="form-label">Branch (for Employee) <span class="text-danger">*</span></label>
-                    <select class="form-select" name="business_unit_id" id="branchSelect">
-                      <option value="0">-- Select branch --</option>
-                      <?php foreach ($branches as $branch): ?>
-                        <option value="<?= (int)$branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?> (<?= htmlspecialchars($branch['code']) ?>)</option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                <?php else: ?>
-                  <!-- non-CSNK agencies default to employee and no branch -->
-                  <input type="hidden" name="role" value="employee">
-                <?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
-                      <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" name="add_account" class="btn btn-primary">Create Account</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-<?php endif; ?>
-
-<!-- Edit Account Modal -->
-<?php if ($isSuperAdmin || $isAdmin): ?>
-<div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" id="editAccountForm" novalidate>
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Account</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="edit_user_id" id="editUserId">
-          <input type="hidden" id="editRoleHidden" value="">
-          <div class="mb-3">
-            <label class="form-label">Username <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" name="edit_username" id="editUsername" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Full Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" name="edit_full_name" id="editFullName" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Email <span class="text-danger">*</span></label>
-            <input type="email" class="form-control" name="edit_email" id="editEmail" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Status</label>
-            <select class="form-select" name="edit_status" id="editStatus">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div class="mb-3 d-none" id="editBranchWrapper">
-            <label class="form-label">Branch (Employee)</label>
-            <select class="form-select" name="edit_business_unit_id" id="editBranch">
-              <option value="0">-- Select branch --</option>
-              <?php foreach ($branches as $branch): ?>
-                <option value="<?= (int)$branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?> (<?= htmlspecialchars($branch['code']) ?>)</option>
+                    </div>
+                  </td>
+                </tr>
               <?php endforeach; ?>
-            </select>
-          </div>
-
-          <small class="text-muted">Role is not changed here.</small>
+            </tbody>
+          </table>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" name="edit_account" class="btn btn-warning">Save Changes</button>
-        </div>
-      </form>
+      <?php endif; ?>
     </div>
-  </div>
-</div>
-<?php endif; ?>
+  <?php endif; ?>
 
-<!-- Reset Password Modal (Super Admin only) -->
-<?php if ($isSuperAdmin): ?>
-<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" id="resetPwdForm" novalidate>
-        <div class="modal-header">
-          <h5 class="modal-title">Reset Password</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <!-- Add Account Modal -->
+    <div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="addAccountForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title" id="addModalTitle">Add Account</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <!-- Agency Tabs (generated from database) -->
+            <ul class="nav nav-tabs border-0 mb-0" id="agencyTabs">
+              <?php foreach ($agencies as $i => $ag): ?>
+                <li class="nav-item">
+                  <a class="nav-link <?= $i === 0 ? 'active' : '' ?>"
+                    href="#agency-<?= htmlspecialchars($ag['code']) ?>-tab"
+                    data-agency="<?= htmlspecialchars($ag['code']) ?>">
+                    <?= htmlspecialchars($ag['name']) ?> Accounts
+                  </a>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+            <div class="modal-body">
+              <!-- visible agency selector so user knows which agency is being created -->
+              <div class="mb-3">
+                <label class="form-label">Agency</label>
+                <select class="form-select" name="agency" id="addAgency" required>
+                  <?php foreach ($agencies as $ag): ?>
+                    <option value="<?= htmlspecialchars($ag['code']) ?>" <?= $ag['code'] === ($agencies[0]['code'] ?? '') ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($ag['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <!-- Agency-specific content -->
+              <div class="tab-content">
+                <?php foreach ($agencies as $i => $ag): ?>
+                  <div class="tab-pane fade <?= $i === 0 ? 'show active' : '' ?>"
+                    id="agency-<?= htmlspecialchars($ag['code']) ?>-tab">
+                    <div class="mb-3">
+                      <label class="form-label">Username <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" name="username" required>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" name="full_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Email <span class="text-danger">*</span></label>
+                      <input type="email" class="form-control" name="email" id="emailInput" required
+                        placeholder="name@gmail.com">
+                      <div class="form-text" id="emailHint"></div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Password <span class="text-danger">*</span></label>
+                      <input type="password" class="form-control" name="password" id="pwdInput" required minlength="10"
+                        placeholder="Strong password">
+                      <div class="progress mt-2" style="height:8px;">
+                        <div id="pwdBar" class="progress-bar" role="progressbar" style="width:0%"></div>
+                      </div>
+                      <small class="text-muted">Min 10 chars with uppercase, lowercase, number, and special
+                        character.</small>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                      <input type="password" class="form-control" name="password2" id="pwdInput2" required minlength="10"
+                        placeholder="Confirm password">
+                      <div class="form-text" id="pwdMatchHint"></div>
+                    </div>
+
+                    <?php if ($ag['code'] === 'csnk'): ?>
+                      <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" name="role" id="roleSelect">
+                          <?php if ($isSuperAdmin): ?>
+                            <option value="employee" selected>Employee</option>
+                            <option value="admin">Admin</option>
+                            <option value="super_admin">Super Admin</option>
+                          <?php else: ?>
+                            <option value="employee" selected>Employee</option>
+                            <option value="admin">Admin</option>
+                          <?php endif; ?>
+                        </select>
+                      </div>
+
+                      <div class="mb-3" id="branchWrapper">
+                        <label class="form-label">Branch (for Employee) <span class="text-danger">*</span></label>
+                        <select class="form-select" name="business_unit_id" id="branchSelect">
+                          <option value="0">-- Select branch --</option>
+                          <?php foreach ($branches as $branch): ?>
+                            <option value="<?= (int) $branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?>
+                              (<?= htmlspecialchars($branch['code']) ?>)</option>
+                          <?php endforeach; ?>
+                        </select>
+                      </div>
+                    <?php else: ?>
+                      <!-- non-CSNK agencies default to employee and no branch -->
+                      <input type="hidden" name="role" value="employee">
+                    <?php endif; ?>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" name="add_account" class="btn btn-primary">Create Account</button>
+              </div>
+          </form>
         </div>
-        <div class="modal-body">
-          <input type="hidden" name="user_id" id="resetUserId">
-          <div class="mb-2">
-            <div class="small text-muted">For user:</div>
-            <div class="fw-semibold" id="resetUserName">—</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">New Password</label>
-            <input type="password" class="form-control" name="new_password" id="newPwd" required minlength="10">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Confirm Password</label>
-            <input type="password" class="form-control" name="confirm_password" id="newPwd2" required minlength="10">
-          </div>
-          <small class="text-muted">Min 10 chars (upper, lower, number, special).</small>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" name="reset_password" class="btn btn-secondary">Reset Password</button>
-        </div>
-      </form>
+      </div>
     </div>
-  </div>
-</div>
-<?php endif; ?>
+  <?php endif; ?>
+
+  <!-- Edit Account Modal -->
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="editAccountForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Account</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="edit_user_id" id="editUserId">
+              <input type="hidden" id="editRoleHidden" value="">
+              <div class="mb-3">
+                <label class="form-label">Username <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="edit_username" id="editUsername" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="edit_full_name" id="editFullName" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" name="edit_email" id="editEmail" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="edit_status" id="editStatus">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div class="mb-3 d-none" id="editBranchWrapper">
+                <label class="form-label">Branch (Employee)</label>
+                <select class="form-select" name="edit_business_unit_id" id="editBranch">
+                  <option value="0">-- Select branch --</option>
+                  <?php foreach ($branches as $branch): ?>
+                    <option value="<?= (int) $branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?>
+                      (<?= htmlspecialchars($branch['code']) ?>)</option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <small class="text-muted">Role is not changed here.</small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" name="edit_account" class="btn btn-warning">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
+  <!-- Reset Password Modal (Super Admin only) -->
+  <?php if ($isSuperAdmin): ?>
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="resetPwdForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title">Reset Password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="user_id" id="resetUserId">
+              <div class="mb-2">
+                <div class="small text-muted">For user:</div>
+                <div class="fw-semibold" id="resetUserName">—</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" name="new_password" id="newPwd" required minlength="10">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" name="confirm_password" id="newPwd2" required minlength="10">
+              </div>
+              <small class="text-muted">Min 10 chars (upper, lower, number, special).</small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" name="reset_password" class="btn btn-secondary">Reset Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
 
 
-<script>
-(function(){
-  // Enhanced role switching
-  ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
-    const btn = document.getElementById(id);
-    btn?.addEventListener('click', () => {
-      document.querySelectorAll('[id^="section"]').forEach(sec => sec.classList.add('d-none'));
-      const targetSection = document.getElementById('section' + btn.id.replace('btnView', ''));
-      targetSection?.classList.remove('d-none');
-      
-      document.querySelectorAll('.filter-btn, .btn-outline-primary').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+  <script>
+    (function () {
+      // Enhanced role switching
+      ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn?.addEventListener('click', () => {
+          document.querySelectorAll('[id^="section"]').forEach(sec => sec.classList.add('d-none'));
+          const targetSection = document.getElementById('section' + btn.id.replace('btnView', ''));
+          targetSection?.classList.remove('d-none');
 
-  // agency tab switching for add-account modal
-  const agencyTabs = document.querySelectorAll('#agencyTabs a');
-  const hiddenAgency = document.getElementById('addAgency');
-  const roleSelect = document.getElementById('roleSelect');
-  const branchWrapper = document.getElementById('branchWrapper');
+          document.querySelectorAll('.filter-btn, .btn-outline-primary').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
 
-  function updateAgencyFields(code) {
-    if (!hiddenAgency) return;
-    hiddenAgency.value = code;
-    // also update visible dropdown
-    if (hiddenAgency.tagName === 'SELECT') {
-      hiddenAgency.value = code;
-    }
-    // CSNK needs role select + branch; others default to employee and hide branch
-    if (code === 'csnk') {
-      if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
-      if (branchWrapper) branchWrapper.classList.remove('d-none');
-    } else {
-      if (roleSelect) {
-        roleSelect.closest('.mb-3').classList.add('d-none');
-        // force employee
-        roleSelect.value = 'employee';
-      }
-      if (branchWrapper) branchWrapper.classList.add('d-none');
-    }
-  }
+      // agency tab switching for add-account modal
+      const agencyTabs = document.querySelectorAll('#agencyTabs a');
+      const hiddenAgency = document.getElementById('addAgency');
+      const roleSelect = document.getElementById('roleSelect');
+      const branchWrapper = document.getElementById('branchWrapper');
 
-  // if user manually selects agency from dropdown, switch to corresponding tab
-  const visibleAgencySelect = document.getElementById('addAgency');
-  if (visibleAgencySelect) {
-    visibleAgencySelect.addEventListener('change', () => {
-      const code = visibleAgencySelect.value;
-      const tabLink = document.querySelector(`#agencyTabs a[data-agency="${code}"]`);
-      if (tabLink) {
-        new bootstrap.Tab(tabLink).show();
-      }
-    });
-  }
-
-  agencyTabs.forEach(tab => {
-    tab.addEventListener('shown.bs.tab', (e) => {
-      const code = e.target.getAttribute('data-agency');
-      updateAgencyFields(code);
-    });
-  });
-
-  // initialize with default active agency
-  if (agencyTabs.length > 0) {
-    const activeTab = document.querySelector('#agencyTabs .active');
-    if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
-  }
-
-  // before submitting the add form, disable all fields in non-active panes
-  const addForm = document.getElementById('addAccountForm');
-  if (addForm) {
-    addForm.addEventListener('submit', () => {
-      document.querySelectorAll('#addAccountForm .tab-pane').forEach(pane => {
-        if (!pane.classList.contains('active')) {
-          pane.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
+      function updateAgencyFields(code) {
+        if (!hiddenAgency) return;
+        hiddenAgency.value = code;
+        // also update visible dropdown
+        if (hiddenAgency.tagName === 'SELECT') {
+          hiddenAgency.value = code;
         }
-      });
-    });
-
-    // restore fields whenever the modal is opened (disabled elements persist otherwise)
-    const addModal = document.getElementById('addAccountModal');
-    if (addModal) {
-      addModal.addEventListener('shown.bs.modal', () => {
-        addForm.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
-      });
-    }
-  }
-
-  // Smooth animations
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.transform = 'translateY(0)';
+        // CSNK needs role select + branch; others default to employee and hide branch
+        if (code === 'csnk') {
+          if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
+          if (branchWrapper) branchWrapper.classList.remove('d-none');
+        } else {
+          if (roleSelect) {
+            roleSelect.closest('.mb-3').classList.add('d-none');
+            // force employee
+            roleSelect.value = 'employee';
+          }
+          if (branchWrapper) branchWrapper.classList.add('d-none');
+        }
       }
-    });
-  });
 
-  document.querySelectorAll('.account-card').forEach(card => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(card);
-  });
-})();
-</script>
+      // if user manually selects agency from dropdown, switch to corresponding tab
+      const visibleAgencySelect = document.getElementById('addAgency');
+      if (visibleAgencySelect) {
+        visibleAgencySelect.addEventListener('change', () => {
+          const code = visibleAgencySelect.value;
+          const tabLink = document.querySelector(`#agencyTabs a[data-agency="${code}"]`);
+          if (tabLink) {
+            new bootstrap.Tab(tabLink).show();
+          }
+        });
+      }
 
-<?php require_once '../includes/footer.php'; ?>
+      agencyTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+          const code = e.target.getAttribute('data-agency');
+          updateAgencyFields(code);
+        });
+      });
+
+      // initialize with default active agency
+      if (agencyTabs.length > 0) {
+        const activeTab = document.querySelector('#agencyTabs .active');
+        if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
+      }
+
+      // before submitting the add form, disable all fields in non-active panes
+      const addForm = document.getElementById('addAccountForm');
+      if (addForm) {
+        addForm.addEventListener('submit', () => {
+          document.querySelectorAll('#addAccountForm .tab-pane').forEach(pane => {
+            if (!pane.classList.contains('active')) {
+              pane.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
+            }
+          });
+        });
+
+        // restore fields whenever the modal is opened (disabled elements persist otherwise)
+        const addModal = document.getElementById('addAccountModal');
+        if (addModal) {
+          addModal.addEventListener('shown.bs.modal', () => {
+            addForm.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
+          });
+        }
+      }
+
+      // Smooth animations
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      });
+
+      document.querySelectorAll('.account-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
+      });
+    })();
+  </script>
+
+  <?php require_once '../includes/footer.php'; ?>
