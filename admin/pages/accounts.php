@@ -811,7 +811,39 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
               <a href="accounts.php?action=delete&id=<?= (int)$acc['id'] ?>" 
                  class="btn btn-danger"
                  onclick="return confirm('Delete this admin?')">
-                <i class="bi bi-trash"
+                <i class="bi bi-trash"></i>
+              </a>
+              <?php endif; ?>
+
+            </div>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
+
+</div>
+      <table class="table table-hover modern-table">
+        <thead class="table-light">
+          <tr>
+            <th>Account</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($superAccounts as $acc): ?>
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="account-avatar flex-shrink-0">
+                  <?= strtoupper(substr($acc['usern
         <!-- Agency Tabs (generated from database) -->
         <ul class="nav nav-tabs border-0 mb-0" id="agencyTabs">
           <?php foreach ($agencies as $i => $ag): ?>
