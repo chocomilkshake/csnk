@@ -1135,6 +1135,30 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       btn.classList.add('active');
     });
   });
+
+  // agency tab switching for add-account modal
+  const agencyTabs = document.querySelectorAll('#agencyTabs a');
+  const hiddenAgency = document.getElementById('addAgency');
+  const roleSelect = document.getElementById('roleSelect');
+  const branchWrapper = document.getElementById('branchWrapper');
+
+  function updateAgencyFields(code) {
+    if (!hiddenAgency) return;
+    hiddenAgency.value = code;
+    // also update visible dropdown
+    if (hiddenAgency.tagName === 'SELECT') {
+      hiddenAgency.value = code;
+    }
+    // CSNK needs role select + branch; others default to employee and hide branch
+    if (code === 'csnk') {
+      if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
+      if (branchWrapper) branchWrapper.classList.remove('d-none');
+    } else {
+      if (roleSelect) {
+        roleSelect.closest('.mb-3').classList.add('d-none');
+        // force employee
+        roleSelect.value = 'employee';
+      }
       if (branchWrapper) branchWrapper.classList.add('d-none');
     }
   }
