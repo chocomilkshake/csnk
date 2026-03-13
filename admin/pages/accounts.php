@@ -869,7 +869,43 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             <td>
               <div class="d-flex align-items-center">
                 <div class="account-avatar flex-shrink-0">
-                  <?= strtoupper(substr($acc['usern
+                  <?= strtoupper(substr($acc['username'], 0, 1)) ?>
+                </div>
+                <div class="ms-3">
+                  <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
+                </div>
+              </div>
+            </td>
+            <td><?= htmlspecialchars($acc['full_name']) ?></td>
+            <td>
+              <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
+                <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
+              </a>
+            </td>
+            <td>
+              <span class="status-badge status-<?= $acc['status'] ?>">
+                <?= ucfirst($acc['sta
+              </div>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php if ($isSuperAdmin || $isAdmin): ?>
+<!-- Add Account Modal -->
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" id="addAccountForm" novalidate>
+<div class="modal-header">
+          <h5 class="modal-title" id="addModalTitle">Add Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <!-- Agency Tabs (generated from database) -->
         <ul class="nav nav-tabs border-0 mb-0" id="agencyTabs">
           <?php foreach ($agencies as $i => $ag): ?>
