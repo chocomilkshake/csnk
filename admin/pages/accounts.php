@@ -1172,3 +1172,59 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       if (tabLink) {
         new bootstrap.Tab(tabLink).show();
       }
+    });
+  }
+
+  agencyTabs.forEach(tab => {
+    tab.addEventListener('shown.bs.tab', (e) => {
+      const code = e.target.getAttribute('data-agency');
+      updateAgencyFields(code);
+    });
+  });
+
+  // initialize with default active agency
+  if (agencyTabs.length > 0) {
+    const activeTab = document.querySelector('#agencyTabs .active');
+    if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
+  }
+
+  // before submitting the add form, disable all fields in non-active panes
+  const addForm = document.getElementById('addAccountForm');
+  if (addForm) {
+    addForm.addEventListener('submit', () => {
+      document.querySelectorAll('#addAccountForm .tab-pane').forEach(pane => {
+        if (!pane.classList.contains('active')) {
+          pane.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
+        }
+      });
+    });
+
+    // restore fields whenever the modal is opened (disabled elements persist otherwise)
+    const addModal = document.getElementById('addAccountModal');
+    if (addModal) {
+      addModal.addEventListener('shown.bs.modal', () => {
+        addForm.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
+      });
+    }
+  }
+
+  // Smooth animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  });
+
+  document.querySelectorAll('.account-card').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(card);
+  });
+})();
+</script>
+
+<?php require_once '../includes/footer.php'; ?>
