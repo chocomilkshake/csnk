@@ -1026,6 +1026,43 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       </form>
     </div>
   </div>
+</div>
+<?php endif; ?>
+
+<!-- Edit Account Modal -->
+<?php if ($isSuperAdmin || $isAdmin): ?>
+<div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" id="editAccountForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+          <small class="text-muted">Role is not changed here.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="edit_account" class="btn btn-warning">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<!-- Reset Password Modal (Super Admin only) -->
+<?php if ($isSuperAdmin): ?>
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" id="resetPwdForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title">Reset Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="user_id" id="resetUserId">
           <div class="mb-2">
             <div class="small text-muted">For user:</div>
             <div class="fw-semibold" id="resetUserName">—</div>
