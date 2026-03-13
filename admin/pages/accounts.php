@@ -715,4 +715,36 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                       </a>
                     <?php endif; ?>
                   </div>
-              
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
+
+<?php if ($isSuperAdmin || $isAdmin): ?>
+<div class="account-card d-none" id="sectionAdmins">
+
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <h5 class="mb-0 fw-bold">
+      <i class="bi bi-shield-check me-2"></i>Admin Accounts
+    </h5>
+    <span class="status-badge"><?= count($adminAccounts) ?> users</span>
+  </div>
+
+  <?php if (empty($adminAccounts)): ?>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="bi bi-shield"></i>
+      </div>
+      <h4 class="mb-2">No Admin Accounts</h4>
+      <p class="mb-4">Create a new admin account to get started.</p>
+      <button class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+        <i class="bi bi-plus-circle me-2"></i>Create Admin
+      </button>
+    </div>
+    
+  <?php else: ?>
+  <div class="table-resp
