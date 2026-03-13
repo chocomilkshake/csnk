@@ -1005,7 +1005,40 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 
                   <div class="mb-3" id="branchWrapper">
                     <label class="form-label">Branch (for Employee) <span class="text-danger">*</span></label>
-                    <select class="forr, lower, number, special).</small>
+                    <select class="form-select" name="business_unit_id" id="branchSelect">
+                      <option value="0">-- Select branch --</option>
+                      <?php foreach ($branches as $branch): ?>
+                        <option value="<?= (int)$branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?> (<?= htmlspecialchars($branch['code']) ?>)</option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                <?php else: ?>
+                  <!-- non-CSNK agencies default to employee and no branch -->
+                  <input type="hidden" name="role" value="employee">
+                <?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+          </div>
+                      <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="add_account" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+          <div class="mb-2">
+            <div class="small text-muted">For user:</div>
+            <div class="fw-semibold" id="resetUserName">—</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" class="form-control" name="new_password" id="newPwd" required minlength="10">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" name="confirm_password" id="newPwd2" required minlength="10">
+          </div>
+          <small class="text-muted">Min 10 chars (upper, lower, number, special).</small>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
