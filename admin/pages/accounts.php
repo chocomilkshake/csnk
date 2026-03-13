@@ -826,6 +826,32 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   <?php endif; ?>
 
 </div>
+<?php endif; ?>
+
+
+
+
+
+<?php if ($isSuperAdmin): ?>
+<!-- Super Admin Section -->
+<div class="account-card d-none" id="sectionSupers">
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <h5 class="mb-0 fw-bold">
+      <i class="bi bi-crown-fill text-warning me-2"></i>Super Admin Accounts
+    </h5>
+    <span class="status-badge"><?= count($superAccounts) ?> users</span>
+  </div>
+
+  <?php if (empty($superAccounts)): ?>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="bi bi-crown"></i>
+      </div>
+      <h4 class="mb-2">No Super Admin Accounts</h4>
+      <p class="mb-4">Only a super admin can create other super admins.</p>
+    </div>
+  <?php else: ?>
+    <div class="table-responsive">
       <table class="table table-hover modern-table">
         <thead class="table-light">
           <tr>
