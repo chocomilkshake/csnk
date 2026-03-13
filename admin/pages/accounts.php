@@ -747,4 +747,13 @@ background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     </div>
     
   <?php else: ?>
-  <div class="table-resp
+  <div class="table-responsive">
+    <table class="table table-hover modern-table">
+      <thead class="table-light">
+        <tr>
+          <th>Account</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th class="
