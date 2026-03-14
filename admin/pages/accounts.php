@@ -937,7 +937,30 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
                 </tr>
               <?php endforeach; ?>
             </tbody>
-          </table>eturn;
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
+
+              <div class="mb-3 d-none" id="editBranchWrapper">
+                <label class="form-label">Branch (Employee)</label>
+                <select class="form-select" name="edit_business_unit_id" id="editBranch">
+                  <option value="0">-- Select branch --</option>
+                  <?php foreach ($branches as $branch): ?>
+                    <option value="<?= (int) $branch['id'] ?>"><?= htmlspecialchars($branch['name']) ?>
+                      (<?= htmlspecialchars($branch['code']) ?>)</option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <small class="text-muted">Role is not changed here.</small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submchWrapper.querySelector('select') : null;
+
+        function updateBranchVisibility() {
+          if (!agencySelect || !branchWrapper) return;
 
           const agency = agencySelect.value;
 
