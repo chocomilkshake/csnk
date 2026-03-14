@@ -973,6 +973,34 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
             </select>
           </div>
 
+          <!-- Section 1: Account Information -->
+          <div class="mb-4">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-person-badge me-2"></i> Account Information
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="text" class="form-control rounded-xl border-slate-200" name="username" placeholder="Username" required>
+                  <label>Username *</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="text" class="form-control rounded-xl border-slate-200" name="full_name" placeholder="Full Name" required>
+                  <label>Full Name *</label>
+                </div>
+              </div>
+              <div class="col-12">
+
+  </div>
+</div>
+
+<script>
+/**
+ * Handles showing/hiding Role & Branch fields based on agency
+ * Logic: Only 'csnk' gets the special fields, others default to 'employee'
+ */
 function toggleCsnkFields(agencyCode) {
     const section = document.getElementById('csnkSpecificFields');
     if (agencyCode === 'csnk') {
