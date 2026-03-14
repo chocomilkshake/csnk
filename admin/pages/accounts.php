@@ -941,6 +941,30 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
         </div>
       <?php endif; ?>
     </div>
+  <?php endif; ?>
+
+
+            </select>
+          </div>
+
+function toggleCsnkFields(agencyCode) {
+    const section = document.getElementById('csnkSpecificFields');
+    if (agencyCode === 'csnk') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" name="edit_email" id="editEmail" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="edit_status" id="editStatus">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
 
               <div class="mb-3 d-none" id="editBranchWrapper">
                 <label class="form-label">Branch (Employee)</label>
