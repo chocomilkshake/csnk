@@ -907,6 +907,18 @@ if ($canViewReports && $conn instanceof mysqli) {
                             <span class="text fw-semibold">Branches</span>
                         </span>
                     </a>
+
+                    <!-- SMC Management (Admins Only - SMC) -->
+                    <a href="pages/smc_management.php"
+                        class="sidebar-item <?php echo $currentPage === 'smc_management' ? 'active' : ''; ?>"
+                        aria-current="<?php echo $currentPage === 'smc_management' ? 'page' : 'false'; ?>"
+                        data-bs-toggle="tooltip" data-bs-placement="right" title="SMC Business Units">
+
+                        <i class="bi bi-building"></i>
+                        <span class="label">
+                            <span class="text fw-semibold">SMC Units</span>
+                        </span>
+                    </a>
                 <?php endif; ?>
 
                 <!-- System Activity -->
