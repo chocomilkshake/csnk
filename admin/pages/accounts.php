@@ -944,28 +944,27 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
   <?php endif; ?>
 
 
-<!-- Add Account Modal -->
 <?php if ($isSuperAdmin || $isAdmin): ?>
 <div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content shadow-lg border-0 rounded-4">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-2xl border-0 rounded-3xl overflow-hidden">
 
       <!-- Header -->
-      <div class="modal-header bg-light border-0 px-4 py-3">
+      <div class="modal-header bg-slate-50 border-0 px-6 py-4">
         <div>
-          <h5 class="modal-title fw-semibold mb-0">Create New Account</h5>
-          <small class="text-muted">Fill in the required details below</small>
+          <h5 class="text-xl font-bold text-slate-800 mb-0">Create New Account</h5>
+          <p class="text-sm text-slate-500 mb-0">Fill in the required details below</p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
       <form method="POST" id="addAccountForm" novalidate>
-        <div class="modal-body px-4 py-3">
+        <div class="modal-body px-6 py-4">
 
-          <!-- Agency -->
+          <!-- Agency Selection - Single Select -->
           <div class="mb-4">
-            <label class="form-label fw-semibold">Agency</label>
-            <select class="form-select form-select-lg" name="agency" id="addAgencySelect" required>
+            <label class="form-label text-sm font-semibold text-slate-700">Agency</label>
+            <select class="form-select rounded-xl border-slate-200 py-2.5" name="agency" id="addAgencySelect" required onchange="toggleCsnkFields(this.value)">
               <?php foreach ($agencies as $ag): ?>
                 <option value="<?= htmlspecialchars($ag['code']) ?>">
                   <?= htmlspecialchars($ag['name']) ?>
@@ -974,130 +973,123 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
             </select>
           </div>
 
-          <?php foreach ($agencies as $i => $ag): ?>
-          <div class="tab-pane fade <?= $i === 0 ? 'show active' : '' ?>"
-               id="agency-<?= htmlspecialchars($ag['code']) ?>-tab">
-
-            <!-- Account Information -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-              <div class="card-body">
-                <h6 class="fw-semibold mb-3">
-                  <i class="bi bi-person-lines-fill me-2"></i>Account Information
-                </h6>
-
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="form-floating">
-                      <input type="text" class="form-control" name="username" placeholder="Username" required>
-                      <label>Username *</label>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <div class="form-floating">
-                      <input type="text" class="form-control" name="full_name" placeholder="Full Name" required>
-                      <label>Full Name *</label>
-                    </div>
-                  </div>
-
-                  <div class="col-12">
-                    <div class="form-floating">
-                      <input type="email" class="form-control" name="email" placeholder="Email" required>
-                      <label>Email *</label>
-                      <div class="form-text" id="emailHint"></div>
-                    </div>
-                  </div>
+          <!-- Section 1: Account Information -->
+          <div class="mb-4">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-person-badge me-2"></i> Account Information
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="text" class="form-control rounded-xl border-slate-200" name="username" placeholder="Username" required>
+                  <label>Username *</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="text" class="form-control rounded-xl border-slate-200" name="full_name" placeholder="Full Name" required>
+                  <label>Full Name *</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating">
+                  <input type="email" class="form-control rounded-xl border-slate-200" name="email" placeholder="Email" required>
+                  <label>Email *</label>
                 </div>
               </div>
             </div>
-
-            <!-- Security -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-              <div class="card-body">
-                <h6 class="fw-semibold mb-3">
-                  <i class="bi bi-shield-lock-fill me-2"></i>Security
-                </h6>
-
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="form-floating position-relative">
-                      <input type="password" class="form-control" id="pwdInput" name="password" minlength="10" required placeholder="Password">
-                      <label>Password *</label>
-                      <i class="bi bi-eye pwd-eye" data-toggle="password"></i>
-                      <div class="progress mt-2">
-                        <div id="pwdBar" class="progress-bar"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <div class="form-floating position-relative">
-                      <input type="password" class="form-control" id="pwdInput2" name="password2" minlength="10" required placeholder="Confirm Password">
-                      <label>Confirm Password *</label>
-                      <i class="bi bi-eye pwd-eye" data-toggle="password"></i>
-                      <div class="form-text" id="pwdMatchHint"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <?php if ($ag['code'] === 'csnk'): ?>
-            <!-- Role & Branch -->
-            <div class="card border-0 shadow-sm rounded-3">
-              <div class="card-body">
-                <h6 class="fw-semibold mb-3">
-                  <i class="bi bi-diagram-3-fill me-2"></i>Role Assignment
-                </h6>
-
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Role</label>
-                    <select class="form-select" name="role" id="roleSelect">
-                      <option value="employee">Employee</option>
-                      <option value="admin">Admin</option>
-                      <?php if ($isSuperAdmin): ?>
-                        <option value="super_admin">Super Admin</option>
-                      <?php endif; ?>
-                    </select>
-                  </div>
-
-                  <div class="col-md-6" id="branchWrapper">
-                    <label class="form-label">Branch</label>
-                    <select class="form-select" name="business_unit_id">
-                      <option value="0">Select branch</option>
-                      <?php foreach ($branches as $branch): ?>
-                        <option value="<?= (int)$branch['id'] ?>">
-                          <?= htmlspecialchars($branch['name']) ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <?php else: ?>
-              <input type="hidden" name="role" value="employee">
-            <?php endif; ?>
-
           </div>
-          <?php endforeach; ?>
+
+          <!-- Section 2: Security -->
+          <div class="mb-4">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-shield-lock me-2"></i> Security
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating position-relative">
+                  <input type="password" class="form-control rounded-xl border-slate-200" name="password" minlength="10" required placeholder="Password">
+                  <label>Password *</label>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div id="pwdBar" class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="password" class="form-control rounded-xl border-slate-200" name="password2" minlength="10" required placeholder="Confirm Password">
+                  <label>Confirm Password *</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Role Assignment (Toggled by JS) -->
+          <div id="csnkSpecificFields">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-diagram-3 me-2"></i> Role Assignment
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-sm font-semibold text-slate-700">Role</label>
+                <select class="form-select rounded-xl border-slate-200 py-2.5" name="role" id="roleSelect">
+                  <option value="employee">Employee</option>
+                  <option value="admin">Admin</option>
+                  <?php if ($isSuperAdmin): ?>
+                    <option value="super_admin">Super Admin</option>
+                  <?php endif; ?>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-sm font-semibold text-slate-700">Branch</label>
+                <select class="form-select rounded-xl border-slate-200 py-2.5" name="business_unit_id">
+                  <option value="0">Select branch</option>
+                  <?php foreach ($branches as $branch): ?>
+                    <option value="<?= (int)$branch['id'] ?>">
+                      <?= htmlspecialchars($branch['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+          </div>
 
         </div>
 
         <!-- Footer -->
-        <div class="modal-footer border-0 px-4 pb-3 pt-2">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" name="add_account" class="btn btn-primary px-4">
-            <i class="bi bi-check-circle me-1"></i> Create Account
+        <div class="modal-footer border-0 px-6 py-4 bg-slate-50 flex justify-content-end">
+          <button type="button" class="btn text-slate-500 font-semibold border-0 me-2" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="add_account" class="btn btn-primary px-4 py-2 rounded-xl shadow-md font-bold transition-all active:scale-95">
+             Create Account
           </button>
         </div>
-
       </form>
     </div>
   </div>
 </div>
+
+<script>
+/**
+ * Handles showing/hiding Role & Branch fields based on agency
+ * Logic: Only 'csnk' gets the special fields, others default to 'employee'
+ */
+function toggleCsnkFields(agencyCode) {
+    const section = document.getElementById('csnkSpecificFields');
+    if (agencyCode === 'csnk') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+// Run once on page load to set initial state
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('addAgencySelect');
+    if(select) toggleCsnkFields(select.value);
+});
+</script>
 <?php endif; ?>
+
 
   <!-- Edit Account Modal -->
   <?php if ($isSuperAdmin || $isAdmin): ?>
