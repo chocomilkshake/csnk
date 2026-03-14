@@ -229,8 +229,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_account'])) {
 
 /* RESET PASSWORD */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password'])) {
-  if (!$isSuperAdmin)
-    forbidAndBack('Only Super Admin can recover accounts.');
+  if (!$isSuperAdmin && !$isAdmin)
+    forbidAndBack('Only Super Admin/Admins can reset passwords.');
+
 
   $userId = (int) ($_POST['user_id'] ?? 0);
   $newPwd = $_POST['new_password'] ?? '';
