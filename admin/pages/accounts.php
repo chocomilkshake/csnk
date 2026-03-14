@@ -1207,7 +1207,27 @@ document.addEventListener('DOMContentLoaded', () => {
               
               // Hide all sections
               document.querySelectorAll('[id^="section"]').forEach(sec => {
-                sec.classList.add('d-none
+                sec.classList.add('d-none');
+              });
+              
+              // Show target section
+              const targetId = 'section' + btn.id.replace('btnView', '');
+              const targetSection = document.getElementById(targetId);
+              if (targetSection) {
+                targetSection.classList.remove('d-none');
+              }
+              
+        } else {
+          if (roleSelect) {
+            roleSelect.closest('.mb-3').classList.add('d-none');
+            roleSelect.value = 'employee';
+          }
+          if (branchWrapper) branchWrapper.classList.add('d-none');
+        }
+      }
+
+      (function () {
+
         /* ================================
           CREATE ACCOUNT – AGENCY → BRANCH
           ================================ */
