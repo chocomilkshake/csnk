@@ -992,7 +992,79 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
                 </div>
               </div>
               <div class="col-12">
+                <div class="form-floating">
+                  <input type="email" class="form-control rounded-xl border-slate-200" name="email" placeholder="Email" required>
+                  <label>Email *</label>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- Section 2: Security -->
+          <div class="mb-4">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-shield-lock me-2"></i> Security
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating position-relative">
+                  <input type="password" class="form-control rounded-xl border-slate-200" name="password" minlength="10" required placeholder="Password">
+                  <label>Password *</label>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div id="pwdBar" class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="password" class="form-control rounded-xl border-slate-200" name="password2" minlength="10" required placeholder="Confirm Password">
+                  <label>Confirm Password *</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Role Assignment (Toggled by JS) -->
+          <div id="csnkSpecificFields">
+            <h6 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 d-flex align-items-center">
+              <i class="bi bi-diagram-3 me-2"></i> Role Assignment
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-sm font-semibold text-slate-700">Role</label>
+                <select class="form-select rounded-xl border-slate-200 py-2.5" name="role" id="roleSelect">
+                  <option value="employee">Employee</option>
+                  <option value="admin">Admin</option>
+                  <?php if ($isSuperAdmin): ?>
+                    <option value="super_admin">Super Admin</option>
+                  <?php endif; ?>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-sm font-semibold text-slate-700">Branch</label>
+                <select class="form-select rounded-xl border-slate-200 py-2.5" name="business_unit_id">
+                  <option value="0">Select branch</option>
+                  <?php foreach ($branches as $branch): ?>
+                    <option value="<?= (int)$branch['id'] ?>">
+                      <?= htmlspecialchars($branch['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer border-0 px-6 py-4 bg-slate-50 flex justify-content-end">
+          <button type="button" class="btn text-slate-500 font-semibold border-0 me-2" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="add_account" class="btn btn-primary px-4 py-2 rounded-xl shadow-md font-bold transition-all active:scale-95">
+             Create Account
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
