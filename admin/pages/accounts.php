@@ -864,7 +864,31 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
         <h5 class="mb-0 fw-bold">
           <i class="bi bi-crown-fill text-warning me-2"></i>Super Admin Accounts
         </h5>
-        <span class
+        <span class="status-badge"><?= count($superAccounts) ?> users</span>
+      </div>
+
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="account-avatar flex-shrink-0">
+                        <?= strtoupper(substr($acc['username'], 0, 1)) ?>
+                      </div>
+                      <div class="ms-3">
+                        <div class="fw-semibold"><?= htmlspecialchars($acc['username']) ?></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><?= htmlspecialchars($acc['full_name']) ?></td>
+                  <td>
+                    <a href="mailto:<?= htmlspecialchars($acc['email']) ?>" class="text-decoration-none">
+                      <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($acc['email']) ?>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="status-badge status-<?= $acc['status'] ?>">
+                      <?= ucfirst($acc['status']) ?>
+                  
+            </tbody>
           </table>eturn;
 
           const agency = agencySelect.value;
