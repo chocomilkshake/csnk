@@ -867,6 +867,29 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
         <span class="status-badge"><?= count($superAccounts) ?> users</span>
       </div>
 
+      <?php if (empty($superAccounts)): ?>
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="bi bi-crown"></i>
+          </div>
+          <h4 class="mb-2">No Super Admin Accounts</h4>
+          <p class="mb-4">Only a super admin can create other super admins.</p>
+        </div>
+      <?php else: ?>
+        <div class="table-responsive">
+          <table class="table table-hover modern-table">
+            <thead class="table-light">
+              <tr>
+                <th>Account</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($superAccounts as $acc): ?>
                 <tr>
                   <td>
                     <div class="d-flex align-items-center">
