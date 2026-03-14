@@ -1139,7 +1139,37 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submchWrapper.querySelector('select') : null;
+              <button type="submit" name="edit_account" class="btn btn-warning">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
+  <!-- Reset Password Modal (Admins/Super Admins) -->
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="resetPwdForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title">Reset Password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+              <div class="modal-body">
+                <input type="hidden" name="user_id" id="resetUserId">
+                <input type="hidden" name="username" id="resetUsername">
+
+                <div class="alert alert-light border mb-3">
+                  <div class="sm
+        /* ================================
+          CREATE ACCOUNT – AGENCY → BRANCH
+          ================================ */
+
+        const agencySelect = document.getElementById('addAgencySelect');
+        const branchWrapper = document.getElementById('branchWrapper');
+        const branchSelect = branchWrapper ? branchWrapper.querySelector('select') : null;
 
         function updateBranchVisibility() {
           if (!agencySelect || !branchWrapper) return;
