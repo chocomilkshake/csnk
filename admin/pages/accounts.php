@@ -1162,7 +1162,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="hidden" name="username" id="resetUsername">
 
                 <div class="alert alert-light border mb-3">
-                  <div class="sm
+                  <div class="small text-muted">Resetting password for</div>
+                  <div class="fw-semibold" id="resetUserName">—</div>
+                </div>
+
+                <div class="form-floating mb-3">
+<input type="password" class="form-control" autocomplete="new-password" name="new_password" id="newPwd" required minlength="10" placeholder="New Password">
+
+                  <label>New Password</label>
+                </div>
+
+                <div class="form-floating mb-2">
+<input type="password" class="form-control" autocomplete="new-password" name="confirm_password" id="newPwd2" required minlength="10" placeholder="Confirm Password">
+
+                  <label>Confirm Password</label>
+                </div>
+
+                <small class="text-muted">
+                  Minimum 10 characters (uppercase, lowercase, number, special).
+                </small>
+              </div>
+            <div class="modal-footer">
+              e.stopPropagation();
+              
+              // Hide all sections
+              document.querySelectorAll('[id^="section"]').forEach(sec => {
+                sec.classList.add('d-none
         /* ================================
           CREATE ACCOUNT – AGENCY → BRANCH
           ================================ */
