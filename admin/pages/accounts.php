@@ -16,10 +16,44 @@ $currentAgency = $currentUser['agency'] ?? null;
 $branches = $admin->getActiveBranches();
 $allBranches = [0 => 'All Branches'] + $branches;
 
+// SMC Countries (business units for SMC agency)  
+$agencies = $admin->getAgencies();
+$smcAgencyId = 2; // default SMC agency ID
+
+$smcCountriesSql = "SELECT bu.id, c.iso2, c.name, c.id as country_id 
+                    FROM business_units bu 
+                    JOIN countries c ON bu.country_id = c.id 
+                    WHERE bu.agency_id = ? AND bu.active = 1 AND c.active = 1 
+                    ORDER BY c.name ASC";
+$conn = $database->getConnection();
+$stmt = $conn->prepare($smcCountriesSql);
+$stmt->bind_param('i', $smcAgencyId);
+$stmt->execute();
+$result = $stmt->get_result();
+$smcCountries = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+$stmt->close();
+$allSmcCountries = [0 => 'All SMC Countries'] + $smcCountries;
+
+// Flag icon helper for SMC countries
+function flag_icon($iso2, $name)
+{
+  $flagClass = 'fi fi-' . strtolower($iso2) . ' me-1';
+  return '<span class="' . $flagClass . '" style="width:20px;height:15px;border-radius:2px;"></span>' . htmlspecialchars($name);
+}
+
+// Hide incompatible filters: branches for SMC, countries for others
+if (isset($filterAgency) && $filterAgency === 'smc') {
+  $filterBranch = 0;
+} else {
+  $filterCountry = 0;
+}
+
 // load agency list from db (codes like 'csnk','smc' with human name)
 $agencies = $admin->getAgencies();
+
 $filterAgency = sanitizeInput($_GET['agency'] ?? '');
 $filterBranch = (int) ($_GET['branch'] ?? 0);
+$filterCountry = (int) ($_GET['country'] ?? 0); // NEW: SMC country filter
 $filterStatus = sanitizeInput($_GET['status'] ?? '');
 $filterSearch = sanitizeInput($_GET['search'] ?? '');
 $errors = [];
@@ -301,15 +335,18 @@ $rawAdmins = $admin->getByAgency($filterAgency ?: null, 'admin');
 // super-admin accounts are global; ignore agency filter when fetching
 $rawSupers = $isSuperAdmin ? $admin->getByAgency(null, 'super_admin') : [];
 
-// Hide branch filters for SMC
+// Hide incompatible filters: branches for SMC, countries for others
 if ($filterAgency === 'smc') {
   $filterBranch = 0;
+} else {
+  $filterCountry = 0;
 }
 
 /* Helper to apply filters + RBAC */
 function applyAccountFilters(
   array $accounts,
   int $filterBranch,
+  int $filterCountry, // NEW param
   string $filterStatus,
   string $filterSearch,
   bool $isSuperAdmin,
@@ -317,12 +354,19 @@ function applyAccountFilters(
   ?string $currentAgency
 ): array {
 
-  return array_values(array_filter($accounts, function ($acc) use ($filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency) {
+  return array_values(array_filter($accounts, function ($acc) use ($filterBranch, $filterCountry, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency) {
 
-    // Branch filter (skip for admins and super admins)
-    $branchId = (int) ($acc['business_unit_id'] ?? ($acc['branch_id'] ?? 0));
+    // Branch filter (skip for super admins)
+    $buId = (int) ($acc['business_unit_id'] ?? ($acc['branch_id'] ?? 0));
     if ($filterBranch > 0) {
-      if (($acc['role'] ?? '') !== 'super_admin' && $branchId !== $filterBranch) {
+      if (($acc['role'] ?? '') !== 'super_admin' && $buId !== $filterBranch) {
+        return false;
+      }
+    }
+
+    // Country filter (SMC BUs, skip super admins) - MIRRORS branch logic exactly
+    if ($filterCountry > 0) {
+      if (($acc['role'] ?? '') !== 'super_admin' && $buId !== $filterCountry) {
         return false;
       }
     }
@@ -353,9 +397,9 @@ function applyAccountFilters(
   }));
 }
 
-$employeeAccounts = applyAccountFilters($rawEmployees, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency);
-$adminAccounts = applyAccountFilters($rawAdmins, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
-$superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
+$employeeAccounts = applyAccountFilters($rawEmployees, $filterBranch, $filterCountry, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, $currentAgency);
+$adminAccounts = applyAccountFilters($rawAdmins, $filterBranch, $filterCountry, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
+$superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, $filterStatus, $filterSearch, $isSuperAdmin, $isAdmin, null);
 ?>
 <style>
   .modern-accounts {
@@ -797,26 +841,39 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
       </div>
     </div>
 
-    <!-- Branch Filters (CSNK only) - Directly Below -->
+    <!-- Branch Filters (CSNK only) -->
     <?php if ($filterAgency === 'csnk'): ?>
       <div class="filter-tabs mt-2">
-
-        <!-- All CSNK FIRST -->
-        <a href="accounts.php?agency=csnk&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+        <a href="accounts.php?agency=csnk&branch=0&country=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
           class="btn btn-secondary btn-sm <?= $filterBranch === 0 ? 'active' : '' ?>">
           All CSNK
         </a>
-
-        <!-- Then the individual branches -->
         <?php foreach ($branches as $branch): ?>
-          <a href="accounts.php?agency=csnk&branch=<?= (int) $branch['id'] ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+          <a href="accounts.php?agency=csnk&branch=<?= (int) $branch['id'] ?>&country=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
             class="btn btn-outline-primary btn-sm <?= $filterBranch === (int) $branch['id'] ? 'active' : '' ?>">
             <?= htmlspecialchars($branch['code']) ?>
           </a>
         <?php endforeach; ?>
-
       </div>
     <?php endif; ?>
+
+    <!-- NEW: SMC Country Filters (SMC only) - Mirrors branches exactly -->
+    <?php if ($filterAgency === 'smc'): ?>
+      <div class="filter-tabs mt-2">
+        <!-- All SMC FIRST -->
+        <a href="accounts.php?agency=smc&country=0&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+          class="btn btn-secondary btn-sm <?= $filterCountry === 0 ? 'active' : '' ?>">
+          All SMC
+        </a>
+        <?php foreach ($smcCountries as $country): ?>
+          <a href="accounts.php?agency=smc&country=<?= (int) $country['id'] ?>&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+            class="btn btn-outline-primary btn-sm <?= $filterCountry === (int) $country['id'] ? 'active' : '' ?>">
+            <?= flag_icon($country['iso2'], $country['name']) ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
 
   </div>
 </div>
