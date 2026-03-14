@@ -1081,6 +1081,38 @@ function toggleCsnkFields(agencyCode) {
         section.style.display = 'none';
     }
 }
+
+// Run once on page load to set initial state
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('addAgencySelect');
+    if(select) toggleCsnkFields(select.value);
+});
+</script>
+<?php endif; ?>
+
+
+  <!-- Edit Account Modal -->
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="editAccountForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Account</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="edit_user_id" id="editUserId">
+              <input type="hidden" id="editRoleHidden" value="">
+              <div class="mb-3">
+                <label class="form-label">Username <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="edit_username" id="editUsername" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="edit_full_name" id="editFullName" required>
+              </div>
+              <div class="mb-3">
                 <label class="form-label">Email <span class="text-danger">*</span></label>
                 <input type="email" class="form-control" name="edit_email" id="editEmail" required>
               </div>
