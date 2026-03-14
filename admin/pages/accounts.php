@@ -1217,6 +1217,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetSection.classList.remove('d-none');
               }
               
+              // Update active state
+              document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+              });
+              btn.classList.add('active');
+            });
+          }
+        });
+      });
+
+
+      // Add/Edit modal handlers (existing + NEW EDIT POPULATE)
+      const agencyTabs = document.querySelectorAll('#agencyTabs a');
+      const hiddenAgency = document.getElementById('addAgency');
+      const roleSelect = document.getElementById('roleSelect');
+      const branchWrapper = document.getElementById('branchWrapper');
+
+      function updateAgencyFields(code) {
+        if (!hiddenAgency) return;
+        hiddenAgency.value = code;
+        if (hiddenAgency.tagName === 'SELECT') hiddenAgency.value = code;
+        if (code === 'csnk') {
+          if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
+          if (branchWrapper) branchWrapper.classList.remove('d-none');
         } else {
           if (roleSelect) {
             roleSelect.closest('.mb-3').classList.add('d-none');
