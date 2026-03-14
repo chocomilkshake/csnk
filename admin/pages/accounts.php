@@ -846,6 +846,38 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
               <?php endforeach; ?>
 
             </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+
+    </div>
+  <?php endif; ?>
+
+
+
+
+
+  <?php if ($isSuperAdmin): ?>
+    <!-- Super Admin Section -->
+    <div class="account-card d-none" id="sectionSupers">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h5 class="mb-0 fw-bold">
+          <i class="bi bi-crown-fill text-warning me-2"></i>Super Admin Accounts
+        </h5>
+        <span class
+          </table>eturn;
+
+          const agency = agencySelect.value;
+
+          if (agency === 'smc') {
+            branchWrapper.classList.add('d-none');
+            if (branchSelect) branchSelect.value = '0';
+          } else {
+            branchWrapper.classList.remove('d-none');
+          }
+        }
+
+        if (agencySelect) {
           agencySelect.addEventListener('change', updateBranchVisibility);
           updateBranchVisibility(); // initial state
         }
