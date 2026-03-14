@@ -722,6 +722,7 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
   .filter-tabs .btn-group .btn,
   .filter-tabs .btn-group .filter-btn {
     margin: 0;
+
   }
 
   /* Subtle spacing between stacked tab rows */
@@ -799,14 +800,21 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
     <!-- Branch Filters (CSNK only) - Directly Below -->
     <?php if ($filterAgency === 'csnk'): ?>
       <div class="filter-tabs mt-2">
+
+        <!-- All CSNK FIRST -->
+        <a href="accounts.php?agency=csnk&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+          class="btn btn-secondary btn-sm <?= $filterBranch === 0 ? 'active' : '' ?>">
+          All CSNK
+        </a>
+
+        <!-- Then the individual branches -->
         <?php foreach ($branches as $branch): ?>
           <a href="accounts.php?agency=csnk&branch=<?= (int) $branch['id'] ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
             class="btn btn-outline-primary btn-sm <?= $filterBranch === (int) $branch['id'] ? 'active' : '' ?>">
             <?= htmlspecialchars($branch['code']) ?>
           </a>
         <?php endforeach; ?>
-        <a href="accounts.php?agency=csnk&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
-          class="btn btn-secondary btn-sm <?= $filterBranch === 0 ? 'active' : '' ?>">All CSNK</a>
+
       </div>
     <?php endif; ?>
 
