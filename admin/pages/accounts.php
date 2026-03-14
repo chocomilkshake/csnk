@@ -944,6 +944,32 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
   <?php endif; ?>
 
 
+<?php if ($isSuperAdmin || $isAdmin): ?>
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-2xl border-0 rounded-3xl overflow-hidden">
+
+      <!-- Header -->
+      <div class="modal-header bg-slate-50 border-0 px-6 py-4">
+        <div>
+          <h5 class="text-xl font-bold text-slate-800 mb-0">Create New Account</h5>
+          <p class="text-sm text-slate-500 mb-0">Fill in the required details below</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" id="addAccountForm" novalidate>
+        <div class="modal-body px-6 py-4">
+
+          <!-- Agency Selection - Single Select -->
+          <div class="mb-4">
+            <label class="form-label text-sm font-semibold text-slate-700">Agency</label>
+            <select class="form-select rounded-xl border-slate-200 py-2.5" name="agency" id="addAgencySelect" required onchange="toggleCsnkFields(this.value)">
+              <?php foreach ($agencies as $ag): ?>
+                <option value="<?= htmlspecialchars($ag['code']) ?>">
+                  <?= htmlspecialchars($ag['name']) ?>
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
 
