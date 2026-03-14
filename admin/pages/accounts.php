@@ -1183,6 +1183,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 </small>
               </div>
             <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" name="reset_password" class="btn btn-secondary">Reset Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
+
+  <script>
+    (function () {
+      // FIXED Role Filter Buttons - Now fully clickable
+      document.addEventListener('DOMContentLoaded', () => {
+        ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
               e.stopPropagation();
               
               // Hide all sections
