@@ -840,6 +840,34 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
                         </a>
                       <?php endif; ?>
 
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+
+            </tbody>
+          agencySelect.addEventListener('change', updateBranchVisibility);
+          updateBranchVisibility(); // initial state
+        }
+
+      })();
+
+
+      agencyTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+          const code = e.target.getAttribute('data-agency');
+          updateAgencyFields(code);
+        });
+      });
+
+      if (agencyTabs.length > 0) {
+        const activeTab = document.querySelector('#agencyTabs .active');
+        if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
+      }
+
+      const addForm = document.getElementById('addAccountForm');
+      if (addForm) {
+        addForm.addEventListener('submit', () => {
           document.querySelectorAll('#addAccountForm .tab-pane').forEach(pane => {
             if (!pane.classList.contains('active')) {
               pane.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
