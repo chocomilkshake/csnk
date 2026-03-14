@@ -385,47 +385,6 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
     color: #64748b;
   }
 
-  .filter-container {
-    background: white;
-    border-radius: 12px;
-    padding: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--csnk-gray-200, #e5e7eb);
-  }
-
-  .filter-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-  }
-
-  .filter-btn {
-    border-radius: 50px;
-    padding: 0.75rem 1.5rem;
-    border: 2px solid #e5e7eb;
-    background: white;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    color: #374151;
-  }
-
-  .filter-btn:hover {
-    border-color: #6b7280;
-    color: #374151;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .filter-btn.active {
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #1f2937;
-    border-color: #d1d5db;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
   .accounts-grid {
     display: grid;
     gap: 1.25rem;
@@ -595,11 +554,6 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
       padding: 1.5rem 1rem;
     }
 
-    .filter-container {
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
     .modern-table {
       font-size: 0.875rem;
       border: none;
@@ -668,6 +622,131 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterStatus, $
     .accounts-grid {
       grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
     }
+  }
+
+  /*=====Filter=====*/
+  .filter-container {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: clamp(10px, 1.6vw, 18px);
+    margin-bottom: 12px;
+  }
+
+  .filter-container .row {
+    row-gap: 2px;
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .filter-tabs::-webkit-scrollbar-thumb {
+    background: #d6d6d6;
+    /* neutral */
+    border-radius: 999px;
+  }
+
+  .filter-tabs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Unified pill style for all filter buttons (links and buttons) */
+  .filter-btn,
+  .filter-tabs .btn {
+    --btn-bg: var(--c-surface);
+    --btn-fg: var(--c-text);
+    --btn-border: var(--c-border);
+    --btn-bg-hover: var(--c-muted);
+    --btn-bg-active: var(--c-active);
+    --btn-fg-active: #333333;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--btn-border);
+    background: white;
+    color: var(--btn-fg);
+    line-height: 1.2;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.1px;
+    text-wrap: nowrap;
+  }
+
+  /* Small variant for branch chips */
+  .filter-tabs .btn-sm {
+    padding: 6px 12px;
+    font-size: 1rem;
+  }
+
+  /* Hover / Active / Focus (neutral only) */
+  .filter-btn:hover,
+  .filter-tabs .btn:hover {
+    background: var(--btn-bg-hover);
+    border-color: #dcdcdc;
+    text-decoration: none;
+  }
+
+  .filter-btn.active,
+  .filter-tabs .btn.active,
+  .filter-tabs .btn:active {
+    background: lightslategray;
+    color: white;
+    border-color: #d0d0d0 !important;
+  }
+
+  .filter-btn:focus-visible,
+  .filter-tabs .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-focus), 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Emoji nudge so labels don't jump */
+  .filter-btn,
+  .filter-tabs .btn {
+    --emoji-shift: -0.5px;
+  }
+
+  .filter-btn> :first-child,
+  .filter-tabs .btn> :first-child {
+    transform: translateY(var(--emoji-shift));
+  }
+
+  /* Logical gaps for multiple groups */
+  .filter-tabs .btn-group {
+    gap: 10px;
+  }
+
+  .filter-tabs .btn-group .btn,
+  .filter-tabs .btn-group .filter-btn {
+    margin: 0;
+  }
+
+  /* Subtle spacing between stacked tab rows */
+  .filter-tabs+.filter-tabs {
+    margin-top: 8px;
+  }
+
+  /* Branch chips: keep consistent neutral styles */
+  .filter-tabs .btn-outline-primary.btn-sm,
+  .filter-tabs .btn-secondary.btn-sm {
+    /* Force neutral look regardless of original Bootstrap variant */
+    --btn-bg: var(--c-surface);
+    --btn-border: var(--c-border);
+    color: var(--c-text);
+  }
+
+  .filter-tabs .btn-outline-primary.btn-sm:hover,
+  .filter-tabs .btn-secondary.btn-sm:hover {
+    background: var(--c-muted);
+  }
+
+  .filter-tabs .btn-outline-primary.btn-sm.active,
+  .filter-tabs .btn-secondary.btn-sm.active {
+    background: lightslategray;
+    color: #ffffff !important;
   }
 </style>
 
