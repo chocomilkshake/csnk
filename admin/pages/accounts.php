@@ -803,13 +803,48 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
     border-radius: 50px;
     padding: 14px 28px;
     font-weight: 600;
-    z-index: 1000;
+    z-index: 1030;
   " data-bs-toggle="modal" data-bs-target="#addAccountModal">
-
   <i class="bi bi-plus-circle me-2"></i>Create Account
 </button>
 
+<script>
+  (function () {
+    // Bootstrap debug + fallback
+
+    console.log('Bootstrap loaded:', typeof bootstrap !== 'undefined');
+    if (typeof bootstrap === 'undefined') {
+      console.error('Bootstrap JS missing - modals will fail!');
+      return;
+    }
+
+    // Manual fallback for all modal buttons
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = btn.dataset.bsTarget;
+        const modalEl = document.querySelector(targetId);
+        if (!modalEl) {
+          console.error(`Modal not found: ${targetId}`);
+          return;
+        }
+        try {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+          console.log(`Manual modal opened: ${targetId}`);
+        } catch (err) {
+          console.error('Modal init failed:', err);
+        }
+      });
+    });
+
+    console.log('Modal fallback handlers installed');
+  })();
+
+</script>
+
 <div class="filter-container">
+
   <div class="row align-items-center">
     <div class="col-lg-8">
       <div class="filter-tabs">
@@ -1073,6 +1108,13 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
 
                   <td class="text-end">
                     <div class="action-buttons btn-group btn-group-sm">
+
+
+                      <button type="button" class="btn-action btn-reset" data-bs-toggle="modal"
+                        data-bs-target="#resetPasswordModal" data-user-id="<?= (int) $acc['id'] ?>"
+                        data-user-name="<?= htmlspecialchars($acc['full_name']) ?>" title="Reset Password">
+                        <i class="bi bi-key-fill"></i>
+                      </button>
 
                       <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                         data-user-id="<?= (int) $acc['id'] ?>" data-username="<?= htmlspecialchars($acc['username']) ?>"
@@ -1369,8 +1411,8 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
     </div>
   <?php endif; ?>
 
-  <!-- Reset Password Modal (Super Admin only) -->
-  <?php if ($isSuperAdmin): ?>
+  <!-- Reset Password Modal (Admins/Super Admins) -->
+  <?php if ($isSuperAdmin || $isAdmin): ?>
     <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -1408,20 +1450,19 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
 
   <script>
     (function () {
-      // Enhanced role switching
+      // Enhanced role switching (existing)
       ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
         const btn = document.getElementById(id);
         btn?.addEventListener('click', () => {
           document.querySelectorAll('[id^="section"]').forEach(sec => sec.classList.add('d-none'));
           const targetSection = document.getElementById('section' + btn.id.replace('btnView', ''));
           targetSection?.classList.remove('d-none');
-
           document.querySelectorAll('.filter-btn, .btn-outline-primary').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
         });
       });
 
-      // agency tab switching for add-account modal
+      // Add/Edit modal handlers (existing + NEW EDIT POPULATE)
       const agencyTabs = document.querySelectorAll('#agencyTabs a');
       const hiddenAgency = document.getElementById('addAgency');
       const roleSelect = document.getElementById('roleSelect');
@@ -1430,33 +1471,26 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
       function updateAgencyFields(code) {
         if (!hiddenAgency) return;
         hiddenAgency.value = code;
-        // also update visible dropdown
-        if (hiddenAgency.tagName === 'SELECT') {
-          hiddenAgency.value = code;
-        }
-        // CSNK needs role select + branch; others default to employee and hide branch
+        if (hiddenAgency.tagName === 'SELECT') hiddenAgency.value = code;
         if (code === 'csnk') {
           if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
           if (branchWrapper) branchWrapper.classList.remove('d-none');
         } else {
           if (roleSelect) {
             roleSelect.closest('.mb-3').classList.add('d-none');
-            // force employee
             roleSelect.value = 'employee';
           }
           if (branchWrapper) branchWrapper.classList.add('d-none');
         }
       }
 
-      // if user manually selects agency from dropdown, switch to corresponding tab
+      // Existing add modal logic
       const visibleAgencySelect = document.getElementById('addAgency');
       if (visibleAgencySelect) {
         visibleAgencySelect.addEventListener('change', () => {
           const code = visibleAgencySelect.value;
           const tabLink = document.querySelector(`#agencyTabs a[data-agency="${code}"]`);
-          if (tabLink) {
-            new bootstrap.Tab(tabLink).show();
-          }
+          if (tabLink) new bootstrap.Tab(tabLink).show();
         });
       }
 
@@ -1467,13 +1501,11 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
         });
       });
 
-      // initialize with default active agency
       if (agencyTabs.length > 0) {
         const activeTab = document.querySelector('#agencyTabs .active');
         if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
       }
 
-      // before submitting the add form, disable all fields in non-active panes
       const addForm = document.getElementById('addAccountForm');
       if (addForm) {
         addForm.addEventListener('submit', () => {
@@ -1483,8 +1515,6 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
             }
           });
         });
-
-        // restore fields whenever the modal is opened (disabled elements persist otherwise)
         const addModal = document.getElementById('addAccountModal');
         if (addModal) {
           addModal.addEventListener('shown.bs.modal', () => {
@@ -1493,7 +1523,73 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
         }
       }
 
-      // Smooth animations
+      // NEW: Edit modal population and branch handling for CSNK/SMC
+      const editModal = document.getElementById('editAccountModal');
+      const editForm = document.getElementById('editAccountForm');
+      if (editModal && editForm) {
+        // Populate on show
+        editModal.addEventListener('shown.bs.modal', (e) => {
+          const btn = e.relatedTarget;
+          if (!btn) return;
+
+          // Extract data-*
+          const userId = parseInt(btn.dataset.userId || 0);
+          const username = btn.dataset.username || '';
+          const fullName = btn.dataset.fullname || '';
+          const email = btn.dataset.email || '';
+          const status = btn.dataset.status || 'active';
+          const branchId = parseInt(btn.dataset.branchId || 0);
+          const role = btn.dataset.role || '';
+
+          // Fill fields
+          document.getElementById('editUserId').value = userId;
+          document.getElementById('editUsername').value = username;
+          document.getElementById('editFullName').value = fullName;
+          document.getElementById('editEmail').value = email;
+          document.getElementById('editStatus').value = status;
+          document.getElementById('editRoleHidden').value = role;
+          const editBranch = document.getElementById('editBranch');
+          if (editBranch) editBranch.value = branchId;
+
+          // Show/hide branch based on role (employee only)
+          const editBranchWrapper = document.getElementById('editBranchWrapper');
+          if (editBranchWrapper) {
+            editBranchWrapper.classList.toggle('d-none', role !== 'employee');
+          }
+
+          editForm.classList.add('was-validated');
+        });
+
+        // Clear on hide
+        editModal.addEventListener('hidden.bs.modal', () => {
+          editForm.reset();
+          editForm.classList.remove('was-validated');
+          const editBranchWrapper = document.getElementById('editBranchWrapper');
+          if (editBranchWrapper) editBranchWrapper.classList.add('d-none');
+        });
+
+        // Form validation
+        editForm.addEventListener('submit', (e) => {
+          if (!editForm.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          editForm.classList.add('was-validated');
+        });
+      }
+
+      // Reset password modal (if exists)
+      const resetModal = document.getElementById('resetPasswordModal');
+      if (resetModal) {
+        resetModal.addEventListener('shown.bs.modal', (e) => {
+          const btn = e.relatedTarget;
+          if (!btn) return;
+          document.getElementById('resetUserId').value = parseInt(btn.dataset.userId || 0);
+          document.getElementById('resetUserName').textContent = btn.dataset.userName || '—';
+        });
+      }
+
+      // Smooth animations (existing)
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -1502,7 +1598,6 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
           }
         });
       });
-
       document.querySelectorAll('.account-card').forEach(card => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
