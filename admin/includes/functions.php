@@ -159,6 +159,30 @@ function redirect($url) {
     echo '</noscript>';
     exit();
 }
+
+/* =========================
+ * NEW: JSON & Similarity Utils
+ * ========================= */
+        SELECT 
+            CONCAT(client_first_name, ' ', client_last_name) AS client_name,
+            client_phone,
+            business_unit_id 
+        FROM client_bookings 
+        WHERE client_email = ? 
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $client_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc() ?: [];
+}
+
+/**
+ * Get applicants booked by client (with names)
+ */
+function get_client_applicants($conn, $client_email) {
+    $applicants = [];
+    $stmt = $conn->prepare("
         SELECT DISTINCT
             cb.applicant_id,
             CONCAT(a.first_name, ' ', a.last_name, IF(a.suffix != '', CONCAT(' ', a.suffix), '')) AS applicant_name,
