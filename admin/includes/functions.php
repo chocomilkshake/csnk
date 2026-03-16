@@ -217,7 +217,6 @@ function get_client_applicants($conn, $client_email) {
         JOIN applicants a ON a.id = cb.applicant_id
         WHERE cb.client_email = ?
         AND cb.status IN ('pending', 'on_process', 'approved')
-        ORDER BY cb.created_at DESC
     ");
     $stmt->bind_param("s", $client_email);
     $stmt->execute();
