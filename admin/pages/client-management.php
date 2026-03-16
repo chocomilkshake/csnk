@@ -26,12 +26,12 @@ $userAgency = isset($_SESSION['agency']) ? strtolower($_SESSION['agency']) : '';
 $clientBookings = [];
 $bookingSearch = isset($_GET['booking_search']) ? trim($_GET['booking_search']) : '';
 $applicantStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
-$sortBy = isset($_GET['sort']) ? strtolower(trim($_GET['sort'])) : 'latest';
+$sortBy = isset($_GET['sort']) ? strtolower(trim($_GET['sort'])) : 'csnk';
 
 // Validate sort option
-$allowedSorts = ['latest', 'oldest', 'agency_asc', 'agency_desc'];
+$allowedSorts = ['csnk', 'smc'];
 if (!in_array($sortBy, $allowedSorts, true)) {
-  $sortBy = 'latest';
+  $sortBy = 'csnk';
 }
 
 $conn = $database->getConnection();
@@ -89,13 +89,10 @@ if ($conn instanceof mysqli) {
     )";
   }
 
-  $orderBy = 'cb.created_at DESC';
-  if ($sortBy === 'oldest') {
-    $orderBy = 'cb.created_at ASC';
-  } elseif ($sortBy === 'agency_asc') {
-    $orderBy = 'bu.name ASC, cb.created_at DESC';
-  } elseif ($sortBy === 'agency_desc') {
-    $orderBy = 'bu.name DESC, cb.created_at DESC';
+  if ($sortBy === 'csnk') {
+    $orderBy = '(bu.agency_id = 1) DESC, cb.created_at DESC';
+  } else { // smc
+    $orderBy = '(bu.agency_id = 2) DESC, cb.created_at DESC';
   }
 
   $bookingSql .= " ORDER BY " . $orderBy;
@@ -191,10 +188,8 @@ function safe(?string $s): string
           </svg>
           <select name="sort" onchange="this.form.submit()"
             class="pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-48">
-            <option value="latest" <?= $sortBy === 'latest' ? 'selected' : '' ?>>Newest</option>
-            <option value="oldest" <?= $sortBy === 'oldest' ? 'selected' : '' ?>>Oldest</option>
-            <option value="agency_asc" <?= $sortBy === 'agency_asc' ? 'selected' : '' ?>>Agency A-Z</option>
-            <option value="agency_desc" <?= $sortBy === 'agency_desc' ? 'selected' : '' ?>>Agency Z-A</option>
+            <option value="csnk" <?= $sortBy === 'csnk' ? 'selected' : '' ?>>CSNK</option>
+            <option value="smc" <?= $sortBy === 'smc' ? 'selected' : '' ?>>SMC</option>
           </select>
         </div>
         <button type="submit"
