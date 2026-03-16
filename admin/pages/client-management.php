@@ -129,7 +129,7 @@ function safe(?string $s): string
 <!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="p-8 max-w-7xl mx-auto">
+<div class="p-8 max-w-screen-2xl mx-auto max-w-none">
 
   <!-- Header -->
   <div class="mb-8">
@@ -199,7 +199,7 @@ function safe(?string $s): string
   </form>
 
   <!-- Table -->
-  <div class="bg-white shadow-lg rounded-xl overflow-hidden">
+  <div class="bg-white shadow-lg rounded-xl overflow-hidden max-w-none">
     <?php if (empty($clientBookings)): ?>
       <div class="text-center py-16">
         <svg class="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,13 +216,13 @@ function safe(?string $s): string
         <table class="w-full">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-72">Client</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80">Applicant</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Contact</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Appointment
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Client</th>
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Applicant</th>
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80">Contact</th>
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Appointment
               </th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Status</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Business Unit
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">Status</th>
+              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Business Unit
               </th>
               <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Booked</th>
               <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Action</th>
