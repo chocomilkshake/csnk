@@ -152,3 +152,28 @@ function redirect($url) {
 
     // Fallback: JS + <noscript> meta refresh if headers already sent
     echo '<script>';
+    echo 'window.location.href = ' . json_encode($url, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) . ';';
+    echo '</script>';
+    echo '<noscript>';
+    echo '<meta http-equiv="refresh" content="0;url=' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">';
+    echo '</noscript>';
+    exit();
+}
+        SELECT DISTINCT
+            cb.applicant_id,
+            CONCAT(a.first_name, ' ', a.last_name, IF(a.suffix != '', CONCAT(' ', a.suffix), '')) AS applicant_name,
+            cb.status
+        FROM client_bookings cb
+        JOIN applicants a ON a.id = cb.applicant_id
+        WHERE cb.client_email = ?
+        AND cb.status IN ('pending', 'on_process', 'approved')
+        ORDER BY cb.created_at DESC
+    ");
+    $stmt->bind_param("s", $client_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $applicants[] = $row;
+    }
+    return $applicants;
+}
