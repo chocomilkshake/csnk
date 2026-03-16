@@ -183,3 +183,47 @@ function overlap_count(array $a, array $b): int {
     $b = normalize_string_array($b);
     return count(array_intersect($a, $b));
 }
+
+/**
+ * Get client details by email from client_bookings
+ */
+function get_client_details($conn, $client_email) {
+    $stmt = $conn->prepare("
+        SELECT 
+            CONCAT(client_first_name, ' ', client_last_name) AS client_name,
+            client_phone,
+            business_unit_id 
+        FROM client_bookings 
+        WHERE client_email = ? 
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $client_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc() ?: [];
+}
+
+/**
+ * Get applicants booked by client (with names)
+ */
+function get_client_applicants($conn, $client_email) {
+    $applicants = [];
+    $stmt = $conn->prepare("
+        SELECT DISTINCT
+            cb.applicant_id,
+            CONCAT(a.first_name, ' ', a.last_name, IF(a.suffix != '', CONCAT(' ', a.suffix), '')) AS applicant_name,
+            cb.status
+        FROM client_bookings cb
+        JOIN applicants a ON a.id = cb.applicant_id
+        WHERE cb.client_email = ?
+        AND cb.status IN ('pending', 'on_process', 'approved')
+        ORDER BY cb.created_at DESC
+    ");
+    $stmt->bind_param("s", $client_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $applicants[] = $row;
+    }
+    return $applicants;
+}
