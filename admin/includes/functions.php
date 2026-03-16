@@ -163,6 +163,32 @@ function redirect($url) {
 /* =========================
  * NEW: JSON & Similarity Utils
  * ========================= */
+function json_to_array_safe($json) {
+    if ($json === null || $json === '' || $json === '[]') return [];
+    $arr = json_decode((string)$json, true);
+    return is_array($arr) ? $arr : [];
+}
+function normalize_string_array(array $arr): array {
+    $out = [];
+    foreach ($arr as $v) {
+        $s = strtolower(trim((string)$v));
+        if ($s !== '' && !in_array($s, $out, true)) {
+            $out[] = $s;
+        }
+    }
+    return $out;
+}
+function overlap_count(array $a, array $b): int {
+    $a = normalize_string_array($a);
+    $b = normalize_string_array($b);
+    return count(array_intersect($a, $b));
+}
+
+/**
+ * Get client details by email from client_bookings
+ */
+function get_client_details($conn, $client_email) {
+    $stmt = $conn->prepare("
         SELECT 
             CONCAT(client_first_name, ' ', client_last_name) AS client_name,
             client_phone,
