@@ -867,6 +867,18 @@ if ($canViewReports && $conn instanceof mysqli) {
                     </span>
                 </a>
 
+                <!-- Client Payments -->
+                <a href="payments_clients.php"
+                    class="sidebar-item <?php echo $currentPage === 'payments_clients' ? 'active' : ''; ?>"
+                    aria-current="<?php echo $currentPage === 'payments_clients' ? 'page' : 'false'; ?>"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Client Salary Payments">
+
+                    <i class="bi bi-credit-card-2-front"></i>
+                    <span class="label">
+                        <span class="text fw-semibold">Payments</span>
+                    </span>
+                </a>
+
                 <!-- Content (Admins Only) -->
                 <?php if ($isAdmin || $isSuperAdmin): ?>
                     <a href="content_management.php"
