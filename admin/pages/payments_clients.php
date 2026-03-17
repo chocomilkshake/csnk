@@ -315,7 +315,6 @@ while ($row = $res->fetch_assoc()) $statusStats[] = $row;
             📄 Invoice List <span class="badge bg-light text-dark ms-2"><?= count($invoices) ?> total</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Client</th>
