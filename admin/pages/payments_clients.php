@@ -111,7 +111,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     data-phone="<?= h($c['client_phone']) ?>"
                                     data-bu="<?= (int)$c['business_unit_id'] ?>"
                                     data-apps='<?= json_encode($c['applicants']) ?>'>
-                                    <?= h($c['client_name']) ?> (<?= count($c['applicant
+                                    <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="hidden" name="client_name" id="c-name">
+                        <input type="hidden" name="client_phone" id="c-phone">
+                        <input type="hidden" name="business_unit_id" id="c-bu">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Due Date</label>
+                        <input type="date" name="due_date" class="form-control" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Applicant Salaries</label>
+                        <div id="salary-fields" class="row g-3"></div>
+                        <div class="text-end mt-3">
+                            <div class="h4 fw-bold text-primary">
+                                Total: ₱<span id="total">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary btn-lg px-5">
                             Generate Invoice
                         </button>
                     </div>
