@@ -114,6 +114,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?= h($c['client_name']) ?> (<?= count($c['applicant
                             Generate Invoice
                         </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- ✅ INVOICE TABLE -->
+    <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+        <div class="card-header bg-gradient bg-primary text-white fw-semibold p-3">
+            📄 Invoice List <span class="badge bg-light text-dark ms-2"><?= count($invoices) ?> total</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Client</th>
+                        <th>Total</th>
+                        <th>Due</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                 <?php foreach ($invoices as $i): ?>
                     <tr>
                         <td>
