@@ -106,6 +106,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select class="form-select" name="client_email" required onchange="loadClient(this)">
                             <option value="">Select client</option>
                             <?php foreach ($clients as $c): ?>
+                                <option value="<?= h($c['client_email']) ?>"
+                                    data-name="<?= h($c['client_name']) ?>"
+                                    data-phone="<?= h($c['client_phone']) ?>"
+                                    data-bu="<?= (int)$c['business_unit_id'] ?>"
+                                    data-apps='<?= json_encode($c['applicants']) ?>'>
+                                    <?= h($c['client_name']) ?> (<?= count($c['applicant
+                            Generate Invoice
+                        </button>
+                <?php foreach ($invoices as $i): ?>
+                    <tr>
+                        <td>
+                            <div class="fw-semibold"><?= h($i['client_name']) ?></div>
+                            <small class="text-muted"><?= h($i['client_email']) ?></small>
+                        </td>
+                        <td class="fw-bold text-primary">
+                            ₱<?= number_format($i['total_amount'],2) ?>
+                        </td>
+                        <td><?= h($i['due_date']) ?></td>
+                        <td>
+                            <span class="badge <?= $i['status']=='PAID'?'bg-success':'bg-warning' ?>">
+                                <?= $i['status'] ?>
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+
+                                <button class="btn btn-outline-secondary view-btn" type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#viewModal"
                                     data-name="<?= h($i['client_name']) ?>"
                                     data-email="<?= h($i['client_email']) ?>"
                                     data-phone="<?= h($i['client_phone']) ?>"
