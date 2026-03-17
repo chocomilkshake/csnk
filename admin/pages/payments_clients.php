@@ -103,6 +103,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    /* ✅ TOGGLE PAID / PENDING */
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-semibold mb-0">📊 Invoice Status</h6>
+                        <small class="text-muted"><?= count($statusStats) ?> statuses</small>
+                    </div>
+                    <div style="height: 200px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ CREATE INVOICE -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            ➕ New Salary Invoice
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <input type="hidden" name="create_invoice" value="1">
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Client</label>
                         <select class="form-select" name="client_email" required onchange="loadClient(this)">
                             <option value="">Select client</option>
                             <?php foreach ($clients as $c): ?>
