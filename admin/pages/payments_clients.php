@@ -115,6 +115,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     title="View">
                                     <i class="bi bi-eye"></i>
                                 </button>
+
+                                <button class="btn btn-outline-secondary toggle-btn" type="button" data-id="<?= $i['id'] ?>" data-status="<?= $i['status'] ?>" title="<?= $i['status']=='PAID' ? 'Mark Pending' : 'Mark Paid' ?>">
+                                    <i class="bi <?= $i['status']=='PAID' ? 'bi-credit-card' : 'bi-clock' ?>"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary edit-btn" type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    data-id="<?= $i['id'] ?>"
+                                    data-name="<?= h($i['client_name']) ?>"
+                                    data-email="<?= h($i['client_email']) ?>"
+                                    data-phone="<?= h($i['client_phone']) ?>"
+                                    data-total="<?= $i['total_amount'] ?>"
+                                    data-due="<?= $i['due_date'] ?>"
+                                    title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+
+                                <button class="btn btn-outline-danger delete-btn" type="button"
+                                    data-id="<?= $i['id'] ?>"
+                                    data-client="<?= h($i['client_name']) ?>"
+                                    title="Delete Invoice">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 <?php if (!$invoices): ?>
                     <tr>
