@@ -104,6 +104,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   /* EDIT MODAL */
   if (e.target.closest('.edit-btn')) {
     const b = e.target.closest('.edit-btn');
+    document.getElementById('edit-id').value = b.dataset.id;
+    document.getElementById('edit_client_name').value = b.dataset.name;
+    document.getElementById('edit-email').value = b.dataset.email;
+    document.getElementById('edit-phone').value = b.dataset.phone;
+    document.getElementById('edit_business_unit_id').value = '1';
+    document.getElementById('edit-total').value = b.dataset.total;
+    document.getElementById('edit-due').value = b.dataset.due;
+  }
+
+  /* TOGGLE STATUS */
+  if (e.target.closest('.toggle-btn')) {
+    const btn = e.target.closest('.toggle-btn');
+    const id = btn.dataset.id;
+    const currentStatus = btn.dataset.status;
+    const newStatus = currentStatus === 'PAID' ? 'PENDING' : 'PAID';
+
+    fetch('payments_clients.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `toggle_status=1&invoice_id=${id}&new_status=${newStatus}`
+    }).then(() => {
+      location.reload();
+    });
   }
 
 });
