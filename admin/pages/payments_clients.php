@@ -103,6 +103,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+                        <select class="form-select" name="client_email" required onchange="loadClient(this)">
+                            <option value="">Select client</option>
+                            <?php foreach ($clients as $c): ?>
+                                    data-name="<?= h($i['client_name']) ?>"
+                                    data-email="<?= h($i['client_email']) ?>"
+                                    data-phone="<?= h($i['client_phone']) ?>"
+                                    data-total="<?= number_format($i['total_amount'],2) ?>"
+                                    data-due="<?= h($i['due_date']) ?>"
+                                    data-status="<?= h($i['statu
+const ctx1 = document.getElementById('monthlyChart')?.getContext('2d');
+if (ctx1) {
+  new Chart(ctx1, {
+    type: 'line',
+    data: {
+        labels: (useDemo ? demoMonthly : monthlyStats).map(r => r.month),
+        datasets: [{
+            data: (useDemo ? demoMonthly : monthlyStats).map(r => r.amount || 0),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: { 
+      plugins:{
+        legend:{display:false},
+        title: {
+          display: useDemo,
+          text: 'Demo Data - Create invoices to see real analytics',
+          font: {size: 14},
+          padding: 20
+        }
+      },
+      scales:{y:{beginAtZero:true}} 
+    }
   });
 }
 
