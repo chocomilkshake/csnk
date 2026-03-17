@@ -106,7 +106,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   });
 }
 
-const ctx2 = document.getElementById('statusChart')?.getCon
+const ctx2 = document.getElementById('statusChart')?.getContext('2d');
+if (ctx2) {
+  new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+        labels: (useDemo ? demoStatus : statusStats).map(r => r.status),
+        datasets: [{
+            data: (useDemo ? demoStatus : statusStats).map(r => r.count || 0),
+            backgroundColor: ['#facc15','#22c55e','#ef4444']
+        }]
+    },
+    options: { 
+      plugins:{
+        legend:{position:'bottom'},
+        title: {
+          display: useDemo,
+          text: 'Demo Data - Mark invoices as PAID to update',
+          font: {size: 14},
+          padding: 20
+        }
+      }
+    }
+  });
+}
+
+function loadClient(sel){
+    const opt = sel.options[sel.selectedIndex];
+    if(!opt) return;
+
+    document.getElementById('c-name').value = opt.dataset.name || '';
+    document.getElementById('c-phone').value = opt.dataset.phone || '';
+    document.getElementById('c-bu').value = opt.dataset.bu || '';
+
     const apps = JSON.parse(opt.dataset.apps || '[]');
     const wrap = document.getElementById('salary-fields');
     wrap.innerHTML = '';
