@@ -98,7 +98,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute()) {
             $_SESSION['flash'] = "success|Invoice updated successfully.";
-        } else {et.status;
+        } else {
+            $_SESSION['flash'] = "error|Failed to update invoice.";
+        }
+    }
+
+  });
+}
+.value)||0);
+    document.getElementById('total').textContent =
+        t.toLocaleString('en-PH',{minimumFractionDigits:2});
+}
+document.addEventListener('input',e=>{
+    if(e.target.classList.contains('salary')) calc();
+});
+
+
+document.addEventListener('click', function(e) {
+
+  /* VIEW MODAL */
+  if (e.target.closest('.view-btn')) {
+    const b = e.target.closest('.view-btn');
+    document.getElementById('view-client-name').textContent = b.dataset.name;
+    document.getElementById('view-client-email').textContent = b.dataset.email;
+    document.getElementById('view-client-phone').textContent = b.dataset.phone;
+    document.getElementById('view-total').textContent = '₱' + b.dataset.total;
+    document.getElementById('view-due').textContent = b.dataset.due;
+    document.getElementById('view-status').textContent = b.dataset.status;
   }
 
   /* EDIT MODAL */
