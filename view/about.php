@@ -51,6 +51,18 @@ function getDbConnection()
   return $conn;
 }
 
+function getCSNKBusinessUnitId($conn)
+{
+  $stmt = $conn->prepare("SELECT id FROM business_units WHERE agency_id = 1 AND active = 1 LIMIT 1");
+  if (!$stmt)
+    return null;
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $stmt->close();
+  return $row ? (int) $row['id'] : null;
+}
+
 /**
  * Helper: slugify label for safe filtering (EXACT match)
  */
@@ -85,47 +97,56 @@ function getContentImageUrl($path)
 
 /* ---------- Fetch data (CMS) ---------- */
 $conn = getDbConnection();
-if (!$conn) {
-  // DB not available - fallback to static state
-  $categories = [];
-  $contentItems = [];
-  $categoryCounts = [];
-  $totalItems = 0;
-} else {
-  // Categories (active only)
-  $categories = [];
-  $sql = "SELECT * FROM content_categories WHERE is_active = 1 ORDER BY display_order ASC, id ASC";
-  $result = mysqli_query($conn, $sql);
-  if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
+$csnkBuId = null;
+$categories = [];
+$contentItems = [];
+$categoryCounts = [];
+$totalItems = 0;
+
+if ($conn) {
+  $csnkBuId = getCSNKBusinessUnitId($conn);
+
+  if ($csnkBuId) {
+    // Categories (active only, CSNK BU)
+    $sql = "SELECT * FROM content_categories WHERE business_unit_id = ? AND is_active = 1 ORDER BY display_order ASC, id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $csnkBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
       $categories[] = $row;
     }
-  }
+    $stmt->close();
 
-  // Content items (active only) + join category name
-  $contentItems = [];
-  $sql = "SELECT ci.*, cc.name as category_name
-          FROM content_items ci
-          LEFT JOIN content_categories cc ON ci.category_id = cc.id
-          WHERE ci.is_active = 1
-          ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
-  $result = mysqli_query($conn, $sql);
-  if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
+    // Content items (active only) + join category name (CSNK BU)
+    $sql = "SELECT ci.*, cc.name as category_name 
+            FROM content_items ci 
+            LEFT JOIN content_categories cc ON ci.category_id = cc.id 
+            WHERE ci.business_unit_id = ? AND ci.is_active = 1
+            ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $csnkBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
       $contentItems[] = $row;
     }
+    $stmt->close();
   }
   mysqli_close($conn);
-
-  // Category counts
-  $categoryCounts = [];
-  foreach ($contentItems as $itm) {
-    $slug = slugify($itm['category_name'] ?? '');
-    $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
-  }
-  $totalItems = count($contentItems);
 }
+
+// Category counts
+$categoryCounts = [];
+foreach ($contentItems as $itm) {
+  $slug = slugify($itm['category_name'] ?? '');
+  $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
+}
+$totalItems = count($contentItems);
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1072,7 +1093,8 @@ if (!$conn) {
         <div id="galleryFilters" class="btn-group flex-wrap" role="group" aria-label="Gallery categories">
           <!-- ALL -->
           <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
-            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
+            All
+            <?= $totalItems > 0 ? " ($totalItems)" : "" ?>
           </button>
 
           <?php if (!empty($categories)): ?>
@@ -1083,7 +1105,8 @@ if (!$conn) {
               ?>
               <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
                 aria-pressed="false">
-                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
+                <?= htmlspecialchars($catName) ?>
+                <?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
             <?php endforeach; ?>
           <?php endif; ?>
@@ -1109,7 +1132,9 @@ if (!$conn) {
                   aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
                   <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
                   <div class="gallery-tile-overlay">
-                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
+                    <p class="gallery-tile-title">
+                      <?= htmlspecialchars($itemTitle) ?>
+                    </p>
                   </div>
                 </button>
               <?php endforeach; ?>
