@@ -107,6 +107,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['toggle_status'])) {
 
         $id = (int)$_POST['invoice_id'];
+        $newStatus = ($_POST['new_status'] === 'PAID') ? 'PAID' : 'PENDING';
+
+        $stmt = $conn->prepare("
+            UPDATE salary_invoices SET status=? WHERE id=?
+        ");
+        $stmt->bind_param("si", $newStatus, $id);
+        $stmt->execute();
+
+        $_SESSION['flash'] = "success|Invoice status updated.";
+    }
+
+    /* ✅ SOFT DELETE (AJAX – NO REDIRECT) */
+    if (isset($_POST['soft_delete'])) {
+        $id = (int)$_POST['invoice_id'];
+        $conn->query("UPDATE salary_invoices SET deleted_at = NOW() WHERE id = $id");
+        exit;
+    }
+
+    /* ✅ UNDO DELETE (AJAX – NO REDIRECT) */
+    if (isset($_POST['undo_delete'])) {
+        $id = (int)$_POST['invoice_id'];
+        $conn->query("UPDATE salary_invoices SET deleted_at = NULL WHERE id = $id");
+        exit;
+    }
+
+    /* ✅ FINAL DELETE (AJAX – NO REDIRECT) */
+    if (isset($_POST['force_delete'])) {
+        $id = (int)$_POST['invoice_id']
+    $apps = [];
     $s = $conn->prepare("
         SELECT a.id, CONCAT(a.first_name,' ',a.las
            COUNT(*) AS count,
