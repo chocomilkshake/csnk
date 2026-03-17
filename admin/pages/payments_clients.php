@@ -111,7 +111,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     data-phone="<?= h($i['client_phone']) ?>"
                                     data-total="<?= number_format($i['total_amount'],2) ?>"
                                     data-due="<?= h($i['due_date']) ?>"
-                                    data-status="<?= h($i['statu
+                                    data-status="<?= h($i['status']) ?>"
+                                    title="View">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                <?php endforeach; ?>
+                <?php if (!$invoices): ?>
+                    <tr>
+    <div class="toast-body border-top">
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-light btn-sm flex-fill" id="undoDelete">Undo Delete</button>
+        <button class="btn btn-light btn-sm" data-bs-dismiss="toast">Dismiss</button>
+      </div>
+    </div>
+  </div>
+</div>
+``
+
+<script>
+const monthlyStats = <?= json_encode($monthlyStats) ?>;
+const statusStats  = <?= json_encode($statusStats) ?>;
+
+// Fallback demo data if no real data
+const demoMonthly = [
+  {month: 'Jan 2026', amount: 15000},
+  {month: 'Feb 2026', amount: 32000},
+  {month: 'Mar 2026', amount: 28000}
+];
+const demoStatus = [
+  {status: 'PENDING', count: 5},
+  {status: 'PAID', count: 12}
+];
+
+const useDemo = monthlyStats.length === 0;
+
 const ctx1 = document.getElementById('monthlyChart')?.getContext('2d');
 if (ctx1) {
   new Chart(ctx1, {
