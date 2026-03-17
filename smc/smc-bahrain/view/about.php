@@ -1,16 +1,157 @@
 <?php
-// Set the active page for navbar highlighting
 $page = 'about';
+
+/**
+ * Determine Bahrain Business Unit ID dynamically
+ */
+function getBahrainBusinessUnitId($conn)
+{
+  $stmt = $conn->prepare("SELECT id FROM business_units WHERE (code LIKE '%bahrain%' OR name LIKE '%bahrain%') AND active = 1 LIMIT 1");
+  if (!$stmt)
+    return null;
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $stmt->close();
+  return $row ? (int) $row['id'] : null;
+}
+
+/**
+ * PROJECT BASE URL
+ */
+$BASE = '/csnk/smc/smc-bahrain';
+
+/**
+ * Build absolute URL for assets
+ */
+function asset(string $path): string
+{
+  global $BASE;
+  $path = '/' . ltrim($path, '/');
+  return rtrim($BASE, '/') . $path;
+}
+
+/**
+ * Get database connection using config
+ */
+function getDbConnection()
+{
+  $dbHost = 'localhost';
+  $dbUser = 'root';
+  $dbPass = '';
+  $dbName = 'csnk';
+
+  $configFile = __DIR__ . '/../../admin/includes/config.php';
+  if (file_exists($configFile)) {
+    include $configFile;
+    if (defined('DB_HOST'))
+      $dbHost = DB_HOST;
+    if (defined('DB_USER'))
+      $dbUser = DB_USER;
+    if (defined('DB_PASS'))
+      $dbPass = DB_PASS;
+    if (defined('DB_NAME'))
+      $dbName = DB_NAME;
+  }
+
+  $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
+  if (!$conn) {
+    return null;
+  }
+  return $conn;
+}
+
+/**
+ * Helper: slugify label for safe filtering (EXACT match)
+ */
+function slugify(string $text): string
+{
+  $text = trim($text);
+  $text = mb_strtolower($text, 'UTF-8');
+  $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+  if (function_exists('iconv')) {
+    $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    if ($trans !== false)
+      $text = $trans;
+  }
+  $text = preg_replace('~[^-\w]+~', '', $text);
+  $text = trim($text, '-');
+  $text = preg_replace('~-+~', '-', $text);
+  return $text !== '' ? $text : 'n-a';
+}
+
+/**
+ * Helper: build content image URL (uploaded via admin)
+ */
+function getContentImageUrl($path)
+{
+  global $BASE;
+  if (empty($path))
+    return '';
+  $adminBase = str_replace('smc/smc-bahrain', 'admin', $BASE);
+  return rtrim($adminBase, '/') . '/uploads/' . ltrim($path, '/');
+}
+
+/* ---------- Fetch data (CMS) ---------- */
+$conn = getDbConnection();
+$bahrainBuId = null;
+$categories = [];
+$contentItems = [];
+$categoryCounts = [];
+$totalItems = 0;
+
+if ($conn) {
+  $bahrainBuId = getBahrainBusinessUnitId($conn);
+
+  if ($bahrainBuId) {
+    // Categories (active only, scoped to Bahrain BU)
+    $sql = "SELECT * FROM content_categories WHERE business_unit_id = ? AND is_active = 1 ORDER BY display_order ASC, id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $bahrainBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+      $categories[] = $row;
+    }
+    $stmt->close();
+
+    // Content items (active only) + join category name
+    $sql = "SELECT ci.*, cc.name as category_name
+            FROM content_items ci
+            LEFT JOIN content_categories cc ON ci.category_id = cc.id
+            WHERE ci.business_unit_id = ? AND ci.is_active = 1
+            ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $bahrainBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+      $contentItems[] = $row;
+    }
+    $stmt->close();
+
+    // Category counts
+    foreach ($contentItems as $itm) {
+      $slug = slugify($itm['category_name'] ?? '');
+      $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
+    }
+    $totalItems = count($contentItems);
+  }
+  mysqli_close($conn);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SMC Manpower Agency Co.</title>
 
   <!-- SEO -->
-  <meta name="description" content="Learn about SMC Manpower Agency Co. — DMW-licensed, compliance-first, and ethically driven recruitment connecting Bahrain-ready and global employers with skilled Filipino talent.">
+  <meta name="description"
+    content="Learn about SMC Manpower Agency Co. — DMW-licensed, compliance-first, and ethically driven recruitment connecting Bahrain-ready and global employers with skilled Filipino talent.">
   <meta name="theme-color" content="#0B1F3A">
 
   <!-- Open Graph -->
@@ -40,77 +181,163 @@ $page = 'about';
        NAVY + GOLD THEME TOKENS
        =========================== */
     :root {
-      --smc-navy: #0B1F3A;    /* deep navy */
-      --smc-navy-2: #132A4A;  /* secondary navy */
-      --smc-navy-3: #1B355C;  /* accent navy */
-      --smc-navy-ink: #16243B;/* readable navy text */
-      --smc-gold: #FFD84D;    /* gold accent */
-      --soft-bg: #f5f8ff;     /* page background sections */
-      --soft-border: #e6ecf5; /* soft border */
+      --smc-navy: #0B1F3A;
+      /* deep navy */
+      --smc-navy-2: #132A4A;
+      /* secondary navy */
+      --smc-navy-3: #1B355C;
+      /* accent navy */
+      --smc-navy-ink: #16243B;
+      /* readable navy text */
+      --smc-gold: #FFD84D;
+      /* gold accent */
+      --soft-bg: #f5f8ff;
+      /* page background sections */
+      --soft-border: #e6ecf5;
+      /* soft border */
       --shadow: 0 12px 28px rgba(11, 31, 58, .12);
       --r-out: 1.25rem;
       --r-in: 1rem;
 
       /* Optional subtle accent */
-      --accent-red: #CE1126; /* used minimally for emphasis */
+      --accent-red: #CE1126;
+      /* used minimally for emphasis */
       --accent-red-2: #B10F20;
     }
 
-    html, body { background: #f8f9fb; color: var(--smc-navy-ink); }
-    img, svg { max-width: 100%; height: auto; }
+    html,
+    body {
+      background: #f8f9fb;
+      color: var(--smc-navy-ink);
+    }
+
+    img,
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
 
     /* RTL language mode */
     body.rtl {
       direction: rtl;
-      font-family: "Noto Kufi Arabic", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+      font-family: "Noto Kufi Arabic", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     }
-    .rtl .flip-rtl { transform: scaleX(-1); }
 
-    .text-navy { color: var(--smc-navy) !important; }
-    .text-muted-navy { color: #6f7e96 !important; }
-    .border-soft { border: 1px solid var(--soft-border); border-radius: var(--r-in); }
-    .shadow-soft { box-shadow: 0 10px 24px rgba(13,29,54,.08); }
+    .rtl .flip-rtl {
+      transform: scaleX(-1);
+    }
+
+    .text-navy {
+      color: var(--smc-navy) !important;
+    }
+
+    .text-muted-navy {
+      color: #6f7e96 !important;
+    }
+
+    .border-soft {
+      border: 1px solid var(--soft-border);
+      border-radius: var(--r-in);
+    }
+
+    .shadow-soft {
+      box-shadow: 0 10px 24px rgba(13, 29, 54, .08);
+    }
+
     .badge-soft {
-      background:#fff; border:1px solid rgba(11,31,58,.12); color:var(--smc-navy); border-radius:999px; padding:.45rem .8rem; font-weight:700;
+      background: #fff;
+      border: 1px solid rgba(11, 31, 58, .12);
+      color: var(--smc-navy);
+      border-radius: 999px;
+      padding: .45rem .8rem;
+      font-weight: 700;
     }
+
     .badge-gold {
-      background: var(--smc-gold); color: var(--smc-navy); border-radius:999px; padding:.45rem .8rem; font-weight:800;
+      background: var(--smc-gold);
+      color: var(--smc-navy);
+      border-radius: 999px;
+      padding: .45rem .8rem;
+      font-weight: 800;
     }
+
     .btn-navy {
       background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
-      color: #fff; border: 0; border-radius: 999px; padding: .8rem 1.3rem; font-weight: 800;
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
       box-shadow: 0 12px 26px rgba(11, 31, 58, .22);
     }
-    .btn-navy:hover { filter: brightness(1.03); color: #fff; }
+
+    .btn-navy:hover {
+      filter: brightness(1.03);
+      color: #fff;
+    }
+
     .btn-gold {
       background: linear-gradient(180deg, #ffe169, var(--smc-gold));
-      color: #18243b; border: 0; border-radius: 999px; padding: .8rem 1.3rem; font-weight: 800;
+      color: #18243b;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
       box-shadow: 0 12px 26px rgba(255, 216, 77, .25);
     }
-    .btn-gold:hover { filter: brightness(1.03); color: #18243b; }
+
+    .btn-gold:hover {
+      filter: brightness(1.03);
+      color: #18243b;
+    }
 
     /* ===========================
        Floating Language Toggle
        =========================== */
-    .lang-toggle{
-      position: fixed; top:16px; left:16px; z-index: 1040;
-      display:inline-flex; align-items:center; gap:.5rem; background:#fff; color: #B10F20;
-      border:2px solid #B10F20; border-radius:999px; padding:.4rem .9rem; font-weight:900;
-      box-shadow:0 8px 22px rgba(206,17,38,.18), 0 1px 0 #fff inset; cursor:pointer;
+    .lang-toggle {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1040;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: #fff;
+      color: #B10F20;
+      border: 2px solid #B10F20;
+      border-radius: 999px;
+      padding: .4rem .9rem;
+      font-weight: 900;
+      box-shadow: 0 8px 22px rgba(206, 17, 38, .18), 0 1px 0 #fff inset;
+      cursor: pointer;
     }
-    .lang-toggle .dot { width:.5rem; height:.5rem; background:#CE1126; border-radius:50%; display:inline-block; }
+
+    .lang-toggle .dot {
+      width: .5rem;
+      height: .5rem;
+      background: #CE1126;
+      border-radius: 50%;
+      display: inline-block;
+    }
 
     /* ===========================
        HERO
        =========================== */
     .hero-section {
       background-color: #f8f9fb;
-      position: relative; isolation: isolate;
+      position: relative;
+      isolation: isolate;
       padding: clamp(2rem, 6vw, 5rem) 0;
     }
-    .hero-grid, .hero-gradient {
-      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+
+    .hero-grid,
+    .hero-gradient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
+
     .hero-grid {
       opacity: .22;
       background-image:
@@ -119,6 +346,7 @@ $page = 'about';
       background-size: 32px 32px, 32px 32px;
       mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .55) 70%, rgba(0, 0, 0, 0) 100%);
     }
+
     .hero-gradient {
       background:
         radial-gradient(900px 400px at 15% 35%, rgba(255, 216, 77, 0.25), rgba(0, 0, 0, 0) 60%),
@@ -126,93 +354,470 @@ $page = 'about';
         linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(240, 244, 255, .6) 60%, rgba(240, 244, 255, 0) 100%);
       mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 12%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
     }
-    .hero-section .container { position: relative; z-index: 1; }
-    @media (max-width: 575.98px) { .hero-section { overflow: visible !important; } }
 
-    .hero-pills-abs-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #heroPills {
-      display: inline-flex; width: max-content; max-width: 100%; gap: .5rem; align-items: center;
-      padding: .5rem .6rem; border-radius: 999px; box-shadow: 0 4px 15px rgba(11, 31, 58, .08);
-      background: #fff; scroll-snap-type: x proximity;
-    }
-    #heroPills .btn { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
-    .hero-section .btn-light.active { background: var(--smc-navy); color: #fff; border: 0; }
-
-    /* ===========================
-       TRUST STRIP
-       =========================== */
-    .trust-strip .item{
-      background:#fff; border:1px solid rgba(11,31,58,.08); border-radius:999px;
-      padding:.45rem .8rem; display:inline-flex; align-items:center; gap:.5rem; font-weight:700;
+    .hero-section .container {
+      position: relative;
+      z-index: 1;
     }
 
-    /* ===========================
-       CARDS / PANELS
-       =========================== */
-    .panel {
-      background:#fff; border:1px solid rgba(11,31,58,.08); border-radius: var(--r-out);
-      box-shadow: var(--shadow);
-    }
-
-    /* ===========================
-       TRAINING GALLERY
-       =========================== */
-    .training-gallery .btn-icon {
-      width: 40px; height: 40px; border-radius: 50%;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .training-gallery .btn-icon.btn-outline-secondary { border-color: var(--soft-border); color: var(--smc-navy); }
-    .training-gallery .btn-icon.btn-outline-secondary:hover { background: var(--smc-navy); color:#fff; }
-
-    .training-gallery .gallery-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
-    @media (min-width:576px) { .training-gallery .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width:992px) {
-      .training-gallery .gallery-grid {
-        grid-template-columns: 3fr 2fr 3fr; grid-template-rows: auto auto;
-        grid-template-areas: "a b d" "a c d";
+    @media (max-width: 575.98px) {
+      .hero-section {
+        overflow: visible !important;
       }
-      .training-gallery .gallery-item[data-area="a"] { grid-area: a; }
-      .training-gallery .gallery-item[data-area="b"] { grid-area: b; }
-      .training-gallery .gallery-item[data-area="c"] { grid-area: c; }
-      .training-gallery .gallery-item[data-area="d"] { grid-area: d; }
     }
-    .training-gallery .gallery-item {
-      position: relative; border-radius: 1rem; overflow: hidden; background: #f8f9fa;
-      transition: transform .25s ease, box-shadow .25s ease; cursor: zoom-in;
-      box-shadow: 0 10px 20px rgba(11, 31, 58, .06);
-    }
-    .training-gallery .gallery-item:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(11, 31, 58, .12); }
-    .training-gallery .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .training-gallery .gallery-item[data-area="a"], .training-gallery .gallery-item[data-area="d"] { aspect-ratio: 3 / 4; }
-    .training-gallery .gallery-item[data-area="b"], .training-gallery .gallery-item[data-area="c"] { aspect-ratio: 4 / 3; }
-    .training-gallery .gallery-dots button { width: 28px; height: 4px; border-radius: 999px; background: #d9dbe1; border: 0; margin: 0 .18rem; }
-    .training-gallery .gallery-dots button.active { background: var(--smc-navy); }
-    #galleryModal .modal-content { background: #000; }
-    #galleryModalImg { max-height: 82vh; object-fit: contain; }
 
-    /* ===========================
-       CTA
-       =========================== */
+    .hero-pills-abs-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #heroPills {
+      display: inline-flex;
+      width: max-content;
+      max-width: 100%;
+      gap: .5rem;
+      align-items: center;
+      padding: .5rem .6rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 15px rgba(11, 31, 58, .08);
+      background: #fff;
+      scroll-snap-type: x proximity;
+    }
+
+    #heroPills .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
+    .hero-section .btn-light.active {
+      background: var(--smc-navy);
+      color: #fff;
+      border: 0;
+    }
+
+    /* Gallery CSS (dynamic) */
+    .gallery-wrapper {
+      position: relative;
+    }
+
+    .gallery-scroll-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f5f5;
+      padding-bottom: 10px;
+      position: relative;
+    }
+
+    .gallery-swipe-indicators {
+      display: none;
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 4px;
+      z-index: 10;
+    }
+
+    @media (max-width: 991px) {
+      .gallery-swipe-indicators {
+        display: flex;
+      }
+    }
+
+    .swipe-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .swipe-dot.active {
+      background: var(--smc-navy);
+      box-shadow: 0 0 4px rgba(11, 31, 58, 0.8);
+    }
+
+    .swipe-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .gallery-scroll-container.swiping .swipe-arrow {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    @media (hover: hover) {
+      .swipe-arrow {
+        display: none;
+      }
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-track {
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+    .gallery-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      padding: 4px;
+    }
+
+    @media (min-width: 992px) {
+      .gallery-grid {
+        flex-wrap: wrap;
+      }
+    }
+
+    .gallery-tile {
+      flex: 0 0 auto;
+      width: calc(50% - 8px);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    @media (min-width: 576px) {
+      .gallery-tile {
+        width: calc(33.333% - 11px);
+      }
+    }
+
+    @media (min-width: 992px) {
+      .gallery-tile {
+        width: calc(25% - 12px);
+        flex: none;
+      }
+    }
+
+    .gallery-tile img {
+      display: block;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .gallery-tile:hover img {
+      transform: scale(1.1);
+    }
+
+    .gallery-tile-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .gallery-tile:hover .gallery-tile-overlay {
+      opacity: 1;
+    }
+
+    .gallery-tile-title {
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0;
+      transform: translateY(10px);
+      transition: transform 0.3s ease;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .gallery-tile:hover .gallery-tile-title {
+      transform: translateY(0);
+    }
+
+    .gallery-tile[hidden] {
+      display: none !important;
+    }
+
+    .gallery-filters-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .gallery-filters-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    #galleryFilters {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #eee;
+    }
+
+    .btn-outline-secondary {
+      height: 42px;
+      padding: 0 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 999px;
+      white-space: nowrap;
+      transition: all 0.25s;
+    }
+
+    .btn-outline-secondary.active {
+      background: linear-gradient(135deg, var(--smc-navy) 0%, var(--smc-navy-2) 100%);
+      color: #fff;
+      border-color: var(--smc-navy);
+      box-shadow: 0 4px 15px rgba(11, 31, 58, 0.3);
+    }
+
+    .btn-outline-secondary:hover:not(.active) {
+      background: #f8f9fa;
+      color: var(--smc-navy-ink);
+      border-color: #ccc;
+    }
+
+    #lightboxModal .modal-dialog {
+      max-width: 900px;
+    }
+
+    #lightboxModal .modal-content {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    #lightboxModal .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    #lightboxModal .modal-body {
+      padding: 0;
+      position: relative;
+    }
+
+    #lightboxModal .btn-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s;
+    }
+
+    #lightboxModal .btn-close:hover {
+      background: #fff;
+      transform: scale(1.1);
+    }
+
+    #lightboxModal .btn-close::after {
+      content: '\\f00d';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      color: var(--smc-navy-ink);
+      font-size: 1rem;
+    }
+
+    #lightboxModal .btn-close span {
+      display: none;
+    }
+
+    #lightboxImg {
+      max-height: calc(100vh - 12rem);
+      width: auto;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    #lightboxCaption {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #fff;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      padding: 12px 24px;
+      border-radius: 999px;
+    }
+
+    #lbPrev,
+    #lbNext {
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      color: var(--smc-navy-ink);
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s;
+    }
+
+    #lbPrev:hover,
+    #lbNext:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    #lbPrev i,
+    #lbNext i {
+      font-size: 0.9rem;
+    }
+
+    .lightbox-nav-overlay {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+    }
+
+    .lightbox-nav-overlay:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .lightbox-nav-overlay.prev {
+      left: 10px;
+    }
+
+    .lightbox-nav-overlay.next {
+      right: 10px;
+    }
+
+    .lightbox-nav-overlay i {
+      color: var(--smc-navy-ink);
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 767px) {
+      .lightbox-nav-overlay {
+        width: 40px;
+        height: 40px;
+      }
+
+      .lightbox-nav-overlay.prev {
+        left: 5px;
+      }
+
+      .lightbox-nav-overlay.next {
+        right: 5px;
+      }
+    }
+
+    .training-gallery .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .training-gallery .btn-icon.btn-outline-secondary {
+      border-color: var(--soft-border);
+      color: var(--smc-navy);
+    }
+
+    .training-gallery .btn-icon.btn-outline-secondary:hover {
+      background: var(--smc-navy);
+      color: #fff;
+    }
+
     .cta-wrap {
-      background:
-        radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%),
-        radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%),
-        linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
+      background: radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%), radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%), linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
       border-radius: var(--r-out);
       box-shadow: 0 16px 36px rgba(11, 31, 58, .08), 0 1px 0 rgba(255, 255, 255, .6) inset;
     }
 
-    /* Minor transitions on hero swap */
-    .is-swapping { opacity: .25; transition: opacity .15s ease; }
+    .is-swapping {
+      opacity: .25;
+      transition: opacity .15s ease;
+    }
 
-    /* Accessibility helpers */
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
   </style>
 </head>
+
 <body class="bg-light">
 
   <!-- Floating Translate Button (EN ⇄ AR) -->
-  <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false" title="Translate to Arabic">
+  <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
+    title="Translate to Arabic">
     <span class="dot" aria-hidden="true"></span>
     <span id="langToggleLabel">AR</span>
   </button>
@@ -249,7 +854,8 @@ $page = 'about';
 
           <!-- Pills -->
           <div class="hero-pills-abs-wrapper mb-3">
-            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist" aria-label="Hero options">
+            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
+              aria-label="Hero options">
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
                 data-title="About SMC"
                 data-lead="SMC Manpower Agency Philippines Co. is a DMW-licensed, compliance-first recruitment agency connecting skilled Filipino talent with reputable employers. We prioritize transparent processes, lawful documentation, and respectful placements."
@@ -259,7 +865,7 @@ $page = 'about';
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
                 data-title="Meet Our Founder"
-                data-lead="Founded by Mr. Rogelio M. Lansang—an OFW in the Middle East for ten years (1989–2004)—SMC’s mission is to create fair and dignified employment opportunities that uplift Filipino families."
+                data-lead="Founded by Mr. Rogelio M. Lansang—an OFW in the Middle East for ten years (1989–2004)—SMC's mission is to create fair and dignified employment opportunities that uplift Filipino families."
                 data-img="../resources/img/MrRog.png" data-img-alt="Founder">
                 <span data-i18n="hero.pill_founder">Founder</span>
               </button>
@@ -285,7 +891,8 @@ $page = 'about';
 
         <!-- RIGHT: Image -->
         <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4" style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(280px, 40vw, 560px);">
+          <div class="hero-image-wrap rounded-4"
+            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(280px, 40vw, 560px);">
             <img id="heroImg" src="../resources/img/hero1.jpg" alt="Hero visual" class="img-fluid">
           </div>
         </div>
@@ -298,11 +905,16 @@ $page = 'about';
   <section class="py-3">
     <div class="container trust-strip text-center">
       <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
-        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW Licensed</span></div>
-        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span data-i18n="trust.compliance">Compliance‑First</span></div>
-        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical Recruitment</span></div>
-        <div class="item"><i class="fa-solid fa-comments text-navy"></i> <span data-i18n="trust.support">Clear Communication</span></div>
-        <div class="item"><i class="fa-solid fa-people-roof text-navy"></i> <span data-i18n="trust.welfare">Worker Welfare</span></div>
+        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW
+            Licensed</span></div>
+        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span
+            data-i18n="trust.compliance">Compliance‑First</span></div>
+        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical
+            Recruitment</span></div>
+        <div class="item"><i class="fa-solid fa-comments text-navy"></i> <span data-i18n="trust.support">Clear
+            Communication</span></div>
+        <div class="item"><i class="fa-solid fa-people-roof text-navy"></i> <span data-i18n="trust.welfare">Worker
+            Welfare</span></div>
       </div>
     </div>
   </section>
@@ -313,7 +925,8 @@ $page = 'about';
       <div class="text-center mb-4">
         <span class="badge-soft" data-i18n="mv.badge">Who We Are</span>
         <h2 class="fw-bold text-navy mt-2" data-i18n="mv.title">Mission • Vision • Values</h2>
-        <p class="text-muted mb-0" data-i18n="mv.subtitle">Built on integrity, clarity, and service—serving employers and supporting Filipino talent.</p>
+        <p class="text-muted mb-0" data-i18n="mv.subtitle">Built on integrity, clarity, and service—serving employers
+          and supporting Filipino talent.</p>
       </div>
       <div class="row g-4">
         <div class="col-lg-4">
@@ -322,7 +935,8 @@ $page = 'about';
               <div class="icon-hex"><i class="fa-solid fa-bullseye text-navy"></i></div>
               <div>
                 <h5 class="fw-bold text-navy mb-1" data-i18n="mv.mission_t">Mission</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.mission_d">Deliver ethical, compliant, and dignified recruitment with clear guidance from screening to deployment.</p>
+                <p class="mb-0 text-muted" data-i18n="mv.mission_d">Deliver ethical, compliant, and dignified
+                  recruitment with clear guidance from screening to deployment.</p>
               </div>
             </div>
           </div>
@@ -333,7 +947,8 @@ $page = 'about';
               <div class="icon-hex"><i class="fa-solid fa-eye text-navy"></i></div>
               <div>
                 <h5 class="fw-bold text-navy mb-1" data-i18n="mv.vision_t">Vision</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.vision_d">Be a trusted bridge between Bahrain & global employers and Filipino workers—recognized for integrity and results.</p>
+                <p class="mb-0 text-muted" data-i18n="mv.vision_d">Be a trusted bridge between Bahrain & global
+                  employers and Filipino workers—recognized for integrity and results.</p>
               </div>
             </div>
           </div>
@@ -344,293 +959,86 @@ $page = 'about';
               <div class="icon-hex"><i class="fa-solid fa-scale-balanced text-navy"></i></div>
               <div>
                 <h5 class="fw-bold text-navy mb-1" data-i18n="mv.values_t">Values</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous improvement.</p>
+                <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous
+                  improvement.</p>
               </div>
             </div>
           </div>
         </div>
-      </div><!--/row-->
-    </div>
-  </section>
-
-  <!-- LICENSING & COMPLIANCE -->
-  <section id="compliance" class="py-5 bg-white">
-    <div class="container">
-      <div class="row g-4 align-items-stretch">
-        <div class="col-lg-7">
-          <div class="panel p-4 p-md-5 h-100">
-            <span class="badge-gold mb-2"><i class="fa-solid fa-shield-halved me-2"></i><span data-i18n="comp.badge">Licensing & Compliance</span></span>
-            <h3 class="fw-bold text-navy mb-3" data-i18n="comp.title">We put safety, legality, and clarity first</h3>
-            <ul class="list-unstyled m-0">
-              <li class="d-flex gap-3 mb-3">
-                <i class="fa-solid fa-id-card-clip text-navy mt-1"></i>
-                <span data-i18n="comp.l1"><strong>DMW License:</strong> DMW-062-LB-03232023-R (formerly POEA)</span>
-              </li>
-              <li class="d-flex gap-3 mb-3">
-                <i class="fa-solid fa-file-signature text-navy mt-1"></i>
-                <span data-i18n="comp.l2"><strong>Transparent Documentation:</strong> Contracts, IDs, clearances, medicals</span>
-              </li>
-              <li class="d-flex gap-3 mb-3">
-                <i class="fa-solid fa-handshake-angle text-navy mt-1"></i>
-                <span data-i18n="comp.l3"><strong>Ethical Recruitment:</strong> No illegal fees; respect and dignity for workers</span>
-              </li>
-              <li class="d-flex gap-3">
-                <i class="fa-solid fa-circle-check text-navy mt-1"></i>
-                <span data-i18n="comp.l4"><strong>Aligned with Regulations:</strong> Bahrain & Philippine processes observed</span>
-              </li>
-            </ul>
-            <p class="small text-muted mt-3 mb-0" data-i18n="comp.note">Timelines and requirements vary by role and case.</p>
-          </div>
-        </div>
-        <div class="col-lg-5">
-          <div class="panel p-4 p-md-5 h-100">
-            <h5 class="fw-bold text-navy mb-3" data-i18n="comp.docs_title">Standard Document Flow</h5>
-            <ol class="m-0 ps-3">
-              <li class="mb-2" data-i18n="comp.d1">Job requisition & role details</li>
-              <li class="mb-2" data-i18n="comp.d2">Sourcing, screening & interviews</li>
-              <li class="mb-2" data-i18n="comp.d3">Contracts & compliance checks</li>
-              <li class="mb-2" data-i18n="comp.d4">Visa processing & travel</li>
-              <li class="mb-0" data-i18n="comp.d5">Deployment & onboarding support</li>
-            </ol>
-            <div class="mt-4">
-              <a href="./contactUs.php" class="btn btn-navy">
-                <span data-i18n="comp.cta">Talk to Compliance</span> <i class="fa-solid fa-arrow-right ms-2 flip-rtl"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div><!--/row-->
-    </div>
-  </section>
-
-  <!-- LEADERSHIP -->
-  <section class="py-5">
-    <div class="container">
-      <div class="text-center mb-4">
-        <span class="badge-soft" data-i18n="lead.badge">Leadership</span>
-        <h2 class="fw-bold text-navy mt-2" data-i18n="lead.title">Guided by Experience & Purpose</h2>
-        <p class="text-muted mb-0" data-i18n="lead.subtitle">A mission led by real-world overseas experience and service mindset.</p>
-      </div>
-      <div class="row g-4 align-items-center">
-        <div class="col-md-5">
-          <div class="panel p-3 h-100">
-            <img src="../resources/img/MrRog.png" class="w-100 rounded-4" alt="Founder - Mr. Rogelio M. Lansang">
-          </div>
-        </div>
-        <div class="col-md-7">
-          <div class="panel p-4 h-100">
-            <h4 class="fw-bold text-navy mb-1" data-i18n="lead.name">Mr. Rogelio M. Lansang</h4>
-            <div class="text-muted mb-3" data-i18n="lead.role">Founder & President</div>
-            <p class="mb-0 text-muted" data-i18n="lead.bio">
-              An Overseas Filipino Worker in the Middle East for ten years (1989–2004), he founded SMC to open fair, dignified employment for Filipinos and dependable recruitment for clients. With a people-first approach and compliance mindset, SMC continues to serve responsibly.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- TIMELINE / MILESTONES -->
-  <section class="py-5 bg-white">
-    <div class="container">
-      <div class="text-center mb-4">
-        <span class="badge-soft" data-i18n="time.badge">Milestones</span>
-        <h2 class="fw-bold text-navy mt-2" data-i18n="time.title">Our Story at a Glance</h2>
-      </div>
-      <div class="panel p-4 p-md-5">
-        <div class="row g-4">
-          <div class="col-md-4">
-            <h5 class="text-navy mb-1">2006</h5>
-            <p class="small text-muted mb-0" data-i18n="time.m1">SMC Group of Company management established</p>
-          </div>
-          <div class="col-md-4">
-            <h5 class="text-navy mb-1">2010</h5>
-            <p class="small text-muted mb-0" data-i18n="time.m2">SMC Manpower Agency officially founded</p>
-          </div>
-          <div class="col-md-4">
-            <h5 class="text-navy mb-1">2023</h5>
-            <p class="small text-muted mb-0" data-i18n="time.m3">DMW license DMW-062-LB-03232023-R confirmed</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- QUALITY & ETHICS -->
-  <section class="py-5">
-    <div class="container">
-      <div class="row g-4">
-        <div class="col-lg-6">
-          <div class="panel p-4 p-md-5 h-100">
-            <h3 class="fw-bold text-navy mb-3" data-i18n="quality.title">Quality Policy</h3>
-            <ul class="list-unstyled m-0">
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-circle-check text-navy mt-1"></i><span data-i18n="quality.q1">Clear requirements and timelines</span></li>
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-circle-check text-navy mt-1"></i><span data-i18n="quality.q2">Verified documentation & screening</span></li>
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-circle-check text-navy mt-1"></i><span data-i18n="quality.q3">Transparent communication & updates</span></li>
-              <li class="d-flex gap-3"><i class="fa-solid fa-circle-check text-navy mt-1"></i><span data-i18n="quality.q4">Continuous improvement and feedback</span></li>
-            </ul>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="panel p-4 p-md-5 h-100">
-            <h3 class="fw-bold text-navy mb-3" data-i18n="ethics.title">Code of Ethics</h3>
-            <ul class="list-unstyled m-0">
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-hand-holding-heart text-navy mt-1"></i><span data-i18n="ethics.e1">Respect and dignity for all candidates</span></li>
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-scale-balanced text-navy mt-1"></i><span data-i18n="ethics.e2">Lawful, fair terms—no illegal fees</span></li>
-              <li class="d-flex gap-3 mb-3"><i class="fa-solid fa-user-shield text-navy mt-1"></i><span data-i18n="ethics.e3">Data privacy & confidentiality</span></li>
-              <li class="d-flex gap-3"><i class="fa-solid fa-flag text-navy mt-1"></i><span data-i18n="ethics.e4">Zero tolerance for misconduct</span></li>
-            </ul>
-          </div>
-        </div>
-      </div><!--/row-->
-    </div>
-  </section>
-
-  <!-- METRICS / COUNTERS -->
-  <section class="py-5 bg-white">
-    <div class="container">
-      <div class="row g-4 text-center">
-        <div class="col-6 col-md-3">
-          <div class="counter-number" data-count="15">0</div>
-          <div class="text-muted fw-semibold" data-i18n="metrics.yos">Years of Service</div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="counter-number" data-count="100">0</div>
-          <div class="text-muted fw-semibold" data-i18n="metrics.compliance">% Compliance Focus</div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="counter-number" data-count="500">0</div>
-          <div class="text-muted fw-semibold" data-i18n="metrics.screened">+ Screened Candidates</div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="counter-number" data-count="24">0</div>
-          <div class="text-muted fw-semibold" data-i18n="metrics.response">Hrs Response Window</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== -->
-  <!-- Training Gallery     -->
-  <!-- ===================== -->
+  <!-- TRAINING GALLERY (Dynamic - Step 4 Complete) -->
   <section id="training-gallery" class="training-gallery py-5 bg-white">
     <div class="container">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h2 class="h1 fw-bold mb-0 text-navy" data-i18n="gallery.title">Gallery</h2>
-        <!-- Desktop/Tablet arrows -->
-        <div class="d-none d-sm-flex align-items-center gap-2">
-          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
-            <i class="fa-solid fa-arrow-left"></i>
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
+        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
+          aria-label="Gallery categories">
+          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
           </button>
-          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
-            <i class="fa-solid fa-arrow-right"></i>
-          </button>
+          <?php if (!empty($categories)): ?>
+            <?php foreach ($categories as $cat):
+              $catName = $cat['name'] ?? 'Category';
+              $catSlug = slugify($catName);
+              $cnt = $categoryCounts[$catSlug] ?? 0;
+              ?>
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+                aria-pressed="false">
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
+              </button>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
       </div>
 
-      <div id="galleryCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
-        <!-- Slides -->
-        <div class="carousel-inner">
-
-          <!-- Slide 1 -->
-          <div class="carousel-item active">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
-                <img src="../resources/img/smc1.jpg" alt="Training photo 1">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
-                <img src="../resources/img/smc2.jpg" alt="Training photo 2">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
-                <img src="../resources/img/smc3.jpg" alt="Training photo 3">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3"
-                 class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
-                <img src="../resources/img/smc4.jpg" alt="Training photo 4">
-              </a>
-            </div>
-          </div>
-
-          <!-- Slide 2 -->
-          <div class="carousel-item">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
-                <img src="../resources/img/smc5.jpg" alt="Training photo 5">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
-                <img src="../resources/img/smc6.jpg" alt="Training photo 6">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
-                <img src="../resources/img/smc7.jpg" alt="Training photo 7">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
-                <img src="../resources/img/smc8.jpg" alt="Training photo 8">
-              </a>
-            </div>
-          </div>
-
-          <!-- Slide 3 -->
-          <div class="carousel-item">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3"
-                 class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
-                <img src="../resources/img/smc9.jpg" alt="Training photo 9">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3"
-                 class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
-                <img src="../resources/img/smc10.jpg" alt="Training photo 10">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3"
-                 class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
-                <img src="../resources/img/smc11.jpg" alt="Training photo 11">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000"
-                 class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
-                <img src="../resources/img/smc12.jpg" alt="Training photo 12">
-              </a>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Mobile arrows -->
-        <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev" aria-label="Previous">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        </button>
-        <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next" aria-label="Next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        </button>
-
-        <!-- Dots -->
-        <div class="carousel-indicators gallery-dots mt-4">
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lightbox Modal -->
-    <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content bg-black border-0">
-          <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close"></button>
-          <div class="p-2 p-sm-3">
-            <img id="galleryModalImg" src="" alt="Training photo" class="img-fluid w-100 rounded-3">
+      <div class="gallery-wrapper">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
+          <div id="galleryGrid" class="gallery-grid">
+            <?php if (!empty($contentItems)): ?>
+              <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName = $item['category_name'] ?? '';
+                $catSlug = slugify($catName);
+                $imgUrl = getContentImageUrl($item['image_path']);
+                ?>
+                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+                  <div class="gallery-tile-overlay">
+                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
+                  </div>
+                </button>
+              <?php endforeach; ?>
+            <?php elseif ($bahrainBuId): ?>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-info">
+                  <i class="fas fa-images me-2"></i>No gallery content yet.
+                  <a href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>" target="_blank">
+                    Upload in Admin → Content Management → SMC/Bahrain
+                  </a>
+                </div>
+              </div>
+            <?php else: ?>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle me-2"></i>Gallery coming soon! Business Unit setup required.
+                </div>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FINAL CTA: Hire Now! -->
+  <!-- FINAL CTA -->
   <section class="py-4 py-md-5">
     <div class="container">
       <div class="p-3 p-md-4 cta-wrap">
@@ -646,238 +1054,23 @@ $page = 'about';
     </div>
   </section>
 
-  <!-- ===================== -->
-  <!-- Page Content Ends     -->
-  <!-- ===================== -->
-
-  <!-- ✅ Reusable Footer -->
+  <!-- Footer -->
   <?php include __DIR__ . '/footer.php'; ?>
 
-  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Counters Animation -->
+  <!-- Counters, Hero, Gallery JS, i18n (existing + new gallery) -->
   <script>
-    (function(){
-      const counters = document.querySelectorAll('.counter-number');
-      const animate = (el) => {
-        const target = +el.getAttribute('data-count');
-        const duration = 1200;
-        const start = performance.now();
-        const step = (now) => {
-          const p = Math.min((now - start) / duration, 1);
-          const val = Math.floor(p * target);
-          el.textContent = val.toLocaleString();
-          if (p < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      };
-      let triggered = false;
-      const onScroll = () => {
-        if (triggered) return;
-        const rect = counters[0]?.getBoundingClientRect();
-        if (!rect) return;
-        if (rect.top < window.innerHeight) {
-          counters.forEach(animate);
-          triggered = true;
-          window.removeEventListener('scroll', onScroll);
-        }
-      };
-      window.addEventListener('scroll', onScroll);
-      onScroll();
-    })();
-  </script>
+    // Counters (existing)
+    (function () { const counters = document.querySelectorAll('.counter-number'); const animate = el => { const target = +el.getAttribute('data-count'); const duration = 1200; const start = performance.now(); const step = now => { const p = Math.min((now - start) / duration, 1); el.textContent = Math.floor(p * target).toLocaleString(); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }; let triggered = false; const onScroll = () => { if (triggered) return; const rect = counters[0]?.getBoundingClientRect(); if (rect?.top < window.innerHeight) { counters.forEach(animate); triggered = true; window.removeEventListener('scroll', onScroll); } }; window.addEventListener('scroll', onScroll); onScroll(); })();
 
-  <!-- Page‑local: Hero pill swapper -->
-  <script>
-    (function () {
-      const container = document.getElementById('heroPills');
-      const titleEl = document.getElementById('heroTitle');
-      const leadEl = document.getElementById('heroLead');
-      const imgEl = document.getElementById('heroImg');
-      if (!container || !titleEl || !leadEl || !imgEl) return;
+    // Hero swap (existing)
+    (function () { const container = document.getElementById('heroPills'); const titleEl = document.getElementById('heroTitle'); const leadEl = document.getElementById('heroLead'); const imgEl = document.getElementById('heroImg'); if (!container || !titleEl || !leadEl || !imgEl) return; const pills = container.querySelectorAll('.btn'); function setActive(btn) { pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }); btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); } function applyFrom(btn) { if (btn.dataset.title) titleEl.textContent = btn.dataset.title; if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead; if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; } } function swap(btn) { setActive(btn);[titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping')); setTimeout(() => { applyFrom(btn);[titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping')); }, 150); } pills.forEach(btn => { btn.addEventListener('click', () => swap(btn)); btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); } }); }); const init = container.querySelector('.btn.active') || pills[0]; if (init) applyFrom(init); })();
 
-      const pills = container.querySelectorAll('.btn');
-      function setActive(btn) {
-        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
-      }
-      function applyFrom(btn) {
-        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
-        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
-        if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; }
-      }
-      function swap(btn) {
-        setActive(btn);
-        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
-        setTimeout(() => {
-          applyFrom(btn);
-          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
-        }, 150);
-      }
-      pills.forEach(btn => {
-        btn.addEventListener('click', () => swap(btn));
-        btn.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
-        });
-      });
-      const init = container.querySelector('.btn.active') || pills[0];
-      if (init) applyFrom(init);
-    })();
-  </script>
-
-  <!-- Page‑local: Training Gallery lightbox & keys -->
-  <script>
-    (function () {
-      const modalEl = document.getElementById('galleryModal');
-      const modalImg = document.getElementById('galleryModalImg');
-      const gallerySection = document.getElementById('training-gallery');
-      if (!modalEl || !modalImg || !gallerySection) return;
-
-      // Open modal with clicked image
-      gallerySection.querySelectorAll('.gallery-item').forEach(item => {
-        item.addEventListener('click', function (e) {
-          e.preventDefault();
-          const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
-          if (!full) return;
-          modalImg.src = full;
-          const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-          m.show();
-        });
-      });
-
-      // Optional: arrow keys go to next/prev slide when modal is open
-      document.addEventListener('keydown', function (e) {
-        const isOpen = modalEl.classList.contains('show');
-        if (!isOpen) return;
-        if (e.key === 'ArrowRight') {
-          document.querySelector('#galleryCarousel .carousel-control-next')?.click();
-        } else if (e.key === 'ArrowLeft') {
-          document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
-        }
-      }, false);
-    })();
-  </script>
-
-  <!-- 🔁 Simple i18n (EN ⇄ AR) -->
-  <script>
-    // Arabic translations for every [data-i18n] key on this page.
-    // EN is taken from the DOM at load and restored when toggling back.
-    const I18N_AR = {
-      "hero.title": "تعرّف على شركة إس إم سي لتوظيف العمالة الفلبينية",
-      "hero.lead": "إرشاد واضح وصادق يضع العميل أولاً. نصل بين أصحاب العمل والأسر والعمال الفلبينيين بعد فرز مناسب عبر عمليات آمنة ومتوافقة.",
-      "hero.pill_overview": "نظرة عامة",
-      "hero.pill_founder": "المؤسس",
-      "hero.pill_mv": "الرسالة والرؤية",
-      "hero.btn_apply": "عرض المتقدمين",
-      "hero.btn_compliance": "امتثالنا",
-
-      "trust.dmw": "ترخيص DMW",
-      "trust.compliance": "الالتزام أولاً",
-      "trust.ethical": "توظيف أخلاقي",
-      "trust.support": "تواصل واضح",
-      "trust.welfare": "رفاهية العامل",
-
-      "mv.badge": "من نحن",
-      "mv.title": "الرسالة • الرؤية • القيم",
-      "mv.subtitle": "نبني عملنا على النزاهة والوضوح والخدمة—لنخدم أصحاب العمل وندعم المواهب الفلبينية.",
-      "mv.mission_t": "رسالتنا",
-      "mv.mission_d": "تقديم توظيف أخلاقي ومتوافق مع القوانين وبكرامة، مع إرشاد واضح من الفرز حتى الإيفاد.",
-      "mv.vision_t": "رؤيتنا",
-      "mv.vision_d": "أن نكون الجسر الموثوق بين أصحاب العمل في البحرين والعالم والعمال الفلبينيين—على أساس النزاهة والنتائج.",
-      "mv.values_t": "قيمنا",
-      "mv.values_d": "النزاهة والاحترام والسلامة والوضوح والتحسين المستمر.",
-
-      "comp.badge": "التراخيص والامتثال",
-      "comp.title": "نضع السلامة والالتزام والوضوح أولاً",
-      "comp.l1": "<strong>ترخيص DMW:</strong> DMW-062-LB-03232023-R (سابقاً POEA)",
-      "comp.l2": "<strong>توثيق شفاف:</strong> عقود وهويات وتصاريح وفحوصات طبية",
-      "comp.l3": "<strong>توظيف أخلاقي:</strong> بلا رسوم غير قانونية؛ كرامة واحترام للعاملين",
-      "comp.l4": "<strong>مواءمة للأنظمة:</strong> إجراءات البحرين والفلبين",
-      "comp.note": "تختلف الجداول والمتطلبات حسب الدور والحالة.",
-      "comp.docs_title": "تدفق المستندات القياسي",
-      "comp.d1": "طلب التوظيف وتفاصيل الدور",
-      "comp.d2": "الاستقطاب والفرز والمقابلات",
-      "comp.d3": "العقود وفحوصات الامتثال",
-      "comp.d4": "إجراءات التأشيرة والسفر",
-      "comp.d5": "الإيفاد ودعم الاندماج",
-      "comp.cta": "تحدث مع فريق الامتثال",
-
-      "lead.badge": "القيادة",
-      "lead.title": "خبرة وغاية تقودنا",
-      "lead.subtitle": "رسالة يقودها احتكاك حقيقي بالعمل في الخارج وعقلية خدمية.",
-      "lead.name": "السيد روجيليو إم. لانسنج",
-      "lead.role": "المؤسس والرئيس",
-      "lead.bio": "عمل كعامل فلبيني في الشرق الأوسط لمدة عشر سنوات (1989–2004). أسس إس إم سي لفتح فرص عمل عادلة وكريمة للفلبينيين وتوظيف موثوق للعملاء. مع نهج يضع الإنسان أولاً وعقلية امتثال، تواصل SMC تقديم خدمة مسؤولة.",
-
-      "time.badge": "محطات",
-      "time.title": "قصتنا بإيجاز",
-      "time.m1": "تأسيس إدارة مجموعة شركات SMC",
-      "time.m2": "تأسيس شركة إس إم سي للتوظيف",
-      "time.m3": "تأكيد ترخيص DMW رقم DMW-062-LB-03232023-R",
-
-      "quality.title": "سياسة الجودة",
-      "quality.q1": "متطلبات وجداول زمنية واضحة",
-      "quality.q2": "توثيق وفرز مُتحقق منه",
-      "quality.q3": "تواصل شفاف وتحديثات",
-      "quality.q4": "تحسين مستمر وتغذية راجعة",
-
-      "ethics.title": "مدونة الأخلاقيات",
-      "ethics.e1": "الاحترام والكرامة لكل المرشحين",
-      "ethics.e2": "شروط عادلة وقانونية—بدون رسوم غير قانونية",
-      "ethics.e3": "خصوصية البيانات وسريتها",
-      "ethics.e4": "عدم التسامح مع أي سلوك مسيء",
-
-      "metrics.yos": "سنوات الخدمة",
-      "metrics.compliance": "% تركيز على الامتثال",
-      "metrics.screened": "+ مرشحون مُفرزون",
-      "metrics.response": "ساعات للاستجابة",
-
-      "gallery.title": "المعرض",
-
-      "final.cta": "وظّف عمالة فلبينية ماهرة ومُفرزة بعناية.",
-      "final.btn": "وظّف الآن!"
-    };
-
-    // Store EN defaults for [data-i18n] nodes
-    const i18nNodes = Array.from(document.querySelectorAll('[data-i18n]'));
-    i18nNodes.forEach(n => { n.dataset.en = n.innerHTML; });
-
-    const setLang = (lang) => {
-      const html = document.documentElement;
-      const body = document.body;
-      const toggle = document.getElementById('langToggle');
-      const label = document.getElementById('langToggleLabel');
-
-      if (lang === 'ar') {
-        html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl');
-        body.classList.add('rtl');
-        i18nNodes.forEach(n => {
-          const key = n.getAttribute('data-i18n');
-          const val = I18N_AR[key];
-          if (typeof val === 'string') n.innerHTML = val;
-        });
-        toggle.setAttribute('aria-pressed', 'true'); toggle.setAttribute('title', 'Return to English');
-        label.textContent = 'EN';
-      } else {
-        html.setAttribute('lang', 'en'); html.setAttribute('dir', 'ltr');
-        body.classList.remove('rtl');
-        i18nNodes.forEach(n => { n.innerHTML = n.dataset.en; });
-        toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('title', 'Translate to Arabic');
-        label.textContent = 'AR';
-      }
-      localStorage.setItem('lang_about', lang);
-    };
-
-    // Init language from storage (separate key for about page)
-    const saved = localStorage.getItem('lang_about') || 'en';
-    setLang(saved);
-
-    // Toggle handler
-    document.getElementById('langToggle').addEventListener('click', () => {
-      const current = localStorage.getItem('lang_about') || 'en';
-      setLang(current === 'en' ? 'ar' : 'en');
-    });
+    // Dynamic Gallery JS (from Turkey - complete)
+    (function () { const grid = document.getElementById('galleryGrid'); const filters = document.getElementById('galleryFilters'); const scrollContainer = document.getElementById('galleryScrollContainer'); if (!grid || !filters) return; const tiles = Array.from(grid.querySelectorAll('.gallery-tile')); const MAX_VISIBLE_ROWS = 4; const COLS_DESKTOP = 4, COLS_TABLET = 3, COLS_MOBILE = 2; let currentFilter = 'all'; function getColumns() { return window.innerWidth >= 992 ? COLS_DESKTOP : window.innerWidth >= 576 ? COLS_TABLET : COLS_MOBILE; } function getMaxVisible() { return MAX_VISIBLE_ROWS * getColumns(); } function updateGallery() { const maxVisible = getMaxVisible(); const filteredTiles = tiles.map((tile, idx) => ({ tile, cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(), originalIndex: idx })).filter(item => currentFilter === 'all' || item.cat === currentFilter); tiles.forEach(t => t.classList.remove('limited')); if (filteredTiles.length > maxVisible) { filteredTiles.forEach((item, idx) => { if (idx >= maxVisible) { item.tile.classList.add('limited'); item.tile.hidden = true; } else { item.tile.classList.remove('limited'); item.tile.hidden = false; } }); } else { filteredTiles.forEach(item => { item.tile.classList.remove('limited'); item.tile.hidden = false; }); } if (scrollContainer) { if (filteredTiles.length > maxVisible && window.innerWidth < 992) { scrollContainer.style.overflowX = 'auto'; scrollContainer.style.overflowY = 'hidden'; } else { scrollContainer.style.overflowX = ''; scrollContainer.style.overflowY = ''; } } } filters.addEventListener('click', e => { const btn = e.target.closest('button[data-filter]'); if (!btn) return; currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase(); filters.querySelectorAll('button[data-filter]').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); tiles.forEach(tile => { const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(); tile.hidden = !(currentFilter === 'all' || cat === currentFilter); }); updateGallery(); }); let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(updateGallery, 150); }); updateGallery(); if (scrollContainer.dataset.indicators === 'true') { const indicators = document.getElementById('swipeIndicators'); const leftBtn = document.getElementById('swipeLeft'); const rightBtn = document.getElementById('swipeRight'); function updateIndicators() { const scrollLeft = scrollContainer.scrollLeft; const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth; const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth)); const index = Math.round(progress * (tiles.length - 1)) || 0; indicators.innerHTML = ''; for (let i = 0; i < Math.min(5, tiles.length); i++) { const dot = document.createElement('div'); dot.className = `swipe-dot ${i === index ? 'active' : ''}`; dot.addEventListener('click', () => { const tileWidth = tiles[i]?.offsetWidth || 0; scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' }); }); indicators.appendChild(dot); } } let scrollTimeout; scrollContainer.addEventListener('scroll', () => { scrollContainer.classList.add('swiping'); updateIndicators(); clearTimeout(scrollTimeout); scrollTimeout = setTimeout(() => { scrollContainer.classList.remove('swiping'); }, 1500); }, { passive: true }); leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' })); rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' })); scrollContainer.addEventListener('scrollend', () => { const tilesInView = Array.from(tiles).filter(t => !t.hidden); const scrollLeft = scrollContainer.scrollLeft; const closest = tilesInView.reduce((prev, curr) => Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev); scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' }); }); updateIndicators(); } // Lightbox (Bootstrap Modal) const modalHtml = `<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-transparent border-0"><div class="modal-body p-0 d-flex flex-column align-items-center"><button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button><div class="w-100 text-center pt-4 pb-3"><img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;"></div><div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3"><button id="lbPrev" class="btn btn-dark rounded-pill px-3"><i class="fa-solid fa-chevron-left me-1"></i> Prev</button><div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div><button id="lbNext" class="btn btn-dark rounded-pill px-3">Next <i class="fa-solid fa-chevron-right ms-1"></i></button></div></div></div></div></div>`; document.body.insertAdjacentHTML('beforeend', modalHtml); const modalEl = document.getElementById('lightboxModal'); const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true }); const imgEl = document.getElementById('lightboxImg'); const captionEl = document.getElementById('lightboxCaption'); const btnPrev = document.getElementById('lbPrev'); const btnNext = document.getElementById('lbNext'); let visible = []; let index = 0; function collectVisible() { visible = tiles.filter(el => !el.hidden); } function showAt(i) { if (!visible.length) return; index = (i + visible.length) % visible.length; const tile = visible[index]; const src = tile.getAttribute('data-full'); const caption = tile.getAttribute('data-caption') || ''; imgEl.src = src; imgEl.alt = caption || 'Training image'; captionEl.textContent = caption; } grid.addEventListener('click', e => { const tile = e.target.closest('.gallery-tile'); if (!tile) return; collectVisible(); if (!visible.length) return; index = visible.indexOf(tile); if (index < 0) index = 0; showAt(index); bsModal.show(); }); btnPrev.addEventListener('click', () => showAt(index - 1)); btnNext.addEventListener('click', () => showAt(index + 1)); modalEl.addEventListener('shown.bs.modal', () => { function onKey(e) { if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); } if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); } } document.addEventListener('keydown', onKey); modalEl.addEventListener('hidden.bs.modal', () => { document.removeEventListener('keydown', onKey); imgEl.src = ''; }, { once: true }); }); // i18n (existing) const I18N_AR = { "hero.title": "تعرّف على شركة إس إم سي لتوظيف العمالة الفلبينية", "hero.lead": "إرشاد واضح وصادق يضع العميل أولاً. نصل بين أصحاب العمل والأسر والعمال الفلبينيين بعد فرز مناسب عبر عمليات آمنة ومتوافقة.", "hero.pill_overview": "نظرة عامة", "hero.pill_founder": "المؤسس", "hero.pill_mv": "الرسالة والرؤية", "hero.btn_apply": "عرض المتقدمين", "hero.btn_compliance": "امتثالنا", "trust.dmw": "ترخيص DMW", "trust.compliance": "الالتزام أولاً", "trust.ethical": "توظيف أخلاقي", "trust.support": "تواصل واضح", "trust.welfare": "رفاهية العامل", "mv.badge": "من نحن", "mv.title": "الرسالة • الرؤية • القيم", "mv.subtitle": "نبني عملنا على النزاهة والوضوح والخدمة—لنخدم أصحاب العمل وندعم المواهب الفلبينية.", "mv.mission_t": "رسالتنا", "mv.mission_d": "تقديم توظيف أخلاقي ومتوافق مع القوانين وبكرامة، مع إرشاد واضح من الفرز حتى الإيفاد.", "mv.vision_t": "رؤيتنا", "mv.vision_d": "أن نكون الجسر الموثوق بين أصحاب العمل في البحرين والعالم والعمال الفلبينيين—على أساس النزاهة والنتائج.", "mv.values_t": "قيمنا", "mv.values_d": "النزاهة والاحترام والسلامة والوضوح والتحسين المستمر.", "comp.badge": "التراخيص والامتثال", "comp.title": "نضع السلامة والالتزام والوضوح أولاً", "comp.l1": "<strong>ترخيص DMW:</strong> DMW-062-LB-03232023-R (سابقاً POEA)", "comp.l2": "<strong>توثيق شفاف:</strong> عقود وهويات وتصاريح وفحوصات طبية", "comp.l3": "<strong>توظيف أخلاقي:</strong> بلا رسوم غير قانونية؛ كرامة واحترام للعاملين", "comp.l4": "<strong>مواءمة للأنظمة:</strong> إجراءات البحرين والفلبين", "comp.note": "تختلف الجداول والمتطلبات حسب الدور والحالة.", "comp.docs_title": "تدفق المستندات القياسي", "comp.d1": "طلب التوظيف وتفاصيل الدور", "comp.d2": "الاستقطاب والفرز والمقابلات", "comp.d3": "العقود وفحوصات الامتثال", "comp.d4": "إجراءات التأشيرة والسفر", "comp.d5": "الإيفاد ودعم الاندماج", "comp.cta": "تحدث مع فريق الامتثال", "lead.badge": "القيادة", "lead.title": "خبرة وغاية تقودنا", "lead.subtitle": "رسالة يقودها احتكاك حقيقي بالعمل في الخارج وعقلية خدمية.", "lead.name": "السيد روجيليو إم. لانسنج", "lead.role": "المؤسس والرئيس", "lead.bio": "عمل كعامل فلبيني في الشرق الأوسط لمدة عشر سنوات (1989–2004). أسس إس إم سي لفتح فرص عمل عادلة وكريمة للفلبينيين وتوظيف موثوق للعملاء. مع نهج يضع الإنسان أولاً وعقلية امتثال، تواصل SMC تقديم خدمة مسؤولة.", "time.badge": "محطات", "time.title": "قصتنا بإيجاز", "time.m1": "تأسيس إدارة مجموعة شركات SMC", "time.m2": "تأسيس شركة إس إم سي للتوظيف", "time.m3": "تأكيد ترخيص DMW رقم DMW-062-LB-03232023-R", "quality.title": "سياسة الجودة", "quality.q1": "متطلبات وجداول زمنية واضحة", "quality.q2": "توثيق وفرز مُتحقق منه", "quality.q3": "تواصل شفاف وتحديثات", "quality.q4": "تحسين مستمر وتغذية راجعة", "ethics.title": "مدونة الأخلاقيات", "ethics.e1": "الاحترام والكرامة لكل المرشحين", "ethics.e2": "شروط عادلة وقانونية—بدون رسوم غير قانونية", "ethics.e3": "خصوصية البيانات وسريتها", "ethics.e4": "عدم التسامح مع أي سلوك مسيء", "metrics.yos": "سنوات الخدمة", "metrics.compliance": "% تركيز على الامتثال", "metrics.screened": "+ مرشحون مُفرزون", "metrics.response": "ساعات للاستجابة", "gallery.title": "المعرض", "final.cta": "وظّف عمالة فلبينية ماهرة ومُفرزة بعناية.", "final.btn": "وظّف الآن!" }; const i18nNodes = Array.from(document.querySelectorAll('[data-i18n]')); i18nNodes.forEach(n => { n.dataset.en = n.innerHTML; }); const setLang = lang => { const html = document.documentElement; const body = document.body; const toggle = document.getElementById('langToggle'); const label = document.getElementById('langToggleLabel'); if (lang === 'ar') { html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl'); body.classList.add('rtl'); i18nNodes.forEach(n => { const key = n.getAttribute('data-i18n'); const val = I18N_AR[key]; if (typeof val === 'string') n.innerHTML = val; }); toggle.setAttribute('aria-pressed', 'true'); toggle.setAttribute('title', 'Return to English'); label.textContent = 'EN'; } else { html.setAttribute('lang', 'en'); html.setAttribute('dir', 'ltr'); body.classList.remove('rtl'); i18nNodes.forEach(n => { n.innerHTML = n.dataset.en; }); toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('title', 'Translate to Arabic'); label.textContent = 'AR'; } localStorage.setItem('lang_about', lang); }; const saved = localStorage.getItem('lang_about') || 'en'; setLang(saved); document.getElementById('langToggle').addEventListener('click', () => { const current = localStorage.getItem('lang_about') || 'en'; setLang(current === 'en' ? 'ar' : 'en'); });
   </script>
 </body>
+
 </html>
