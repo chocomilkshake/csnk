@@ -1,6 +1,148 @@
 <?php
 // Set the active page for navbar highlighting
 $page = 'about';
+
+/**
+ * Determine Turkey Business Unit ID dynamically
+ */
+function getTurkeyBusinessUnitId($conn)
+{
+  $stmt = $conn->prepare("SELECT id FROM business_units WHERE (code LIKE '%turkey%' OR name LIKE '%turkey%') AND active = 1 LIMIT 1");
+  if (!$stmt)
+    return null;
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $stmt->close();
+  return $row ? (int) $row['id'] : null;
+}
+
+/**
+ * PROJECT BASE URL
+ * For localhost: /csnk/smc/smc-turkey
+ */
+$BASE = '/csnk/smc/smc-turkey';
+
+/**
+ * Build absolute URL for assets (css, js, images)
+ */
+function asset(string $path): string
+{
+  global $BASE;
+  $path = '/' . ltrim($path, '/');
+  return rtrim($BASE, '/') . $path;
+}
+
+/**
+ * Get database connection using config
+ */
+function getDbConnection()
+{
+  $dbHost = 'localhost';
+  $dbUser = 'root';
+  $dbPass = '';
+  $dbName = 'csnk';
+
+  $configFile = __DIR__ . '/../../admin/includes/config.php';
+  if (file_exists($configFile)) {
+    include $configFile;
+    if (defined('DB_HOST'))
+      $dbHost = DB_HOST;
+    if (defined('DB_USER'))
+      $dbUser = DB_USER;
+    if (defined('DB_PASS'))
+      $dbPass = DB_PASS;
+    if (defined('DB_NAME'))
+      $dbName = DB_NAME;
+  }
+
+  $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
+  if (!$conn) {
+    return null;
+  }
+  return $conn;
+}
+
+/**
+ * Helper: slugify label for safe filtering (EXACT match)
+ */
+function slugify(string $text): string
+{
+  $text = trim($text);
+  $text = mb_strtolower($text, 'UTF-8');
+  $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+  if (function_exists('iconv')) {
+    $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    if ($trans !== false)
+      $text = $trans;
+  }
+  $text = preg_replace('~[^-\w]+~', '', $text);
+  $text = trim($text, '-');
+  $text = preg_replace('~-+~', '-', $text);
+  return $text !== '' ? $text : 'n-a';
+}
+
+/**
+ * Helper: build content image URL (uploaded via admin)
+ * Your admin uploads are under: /csnk/admin/uploads/<path>
+ */
+function getContentImageUrl($path)
+{
+  global $BASE;
+  if (empty($path))
+    return '';
+  $adminBase = str_replace('smc/smc-turkey', 'admin', $BASE);
+  return rtrim($adminBase, '/') . '/uploads/' . ltrim($path, '/');
+}
+
+/* ---------- Fetch data (CMS) ---------- */
+$conn = getDbConnection();
+$turkeyBuId = null;
+$categories = [];
+$contentItems = [];
+$categoryCounts = [];
+$totalItems = 0;
+
+if ($conn) {
+  $turkeyBuId = getTurkeyBusinessUnitId($conn);
+
+  if ($turkeyBuId) {
+    // Categories (active only, scoped to Turkey BU)
+    $sql = "SELECT * FROM content_categories WHERE business_unit_id = ? AND is_active = 1 ORDER BY display_order ASC, id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $turkeyBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+      $categories[] = $row;
+    }
+    $stmt->close();
+
+    // Content items (active only) + join category name
+    $sql = "SELECT ci.*, cc.name as category_name
+            FROM content_items ci
+            LEFT JOIN content_categories cc ON ci.category_id = cc.id
+            WHERE ci.business_unit_id = ? AND ci.is_active = 1
+            ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $turkeyBuId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+      $contentItems[] = $row;
+    }
+    $stmt->close();
+
+    // Category counts
+    foreach ($contentItems as $itm) {
+      $slug = slugify($itm['category_name'] ?? '');
+      $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
+    }
+    $totalItems = count($contentItems);
+  }
+  mysqli_close($conn);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -178,117 +320,439 @@ $page = 'about';
       border: 0;
     }
 
-    /* ===========================
-       TRAINING GALLERY
-       =========================== */
-    .training-gallery .btn-icon {
-      width: 40px;
-      height: 40px;
+    /* ====================== */
+    /* Gallery with Category  */
+    /* ====================== */
+    .gallery-wrapper {
+      position: relative;
+    }
+
+    .gallery-scroll-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f5f5;
+      padding-bottom: 10px;
+      position: relative;
+    }
+
+    /* Swipe indicators (mobile/tablet only) */
+    .gallery-swipe-indicators {
+      display: none;
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 4px;
+      z-index: 10;
+    }
+
+    @media (max-width: 991px) {
+      .gallery-swipe-indicators {
+        display: flex;
+      }
+    }
+
+    .swipe-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      display: inline-flex;
+      background: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .swipe-dot.active {
+      background: var(--smc-navy);
+      box-shadow: 0 0 4px rgba(11, 31, 58, 0.8);
+    }
+
+    /* Touch feedback arrows */
+    .swipe-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      z-index: 10;
+      pointer-events: none;
     }
 
-    .training-gallery .btn-icon.btn-outline-secondary {
-      border-color: var(--soft-border);
-      color: var(--smc-navy);
+    .gallery-scroll-container.swiping .swipe-arrow {
+      pointer-events: auto;
+      opacity: 1;
     }
 
-    .training-gallery .btn-icon.btn-outline-secondary:hover {
-      background: var(--smc-navy);
-      color: #fff;
-    }
-
-    .training-gallery .gallery-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: 1fr;
-    }
-
-    @media (min-width:576px) {
-      .training-gallery .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
+    @media (hover: hover) {
+      .swipe-arrow {
+        display: none;
       }
     }
 
-    @media (min-width:992px) {
-      .training-gallery .gallery-grid {
-        grid-template-columns: 3fr 2fr 3fr;
-        grid-template-rows: auto auto;
-        grid-template-areas: "a b d" "a c d";
+    .gallery-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-track {
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    .gallery-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+    .gallery-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      padding: 4px;
+    }
+
+    @media (min-width: 992px) {
+      .gallery-grid {
+        flex-wrap: wrap;
       }
-
-      .training-gallery .gallery-item[data-area="a"] {
-        grid-area: a;
-      }
-
-      .training-gallery .gallery-item[data-area="b"] {
-        grid-area: b;
-      }
-
-      .training-gallery .gallery-item[data-area="c"] {
-        grid-area: c;
-      }
-
-      .training-gallery .gallery-item[data-area="d"] {
-        grid-area: d;
-      }
     }
 
-    .training-gallery .gallery-item {
-      position: relative;
-      border-radius: 1rem;
-      overflow: hidden;
-      background: #f8f9fa;
-      transition: transform .25s ease, box-shadow .25s ease;
-      cursor: zoom-in;
-      box-shadow: 0 10px 20px rgba(11, 31, 58, .06);
-    }
-
-    .training-gallery .gallery-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(11, 31, 58, .12);
-    }
-
-    .training-gallery .gallery-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .training-gallery .gallery-item[data-area="a"],
-    .training-gallery .gallery-item[data-area="d"] {
-      aspect-ratio: 3 / 4;
-    }
-
-    .training-gallery .gallery-item[data-area="b"],
-    .training-gallery .gallery-item[data-area="c"] {
-      aspect-ratio: 4 / 3;
-    }
-
-    .training-gallery .gallery-dots button {
-      width: 28px;
-      height: 4px;
-      border-radius: 999px;
-      background: #d9dbe1;
+    .gallery-tile {
+      flex: 0 0 auto;
+      width: calc(50% - 8px);
+      padding: 0;
       border: 0;
-      margin: 0 .18rem;
+      background: transparent;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
     }
 
-    .training-gallery .gallery-dots button.active {
-      background: var(--smc-navy);
+    @media (min-width: 576px) {
+      .gallery-tile {
+        width: calc(33.333% - 11px);
+      }
     }
 
-    #galleryModal .modal-content {
-      background: #000;
+    @media (min-width: 992px) {
+      .gallery-tile {
+        width: calc(25% - 12px);
+        flex: none;
+      }
     }
 
-    #galleryModalImg {
-      max-height: 82vh;
-      object-fit: contain;
+    .gallery-tile img {
+      display: block;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      transition: transform 0.4s ease;
     }
+
+    .gallery-tile:hover img {
+      transform: scale(1.1);
+    }
+
+    /* Overlay with title */
+    .gallery-tile-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .gallery-tile:hover .gallery-tile-overlay {
+      opacity: 1;
+    }
+
+    .gallery-tile-title {
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0;
+      transform: translateY(10px);
+      transition: transform 0.3s ease;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .gallery-tile:hover .gallery-tile-title {
+      transform: translateY(0);
+    }
+
+    .gallery-tile[hidden] {
+      display: none !important;
+    }
+
+    /* View more indicator */
+    .gallery-view-more {
+      flex: 0 0 auto;
+      width: calc(50% - 8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 180px;
+    }
+
+    @media (min-width: 576px) {
+      .gallery-view-more {
+        width: calc(33.333% - 11px);
+      }
+    }
+
+    @media (min-width: 992px) {
+      .gallery-view-more {
+        width: calc(25% - 12px);
+        flex: none;
+      }
+    }
+
+    .gallery-view-more:hover {
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .gallery-view-more-content {
+      text-align: center;
+      color: #6c757d;
+    }
+
+    .gallery-view-more-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .gallery-view-more-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* Enhanced filter buttons */
+    .gallery-filters-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .gallery-filters-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    #galleryFilters {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      padding: 6px;
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #eee;
+    }
+
+    .btn-outline-secondary {
+      height: 42px;
+      width: auto;
+      padding: 0 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 999px;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline-secondary.active {
+      background: linear-gradient(135deg, var(--smc-navy) 0%, var(--smc-navy-2) 100%);
+      color: #fff;
+      border-color: var(--smc-navy);
+      box-shadow: 0 4px 15px rgba(11, 31, 58, 0.3);
+    }
+
+    .btn-outline-secondary:hover:not(.active) {
+      background: #f8f9fa;
+      color: var(--smc-navy-ink);
+      border-color: #ccc;
+    }
+
+    /* Lightbox */
+    #lightboxModal .modal-dialog {
+      max-width: 900px;
+    }
+
+    #lightboxModal .modal-content {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    #lightboxModal .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    #lightboxModal .modal-body {
+      padding: 0;
+      position: relative;
+    }
+
+    #lightboxModal .btn-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    #lightboxModal .btn-close:hover {
+      background: #fff;
+      transform: scale(1.1);
+    }
+
+    #lightboxModal .btn-close::after {
+      content: '\f00d';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      color: var(--smc-navy-ink);
+      font-size: 1rem;
+    }
+
+    #lightboxModal .btn-close span {
+      display: none;
+    }
+
+    #lightboxImg {
+      max-height: calc(100vh - 12rem);
+      width: auto;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    #lightboxCaption {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #fff;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      padding: 12px 24px;
+      border-radius: 999px;
+    }
+
+    #lbPrev,
+    #lbNext {
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      color: var(--smc-navy-ink);
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    #lbPrev:hover,
+    #lbNext:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    #lbPrev i,
+    #lbNext i {
+      font-size: 0.9rem;
+    }
+
+    /* Lightbox navigation arrows on image */
+    .lightbox-nav-overlay {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+    }
+
+    .lightbox-nav-overlay:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .lightbox-nav-overlay.prev {
+      left: 10px;
+    }
+
+    .lightbox-nav-overlay.next {
+      right: 10px;
+    }
+
+    .lightbox-nav-overlay i {
+      color: var(--smc-navy-ink);
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 767px) {
+      .lightbox-nav-overlay {
+        width: 40px;
+        height: 40px;
+      }
+
+      .lightbox-nav-overlay.prev {
+        left: 5px;
+      }
+
+      .lightbox-nav-overlay.next {
+        right: 5px;
+      }
+    }
+
 
     /* ===========================
        CTA
@@ -384,123 +848,73 @@ $page = 'about';
   <!-- ===================== -->
   <section id="training-gallery" class="training-gallery py-5 bg-white">
     <div class="container">
-      <div class="d-flex align-items-center justify-content-between mb-3">
+      <!-- Header + Category Filters -->
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
         <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
 
-        <!-- Desktop/Tablet arrows -->
-        <div class="d-none d-sm-flex align-items-center gap-2">
-          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel"
-            data-bs-slide="prev" aria-label="Previous">
-            <i class="fa-solid fa-arrow-left"></i>
+        <!-- Category buttons (CMS-driven) -->
+        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
+          aria-label="Gallery categories">
+          <!-- ALL -->
+          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
           </button>
-          <button class="btn btn-outline-secondary btn-icon" type="button" data-bs-target="#galleryCarousel"
-            data-bs-slide="next" aria-label="Next">
-            <i class="fa-solid fa-arrow-right"></i>
-          </button>
+
+          <?php if (!empty($categories)): ?>
+            <?php foreach ($categories as $cat):
+              $catName = $cat['name'] ?? 'Category';
+              $catSlug = slugify($catName);
+              $cnt = $categoryCounts[$catSlug] ?? 0;
+              ?>
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+                aria-pressed="false">
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
+              </button>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
       </div>
 
-      <div id="galleryCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false"
-        data-bs-touch="true">
-        <!-- Slides -->
-        <div class="carousel-inner">
-
-          <!-- Slide 1 -->
-          <div class="carousel-item active">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122156331620925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="a" data-full="../resources/img/smc1.jpg">
-                <img src="../resources/img/smc1.jpg" alt="Training photo 1">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331584925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="b" data-full="../resources/img/smc2.jpg">
-                <img src="../resources/img/smc2.jpg" alt="Training photo 2">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122156331548925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="c" data-full="../resources/img/smc3.jpg">
-                <img src="../resources/img/smc3.jpg" alt="Training photo 3">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122156331764925548&set=pb.61577766467864.-2207520000&type=3"
-                class="gallery-item" data-area="d" data-full="../resources/img/smc4.jpg">
-                <img src="../resources/img/smc4.jpg" alt="Training photo 4">
-              </a>
-            </div>
-          </div>
-
-          <!-- Slide 2 -->
-          <div class="carousel-item">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo/?fbid=122155688996925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="a" data-full="../resources/img/smc5.jpg">
-                <img src="../resources/img/smc5.jpg" alt="Training photo 5">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689038925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="b" data-full="../resources/img/smc6.jpg">
-                <img src="../resources/img/smc6.jpg" alt="Training photo 6">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689080925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="c" data-full="../resources/img/smc7.jpg">
-                <img src="../resources/img/smc7.jpg" alt="Training photo 7">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689122925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="d" data-full="../resources/img/smc8.jpg">
-                <img src="../resources/img/smc8.jpg" alt="Training photo 8">
-              </a>
-            </div>
-          </div>
-
-          <!-- Slide 3 -->
-          <div class="carousel-item">
-            <div class="gallery-grid">
-              <a href="https://www.facebook.com/photo.php?fbid=122155689332925548&set=pb.61577766467864.-2207520000&type=3"
-                class="gallery-item" data-area="a" data-full="../resources/img/smc9.jpg">
-                <img src="../resources/img/smc9.jpg" alt="Training photo 9">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122145840176925548&set=pb.61577766467864.-2207520000&type=3"
-                class="gallery-item" data-area="b" data-full="../resources/img/smc10.jpg">
-                <img src="../resources/img/smc10.jpg" alt="Training photo 10">
-              </a>
-              <a href="https://www.facebook.com/photo.php?fbid=122126002442925548&set=pb.61577766467864.-2207520000&type=3"
-                class="gallery-item" data-area="c" data-full="../resources/img/smc11.jpg">
-                <img src="../resources/img/smc11.jpg" alt="Training photo 11">
-              </a>
-              <a href="https://www.facebook.com/photo/?fbid=122155689332925548&set=pb.61577766467864.-2207520000"
-                class="gallery-item" data-area="d" data-full="../resources/img/smc12.jpg">
-                <img src="../resources/img/smc12.jpg" alt="Training photo 12">
-              </a>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Mobile arrows -->
-        <button class="carousel-control-prev d-sm-none" type="button" data-bs-target="#galleryCarousel"
-          data-bs-slide="prev" aria-label="Previous">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        </button>
-        <button class="carousel-control-next d-sm-none" type="button" data-bs-target="#galleryCarousel"
-          data-bs-slide="next" aria-label="Next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        </button>
-
-        <!-- Dots -->
-        <div class="carousel-indicators gallery-dots mt-4">
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="0" class="active"
-            aria-current="true" aria-label="Slide 1"></button>
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-          <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lightbox Modal -->
-    <div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content bg-black border-0">
-          <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal"
-            aria-label="Close"></button>
-          <div class="p-2 p-sm-3">
-            <img id="galleryModalImg" src="" alt="Training photo" class="img-fluid w-100 rounded-3">
+      <!-- Thumbnails Grid (CMS-driven) with row limiter -->
+      <div class="gallery-wrapper">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
+          <div id="galleryGrid" class="gallery-grid">
+            <?php if (!empty($contentItems)): ?>
+              <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName = $item['category_name'] ?? '';
+                $catSlug = slugify($catName);
+                $imgUrl = getContentImageUrl($item['image_path']);
+                ?>
+                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+                  <div class="gallery-tile-overlay">
+                    <p class="gallery-tile-title">
+                      <?= htmlspecialchars($itemTitle) ?>
+                    </p>
+                  </div>
+                </button>
+              <?php endforeach; ?>
+            <?php elseif ($turkeyBuId): ?>
+              <div class="col-12">
+                <div class="text-center py-5 bg-light rounded-3 border">
+                  <p class="text-muted mb-0">No content yet. <a
+                      href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>">Upload in Admin → Content
+                      Management → SMC/Turkey</a></p>
+                </div>
+              </div>
+            <?php else: ?>
+              <div class="col-12">
+                <div class="text-center py-5 bg-light rounded-3 border">
+                  <p class="text-muted mb-0">Gallery coming soon! Content setup required.</p>
+                </div>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -571,38 +985,265 @@ $page = 'about';
     })();
   </script>
 
-  <!-- Page‑local: Training Gallery lightbox & keys -->
+  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev + Row Limiter -->
   <script>
     (function () {
-      const modalEl = document.getElementById('galleryModal');
-      const modalImg = document.getElementById('galleryModalImg');
-      const gallerySection = document.getElementById('training-gallery');
-      if (!modalEl || !modalImg || !gallerySection) return;
+      const grid = document.getElementById('galleryGrid');
+      const filters = document.getElementById('galleryFilters');
+      const scrollContainer = document.getElementById('galleryScrollContainer');
+      if (!grid || !filters) return;
 
-      // Open modal with clicked image
-      gallerySection.querySelectorAll('.gallery-item').forEach(item => {
-        item.addEventListener('click', function (e) {
-          e.preventDefault();
-          const full = this.getAttribute('data-full') || this.querySelector('img')?.src;
-          if (!full) return;
-          modalImg.src = full;
-          const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-          m.show();
+      const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
+
+      // Configuration: Max rows to show (4 rows - shows rest of pictures)
+      const MAX_VISIBLE_ROWS = 4;
+      const COLS_DESKTOP = 4;
+      const COLS_TABLET = 3;
+      const COLS_MOBILE = 2;
+
+      let currentFilter = 'all';
+      let hasMoreItems = false;
+      let hiddenTiles = [];
+
+      // Function to get columns based on viewport
+      function getColumns() {
+        if (window.innerWidth >= 992) return COLS_DESKTOP;
+        if (window.innerWidth >= 576) return COLS_TABLET;
+        return COLS_MOBILE;
+      }
+
+      // Function to calculate max visible items
+      function getMaxVisible() {
+        return MAX_VISIBLE_ROWS * getColumns();
+      }
+
+      // Function to update gallery based on filter and row limit
+      function updateGallery() {
+        const maxVisible = getMaxVisible();
+
+        // Get visible tiles based on filter
+        const filteredTiles = tiles.map((tile, idx) => ({
+          tile,
+          cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(),
+          originalIndex: idx
+        })).filter(item => {
+          if (currentFilter === 'all') return true;
+          return item.cat === currentFilter;
         });
+
+        // Reset all tiles first
+        tiles.forEach(t => t.classList.remove('limited'));
+
+        if (filteredTiles.length > maxVisible) {
+          // Hide tiles beyond the limit
+          filteredTiles.forEach((item, idx) => {
+            if (idx >= maxVisible) {
+              item.tile.classList.add('limited');
+              item.tile.hidden = true;
+            } else {
+              item.tile.classList.remove('limited');
+              item.tile.hidden = false;
+            }
+          });
+          hasMoreItems = true;
+        } else {
+          // Show all if within limit
+          filteredTiles.forEach(item => {
+            item.tile.classList.remove('limited');
+            item.tile.hidden = false;
+          });
+          hasMoreItems = false;
+        }
+
+        // Update scroll container behavior
+        if (scrollContainer) {
+          if (hasMoreItems && window.innerWidth < 992) {
+            scrollContainer.style.overflowX = 'auto';
+            scrollContainer.style.overflowY = 'hidden';
+          } else {
+            scrollContainer.style.overflowX = '';
+            scrollContainer.style.overflowY = '';
+          }
+        }
+      }
+
+      // Filter buttons (All + dynamic categories)
+      filters.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-filter]');
+        if (!btn) return;
+
+        currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+
+        // Update active state
+        filters.querySelectorAll('button[data-filter]').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+
+        // Show/hide tiles based on slug (strict match)
+        tiles.forEach(tile => {
+          const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
+          const show = (currentFilter === 'all') ? true : (cat === currentFilter);
+          tile.hidden = !show;
+        });
+
+        // Apply row limiter
+        updateGallery();
       });
 
-      // Optional: arrow keys go to next/prev slide when modal is open
-      document.addEventListener('keydown', function (e) {
-        const isOpen = modalEl.classList.contains('show');
-        if (!isOpen) return;
-        if (e.key === 'ArrowRight') {
-          document.querySelector('#galleryCarousel .carousel-control-next')?.click();
-        } else if (e.key === 'ArrowLeft') {
-          document.querySelector('#galleryCarousel .carousel-control-prev')?.click();
+      // Handle window resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateGallery, 150);
+      });
+
+      // Initial setup
+      updateGallery();
+
+      // Enhanced swipe logic (preserves existing)
+      if (scrollContainer.dataset.indicators === 'true') {
+        const indicators = document.getElementById('swipeIndicators');
+        const leftBtn = document.getElementById('swipeLeft');
+        const rightBtn = document.getElementById('swipeRight');
+
+        function updateIndicators() {
+          const scrollLeft = scrollContainer.scrollLeft;
+          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
+          const index = Math.round(progress * (tiles.length - 1)) || 0;
+
+          // Dots
+          indicators.innerHTML = '';
+          for (let i = 0; i < Math.min(5, tiles.length); i++) {
+            const dot = document.createElement('div');
+            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
+            dot.addEventListener('click', () => {
+              const tileWidth = tiles[i]?.offsetWidth || 0;
+              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
+            });
+            indicators.appendChild(dot);
+          }
         }
-      }, false);
+
+        // Scroll events
+        let scrollTimeout;
+        scrollContainer.addEventListener('scroll', () => {
+          scrollContainer.classList.add('swiping');
+          updateIndicators();
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            scrollContainer.classList.remove('swiping');
+          }, 1500);
+        }, { passive: true });
+
+        // Arrow buttons (touch only)
+        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+
+        // Snap to tile edges on scroll end
+        scrollContainer.addEventListener('scrollend', () => {
+          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
+          const scrollLeft = scrollContainer.scrollLeft;
+          const closest = tilesInView.reduce((prev, curr) =>
+            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
+          );
+          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
+        });
+
+        updateIndicators();
+      }
+
+      // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
+      // Create modal HTML once
+      const modalHtml = `
+        <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-transparent border-0">
+              <div class="modal-body p-0 d-flex flex-column align-items-center">
+                <button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+
+                <div class="w-100 text-center pt-4 pb-3">
+                  <img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;">
+                </div>
+
+                <div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3">
+                  <button id="lbPrev" class="btn btn-dark rounded-pill px-3">
+                    <i class="fa-solid fa-chevron-left me-1"></i> Prev
+                  </button>
+                  <div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div>
+                  <button id="lbNext" class="btn btn-dark rounded-pill px-3">
+                    Next <i class="fa-solid fa-chevron-right ms-1"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      const modalEl = document.getElementById('lightboxModal');
+      const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+
+      const imgEl = document.getElementById('lightboxImg');
+      const captionEl = document.getElementById('lightboxCaption');
+      const btnPrev = document.getElementById('lbPrev');
+      const btnNext = document.getElementById('lbNext');
+
+      let visible = [];   // currently visible tiles
+      let index = 0;      // current index in visible
+
+      function collectVisible() {
+        visible = tiles.filter(el => !el.hidden);
+      }
+
+      function showAt(i) {
+        if (!visible.length) return;
+        index = (i + visible.length) % visible.length;
+        const tile = visible[index];
+        const src = tile.getAttribute('data-full');
+        const caption = tile.getAttribute('data-caption') || '';
+        imgEl.src = src;
+        imgEl.alt = caption || 'Training image';
+        captionEl.textContent = caption;
+      }
+
+      // Open lightbox on tile click
+      grid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.gallery-tile');
+        if (!tile) return;
+
+        collectVisible();
+        if (!visible.length) return;
+
+        // set index to the clicked one
+        index = visible.indexOf(tile);
+        if (index < 0) index = 0;
+
+        showAt(index);
+        bsModal.show();
+      });
+
+      btnPrev.addEventListener('click', () => showAt(index - 1));
+      btnNext.addEventListener('click', () => showAt(index + 1));
+
+      // Keyboard navigation when modal is open
+      modalEl.addEventListener('shown.bs.modal', () => {
+        function onKey(e) {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); }
+          if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); }
+        }
+        document.addEventListener('keydown', onKey);
+        modalEl.addEventListener('hidden.bs.modal', () => {
+          document.removeEventListener('keydown', onKey);
+          imgEl.src = '';
+        }, { once: true });
+      });
     })();
   </script>
+
 </body>
 
 </html>
