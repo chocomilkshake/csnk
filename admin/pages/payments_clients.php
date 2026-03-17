@@ -118,6 +118,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
                 <?php if (!$invoices): ?>
                     <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            No invoices yet
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bootstrap Undo Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="--bs-toast-max-width: 400px;">
+  <div id="deleteToast" class="toast shadow-lg border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+    <div class="toast-header bg-success text-white border-0">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <strong class="me-auto">Invoice Deleted</strong>
+      <button class="btn-close btn-close-white" type="button" data-bs-dismiss="toast" id="closeToast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+      <span id="toastText"></span>
+      <div class="mt-2 small text-white-50">
+        <span class="countdown">Undo in <span id="timer">10</span>s</span>
+      </div>
+    </div>
     <div class="toast-body border-top">
       <div class="d-flex gap-2">
         <button class="btn btn-outline-light btn-sm flex-fill" id="undoDelete">Undo Delete</button>
