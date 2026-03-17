@@ -134,7 +134,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ✅ FINAL DELETE (AJAX – NO REDIRECT) */
     if (isset($_POST['force_delete'])) {
-        $id = (int)$_POST['invoice_id']
+        $id = (int)$_POST['invoice_id'];
+        $conn->query("DELETE FROM salary_invoices WHERE id = $id");
+        exit;
+    }
+
+    /* ✅ ONE REDIRECT ONLY (VERY IMPORTANT) */
+    header("Location: payments_clients.php");
+    exit;
+}
+
+/* ================= FETCH CLIENTS ================= */
+$clients = [];
+$q = "
+    SELECT cb.client_email,
+           CONCAT(cb.client_first_name,' ',cb.client_last_name) AS client_name,
+           cb.client_phone,
+           cb.business_unit_id
+    FROM client_bookings cb
+    WHERE cb.status IN ('submitted','confirmed')
+    GROUP BY cb.client_email
+    ORDER BY client_name
+";
+$r = $conn->query($q);
+while ($row = $r->fetch_assoc()) {
+
     $apps = [];
     $s = $conn->prepare("
         SELECT a.id, CONCAT(a.first_name,' ',a.last_name) name
