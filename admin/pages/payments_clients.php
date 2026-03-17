@@ -137,7 +137,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)$_POST['invoice_id']
     $apps = [];
     $s = $conn->prepare("
-        SELECT a.id, CONCAT(a.first_name,' ',a.las
+        SELECT a.id, CONCAT(a.first_name,' ',a.last_name) name
+        FROM applicants a
+        JOIN client_bookings cb ON cb.applicant_id = a.id
+        WHERE cb.client_email = ? AND a.status IN ('on_process','approved')
+    ");
+    $s->bind_param("s", $row['client_email']);
+    $s->execute();
+    $apps = $s->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    $row['applicants'] = $apps;
+    $clients[] = $row;
+}
+
+/* ================= FETCH INVOICES ================= */
+$invoices = $conn->query("
+    SELECT *
+    FROM salary_invoices
+    WHERE deleted_at IS NULL
+    ORDER BY created_at DESC
+")->fetch_all(MYSQLI_ASSOC);
+
+/* ================= CHART DATA ================= */
+$monthlyStats = [];
+$res = $conn->query("
+    SELECT DATE_FORMAT(created_at,'%b %Y') AS month,
            COUNT(*) AS count,
            SUM(total_amount) AS amount
     FROM salary_invoices
