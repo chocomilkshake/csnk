@@ -105,7 +105,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   });
 }
-.value)||0);
+
+const ctx2 = document.getElementById('statusChart')?.getCon
+    const apps = JSON.parse(opt.dataset.apps || '[]');
+    const wrap = document.getElementById('salary-fields');
+    wrap.innerHTML = '';
+    apps.forEach(a=>{
+        wrap.insertAdjacentHTML('beforeend',`
+            <div class="col-md-6">
+                <div class="card border shadow-sm">
+                    <div class="card-body py-2">
+                        <div class="small fw-semibold mb-1">${a.name}</div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">₱</span>
+                            <input type="number" class="form-control salary"
+                                   name="applicants[${a.id}]" value="0" min="0" step="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    });
+    calc();
+}
+
+function calc(){
+    let t=0;
+    document.querySelectorAll('.salary').forEach(i=>t+=parseFloat(i.value)||0);
     document.getElementById('total').textContent =
         t.toLocaleString('en-PH',{minimumFractionDigits:2});
 }
