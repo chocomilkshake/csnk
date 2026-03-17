@@ -105,6 +105,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ✅ TOGGLE PAID / PENDING */
     if (isset($_POST['toggle_status'])) {
+
+        $id = (int)$_POST['invoice_id'];
+    $s = $conn->prepare("
+        SELECT a.id, CONCAT(a.first_name,' ',a.las
+           COUNT(*) AS count,
+           SUM(total_amount) AS amount
+    FROM salary_invoices
+    WHERE status='PAID'
+    GROUP BY month
+    ORDER BY MIN(created_at)
+");
+while ($row = $res->fetch_assoc()) $monthlyStats[] = $row;
+
+$statusStats = [];
+$res = $conn->query("
+    SELECT status, COUNT(*) AS count
+    FROM salary_invoices
+    GROUP BY status
+");
+while ($row = $res->fetch_assoc()) $statusStats[] = $row;
+?>
+
+<?php include '../includes/header.php'; ?>
+
+<div class="container-fluid py-4 bg-body-tertiary">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-0">💳 Payment Management</h1>
+            <small class="text-muted">Client salary invoices & analytics</small>
         </div>
         <span class="badge bg-primary fs-6 px-3"><?= count($invoices) ?> invoices</span>
     </div>
