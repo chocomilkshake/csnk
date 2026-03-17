@@ -104,6 +104,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ✅ TOGGLE PAID / PENDING */
+    if (isset($_POST['toggle_status'])) {
+        </div>
+        <span class="badge bg-primary fs-6 px-3"><?= count($invoices) ?> invoices</span>
+    </div>
+
+    <?php if ($message):
+        [$t,$m] = explode('|',$message,2); ?>
+        <div class="alert alert-<?= $t=='success'?'success':'danger' ?> shadow-sm">
+            <?= htmlspecialchars($m) ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- ✅ COMPACT ANALYTICS SECTION -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-semibold mb-0">📈 Monthly Paid Amount</h6>
+                        <small class="text-muted"><?= count($monthlyStats) ?> months</small>
+                    </div>
+                    <div style="height: 200px;">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="col-md-4">
