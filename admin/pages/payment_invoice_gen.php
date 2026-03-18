@@ -324,6 +324,33 @@ SELECT a.id AS applicant_id,
                                 <input type="date" name="due_date" id="due_date" class="form-control form-control-lg" oninput="updatePreview()">
                             </div>
                             <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Name</label>
+                                <input type="text" name="client_name" id="client_name" class="form-control form-control-lg" oninput="updatePreview()">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Email</label>
+                                <input type="email" name="client_email" id="client_email" class="form-control form-control-lg" placeholder="client@example.com" oninput="updatePreview()">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Address</label>
+                                <textarea name="client_address" id="client_address" class="form-control" rows="3" placeholder="Complete billing address" oninput="updatePreview()"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Applicant Items -->
+                        <h6 class="fw-bold mb-3 pb-2 border-bottom">Salary Items <span class="badge bg-secondary ms-2" id="applicant-count">0</span></h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%">Applicant</th>
+                                        <th style="width: 20%">Start Date</th>
+                                        <th style="width: 20%">End Date</th>
+                                        <th style="width: 10%" class="text-center">Days</th>
+                                        <th style="width: 15%" class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items">
                                     <tr>
                                         <td><input name="applicants[0][name]" class="form-control" placeholder="Applicant name"></td>
                                         <td><input name="applicants[0][start_date]" type="date" class="form-control start-date" oninput="calcDays(0)"></td>
