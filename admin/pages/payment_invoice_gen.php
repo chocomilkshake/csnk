@@ -407,5 +407,21 @@ SELECT a.id AS applicant_id,
 .inv-address {
   background: #f2f2f2;
   border-bottom: 2px solid #ccc;
+  padding: 10px;
+  font-size: 13px;
+  margin-top: 26px;
+  font-size: 13px;
+}
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 3px solid #dee2e6;
+}
+.logo-left img, .logo-right img { 
+    max-height: 70px; 
+    border-radius: 8px;
 }
     margin-bottom: 0.25rem;
