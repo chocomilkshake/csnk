@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 18, 2026 at 08:41 AM
+-- Generation Time: Mar 18, 2026 at 09:33 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -35,6 +35,22 @@ CREATE TABLE `activity_logs` (
   `ip_address` varchar(45) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `activity_logs`
+--
+
+INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_address`, `created_at`) VALUES
+(971, 12, 'Create Branch', 'Created branch \'CSNK Mindoro\' (CSNK-MINDORO)', '::1', '2026-03-18 08:05:55'),
+(972, 12, 'Create Branch', 'Created branch \'CSNK Palawan\' (CSNK-PALAWAN)', '::1', '2026-03-18 08:06:17'),
+(973, 12, 'Create Branch', 'Created branch \'CSNK Marinduque\' (CSNK-MARINDUQUE)', '::1', '2026-03-18 08:06:49'),
+(974, 12, 'Update Branch', 'Updated branch \'CSNK Batangas\' (CSNK-BATANGAS)', '::1', '2026-03-18 08:12:39'),
+(975, 12, 'Create Branch', 'Created branch \'CSNK Gensan\' (CSNK-GENSAN)', '::1', '2026-03-18 08:12:52'),
+(976, 12, 'Create Branch', 'Created branch \'CSNK ILOILO\' (CSNK-ILOILO)', '::1', '2026-03-18 08:13:26'),
+(977, 12, 'Create Branch', 'Created branch \'CSNK Dinagat\' (CSNK-DINAGAT)', '::1', '2026-03-18 08:13:38'),
+(978, 12, 'Create Branch', 'Created branch \'CSNK Cebu\' (CSNK-CEBU)', '::1', '2026-03-18 08:13:58'),
+(979, 12, 'Create Branch', 'Created branch \'CSNK NUEVA ECIJA\' (CSNK-NUEVA-ECIJA)', '::1', '2026-03-18 08:14:36'),
+(980, 12, 'Create Branch', 'Created branch \'CSNK BACOLOD\' (CSNK-BACOLOR)', '::1', '2026-03-18 08:15:04');
 
 -- --------------------------------------------------------
 
@@ -932,7 +948,16 @@ CREATE TABLE `csnk_branches` (
 INSERT INTO `csnk_branches` (`id`, `code`, `name`, `status`, `is_default`, `sort_order`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
 (1, 'CSNK-MNL', 'CSNK Manila', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-13 03:28:24', 'jmpogi'),
 (3, 'CSNK-ALAMINOS', 'CSNK Alaminos', 'ACTIVE', 0, 2, '2026-03-13 02:22:43', 'jmpogi', '2026-03-13 03:28:29', 'jmpogi'),
-(4, 'CSNK-NASUGBU', 'CSNK Nasugbu', 'ACTIVE', 0, 1, '2026-03-13 02:23:16', 'jmpogi', '2026-03-13 03:27:52', 'jmpogi');
+(4, 'CSNK-BATANGAS', 'CSNK Batangas', 'ACTIVE', 0, 1, '2026-03-13 02:23:16', 'jmpogi', '2026-03-18 08:12:39', 'jmpogi'),
+(5, 'CSNK-MINDORO', 'CSNK Mindoro', 'ACTIVE', 0, 0, '2026-03-18 08:05:55', 'jmpogi', NULL, NULL),
+(6, 'CSNK-PALAWAN', 'CSNK Palawan', 'ACTIVE', 0, 0, '2026-03-18 08:06:17', 'jmpogi', NULL, NULL),
+(7, 'CSNK-MARINDUQUE', 'CSNK Marinduque', 'ACTIVE', 0, 0, '2026-03-18 08:06:49', 'jmpogi', NULL, NULL),
+(8, 'CSNK-GENSAN', 'CSNK Gensan', 'ACTIVE', 0, 0, '2026-03-18 08:12:52', 'jmpogi', NULL, NULL),
+(9, 'CSNK-ILOILO', 'CSNK ILOILO', 'ACTIVE', 0, 0, '2026-03-18 08:13:26', 'jmpogi', NULL, NULL),
+(10, 'CSNK-DINAGAT', 'CSNK Dinagat', 'ACTIVE', 0, 0, '2026-03-18 08:13:38', 'jmpogi', NULL, NULL),
+(11, 'CSNK-CEBU', 'CSNK Cebu', 'ACTIVE', 0, 0, '2026-03-18 08:13:58', 'jmpogi', NULL, NULL),
+(12, 'CSNK-NUEVA-ECIJA', 'CSNK NUEVA ECIJA', 'ACTIVE', 0, 0, '2026-03-18 08:14:36', 'jmpogi', NULL, NULL),
+(13, 'CSNK-BACOLOR', 'CSNK BACOLOD', 'ACTIVE', 0, 0, '2026-03-18 08:15:04', 'jmpogi', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1187,7 +1212,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=971;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=981;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -1241,7 +1266,7 @@ ALTER TABLE `countries`
 -- AUTO_INCREMENT for table `csnk_branches`
 --
 ALTER TABLE `csnk_branches`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `invoice_history`
