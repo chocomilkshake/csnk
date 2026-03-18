@@ -406,6 +406,24 @@ SELECT a.id AS applicant_id,
 }
 .inv-address {
   font-size: 12px;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* TITLE */
+.inv-title {
+  text-align: center;
+  font-size: 28px;
+  letter-spacing: 4px;
+  margin: 28px 0;
+  font-weight: 700;
+}
+
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.inv-info {
+  text-align: right;
   font-size: 13px;
 }
 .inv-info .ref {
