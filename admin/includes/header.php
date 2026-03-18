@@ -1075,7 +1075,7 @@ if ($canViewReports && $conn instanceof mysqli) {
                 if ($message !== '') {
                     ?>
                     <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show" role="alert">
-                        <?php echo h((string) $message); ?>
+                    <?php echo $message; ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                     <?php
