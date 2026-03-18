@@ -71,7 +71,7 @@ foreach ($this->items as $i) {
       <td>' . $i[0] . '</td>
       <td>' . $i[1] . '</td>
       <td class="center">' . $i[2] . '</td>
-      <td class="right">' . $i[4] . '</td>
+      <td class="right">' . $i[3] . '</td>
     </tr>';
 }
 
