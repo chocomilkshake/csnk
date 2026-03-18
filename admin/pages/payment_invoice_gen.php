@@ -472,9 +472,9 @@ while ($row = $r->fetch_assoc()) {
                             <td width="70%">
                                 <img src="../../resources/img/smcbrandname.png" class="logo-main"><br>
                                 <div class="company-name">SMC Agency</div>
-                                <div class="address">
-                                    SMC International Recruitment<br>
-                                    Makati City, Philippines
+                                <div class="inv-address">
+                                    Unit 1 Eden Townhomes 2001 Eden Street corner<br>
+                                    Pedro Gil Street Sta. Ana, Manila, Philippines
                                 </div>
                             </td>
                             <td width="30%" class="right">
