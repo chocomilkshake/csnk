@@ -496,4 +496,16 @@ SELECT a.id AS applicant_id,
     max-height: 70px; 
     border-radius: 8px;
 }
+.logo-left {
+    display: flex;
+    flex-direction: column;
+}
+.company-address {
+    margin-top: 0.75rem;
+    border-bottom: 2px dashed #dee2e6;
+}
+.meta-right {
+    text-align: right;
+}
+.meta-right div {
     margin-bottom: 0.25rem;
