@@ -419,6 +419,9 @@ SELECT a.id AS applicant_id,
   font-weight: 700;
 }
 
+/* META */
+.inv-meta {
+  display: flex;
   justify-content: space-between;
   margin-bottom: 28px;
 }
