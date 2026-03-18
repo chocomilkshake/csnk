@@ -712,7 +712,28 @@ function calcTotal() {
 
 function updatePreviewItems() {
     const previewBody = document.getElementById('pv-items');
+    const rows = document.querySelectorAll('#items tr');
+    previewBody.innerHTML = '';
 
+    if (rows.length === 0) {
+        previewBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty">No applicants yet</td>
+            </tr>`;
+        return;
+    }
+
+    rows.forEach(row => {
+        const name = row.querySelector('[name*="[name]"]')?.value || '';
+        const start = row.querySelector('[name*="[start_date]"]')?.value || '—';
+        const end = row.querySelector('[name*="[end_date]"]')?.value || '—';
+        const days = row.querySelector('.days')?.textContent || '0 days';
+        const amount = row.querySelector('[name*="[amount]"]')?.value || '0.00';
+
+        if (!name) return;
+
+        previewBody.insertAdjacentHTML('beforeend', `
+            <tr>
                 <td>${name}</td>
                 <td>${start}</td>
                 <td>${end}</td>
