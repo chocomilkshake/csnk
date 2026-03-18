@@ -11,7 +11,10 @@ $conn = $db->getConnection();
 if (!$conn) die('Database connection failed.');
 
 $invoice_date = date('Y-m-d');
-$reference_no = 'REF-' . date('Ymd') . '-' . rand(100000,999999);
+$reference_no = 'REF-' . date('Ymd') . '-' . str_pad(rand(100000,999999), 6, '0', STR_PAD_LEFT);
+
+$preview_agency = 'csnk'; // default
+$invoice_num = 'CSNK-' . date('m-d-Y') . '-' . rand(100, 999);
 
 $download_link = '';
 
@@ -251,44 +254,55 @@ $s = $conn->prepare("
     <div class="col-lg-6">
 
       <div class="invoice-preview-wrapper h-100">
-        <div class="invoice-preview-paper h-100">
+        <div class="invoice-preview-paper h-100 template-csnk" id="preview-csnk">        
+            <style>
+                /* CSNK Template - default */
+                .template-csnk .inv-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 14px; }
+                .template-csnk .inv-header img { max-height: 54px; }
+                .template-csnk .inv-address { font-size: 12px; color: #555; margin-top: 6px; }
+                .template-csnk .inv-title { text-align: center; font-size: 28px; letter-spacing: 4px; margin: 28px 0; font-weight: 700; }
+                .template-csnk .inv-table th { background: #f2f2f2; border-bottom: 2px solid #ccc; padding: 10px; font-size: 13px; }
+                .template-csnk .inv-table .right { text-align: right; }
+            </style>
 
-          <!-- ✅ KEEP YOUR EXISTING LIVE PREVIEW CONTENT HERE -->
-          <!-- HEADER -->
-          <div class="inv-header">
-            <div class="inv-logo-left">
-              <img src="../resources/img/whychoose.png" alt="CSNK">
-              <div class="inv-address">
-                Unit 1 Eden Townhomes 2001 Eden Street corner<br>
-                Pedro Gil Street Sta. Ana, Manila, Philippines
-              </div>
+
+            <!-- ✅ KEEP YOUR EXISTING LIVE PREVIEW CONTENT HERE -->
+            <!-- HEADER -->
+            <div class="inv-header">
+                <div class="inv-logo-left">
+                <img src="../resources/img/whychoose.png" alt="CSNK">
+                <div class="inv-address">
+                    Unit 1 Eden Townhomes 2001 Eden Street corner<br>
+                    Pedro Gil Street Sta. Ana, Manila, Philippines
+                </div>
+                </div>
+                <div class="inv-logo-right">
+                <img src="../../resources/img/csnk-iconz.png" alt="CSNK" max-height="110px">
+                </div>
             </div>
-            <div class="inv-logo-right">
-              <img src="../../resources/img/csnk-iconz.png" alt="CSNK" max-height="110px">
-            </div>
-          </div>
 
-          <div class="inv-title">INVOICE</div>
+            <div class="inv-title">INVOICE</div>
 
-          <div class="inv-meta">
-            <div>
-              <strong>Billed to:</strong><br>
-              <span id="pv-client-name">Client’s Name</span><br>
+            <div class="inv-meta">
+                <div>
+                <strong>Billed to:</strong><br>
+                <span id="pv-client-name">Client’s Name</span><br>
               <span id="pv-client-email" class="muted">Client Email</span><br>
               <span id="pv-client-address" class="muted">Client’s Address</span>
             </div>
             <div class="inv-info">
-              <div><strong>Invoice #</strong> <?= $invoice_num ?></div>
+              <div id="pv-invoice-num"><strong>Invoice #</strong> <?= $invoice_num ?></div>
               <div><strong>Invoice Date</strong> <?= $invoice_date ?></div>
               <div><strong>Due Date</strong> <span id="pv-due-date">—</span></div>
               <div class="ref">Ref no: <?= $reference_no ?></div>
+
             </div>
           </div>
 
           <table class="inv-table">
             <thead>
               <tr>
-    <th>Applicant Name</th>
+                <th>Applicant Name</th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>No. Days</th>
@@ -300,22 +314,22 @@ $s = $conn->prepare("
                 <td colspan="5" class="empty">No applicants yet</td>
               </tr>
             </tbody>
-<tfoot>
-    <!-- separator line -->
-    <tr>
-        <td colspan="7" style="border-top: 2px solid #000;"></td>
-    </tr>
+            <tfoot>
+                <!-- separator line -->
+                <tr>
+                    <td colspan="7" style="border-top: 2px solid #000;"></td>
+                </tr>
 
-    <!-- total row -->
-    <tr>
-        <td colspan="4" class="right" style="padding-top: 12px; font-weight: 600;">
-            Total:
-        </td>
-        <td class="right" style="padding-top: 12px; font-weight: 700;">
-            ₱<span id="pv-total">0.00</span>
-        </td>
-    </tr>
-</tfoot>
+                <!-- total row -->
+                <tr>
+                    <td colspan="4" class="right" style="padding-top: 12px; font-weight: 600;">
+                        Total:
+                    </td>
+                    <td class="right" style="padding-top: 12px; font-weight: 700;">
+                        ₱<span id="pv-total">0.00</span>
+                    </td>
+                </tr>
+            </tfoot>
           </table>
 
           <div class="inv-declaration">
@@ -330,8 +344,170 @@ $s = $conn->prepare("
           </div>
 
         </div>
-      </div>
+        <div class="invoice-preview-paper h-100 template-smc d-none" id="preview-smc">
+            <style>
+                /* ================= SMC LIVE PREVIEW ================= */
+                .template-smc {
+                font-family: DejaVuSans, Arial, Helvetica, sans-serif;
+                font-size: 14px;
+                }
 
+                .template-smc .header {
+                width: 100%;
+                border-bottom: 2px solid #003366;
+                margin-bottom: 18px;
+                }
+
+                .template-smc .header td {
+                vertical-align: top;
+                }
+
+                .template-smc .logo-main {
+                height: 65px;
+                }
+
+                .template-smc .logo-icon {
+                height: 100px;
+                }
+
+                .template-smc .company-name {
+                font-size: 18px;
+                font-weight: bold;
+                color: #003366;
+                margin-top: 6px;
+                }
+
+                .template-smc .address {
+                font-size: 12.5px;
+                }
+
+                .template-smc .title {
+                text-align: center;
+                font-size: 14px;
+                font-weight: bold;
+                letter-spacing: 4px;
+                margin: 20px 0;
+                }
+
+                .template-smc .meta {
+                width: 100%;
+                margin-bottom: 16px;
+                }
+
+                .template-smc .meta-right {
+                text-align: right;
+                }
+
+                .template-smc .items {
+                width: 100%;
+                border-collapse: collapse;
+                }
+
+                .template-smc .items th {
+                background: #e6f0ff;
+                border-bottom: 2px solid #003366;
+                padding: 8px;
+                }
+
+                .template-smc .items td {
+                padding: 8px;
+                border-bottom: 1px solid #ccc;
+                }
+
+                .template-smc .right { text-align: right; }
+                .template-smc .center { text-align: center; }
+
+                .template-smc .total td {
+                border-top: 2px solid #003366;
+                font-weight: bold;
+                }
+
+                .template-smc .note {
+                margin-top: 18px;
+                font-style: italic;
+                }
+
+                .template-smc .payment {
+                margin-top: 18px;
+                }
+            </style>
+
+            <!-- ================= HEADER ================= -->
+            <table class="header">
+            <tr>
+            <td width="70%">
+            <img src="../../resources/img/smcbrandname.png" class="logo-main"><br>
+            <div class="company-name">SMC Agency</div>
+            <div class="address">
+                SMC International Recruitment<br>
+                Makati City, Philippines
+            </div>
+            </td>
+            <td width="30%" class="right">
+            <img src="../../resources/img/smc.png" class="logo-icon">
+            </td>
+            </tr>
+            </table>
+
+            <!-- ================= TITLE ================= -->
+            <div class="title">SMC MANPOWER AGENCY PHILIPPINES CO. (INVOICE)</div>
+
+            <!-- ================= META ================= -->
+            <table class="meta">
+            <tr>
+            <td width="60%">
+            <strong>Billed To:</strong><br>
+            <span id="smc-client-name">Client Name</span><br>
+            <span id="smc-client-email">Client Email</span><br>
+            <span id="smc-client-address">Client Address</span>
+            </td>
+            <td width="40%" class="meta-right">
+            <div><strong>Invoice #:</strong> <span id="smc-invoice-num"></span></div>
+            <div><strong>Invoice Date:</strong> <?= $invoice_date ?></div>
+            <div><strong>Due Date:</strong> <span id="smc-due-date">—</span></div>
+            <div>Ref No: <?= $reference_no ?></div>
+            </td>
+            </tr>
+            </table>
+
+            <!-- ================= ITEMS ================= -->
+            <table class="items">
+            <thead>
+            <tr>
+            <th>Applicant Name</th>
+            <th>Work Duration</th>
+            <th>No. Days</th>
+            <th class="right">Service Fee</th>
+            </tr>
+            </thead>
+            <tbody id="smc-items">
+            <tr>
+            <td colspan="4" class="center">No applicants yet</td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr class="total">
+            <td colspan="3" class="right">Total</td>
+            <td class="right">₱<span id="smc-total">0.00</span></td>
+            </tr>
+            </tfoot>
+            </table>
+
+            <div class="note">
+            I declare that all information contained in this invoice are certified true and correct.
+            </div>
+
+            <div class="payment">
+            <strong>Issued By:</strong> SMC Agency<br><br>
+            <strong>Payment Method:</strong><br>
+            Bank Transfer / International Remittance
+            </div>
+
+            </div>
+
+
+
+      </div>
     </div>
 
 
@@ -353,7 +529,7 @@ $s = $conn->prepare("
 
                         <div class="col-12">
                             <label class="form-label small fw-semibold">Select Agency</label>
-                            <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency()">
+                            <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency(); updateInvoiceNumPreview();">
                                 <option value="">Select Agency</option>
                                 <option value="1">CSNK</option>
                                 <option value="2">SMC</option>
@@ -786,37 +962,72 @@ function calcTotal() {
 }
 
 function updatePreviewItems() {
-    const previewBody = document.getElementById('pv-items');
-    const rows = document.querySelectorAll('#items tr');
-    previewBody.innerHTML = '';
+    const csnkBody = document.getElementById('pv-items');
+    const smcBody  = document.getElementById('smc-items');
 
-    if (rows.length === 0) {
-        previewBody.innerHTML = `
-            <tr>
-                <td colspan="5" class="empty">No applicants yet</td>
-            </tr>`;
-        return;
-    }
+    const rows = document.querySelectorAll('#items tr');
+
+    csnkBody.innerHTML = '';
+    smcBody.innerHTML  = '';
+
+    let hasItems = false;
 
     rows.forEach(row => {
-        const name = row.querySelector('[name*="[name]"]')?.value || '';
-        const start = row.querySelector('[name*="[start_date]"]')?.value || '—';
-        const end = row.querySelector('[name*="[end_date]"]')?.value || '—';
-        const days = row.querySelector('.days')?.textContent || '0 days';
-        const amount = row.querySelector('[name*="[amount]"]')?.value || '0.00';
+        const nameInput  = row.querySelector('[name*="[name]"]');
+        const startInput = row.querySelector('[name*="[start_date]"]');
+        const endInput   = row.querySelector('[name*="[end_date]"]');
+        const daysSpan   = row.querySelector('.days');
+        const amtInput   = row.querySelector('[name*="[amount]"]');
 
-        if (!name) return;
+        if (!nameInput || !nameInput.value.trim()) return;
 
-        previewBody.insertAdjacentHTML('beforeend', `
+        hasItems = true;
+
+        const name  = nameInput.value;
+        const start = startInput?.value || '—';
+        const end   = endInput?.value || '—';
+        const days  = daysSpan?.textContent || '0 days';
+        const amt   = parseFloat(amtInput?.value || 0);
+
+        /* ===== CSNK ROW ===== */
+        csnkBody.insertAdjacentHTML('beforeend', `
             <tr>
                 <td>${name}</td>
                 <td>${start}</td>
                 <td>${end}</td>
                 <td class="text-center">${days}</td>
-                <td class="right">₱${parseFloat(amount).toLocaleString()}</td>
+                <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            </tr>
+        `);
+
+        /* ===== SMC ROW ===== */
+        smcBody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>${name}</td>
+                <td>${start} - ${end}</td>
+                <td class="center">${days}</td>
+                <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
             </tr>
         `);
     });
+
+    if (!hasItems) {
+        csnkBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty">No applicants yet</td>
+            </tr>
+        `;
+
+        smcBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="center">No applicants yet</td>
+            </tr>
+        `;
+    }
+
+    // ✅ Update totals on BOTH previews
+    document.getElementById('smc-total').textContent =
+        document.getElementById('pv-total').textContent;
 }
 
 function filterClientsByAgency() {
@@ -842,24 +1053,50 @@ function filterClientsByAgency() {
         clientSelect.disabled = false;
         document.getElementById('business_unit_id').value = agencyId;
     }
+    updateInvoiceNumPreview();
+}
+
+function updateInvoiceNumPreview() {
+    const agency = document.getElementById('agency-select').value;
+
+    document.getElementById('preview-csnk').classList.add('d-none');
+    document.getElementById('preview-smc').classList.add('d-none');
+
+    if (!agency) return;
+
+    const prefix = agency === '2' ? 'SMC' : 'CSNK';
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0,10).replace(/-/g,'');
+
+    const rand = Math.floor(Math.random() * 900) + 100;
+    const invoiceNum = `${prefix}-${dateStr}-${rand}`;
+
+    if (agency === '2') {
+        document.getElementById('preview-smc').classList.remove('d-none');
+        document.getElementById('smc-invoice-num').textContent = invoiceNum;
+    } else {
+        document.getElementById('preview-csnk').classList.remove('d-none');
+        document.getElementById('pv-invoice-num').innerHTML = `<strong>Invoice #</strong> ${invoiceNum}`;
+    }
 }
 
 function updatePreview() {
-    // Client Name LIVE
-    const nameEl = document.getElementById('client_name');
-    if (nameEl) document.getElementById('pv-client-name').textContent = nameEl.value || 'Client Name';
+    const name  = document.getElementById('client_name').value || 'Client Name';
+    const email = document.getElementById('client_email').value || 'Client Email';
+    const addr  = document.getElementById('client_address').value || 'Client Address';
+    const due   = document.getElementById('due_date').value || '—';
 
-    // Client Email LIVE
-    const emailEl = document.getElementById('client_email');
-    if (emailEl) document.getElementById('pv-client-email').textContent = emailEl.value || 'Client Email';
+    /* ===== CSNK PREVIEW ===== */
+    document.getElementById('pv-client-name').textContent    = name;
+    document.getElementById('pv-client-email').textContent   = email;
+    document.getElementById('pv-client-address').textContent = addr;
+    document.getElementById('pv-due-date').textContent       = due;
 
-    // Client Address LIVE
-    const addrEl = document.getElementById('client_address');
-    if (addrEl) document.getElementById('pv-client-address').textContent = addrEl.value || 'Address';
-
-    // Due Date LIVE
-    const dueEl = document.getElementById('due_date');
-    if (dueEl) document.getElementById('pv-due-date').textContent = dueEl.value || '—';
+    /* ===== SMC PREVIEW ===== */
+    document.getElementById('smc-client-name').textContent    = name;
+    document.getElementById('smc-client-email').textContent   = email;
+    document.getElementById('smc-client-address').textContent = addr;
+    document.getElementById('smc-due-date').textContent       = due;
 
     calcTotal();
 }
@@ -900,11 +1137,16 @@ function calcDays(index) {
 // Event listeners for manual edits
 document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('input', function(e) {
-        if (e.target.matches('#client_name, #client_email, #client_address, #due_date, .amount, .start-date, .end-date, [name*="[email]"]')) {
+        if (
+            e.target.matches(
+                '#client_name, #client_email, #client_address, #due_date, ' +
+                '.amount, .start-date, .end-date'
+            )
+        ) {
             updatePreview();
         }
     });
-    
+
     updateApplicantCount();
     calcTotal();
 });
