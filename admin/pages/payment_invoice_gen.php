@@ -122,13 +122,15 @@ $dir = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/';
         
         $stmt = $conn->prepare("
             INSERT INTO invoice_history (
+                business_unit_id,
                 reference_no, invoice_num, invoice_date, due_date,
                 client_name, client_email, client_address,
                 applicants_data, total_amount, pdf_filename
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            )
         ");
         $stmt->bind_param(
-            "ssssssssds",
+            "issssssssds",
+            $business_unit_id,
             $reference_no,
             $invoice_num,
             $invoice_date,
@@ -136,8 +138,8 @@ $dir = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/';
             $client_name,
             $client_email,
             $client_address,
-            $applicants_json, // ✅ now STRING
-            $total,           // ✅ number
+            $applicants_json,
+            $total,
             $filename
         );
         $stmt->execute();
@@ -298,6 +300,15 @@ SELECT a.id AS applicant_id,
                     <div class="card-body p-4">
                         <!-- Client Info -->
                         <h6 class="fw-bold mb-3 pb-2 border-bottom">Client Details</h6>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Select Agency</label>
+                            <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency()">
+                                <option value="">-- Select Agency --</option>
+                                <option value="1">CSNK</option>
+                                <option value="2">SMC</option>
+                            </select>
+                        </div>
                         
                         <div class="row g-3 mb-4">
                             <div class="col-12">
@@ -308,12 +319,13 @@ SELECT a.id AS applicant_id,
                                         <option value="<?= h($c['client_email']) ?>"
                                             data-name="<?= h($c['client_name']) ?>"
                                             data-address="<?= h($c['client_address']) ?>"
-                                            data-apps="<?= htmlspecialchars(json_encode($c['applicants']), ENT_QUOTES, 'UTF-8') ?>">
+                                            data-apps="<?= htmlspecialchars(json_encode($c['applicants']), ENT_QUOTES, 'UTF-8') ?>"
+                                            data-bu="<?= (int)$c['business_unit_id'] ?>">
                                             <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?> applicants)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-<div id="client-info" class="mt-2 p-3 bg-light rounded border small d-none">
+                                    <div id="client-info" class="mt-2 p-3 bg-light rounded border small d-none">
                                     <strong id="client-name"></strong><br>
                                     <small class="text-muted" id="client-email"></small><br>
                                     <small class="text-muted" id="client-address"></small>
@@ -596,6 +608,12 @@ SELECT a.id AS applicant_id,
 </style>
 
 <script>
+
+document.getElementById('agency-select').addEventListener('change', function () {
+    document.getElementById('agency-hidden').value = this.value;
+});
+
+
 let applicantCounter = 0;
 
 function loadClient(sel) {
@@ -660,7 +678,11 @@ function loadClient(sel) {
                        oninput="calcDays(${index})">
             </td>
             <td class="text-center">
-                <span class="days badge bg-secondary">0 days</span><input type="hidden"name="applicants[${index}][days]" class="days-input" value="0">
+                <span class="days badge bg-secondary" data-index="${index}">0 days</span>
+                <input type="hidden"
+                    name="applicants[${index}][days]"
+                    class="days-input"
+                    value="0">
             </td>
             <td>
                 <input type="number"
@@ -741,6 +763,24 @@ function updatePreviewItems() {
                 <td class="right">₱${parseFloat(amount).toLocaleString()}</td>
             </tr>
         `);
+    });
+}
+
+function filterClientsByAgency() {
+    const agencyId = document.getElementById('agency-select').value;
+    const clientSelect = document.getElementById('client-select');
+
+    clientSelect.value = '';
+    document.getElementById('client-info').classList.add('d-none');
+
+    Array.from(clientSelect.options).forEach(opt => {
+        if (!opt.dataset.bu) return;
+
+        if (agencyId === '') {
+            opt.hidden = true;
+        } else {
+            opt.hidden = opt.dataset.bu !== agencyId;
+        }
     });
 }
 
