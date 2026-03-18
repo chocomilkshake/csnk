@@ -608,6 +608,21 @@ function loadClient(sel) {
     document.getElementById('client_address').value = opt.dataset.address || '';
     document.getElementById('due_date').value = '';
 
+    updatePreview();
+
+    // SHOW CLIENT INFO
+    const info = document.getElementById('client-info');
+    info.classList.remove('d-none');
+    document.getElementById('client-name').textContent = opt.dataset.name || '';
+    document.getElementById('client-email').textContent = opt.value || '';
+    document.getElementById('client-address').textContent = opt.dataset.address || '';
+
+    // LOAD APPLICANTS
+    let apps = [];
+    try {
+        apps = JSON.parse(opt.dataset.apps || '[]');
+    } catch (e) {
+        console.error('Invalid applicants JSON', e);
     }
 
     const tbody = document.getElementById('items');
