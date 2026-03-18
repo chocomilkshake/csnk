@@ -1,742 +1,424 @@
 <?php
 session_start();
 
-require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/Database.php';
-require_once __DIR__ . '/../includes/functions.php';
+/* ======================================================
+   AJAX: Get Invoice Applicants (MUST BE FIRST)
+====================================================== */
+if (isset($_GET['get_invoice_applicants']) && isset($_GET['id'])) {
+    header('Content-Type: application/json');
 
-$db = new Database();
-$conn = $db->getConnection();
-if (!$conn) die('Database connection failed.');
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+    require_once '../includes/functions.php';
 
-$message = '';
+    $db = new Database();
+    $conn = $db->getConnection();
 
-/* ================= HANDLE ACTIONS ================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$conn) {
+        echo json_encode([]);
+        exit;
+    }
 
-    /* ✅ CREATE INVOICE */
-    if (isset($_POST['create_invoice'])) {
+    $invoice_id = (int) $_GET['id'];
 
-        $client_email = trim($_POST['client_email']);
-        $client_name  = trim($_POST['client_name']);
-        $client_phone = trim($_POST['client_phone']);
-        $business_unit_id = (int)$_POST['business_unit_id'];
-        $due_date = $_POST['due_date'];
+    $stmt = $conn->prepare("
+        SELECT applicants_data
+        FROM invoice_history
+        WHERE id = ?
+    ");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
 
-        $total_amount = 0;
-        foreach ($_POST['applicants'] ?? [] as $salary) {
-            $total_amount += (float)$salary;
-        }
+    if (!$row) {
+        echo json_encode([]);
+        exit;
+    }
 
-        $stmt = $conn->prepare("
-            INSERT INTO salary_invoices
-            (client_email, client_name, client_phone, business_unit_id, total_amount, due_date, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'PENDING')
-        ");
-        $stmt->bind_param(
-            "sssids",
-            $client_email,
-            $client_name,
-            $client_phone,
-            $business_unit_id,
-            $total_amount,
-            $due_date
-        );
+    $decoded = json_decode($row['applicants_data'] ?? '[]', true);
+    if (!is_array($decoded)) {
+        echo json_encode([]);
+        exit;
+    }
 
-        if ($stmt->execute()) {
-            $invoice_id = $conn->insert_id;
+    $enriched_apps = [];
 
-            foreach ($_POST['applicants'] ?? [] as $app_id => $salary) {
-                if ((float)$salary > 0) {
-                    $item = $conn->prepare("
-                        INSERT INTO salary_invoice_items
-                        (invoice_id, applicant_id, basic_salary)
-                        VALUES (?, ?, ?)
-                    ");
-                    $item->bind_param("iid", $invoice_id, $app_id, $salary);
-                    $item->execute();
-                }
+    foreach ($decoded as $app) {
+        $item = [
+            'name'        => $app['name'] ?? 'Unknown Applicant',
+            'start_date'  => $app['start_date'] ?? '',
+            'end_date'    => $app['end_date'] ?? '',
+            'days'        => isset($app['days']) ? (int)$app['days'] : 0,
+            'amount'      => isset($app['amount']) ? (float)$app['amount'] : 0
+        ];
+
+
+        // Optional: enrich name from applicants table
+        if (!empty($app['applicant_id'])) {
+            $app_stmt = $conn->prepare("
+                SELECT first_name, middle_name, last_name, suffix
+                FROM applicants
+                WHERE id = ?
+            ");
+            $app_stmt->bind_param('i', $app['applicant_id']);
+            $app_stmt->execute();
+            $a = $app_stmt->get_result()->fetch_assoc();
+
+            if ($a) {
+                $item['name'] = getFullName(
+                    $a['first_name'],
+                    $a['middle_name'],
+                    $a['last_name'],
+                    $a['suffix']
+                );
             }
-
-            $_SESSION['flash'] =
-                "success|Invoice #{$invoice_id} created successfully (₱" .
-                number_format($total_amount, 2) . ").";
-        } else {
-            $_SESSION['flash'] = "error|Failed to create invoice.";
         }
+
+        $enriched_apps[] = $item;
     }
 
-    /* ✅ UPDATE INVOICE (EDIT MODAL) */
-    if (isset($_POST['update_invoice'])) {
-
-        $id = (int)$_POST['invoice_id'];
-        $client_email = trim($_POST['edit_client_email']);
-        $client_name  = trim($_POST['edit_client_name']);
-        $client_phone = trim($_POST['edit_client_phone']);
-        $business_unit = (int)$_POST['edit_business_unit_id'];
-        $total = (float)$_POST['edit_total_amount'];
-        $due_date = $_POST['edit_due_date'];
-
-        $stmt = $conn->prepare("
-            UPDATE salary_invoices
-            SET client_email=?, client_name=?, client_phone=?,
-                business_unit_id=?, total_amount=?, due_date=?
-            WHERE id=? AND deleted_at IS NULL
-        ");
-
-        // ✅ FIXED TYPE STRING
-        $stmt->bind_param(
-            "sssidsi",
-            $client_email,
-            $client_name,
-            $client_phone,
-            $business_unit,
-            $total,
-            $due_date,
-            $id
-        );
-
-        if ($stmt->execute()) {
-            $_SESSION['flash'] = "success|Invoice updated successfully.";
-        } else {
-            $_SESSION['flash'] = "error|Failed to update invoice.";
-        }
-    }
-
-    /* ✅ TOGGLE PAID / PENDING */
-    if (isset($_POST['toggle_status'])) {
-
-        $id = (int)$_POST['invoice_id'];
-        $newStatus = ($_POST['new_status'] === 'PAID') ? 'PAID' : 'PENDING';
-
-        $stmt = $conn->prepare("
-            UPDATE salary_invoices SET status=? WHERE id=?
-        ");
-        $stmt->bind_param("si", $newStatus, $id);
-        $stmt->execute();
-
-        $_SESSION['flash'] = "success|Invoice status updated.";
-    }
-
-    /* ✅ SOFT DELETE (AJAX – NO REDIRECT) */
-    if (isset($_POST['soft_delete'])) {
-        $id = (int)$_POST['invoice_id'];
-        $conn->query("UPDATE salary_invoices SET deleted_at = NOW() WHERE id = $id");
-        exit;
-    }
-
-    /* ✅ UNDO DELETE (AJAX – NO REDIRECT) */
-    if (isset($_POST['undo_delete'])) {
-        $id = (int)$_POST['invoice_id'];
-        $conn->query("UPDATE salary_invoices SET deleted_at = NULL WHERE id = $id");
-        exit;
-    }
-
-    /* ✅ FINAL DELETE (AJAX – NO REDIRECT) */
-    if (isset($_POST['force_delete'])) {
-        $id = (int)$_POST['invoice_id'];
-        $conn->query("DELETE FROM salary_invoices WHERE id = $id");
-        exit;
-    }
-
-    /* ✅ ONE REDIRECT ONLY (VERY IMPORTANT) */
-    header("Location: payments_clients.php");
+    echo json_encode($enriched_apps);
     exit;
 }
 
-/* ================= FETCH CLIENTS ================= */
-$clients = [];
-$q = "
-    SELECT cb.client_email,
-           CONCAT(cb.client_first_name,' ',cb.client_last_name) AS client_name,
-           cb.client_phone,
-           cb.business_unit_id
-    FROM client_bookings cb
-    WHERE cb.status IN ('submitted','confirmed')
-    GROUP BY cb.client_email
-    ORDER BY client_name
-";
-$r = $conn->query($q);
-while ($row = $r->fetch_assoc()) {
+/* ======================================================
+   NORMAL PAGE LOAD CONTINUES BELOW
+====================================================== */
 
-    $apps = [];
-    $s = $conn->prepare("
-        SELECT a.id, CONCAT(a.first_name,' ',a.last_name) name
-        FROM applicants a
-        JOIN client_bookings cb ON cb.applicant_id = a.id
-        WHERE cb.client_email = ? AND a.status IN ('on_process','approved')
-    ");
-    $s->bind_param("s", $row['client_email']);
-    $s->execute();
-    $apps = $s->get_result()->fetch_all(MYSQLI_ASSOC);
+$pageTitle = 'Clients Invoices';
 
-    $row['applicants'] = $apps;
-    $clients[] = $row;
+require_once '../includes/config.php';
+require_once '../includes/Database.php';
+require_once '../includes/functions.php';
+
+$db = new Database();
+$conn = $db->getConnection();
+
+if (!$conn) {
+    die('Database connection failed.');
+}
+
+
+/* ================= SEARCH ================= */
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim((string) $_GET['q']);
+    $_SESSION['invoices_q'] = $q;
+} elseif (!empty($_SESSION['invoices_q'])) {
+    $q = $_SESSION['invoices_q'];
+}
+
+if (isset($_GET['clear']) && $_GET['clear'] === '1') {
+    unset($_SESSION['invoices_q']);
+    redirect('payments_clients.php');
+    exit;
 }
 
 /* ================= FETCH INVOICES ================= */
-$invoices = $conn->query("
-    SELECT *
-    FROM salary_invoices
-    WHERE deleted_at IS NULL
-    ORDER BY created_at DESC
-")->fetch_all(MYSQLI_ASSOC);
+$sql = "
+    SELECT ih.*, a.picture
+    FROM invoice_history ih
+    LEFT JOIN applicants a ON 1=0 -- Disabled broken JSON_EXTRACT join
+    WHERE ih.client_name LIKE ?
+    ORDER BY ih.id DESC
+";
+$stmt = $conn->prepare($sql);
+$like = '%' . $q . '%';
+$stmt->bind_param('s', $like);
+$stmt->execute();
+$invoices = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-/* ================= CHART DATA ================= */
-$monthlyStats = [];
-$res = $conn->query("
-    SELECT DATE_FORMAT(created_at,'%b %Y') AS month,
-           COUNT(*) AS count,
-           SUM(total_amount) AS amount
-    FROM salary_invoices
-    WHERE status='PAID'
-    GROUP BY month
-    ORDER BY MIN(created_at)
-");
-while ($row = $res->fetch_assoc()) $monthlyStats[] = $row;
+/* ================= HELPERS ================= */
+function formatCurrency($amount)
+{
+    return '₱' . number_format((float) $amount, 2);
+}
 
-$statusStats = [];
-$res = $conn->query("
-    SELECT status, COUNT(*) AS count
-    FROM salary_invoices
-    GROUP BY status
-");
-while ($row = $res->fetch_assoc()) $statusStats[] = $row;
+function renderAvatar($picture, $client_name)
+{
+    if ($picture) {
+        return '<img src="' . htmlspecialchars(getFileUrl($picture)) . '" class="rounded" width="50" height="50">';
+    }
+    return '<div class="bg-primary text-white rounded d-flex align-items-center justify-content-center"
+                style="width:50px;height:50px;">' . strtoupper($client_name[0]) . '</div>';
+}
+
+// Use existing getFullName from functions.php
+
 ?>
-
 <?php include '../includes/header.php'; ?>
 
-<div class="container-fluid py-4 bg-body-tertiary">
+<style>
+/* === ONLY REQUIRED CSS FOR VIEW MODAL === */
+.invoice-preview-paper {
+    background: #fff;
+    padding: 40px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.inv-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+}
+.inv-title {
+    text-align: center;
+    font-size: 28px;
+    margin: 25px 0;
+    font-weight: bold;
+}
+.inv-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.inv-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.inv-table th,
+.inv-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.inv-table th {
+    background: #f5f5f5;
+}
+.inv-declaration {
+    margin-top: 20px;
+    font-style: italic;
+}
+.inv-payment {
+    margin-top: 20px;
+}
+</style>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 fw-bold mb-0">💳 Payment Management</h1>
-            <small class="text-muted">Client salary invoices & analytics</small>
-        </div>
-        <span class="badge bg-primary fs-6 px-3"><?= count($invoices) ?> invoices</span>
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between mb-3">
+        <h4 class="fw-semibold">📋 Clients Invoices</h4>
+        <a href="payment_invoice_gen.php" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Add New Invoice
+        </a>
     </div>
 
-    <?php if ($message):
-        [$t,$m] = explode('|',$message,2); ?>
-        <div class="alert alert-<?= $t=='success'?'success':'danger' ?> shadow-sm">
-            <?= htmlspecialchars($m) ?>
-        </div>
-    <?php endif; ?>
-
-    <!-- ✅ COMPACT ANALYTICS SECTION -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="fw-semibold mb-0">📈 Monthly Paid Amount</h6>
-                        <small class="text-muted"><?= count($monthlyStats) ?> months</small>
-                    </div>
-                    <div style="height: 200px;">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="fw-semibold mb-0">📊 Invoice Status</h6>
-                        <small class="text-muted"><?= count($statusStats) ?> statuses</small>
-                    </div>
-                    <div style="height: 200px;">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ✅ CREATE INVOICE -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-            ➕ New Salary Invoice
-        </div>
-        <div class="card-body">
-            <form method="POST">
-                <input type="hidden" name="create_invoice" value="1">
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Client</label>
-                        <select class="form-select" name="client_email" required onchange="loadClient(this)">
-                            <option value="">Select client</option>
-                            <?php foreach ($clients as $c): ?>
-                                <option value="<?= h($c['client_email']) ?>"
-                                    data-name="<?= h($c['client_name']) ?>"
-                                    data-phone="<?= h($c['client_phone']) ?>"
-                                    data-bu="<?= (int)$c['business_unit_id'] ?>"
-                                    data-apps='<?= json_encode($c['applicants']) ?>'>
-                                    <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <input type="hidden" name="client_name" id="c-name">
-                        <input type="hidden" name="client_phone" id="c-phone">
-                        <input type="hidden" name="business_unit_id" id="c-bu">
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Due Date</label>
-                        <input type="date" name="due_date" class="form-control" required>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label fw-semibold">Applicant Salaries</label>
-                        <div id="salary-fields" class="row g-3"></div>
-                        <div class="text-end mt-3">
-                            <div class="h4 fw-bold text-primary">
-                                Total: ₱<span id="total">0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12 text-end">
-                        <button class="btn btn-primary btn-lg px-5">
-                            Generate Invoice
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-
-
-    <!-- ✅ INVOICE TABLE -->
-    <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
-        <div class="card-header bg-gradient bg-primary text-white fw-semibold p-3">
-            📄 Invoice List <span class="badge bg-light text-dark ms-2"><?= count($invoices) ?> total</span>
-        </div>
+    <div class="card shadow-lg">
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle mb-0">
+            <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th>Avatar</th>
                         <th>Client</th>
-                        <th>Total</th>
-                        <th>Due</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
+                        <th>Invoice #</th>
+                        <th>Amount</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($invoices as $i): ?>
-                    <tr>
-                        <td>
-                            <div class="fw-semibold"><?= h($i['client_name']) ?></div>
-                            <small class="text-muted"><?= h($i['client_email']) ?></small>
-                        </td>
-                        <td class="fw-bold text-primary">
-                            ₱<?= number_format($i['total_amount'],2) ?>
-                        </td>
-                        <td><?= h($i['due_date']) ?></td>
-                        <td>
-                            <span class="badge <?= $i['status']=='PAID'?'bg-success':'bg-warning' ?>">
-                                <?= $i['status'] ?>
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
 
-                                <button class="btn btn-outline-secondary view-btn" type="button"
+                <?php if (!$invoices): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No invoices found
+                        </td>
+                    </tr>
+                <?php endif; ?>
+
+                <?php foreach ($invoices as $inv): ?>
+                    <tr>
+                        <td><?= renderAvatar($inv['picture'], $inv['client_name']) ?></td>
+                        <td>
+                            <strong><?= h($inv['client_name']) ?></strong><br>
+                            <small class="text-muted"><?= h($inv['client_email']) ?></small>
+                        </td>
+                        <td><?= h($inv['invoice_num']) ?></td>
+                        <td class="fw-bold text-success"><?= formatCurrency($inv['total_amount']) ?></td>
+                        <td><?= date('M j, Y', strtotime($inv['invoice_date'])) ?></td>
+                        <td><?= date('M j, Y', strtotime($inv['due_date'])) ?></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button
+                                    class="btn btn-outline-info view-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#viewModal"
-                                    data-name="<?= h($i['client_name']) ?>"
-                                    data-email="<?= h($i['client_email']) ?>"
-                                    data-phone="<?= h($i['client_phone']) ?>"
-                                    data-total="<?= number_format($i['total_amount'],2) ?>"
-                                    data-due="<?= h($i['due_date']) ?>"
-                                    data-status="<?= h($i['status']) ?>"
-                                    title="View">
+                                    data-id="<?= $inv['id'] ?>"
+                                    data-client="<?= h($inv['client_name']) ?>"
+                                    data-email="<?= h($inv['client_email']) ?>"
+                                    data-address="<?= h($inv['client_address']) ?>"
+                                    data-invoice="<?= h($inv['invoice_num']) ?>"
+                                    data-date="<?= $inv['invoice_date'] ?>"
+                                    data-due="<?= $inv['due_date'] ?>"
+                                    data-ref="<?= h($inv['reference_no']) ?>"
+                                    data-total="<?= (float) $inv['total_amount'] ?>"
+                                    data-applicants='<?= $inv['applicants_data'] ?>'
+                                    data-pdf="<?= h($inv['pdf_filename']) ?>"
+                                >
                                     <i class="bi bi-eye"></i>
                                 </button>
 
-                                <button class="btn btn-outline-secondary toggle-btn" type="button" data-id="<?= $i['id'] ?>" data-status="<?= $i['status'] ?>" title="<?= $i['status']=='PAID' ? 'Mark Pending' : 'Mark Paid' ?>">
-                                    <i class="bi <?= $i['status']=='PAID' ? 'bi-credit-card' : 'bi-clock' ?>"></i>
+                                <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
 
-                                <button class="btn btn-outline-secondary edit-btn" type="button"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editModal"
-                                    data-id="<?= $i['id'] ?>"
-                                    data-name="<?= h($i['client_name']) ?>"
-                                    data-email="<?= h($i['client_email']) ?>"
-                                    data-phone="<?= h($i['client_phone']) ?>"
-                                    data-total="<?= $i['total_amount'] ?>"
-                                    data-due="<?= $i['due_date'] ?>"
-                                    title="Edit">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-
-                                <button class="btn btn-outline-danger delete-btn" type="button"
-                                    data-id="<?= $i['id'] ?>"
-                                    data-client="<?= h($i['client_name']) ?>"
-                                    title="Delete Invoice">
-                                    <i class="bi bi-trash3-fill"></i>
-                                </button>
+                                <a href="payments_clients.php?action=delete&id=<?= $inv['id'] ?>"
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('Delete this invoice?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
                             </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
-                <?php if (!$invoices): ?>
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-5">
-                            No invoices yet
-                        </td>
-                    </tr>
-                <?php endif; ?>
+
                 </tbody>
             </table>
         </div>
     </div>
-
 </div>
 
-<!-- Bootstrap Undo Toast -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="--bs-toast-max-width: 400px;">
-  <div id="deleteToast" class="toast shadow-lg border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
-    <div class="toast-header bg-success text-white border-0">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <strong class="me-auto">Invoice Deleted</strong>
-      <button class="btn-close btn-close-white" type="button" data-bs-dismiss="toast" id="closeToast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body">
-      <span id="toastText"></span>
-      <div class="mt-2 small text-white-50">
-        <span class="countdown">Undo in <span id="timer">10</span>s</span>
-      </div>
-    </div>
-    <div class="toast-body border-top">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-light btn-sm flex-fill" id="undoDelete">Undo Delete</button>
-        <button class="btn btn-light btn-sm" data-bs-dismiss="toast">Dismiss</button>
-      </div>
-    </div>
-  </div>
-</div>
-``
+<!-- ================= VIEW MODAL ================= -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
 
-<script>
-const monthlyStats = <?= json_encode($monthlyStats) ?>;
-const statusStats  = <?= json_encode($statusStats) ?>;
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">📄 Invoice Preview</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
 
-// Fallback demo data if no real data
-const demoMonthly = [
-  {month: 'Jan 2026', amount: 15000},
-  {month: 'Feb 2026', amount: 32000},
-  {month: 'Mar 2026', amount: 28000}
-];
-const demoStatus = [
-  {status: 'PENDING', count: 5},
-  {status: 'PAID', count: 12}
-];
+            <div class="modal-body">
+                <div class="invoice-preview-paper">
 
-const useDemo = monthlyStats.length === 0;
+                    <div class="inv-header">
+                        <div>
+                            <img src="../resources/img/whychoose.png" height="50"><br>
+                            <small>Unit 1 Eden Townhomes<br>Pedro Gil Street, Manila</small>
+                        </div>
+                        <img src="../../resources/img/csnk-iconz.png" height="80">
+                    </div>
 
-const ctx1 = document.getElementById('monthlyChart')?.getContext('2d');
-if (ctx1) {
-  new Chart(ctx1, {
-    type: 'line',
-    data: {
-        labels: (useDemo ? demoMonthly : monthlyStats).map(r => r.month),
-        datasets: [{
-            data: (useDemo ? demoMonthly : monthlyStats).map(r => r.amount || 0),
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37,99,235,0.1)',
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: { 
-      plugins:{
-        legend:{display:false},
-        title: {
-          display: useDemo,
-          text: 'Demo Data - Create invoices to see real analytics',
-          font: {size: 14},
-          padding: 20
-        }
-      },
-      scales:{y:{beginAtZero:true}} 
-    }
-  });
-}
+                    <div class="inv-title">INVOICE</div>
 
-const ctx2 = document.getElementById('statusChart')?.getContext('2d');
-if (ctx2) {
-  new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-        labels: (useDemo ? demoStatus : statusStats).map(r => r.status),
-        datasets: [{
-            data: (useDemo ? demoStatus : statusStats).map(r => r.count || 0),
-            backgroundColor: ['#facc15','#22c55e','#ef4444']
-        }]
-    },
-    options: { 
-      plugins:{
-        legend:{position:'bottom'},
-        title: {
-          display: useDemo,
-          text: 'Demo Data - Mark invoices as PAID to update',
-          font: {size: 14},
-          padding: 20
-        }
-      }
-    }
-  });
-}
-
-function loadClient(sel){
-    const opt = sel.options[sel.selectedIndex];
-    if(!opt) return;
-
-    document.getElementById('c-name').value = opt.dataset.name || '';
-    document.getElementById('c-phone').value = opt.dataset.phone || '';
-    document.getElementById('c-bu').value = opt.dataset.bu || '';
-
-    const apps = JSON.parse(opt.dataset.apps || '[]');
-    const wrap = document.getElementById('salary-fields');
-    wrap.innerHTML = '';
-    apps.forEach(a=>{
-        wrap.insertAdjacentHTML('beforeend',`
-            <div class="col-md-6">
-                <div class="card border shadow-sm">
-                    <div class="card-body py-2">
-                        <div class="small fw-semibold mb-1">${a.name}</div>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">₱</span>
-                            <input type="number" class="form-control salary"
-                                   name="applicants[${a.id}]" value="0" min="0" step="100">
+                    <div class="inv-meta">
+                        <div>
+                            <strong>Billed To:</strong><br>
+                            <span id="pv-client-name"></span><br>
+                            <span id="pv-client-email"></span><br>
+                            <span id="pv-client-address"></span>
+                        </div>
+                        <div class="text-end">
+                            <div><strong>Invoice #:</strong> <span id="pv-invoice-num"></span></div>
+                            <div><strong>Date:</strong> <span id="pv-invoice-date"></span></div>
+                            <div><strong>Due:</strong> <span id="pv-due-date"></span></div>
+                            <div><strong>Ref:</strong> <span id="pv-ref-no"></span></div>
                         </div>
                     </div>
+
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Period</th>
+                                <th class="text-center">Days</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pv-items"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">TOTAL:</td>
+                                <td class="text-end fw-bold text-success">
+                                    ₱<span id="pv-total">0.00</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="inv-declaration">
+                        I declare that all information contained in this invoice are certified true and correct.
+                    </div>
+
+                    <div class="inv-payment">
+                        <strong>Issued By:</strong> CSNK Agency
+                    </div>
+
                 </div>
             </div>
-        `);
-    });
-    calc();
-}
 
-function calc(){
-    let t=0;
-    document.querySelectorAll('.salary').forEach(i=>t+=parseFloat(i.value)||0);
-    document.getElementById('total').textContent =
-        t.toLocaleString('en-PH',{minimumFractionDigits:2});
-}
-document.addEventListener('input',e=>{
-    if(e.target.classList.contains('salary')) calc();
-});
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="downloadPdfBtn">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
+            </div>
 
-
-document.addEventListener('click', function(e) {
-
-  /* VIEW MODAL */
-  if (e.target.closest('.view-btn')) {
-    const b = e.target.closest('.view-btn');
-    document.getElementById('view-client-name').textContent = b.dataset.name;
-    document.getElementById('view-client-email').textContent = b.dataset.email;
-    document.getElementById('view-client-phone').textContent = b.dataset.phone;
-    document.getElementById('view-total').textContent = '₱' + b.dataset.total;
-    document.getElementById('view-due').textContent = b.dataset.due;
-    document.getElementById('view-status').textContent = b.dataset.status;
-  }
-
-  /* EDIT MODAL */
-  if (e.target.closest('.edit-btn')) {
-    const b = e.target.closest('.edit-btn');
-    document.getElementById('edit-id').value = b.dataset.id;
-    document.getElementById('edit_client_name').value = b.dataset.name;
-    document.getElementById('edit-email').value = b.dataset.email;
-    document.getElementById('edit-phone').value = b.dataset.phone;
-    document.getElementById('edit_business_unit_id').value = '1';
-    document.getElementById('edit-total').value = b.dataset.total;
-    document.getElementById('edit-due').value = b.dataset.due;
-  }
-
-  /* TOGGLE STATUS */
-  if (e.target.closest('.toggle-btn')) {
-    const btn = e.target.closest('.toggle-btn');
-    const id = btn.dataset.id;
-    const currentStatus = btn.dataset.status;
-    const newStatus = currentStatus === 'PAID' ? 'PENDING' : 'PAID';
-
-    fetch('payments_clients.php', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: `toggle_status=1&invoice_id=${id}&new_status=${newStatus}`
-    }).then(() => {
-      location.reload();
-    });
-  }
-
-});
-
-
-let deleteTimer;
-let deleteInvoiceId = null;
-let seconds = 10;
-let toastInstance = null;
-
-document.addEventListener('click', e => {
-
-  /* DELETE CLICK */
-  if (e.target.closest('.delete-btn')) {
-    const btn = e.target.closest('.delete-btn');
-    deleteInvoiceId = btn.dataset.id;
-
-    fetch('payments_clients.php', {
-      method: 'POST',
-      headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: 'soft_delete=1&invoice_id=' + deleteInvoiceId
-    });
-
-    document.getElementById('toastText').textContent =
-      'Invoice for ' + btn.dataset.client + ' was deleted.';
-
-    showToast();
-  }
-
-  /* UNDO */
-  if (e.target.id === 'undoDelete') {
-    if (toastInstance) toastInstance.hide();
-    clearInterval(deleteTimer);
-    fetch('payments_clients.php', {
-      method: 'POST',
-      headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: 'undo_delete=1&invoice_id=' + deleteInvoiceId
-    }).then(() => location.reload());
-  }
-
-  /* FORCE DELETE / DISMISS */
-  if (e.target.id === 'closeToast' || e.target.matches('[data-bs-dismiss="toast"]')) {
-    forceDelete();
-  }
-});
-
-function showToast() {
-  const toastEl = document.getElementById('deleteToast');
-  toastInstance = new bootstrap.Toast(toastEl);
-  toastInstance.show();
-  
-  const timerEl = document.getElementById('timer');
-  seconds = 10;
-  timerEl.textContent = seconds;
-
-  deleteTimer = setInterval(() => {
-    seconds--;
-    timerEl.textContent = seconds;
-    if (seconds <= 0) {
-      forceDelete();
-    }
-  }, 1000);
-}
-
-function forceDelete() {
-  if (toastInstance) toastInstance.hide();
-  clearInterval(deleteTimer);
-  fetch('payments_clients.php', {
-    method: 'POST',
-    headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    body: 'force_delete=1&invoice_id=' + deleteInvoiceId
-  }).then(() => location.reload());
-}
-</script>
-
-
-<!-- ✅ VIEW INVOICE MODAL -->
-<div class="modal fade" id="viewModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Invoice Details</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <strong>Client Name</strong>
-            <div id="view-client-name" class="text-muted"></div>
-          </div>
-          <div class="col-md-6">
-            <strong>Email</strong>
-            <div id="view-client-email" class="text-muted"></div>
-          </div>
-          <div class="col-md-6">
-            <strong>Phone</strong>
-            <div id="view-client-phone" class="text-muted"></div>
-          </div>
-          <div class="col-md-6">
-            <strong>Status</strong>
-            <div id="view-status" class="text-muted"></div>
-          </div>
-          <div class="col-md-6">
-            <strong>Total Amount</strong>
-            <div id="view-total" class="fw-bold text-primary"></div>
-          </div>
-          <div class="col-md-6">
-            <strong>Due Date</strong>
-            <div id="view-due" class="text-muted"></div>
-          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
     </div>
-  </div>
 </div>
 
+<script>
+let currentInvoiceData = {};
 
+document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const d = btn.dataset;
+        
+        // Store data globally
+        currentInvoiceData = {
+            pdf: d.pdf,
+            total: parseFloat(d.total)
+        };
+        
+        // Populate static fields
+        document.getElementById('pv-client-name').textContent = d.client;
+        document.getElementById('pv-client-email').textContent = d.email;
+        document.getElementById('pv-client-address').textContent = d.address;
+        document.getElementById('pv-invoice-num').textContent = d.invoice;
+        document.getElementById('pv-invoice-date').textContent = new Date(d.date).toLocaleDateString('en-PH');
+        document.getElementById('pv-due-date').textContent = new Date(d.due).toLocaleDateString('en-PH');
+        document.getElementById('pv-ref-no').textContent = d.ref;
+        document.getElementById('pv-total').textContent = 
+            parseFloat(d.total).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
+        const tbody = document.getElementById('pv-items');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>';
 
-<!-- ✅ EDIT INVOICE MODAL -->
-<div class="modal fade" id="editModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <form method="POST" class="modal-content">
-      <input type="hidden" name="update_invoice" value="1">
-      <input type="hidden" name="invoice_id" id="edit-id">
-      <input type="hidden" name="edit_business_unit_id" id="edit_business_unit_id" value="1">
+        try {
+            // Fetch enriched applicants via AJAX
+            const response = await fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
+            const apps = await response.json();
+            
+            tbody.innerHTML = '';
+            
+            if (!apps || apps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No applicants assigned</td></tr>';
+            } else {
+                apps.forEach(app => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${app.name || 'Unknown'}</td>
+                            <td>${app.start_date || ''} - ${app.end_date || ''}</td>
+                            <td class="text-center">${Number(app.days) > 0 ? app.days : 0}</td>
+                            <td class="text-end fw-semibold">
+                                ₱${parseFloat(app.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load applicants:', error);
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Failed to load applicants</td></tr>';
+        }
 
-      <div class="modal-header bg-warning">
-        <h5 class="modal-title">Edit Invoice</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="mb-2">
-          <label class="form-label">Client Name</label>
-          <input type="text" name="edit_client_name" id="edit_client_name" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Email</label>
-          <input type="email" name="edit_client_email" id="edit-email" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Phone</label>
-          <input type="text" name="edit_client_phone" id="edit-phone" class="form-control">
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Due Date</label>
-          <input type="date" name="edit_due_date" id="edit-due" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Total Amount</label>
-          <input type="number" step="0.01" name="edit_total_amount" id="edit-total" class="form-control" required>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-warning">Save Changes</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
+        // Setup PDF download
+        document.getElementById('downloadPdfBtn').onclick = () => {
+            window.open('../../uploads/invoices/' + currentInvoiceData.pdf, '_blank');
+        };
+    });
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>
