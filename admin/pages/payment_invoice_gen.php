@@ -409,6 +409,22 @@ SELECT a.id AS applicant_id,
   border-bottom: 2px solid #ccc;
   padding: 10px;
   font-size: 13px;
+}
+.inv-table td {
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+}
+.inv-table .right {
+  text-align: right;
+}
+.inv-table .empty {
+  text-align: center;
+  color: #999;
+}
+
+/* DECLARATION */
+.inv-declaration {
   margin-top: 26px;
   font-size: 13px;
 }
