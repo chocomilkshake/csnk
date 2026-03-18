@@ -742,4 +742,40 @@ function updatePreviewItems() {
             </tr>
         `);
     });
+}
+
+function updatePreview() {
+        daysInput.value = 0;
+        return;
+    }
+
+    const start = new Date(startInput.value);
+    const end   = new Date(endInput.value);
+
+    if (end < start) {
+        daysSpan.textContent = '0 days';
+        daysInput.value = 0;
+        return;
+    }
+
+    const diffTime = end - start;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    daysSpan.textContent = diffDays + ' days';
+    daysInput.value = diffDays;
+}
+
+// Event listeners for manual edits
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('#client_name, #client_email, #client_address, #due_date, .amount, .start-date, .end-date, [name*="[email]"]')) {
+            updatePreview();
+        }
+    });
+    
+    updateApplicantCount();
+    calcTotal();
+});
+</script>
+
 <?php include '../includes/footer.php'; ?>
