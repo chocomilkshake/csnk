@@ -584,6 +584,29 @@ SELECT a.id AS applicant_id,
     background: #f1f3f4;
     border-radius: 8px;
     font-size: 0.9rem;
+}
+.payment-info strong {
+    color: #495057;
+}
+@media (max-width: 768px) {
+    .invoice-paper {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+let applicantCounter = 0;
+
+function loadClient(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || opt.value === '') return;
+
+    // CLIENT INFO
+    document.getElementById('client_name').value = opt.dataset.name || '';
+    document.getElementById('client_email').value = opt.value || '';
+    document.getElementById('client_address').value = opt.dataset.address || '';
+    document.getElementById('due_date').value = '';
 
     }
 
