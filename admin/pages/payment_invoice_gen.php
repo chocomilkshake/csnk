@@ -648,7 +648,34 @@ function loadClient(sel) {
                        readonly>
             </td>
             <td>
+                <input type="date"
+                       name="applicants[${index}][start_date]"
+                       class="form-control start-date"
+                       oninput="calcDays(${index})">
+            </td>
+            <td>
+                <input type="date"
+                       name="applicants[${index}][end_date]"
+                       class="form-control end-date"
+                       oninput="calcDays(${index})">
+            </td>
+            <td class="text-center">
+                <span class="days badge bg-secondary">0 days</span><input type="hidden"name="applicants[${index}][days]" class="days-input" value="0">
+            </td>
+            <td>
+                <input type="number"
+                       name="applicants[${index}][amount]"
+                       class="form-control text-end amount"
+                       value="0"
+                       oninput="calcTotal()">
+    });
+    document.getElementById('pv-total').textContent = total.toLocaleString('en-PH', {minimumFractionDigits: 2});
+    
+    // Update preview items table
+    updatePreviewItems();
+}
 
+function updatePreviewItems() {
     const previewBody = document.getElementById('pv-items');
 
                 <td>${name}</td>
