@@ -502,6 +502,24 @@ SELECT a.id AS applicant_id,
 }
 .company-address {
     margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+.invoice-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #212529;
+    margin: 2rem 0 1.5rem;
+    text-transform: uppercase;
+}
+.invoice-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding: 1.5rem 0;
     border-bottom: 2px dashed #dee2e6;
 }
 .meta-right {
