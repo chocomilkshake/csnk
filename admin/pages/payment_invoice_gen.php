@@ -588,6 +588,32 @@ SELECT a.id AS applicant_id,
     }
 
     const tbody = document.getElementById('items');
+    tbody.innerHTML = '';
+    applicantCounter = 0;
+
+    if (apps.length === 0) {
+        addApplicant();
+        updatePreviewItems();
+        return;
+    }
+
+    apps.forEach(app => {
+        const index = applicantCounter++;
+        const row = tbody.insertRow();
+
+        row.innerHTML = `
+            <td>
+                <input type="text"
+                       class="form-control"
+                       name="applicants[${index}][name]"
+                       value="${app.name}"
+                       readonly>
+            </td>
+            <td>
+
+    const previewBody = document.getElementById('pv-items');
+
+                <td>${name}</td>
                 <td>${start}</td>
                 <td>${end}</td>
                 <td class="text-center">${days}</td>
