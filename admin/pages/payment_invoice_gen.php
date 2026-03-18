@@ -527,3 +527,19 @@ SELECT a.id AS applicant_id,
 }
 .meta-right div {
     margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+.ref {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+.invoice-table {
+}
+.invoice-table tfoot td {
+    border-top: 3px double #dee2e6;                <td class="right">₱${parseFloat(amount).toLocaleString()}</td>
+            </tr>
+        `);
+    });
+<?php include '../includes/footer.php'; ?>
