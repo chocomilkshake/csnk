@@ -745,6 +745,38 @@ function updatePreviewItems() {
 }
 
 function updatePreview() {
+    // Client Name LIVE
+    const nameEl = document.getElementById('client_name');
+    if (nameEl) document.getElementById('pv-client-name').textContent = nameEl.value || 'Client Name';
+
+    // Client Email LIVE
+    const emailEl = document.getElementById('client_email');
+    if (emailEl) document.getElementById('pv-client-email').textContent = emailEl.value || 'Client Email';
+
+    // Client Address LIVE
+    const addrEl = document.getElementById('client_address');
+    if (addrEl) document.getElementById('pv-client-address').textContent = addrEl.value || 'Address';
+
+    // Due Date LIVE
+    const dueEl = document.getElementById('due_date');
+    if (dueEl) document.getElementById('pv-due-date').textContent = dueEl.value || '—';
+
+    calcTotal();
+}
+
+function calcDays(index) {
+    const row = document.querySelector(`#items tr:nth-child(${index + 1})`);
+    if (!row) return;
+
+    const startInput = row.querySelector('.start-date');
+    const endInput   = row.querySelector('.end-date');
+    const daysSpan   = row.querySelector('.days');
+    const daysInput  = row.querySelector('.days-input');
+
+    if (!startInput || !endInput || !daysSpan || !daysInput) return;
+
+    if (!startInput.value || !endInput.value) {
+        daysSpan.textContent = '0 days';
         daysInput.value = 0;
         return;
     }
