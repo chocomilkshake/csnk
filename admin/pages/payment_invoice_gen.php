@@ -10,19 +10,50 @@ $db = new Database();
 $conn = $db->getConnection();
 if (!$conn) die('Database connection failed.');
 
-$invoice_num  = 'CSNK-' . date('Ymd') . '-' . rand(100,999);
 $invoice_date = date('Y-m-d');
 $reference_no = 'REF-' . date('Ymd') . '-' . rand(100000,999999);
 
 $download_link = '';
 
-/* ================= PDF GENERATION ================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
+
+
+$client_email   = trim($_POST['client_email'] ?? '');
+    $client_address = trim($_POST['client_address'] ?? '');
+    $due_date       = $_POST['due_date'] ?? '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
 
     $client_name    = trim($_POST['client_name']);
-    $client_email   = trim($_POST['client_email']);
-    $client_address = trim($_POST['client_address']);
-    $due_date       = $_POST['due_date'];
+    $business_unit_id = (int) ($_POST['business_unit_id'] ?? 0);
+
+        // ✅ Set invoice prefix & template based on agency
+    if ($business_unit_id == 2) {
+        // SMC
+        $invoice_prefix = 'SMC';
+        $template_name  = 'smc';
+    } else {
+        // CSNK (default)
+        $invoice_prefix = 'CSNK';
+        $template_name  = 'csnk';
+    }
+
+    // ✅ Generate invoice number dynamically
+    $invoice_num = $invoice_prefix . '-' . date('Ymd') . '-' . rand(100, 999);
+
+    if ($business_unit_id <= 0) {
+        setFlashMessage('error', 'Please select an agency before generating invoice.');
+        header('Location: payment_invoice_gen.php');
+        exit;
+    }
+
+    // ✅ existing validation
+    if (!$client_name || empty($_POST['applicants'])) {
+        setFlashMessage('error', 'Missing invoice details.');
+        header('Location: payment_invoice_gen.php');
+        exit;
+    }
+
+    // PDF generation continues here...
 
     if (!$client_name || empty($_POST['applicants'])) {
         setFlashMessage('error', 'Missing invoice details.');
@@ -31,17 +62,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     }
 
     $invoicr = new Invoicr();
-    $invoicr->template('csnk');
+    $invoicr->template($template_name);
 
     /* COMPANY */
+    if ($business_unit_id == 2) {
+        $companyName = 'SMC Agency';
+        $companyLogo = "<img src='".__DIR__."/../../resources/img/SMC-LOGO.png'>";
+    } else {
+        $companyName = 'CSNK Agency';
+        $companyLogo = "<img src='".__DIR__."/../../resources/img/CSNK-LOGO.png'>";
+    }
+
     $invoicr->set('company', [
-        "<img src='".__DIR__."/../../resources/img/CSNK-LOGO.png'>",
-        'CSNK Agency',
+        $companyLogo,
+        $companyName,
         'Unit 1 Eden Townhomes',
         'Pedro Gil Street, Manila',
         '091-0000-0000',
-        'csnk.com',
-        'info@csnk.com'
+        'agency.com',
+        'info@agency.com'
     ]);
 
     /* HEADER */
@@ -120,13 +159,22 @@ $dir = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/';
 
         $applicants_json = json_encode($cleanApplicants, JSON_UNESCAPED_UNICODE);
         
+        $business_unit_id = (int) ($_POST['business_unit_id'] ?? 0);
+
         $stmt = $conn->prepare("
             INSERT INTO invoice_history (
                 business_unit_id,
-                reference_no, invoice_num, invoice_date, due_date,
-                client_name, client_email, client_address,
-                applicants_data, total_amount, pdf_filename
-            )
+                reference_no,
+                invoice_num,
+                invoice_date,
+                due_date,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                total_amount,
+                pdf_filename
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->bind_param(
             "issssssssds",
@@ -153,7 +201,6 @@ setFlashMessage('success', '✅ Invoice generated successfully and saved to hist
 
 if (!$conn) die('Database connection failed.');
 
-$invoice_num  = 'CSNK-' . date('Ymd') . '-' . rand(100,999);
 $invoice_date = date('Y-m-d');
 $reference_no = 'REF-' . date('Ymd') . '-' . str_pad(rand(100000,999999), 6, '0', STR_PAD_LEFT);
 
@@ -166,22 +213,24 @@ $q = "
            cb.client_address,
            cb.business_unit_id
     FROM client_bookings cb
+    JOIN business_units bu ON bu.id = cb.business_unit_id
+    JOIN agencies ag ON ag.id = bu.agency_id
     WHERE cb.status IN ('submitted','confirmed')
-    GROUP BY cb.client_email
-    ORDER BY client_name
 ";
 $r = $conn->query($q);
 while ($row = $r->fetch_assoc()) {
 
     $apps = [];
-    $s = $conn->prepare("
-SELECT a.id AS applicant_id,
-               CONCAT(a.first_name,' ', COALESCE(a.middle_name, ''), ' ', a.last_name, IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')) AS name,
+$s = $conn->prepare("
+        SELECT a.id AS applicant_id,
+               CONCAT(a.first_name, IF(a.middle_name IS NOT NULL AND a.middle_name != '', CONCAT(' ', a.middle_name), ''), ' ', a.last_name, IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')) AS name,
                a.email
         FROM applicants a
         JOIN client_bookings cb ON cb.applicant_id = a.id
         WHERE cb.client_email = ? AND a.status IN ('on_process','approved')
     ");
+
+
     $s->bind_param("s", $row['client_email']);
     $s->execute();
     $apps = $s->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -290,6 +339,7 @@ SELECT a.id AS applicant_id,
         <div class="col-lg-6 ps-lg-2">
             <form method="POST">
                 <input type="hidden" name="generate_invoice" value="1">
+                <input type="hidden" name="business_unit_id" id="business_unit_id">
                 
                 <div class="card shadow-lg border-0 h-100 rounded-4 overflow-hidden">
                     <div class="card-header bg-success text-white border-0">
@@ -304,7 +354,7 @@ SELECT a.id AS applicant_id,
                         <div class="col-12">
                             <label class="form-label small fw-semibold">Select Agency</label>
                             <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency()">
-                                <option value="">-- Select Agency --</option>
+                                <option value="">Select Agency</option>
                                 <option value="1">CSNK</option>
                                 <option value="2">SMC</option>
                             </select>
@@ -312,9 +362,12 @@ SELECT a.id AS applicant_id,
                         
                         <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <label class="form-label small fw-semibold">Select Client <span class="badge bg-info">Auto-fill</span></label>
-                                <select class="form-select form-control-lg" id="client-select" onchange="loadClient(this)">
-                                    <option value="">Search & select client...</option>
+                            <label class="form-label small fw-semibold">Select Client <span class="badge bg-info">Auto-fill</span></label>
+                                <select class="form-select form-control-lg"
+                                    id="client-select"
+                                    disabled
+                                    onchange="loadClient(this)">
+                                    <option value="">Select agency first</option>
                                     <?php foreach ($clients as $c): ?>
                                         <option value="<?= h($c['client_email']) ?>"
                                             data-name="<?= h($c['client_name']) ?>"
@@ -609,14 +662,14 @@ SELECT a.id AS applicant_id,
 
 <script>
 
-document.getElementById('agency-select').addEventListener('change', function () {
-    document.getElementById('agency-hidden').value = this.value;
-});
-
-
 let applicantCounter = 0;
 
 function loadClient(sel) {
+    if (!document.getElementById('agency-select').value) {
+        alert('Please select an agency first.');
+        sel.value = '';
+        return;
+    }
     const opt = sel.options[sel.selectedIndex];
     if (!opt || opt.value === '') return;
 
@@ -771,17 +824,24 @@ function filterClientsByAgency() {
     const clientSelect = document.getElementById('client-select');
 
     clientSelect.value = '';
+    clientSelect.disabled = true;
     document.getElementById('client-info').classList.add('d-none');
 
     Array.from(clientSelect.options).forEach(opt => {
-        if (!opt.dataset.bu) return;
-
-        if (agencyId === '') {
-            opt.hidden = true;
-        } else {
-            opt.hidden = opt.dataset.bu !== agencyId;
+        if (opt.value === '') {
+            opt.hidden = false;
+            return;
+        }
+        opt.hidden = true;
+        if (agencyId && opt.dataset.bu === agencyId) {
+            opt.hidden = false;
         }
     });
+
+    if (agencyId) {
+        clientSelect.disabled = false;
+        document.getElementById('business_unit_id').value = agencyId;
+    }
 }
 
 function updatePreview() {
