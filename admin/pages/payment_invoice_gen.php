@@ -405,6 +405,25 @@ SELECT a.id AS applicant_id,
   max-height: 54px;
 }
 .inv-address {
+  font-size: 12px;
+  font-size: 13px;
+}
+.inv-info .ref {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #777;
+}
+.muted {
+  color: #666;
+}
+
+/* TABLE */
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 28px;
+}
+.inv-table th {
   background: #f2f2f2;
   border-bottom: 2px solid #ccc;
   padding: 10px;
