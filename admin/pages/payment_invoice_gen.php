@@ -324,6 +324,28 @@ SELECT a.id AS applicant_id,
                                 <input type="date" name="due_date" id="due_date" class="form-control form-control-lg" oninput="updatePreview()">
                             </div>
                             <div class="col-12">
+                                    <tr>
+                                        <td><input name="applicants[0][name]" class="form-control" placeholder="Applicant name"></td>
+                                        <td><input name="applicants[0][start_date]" type="date" class="form-control start-date" oninput="calcDays(0)"></td>
+                                        <td><input name="applicants[0][end_date]" type="date" class="form-control end-date" oninput="calcDays(0)"></td>
+                                        <td class="text-center"><span class="days badge bg-secondary" data-index="0">0 days</span></td>
+                                        <td><input name="applicants[0][amount]" class="form-control text-end amount" placeholder="0.00" oninput="calcTotal()"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="addApplicant()">
+                                <i class="bi bi-plus-circle me-2"></i>Add Applicant
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Invoice PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
