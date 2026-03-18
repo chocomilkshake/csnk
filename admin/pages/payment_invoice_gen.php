@@ -324,6 +324,20 @@ SELECT a.id AS applicant_id,
                                 <input type="date" name="due_date" id="due_date" class="form-control form-control-lg" oninput="updatePreview()">
                             </div>
                             <div class="col-12">
+        </div>
+    </div>
+</div>
+  margin: auto;
+  padding: 48px 40px;
+  border: 1px solid #ddd;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #222;
+}
+
+/* HEADER */
+.inv-header {
+  display: flex;
+  justify-content: space-between;
   border-bottom: 2px solid #ccc;
   padding-bottom: 14px;
 }
