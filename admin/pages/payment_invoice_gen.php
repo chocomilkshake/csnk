@@ -536,9 +536,43 @@ SELECT a.id AS applicant_id,
     font-weight: 500;
 }
 .invoice-table {
+    width: 100%;
+    margin-bottom: 2rem;
+    border-collapse: collapse;
+}
+.invoice-table th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 3px solid #dee2e6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.invoice-table td {
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.95rem;
+}
+.invoice-table .right {
+    text-align: right;
 }
 .invoice-table tfoot td {
-    border-top: 3px double #dee2e6;                <td class="right">₱${parseFloat(amount).toLocaleString()}</td>
+    border-top: 3px double #dee2e6;
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: #f1f3f4;
+    border-radius: 8px;
+    font-size: 0.9rem;
+
+    }
+
+    const tbody = document.getElementById('items');
+                <td>${start}</td>
+                <td>${end}</td>
+                <td class="text-center">${days}</td>
+                <td class="right">₱${parseFloat(amount).toLocaleString()}</td>
             </tr>
         `);
     });
