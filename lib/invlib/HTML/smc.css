@@ -1,0 +1,104 @@
+body {
+  font-family: DejaVuSans, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #000;
+}
+
+/* HEADER */
+.header {
+  width: 100%;
+  border-bottom: 2px solid #003366;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+}
+
+.header-left {
+  width: 70%;
+}
+
+.header-right {
+  width: 30%;
+  text-align: right;
+}
+
+.logo-main {
+  height: 65px;
+}
+
+.logo-icon {
+  height: 100px;
+}
+
+.company-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 6px;
+  color: #003366;
+}
+
+.address {
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+/* TITLE */
+.title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  margin: 20px 0;
+}
+
+/* META */
+.meta {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.meta-right {
+  text-align: right;
+}
+
+/* ITEMS */
+.items {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.items th {
+  background: #e6f0ff;
+  border-bottom: 2px solid #003366;
+  padding: 8px;
+}
+
+.items td {
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+}
+
+.items .right {
+  text-align: right;
+}
+
+.items .center {
+  text-align: center;
+}
+
+/* TOTAL */
+.total td {
+  border-top: 2px solid #003366;
+  font-weight: bold;
+  padding-top: 10px;
+}
+
+/* NOTE & PAYMENT */
+.note {
+  margin-top: 18px;
+  font-style: italic;
+}
+
+.payment {
+  margin-top: 18px;
+}
