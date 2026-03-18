@@ -327,6 +327,17 @@ SELECT a.id AS applicant_id,
         </div>
     </div>
 </div>
+
+<style>
+
+.invoice-preview-wrapper {
+  background: #f5f5f5;
+  padding: 24px;
+}
+
+.invoice-preview-paper {
+  background: #fff;
+  max-width: 820px;
   margin: auto;
   padding: 48px 40px;
   border: 1px solid #ddd;
