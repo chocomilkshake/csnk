@@ -1190,7 +1190,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
               <small class="text-muted">Role is not changed here.</small>
             </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" name="edit_account" class="btn btn-warning">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
 
+  <!-- Reset Password Modal (Admins/Super Admins) -->
+  <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" id="resetPwdForm" novalidate>
+            <div class="modal-header">
+              <h5 class="modal-title">Reset Password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+              <div cla('hidden.bs.modal', () => {
+          editForm.reset();
+          editForm.classList.remove('was-validated');
+        eye.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            eye.click();'progress-bar pwd-fair'; break;
+            case 4: width = 75; pwdBar.className = 'progress-bar pwd-good'; break;
+            case 5: width = 100; pwdBar.className = 'progress-bar pwd-strong'; break;
+          }
+          pwdBar.style.width = width + '%';
       });
       document.querySelectorAll('.account-card').forEach(card => {
         card.style.opacity = '0';
