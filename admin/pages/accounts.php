@@ -1213,6 +1213,34 @@ document.addEventListener('DOMContentLoaded', () => {
               <div cla('hidden.bs.modal', () => {
           editForm.reset();
           editForm.classList.remove('was-validated');
+          editBranchWrapper.classList.add('d-none');
+        });
+
+      })();
+
+      // Reset password modal (if exists)
+      const resetModal = document.getElementById('resetPasswordModal');
+      if (resetModal) {
+        resetModal.addEventListener('shown.bs.modal', (e) => {
+          const btn = e.relatedTarget;
+          if (!btn) return;
+          document.getElementById('resetUserId').value = parseInt(btn.dataset.userId || 0);
+          document.getElementById('resetUsername').value = btn.dataset.userName || '';
+          document.getElementById('resetUserName').textContent = btn.dataset.userName || '—';
+        });
+      }
+
+      // Modern form enhancements
+      // Password toggle visibility
+      document.querySelectorAll('.pwd-eye').forEach(eye => {
+        eye.addEventListener('click', () => {
+          const input = eye.closest('.field-group').querySelector('input');
+          const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+          input.setAttribute('type', type);
+          eye.classList.toggle('bi-eye');
+          eye.classList.toggle('bi-eye-slash');
+          eye.classList.toggle('active');
+        });
         eye.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
