@@ -1210,7 +1210,23 @@ document.addEventListener('DOMContentLoaded', () => {
               <h5 class="modal-title">Reset Password</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-              <div cla
+              <div class="motElementById('branchWrapper');
+        const branchSelect = branchWrapper ? branchWrapper.querySelector('select') : null;
+
+        function updateBranchVisibility() {
+          if (!agencySelect || !branchWrapper) return;
+
+          const agency = agencySelect.value;
+
+          if (agency === 'smc') {
+            branchWrapper.classList.add('d-none');
+            if (branchSelect) branchSelect.value = '0';
+          } else {
+            branchWrapper.classList.remove('d-none');
+          }
+        }
+
+        if (agencySelect) {
           agencySelect.addEventListener('change', updateBranchVisibility);
           updateBranchVisibility(); // initial state
         }
