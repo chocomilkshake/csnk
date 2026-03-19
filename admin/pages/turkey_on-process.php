@@ -12,6 +12,7 @@ require_once $ADMIN_ROOT . '/includes/config.php';
 require_once $ADMIN_ROOT . '/includes/Database.php';
 require_once $ADMIN_ROOT . '/includes/Auth.php';
 require_once $ADMIN_ROOT . '/includes/functions.php';
+require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 
 $database = new Database();
 $auth = new Auth($database);
@@ -261,15 +262,217 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 
 require_once $ADMIN_ROOT . '/includes/header.php';
 
-// Get applicants with latest booking data for SMC business units
-$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+// --- Boot filter state ---
+$smcState = smc_filter_boot([
+    'base_url'         => 'turkey_on-process.php',
+    'session_ns'       => 'smc_turkey_onprocess',
+    'allowed_statuses' => ['all', 'pending', 'on_process', 'approved'],
+    'buId'             => $_SESSION['current_bu_id'] ?? null,
+    'not_deleted'      => true,
+    'not_blacklisted'  => true,
+]);
+
+$q       = (string)($smcState['q'] ?? '');
+$status  = (string)($smcState['status'] ?? 'all');
+$country = (string)($smcState['country'] ?? 'all');
+
+// --- (4.1) counts ---
+$counts = ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
+
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPh   = implode(',', array_fill(0, count($smcBuIds), '?'));
+    $where  = [];
+    $types  = str_repeat('i', count($smcBuIds));
+    $params = $smcBuIds;
+
+    $where[] = "a.business_unit_id IN ($buPh)";
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    if ($country !== 'all') {
+        // Adjust to your column if needed
+        $where[] = "a.country_id = ?";
+        $types   .= 'i';
+        $params[] = (int)$country;
+    }
+
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . ")";
+        $types  .= 'sss';
+        array_push($params, $like, $like, $like);
+    }
+
+    $where[] = "a.status IN ('pending','on_process','approved')";
+    $whereSql = implode(' AND ', $where);
+
+    $sqlCounts = "SELECT a.status, COUNT(*) AS cnt
+                  FROM applicants a
+                  WHERE $whereSql
+                  GROUP BY a.status";
+
+    if ($stmt = $conn->prepare($sqlCounts)) {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $total = 0;
+        while ($row = $res->fetch_assoc()) {
+            $st  = (string)$row['status'];
+            $cnt = (int)$row['cnt'];
+            if (in_array($st, ['pending','on_process','approved'], true)) {
+                $counts[$st] = $cnt;
+                $total += $cnt;
+            }
+        }
+        $counts['all'] = $total;
+        $stmt->close();
+    }
+}
+
+$smcState['counts'] = $counts;
+
+// --- (4.2) country counts ---
+$countriesWithCounts = [];
+
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPh   = implode(',', array_fill(0, count($smcBuIds), '?'));
+    $where  = [];
+    $types  = str_repeat('i', count($smcBuIds));
+    $params = $smcBuIds;
+
+    $where[] = "a.business_unit_id IN ($buPh)";
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    if ($status === 'all') {
+        $where[] = "a.status IN ('pending','on_process','approved')";
+    } else {
+        $where[] = "a.status = ?";
+        $types   .= 's';
+        $params[] = $status;
+    }
+
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . ")";
+        $types  .= 'sss';
+        array_push($params, $like, $like, $like);
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $sqlCountries = "
+        SELECT COALESCE(c.id, 0) AS id,
+               COALESCE(c.name, 'Unspecified') AS name,
+               COUNT(*) AS count
+        FROM applicants a
+        LEFT JOIN countries c ON c.id = a.country_id
+        WHERE $whereSql
+        GROUP BY COALESCE(c.id, 0), COALESCE(c.name, 'Unspecified')
+        ORDER BY name ASC
+    ";
+
+    if ($stmt = $conn->prepare($sqlCountries)) {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $countriesWithCounts[] = [
+                'id'    => (int)$row['id'],
+                'name'  => (string)$row['name'],
+                'count' => (int)$row['count'],
+            ];
+        }
+        $stmt->close();
+    }
+}
+
+$smcState['countriesWithCounts'] = $countriesWithCounts;
+?>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-2 fw-semibold">SMC Applicants</h4>
+    <?php smc_filter_render($smcState); ?>
+  </div>
+</div>
+
+
+<?php
+$q       = (string)($smcState['q'] ?? '');
+$status  = (string)($smcState['status'] ?? 'all');
+$country = (string)($smcState['country'] ?? 'all');
+
 $rows = [];
 
 if ($conn instanceof mysqli && !empty($smcBuIds)) {
-    $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
-    
-    // Join with client_bookings to get booking info
-    $sql = "SELECT 
+    $buPlaceholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+
+    $where  = [];
+    $types  = '';
+    $params = [];
+
+    // SMC BU restriction
+    $where[] = "a.business_unit_id IN ($buPlaceholders)";
+    $types  .= str_repeat('i', count($smcBuIds));
+    array_push($params, ...$smcBuIds);
+
+    // Status
+    if ($status !== 'all') {
+        $where[] = "a.status = ?";
+        $types   .= 's';
+        $params[] = $status;
+    } else {
+        $where[] = "a.status IN ('pending','on_process','approved')";
+    }
+
+    // Country
+    if ($country !== 'all') {
+        // 🔁 Change a.country_id if needed
+        $where[] = "a.country_id = ?";
+        $types   .= 'i';
+        $params[] = (int)$country;
+    }
+
+    // Not deleted / not blacklisted
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    // Query search across applicant + latest client booking fields
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . " OR CONCAT_WS(' ', cb.client_first_name, cb.client_middle_name, cb.client_last_name) LIKE ?"
+            . " OR cb.client_email LIKE ?"
+            . " OR cb.client_phone LIKE ?"
+            . ")";
+        $types  .= 'ssssss';
+        array_push($params, $like, $like, $like, $like, $like, $like);
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $sql = "SELECT
                 a.id,
                 a.first_name,
                 a.middle_name,
@@ -301,54 +504,19 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
                     GROUP BY applicant_id
                 ) cb2 ON cb1.applicant_id = cb2.applicant_id AND cb1.created_at = cb2.max_created
             ) cb ON a.id = cb.applicant_id
-            WHERE a.business_unit_id IN ($placeholders) 
-            AND a.status = 'on_process' 
-            AND a.deleted_at IS NULL
-            AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = a.id AND b.is_active = 1
-            )";
-    
+            WHERE $whereSql
+            ORDER BY a.created_at DESC";
+
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        if ($types !== '') {
+            $stmt->bind_param($types, ...$params);
+        }
         $stmt->execute();
-        $res = $stmt->get_result();
+        $res  = $stmt->get_result();
         $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         $stmt->close();
     }
 }
-
-// Filter by search query
-function filterRowsByQuery(array $rows, string $query): array {
-    if ($query === '') return $rows;
-    $needle = mb_strtolower($query);
-    
-    return array_values(array_filter($rows, function(array $row) use ($needle) {
-        $first = mb_strtolower((string)($row['first_name'] ?? ''));
-        $middle = mb_strtolower((string)($row['middle_name'] ?? ''));
-        $last = mb_strtolower((string)($row['last_name'] ?? ''));
-        $email = mb_strtolower((string)($row['email'] ?? ''));
-        $phone = mb_strtolower((string)($row['phone_number'] ?? ''));
-        
-        $cfn = mb_strtolower((string)($row['client_first_name'] ?? ''));
-        $cmn = mb_strtolower((string)($row['client_middle_name'] ?? ''));
-        $cln = mb_strtolower((string)($row['client_last_name'] ?? ''));
-        $cem = mb_strtolower((string)($row['client_email'] ?? ''));
-        $cph = mb_strtolower((string)($row['client_phone'] ?? ''));
-        
-        $applicantName = trim($first . ' ' . $middle . ' ' . $last);
-        $clientName = trim($cfn . ' ' . $cmn . ' ' . $cln);
-        
-        $haystack = implode(' | ', [$first, $middle, $last, $applicantName, $email, $phone, $clientName, $cem, $cph]);
-        
-        return mb_strpos($haystack, $needle) !== false;
-    }));
-}
-
-if ($q !== '') {
-    $rows = filterRowsByQuery($rows, $q);
-}
-
 /** Helpers */
 function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     if (empty($json)) return 'N/A';
@@ -394,17 +562,6 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
     .status-modal .form-text { color:#64748b; }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h4 class="mb-2 fw-semibold">SMC - On Process Applicants</h4>
-        <div class="status-group">
-            <a href="turkey_applicants.php" class="status-btn">All</a>
-            <a href="turkey_pending.php" class="status-btn">Pending</a>
-            <a href="turkey_on-process.php" class="status-btn status-btn--active">On Process</a>
-            <a href="turkey_approved.php" class="status-btn">Hired</a>
-        </div>
-    </div>
-</div>
 
 <!-- Search bar -->
 <div class="mb-3 d-flex justify-content-end">
@@ -441,28 +598,38 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string {
                     <?php if (empty($rows)): ?>
                         <tr>
                             <td colspan="9" class="text-center text-muted py-5">
-                                <?php if ($q === ''): ?>
-                                    No applicants currently on process.
-                                <?php else: ?>
-                                    No results for "<strong><?php echo h($q); ?></strong>".
-                                    <a href="turkey_on-process.php" class="ms-1">Clear search</a>
-                                <?php endif; ?>
+                               <?php
+$labelMap = ['all' => 'All', 'pending' => 'Pending', 'on_process' => 'On-Process', 'approved' => 'Approved'];
+$curStatusLabel = $labelMap[$status] ?? ucfirst(str_replace('_',' ', $status));
+$clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?' : '');
+?>
+<?php if ($q === ''): ?>
+    No applicants found for <strong><?php echo h($curStatusLabel); ?></strong><?php if ($country !== 'all') echo ' in selected country'; ?>.
+<?php else: ?>
+    No results for "<strong><?php echo h($q); ?></strong>" under <strong><?php echo h($curStatusLabel); ?></strong><?php if ($country !== 'all') echo ' in selected country'; ?>.
+    turkey_on-process.phpClear filters</a>
+<?php endif; ?>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($rows as $row): ?>
                             <?php
+                            
+                                $qsAppend = $smcState['preserveQS'] ?? ''; // e.g., "&q=...&status=...&country=..."
+                                $csrfQS   = '&csrf_token=' . urlencode($csrf); // optional but recommended for GET actions
+
                                 $id = (int)$row['id'];
                                 $currentStatus = (string)($row['status'] ?? 'on_process');
                                 
                                 $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $deleteUrl = 'turkey_on-process.php?action=delete&id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                
-                                // Status change URLs
-                                $toPendingUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=pending' . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $toOnProcessUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=on_process' . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $toApprovedUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=approved' . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                                $deleteUrl     = 'turkey_on-process.php?action=delete&id=' . $id . $csrfQS . $qsAppend;
+
+                                $toPendingUrl   = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=pending'    . $csrfQS . $qsAppend;
+                                $toOnProcessUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=on_process' . $csrfQS . $qsAppend;
+                                $toApprovedUrl  = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=approved'   . $csrfQS . $qsAppend;
+
                                 
                                 // Client info
                                 $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
