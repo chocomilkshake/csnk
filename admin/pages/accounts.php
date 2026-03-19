@@ -473,32 +473,57 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
 .accounts-grid{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
 }
 
-/* ===== Filters ===== */
-.filter-container{background:#fff;border-radius:14px;padding:clamp(10px,1.6vw,18px);margin-bottom:12px}
-.filter-container .row{row-gap:2px}
-
-.filter-tabs::-webkit-scrollbar{height:8px}
-.filter-tabs::-webkit-scrollbar-thumb{background:#d6d6d6;border-radius:999px}
-
-.filter-btn,.filter-tabs .btn{
-display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
-border:1px solid var(--c-border);background:#fff;color:var(--c-text);
-font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:nowrap
+/* ===== Modern Filters ===== */
+.filter-modern {
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
 }
+.filter-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+.filter-section { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+@media (max-width: 768px) { .filter-row { flex-direction: column; align-items: stretch; } .filter-btn { justify-content: center; } }
 
-.filter-tabs .btn-sm{padding:6px 12px;font-size:1rem}
+.filter-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.25rem; border-radius: 50px;
+  border: 1px solid #e5e7eb; background: white;
+  color: #374151; font-weight: 600; font-size: 0.9rem;
+  text-decoration: none; transition: all 0.3s ease; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.filter-btn:hover { 
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb); 
+  transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); 
+  border-color: #d1d5db;
+}
+.filter-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white !important;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+}
+.filter-btn:active { transform: scale(0.98); }
 
-.filter-btn:hover,.filter-tabs .btn:hover{background:var(--c-muted);border-color:#dcdcdc}
-.filter-btn.active,.filter-tabs .btn.active{background:lightslategray;color:#fff;border-color:#d0d0d0!important}
+.filter-search { 
+  position: relative; flex: 1; min-width: 250px; 
+}
+.filter-search input {
+  padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 50px;
+  border: 1px solid #e5e7eb; background: white;
+  font-size: 0.95rem; width: 100%; transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.filter-search input:focus {
+  outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  transform: translateY(-1px);
+}
+.filter-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
 
-.filter-tabs .btn-group{gap:10px}
-.filter-tabs+.filter-tabs{margin-top:8px}
+.filter-dropdown { min-width: 200px; }
+@media (max-width: 768px) { .filter-search { min-width: auto; order: -1; } }
 
-.filter-tabs .btn-outline-primary.btn-sm,
-.filter-tabs .btn-secondary.btn-sm{color:var(--c-text)}
-
-.filter-tabs .btn-outline-primary.btn-sm.active,
-.filter-tabs .btn-secondary.btn-sm.active{background:lightslategray;color:#fff!important}
 </style>
 
 <button class="btn btn-primary shadow-lg" style="
@@ -548,76 +573,103 @@ font-weight:600;font-size:.95rem;line-height:1.2;letter-spacing:.1px;text-wrap:n
 
 </script>
 
-<div class="filter-container">
-
-  <div class="row align-items-center">
-    <div class="col-lg-8">
-      <div class="filter-tabs">
-        <!-- Agency Filter Tabs -->
-        <div class="btn-group mb-2 me-3" role="group">
-          <a href="accounts.php?agency=&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>"
-            class="btn filter-btn <?= empty($filterAgency) ? 'active' : '' ?>">🏢 All</a>
-          <?php foreach ($agencies as $ag): ?>
-            <a href="accounts.php?agency=<?= urlencode($ag['code']) ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>&branch=<?= $filterBranch ?>"
-              class="btn filter-btn <?= $filterAgency === $ag['code'] ? 'active' : '' ?>"><?= htmlspecialchars($ag['name']) ?></a>
-          <?php endforeach; ?>
-        </div>
-
-        <!-- Role Filter - CLICKABLE -->
-        <?php if ($isSuperAdmin): ?>
-          <div class="btn-group mb-2 mb-lg-0" role="group">
-            <button type="button" class="filter-btn active" id="btnViewEmployees">👥 Employees</button>
-            <button type="button" class="filter-btn" id="btnViewAdmins">⚙️ Admins</button>
-            <button type="button" class="filter-btn" id="btnViewSupers">👑 Super Admins</button>
-          </div>
-        <?php elseif ($isAdmin): ?>
-          <div class="btn-group mb-2 mb-lg-0" role="group">
-            <button type="button" class="filter-btn active" id="btnViewEmployees">👥 Employees</button>
-            <button type="button" class="filter-btn" id="btnViewAdmins">⚙️ Admins</button>
-          </div>
-        <?php endif; ?>
-
-
-
-      </div>
+<div class="filter-modern">
+  <!-- Agency & Role Filters -->
+  <div class="filter-row">
+    <div class="filter-section">
+      <a href="accounts.php?agency=&branch=<?= $filterBranch ?>&country=<?= $filterCountry ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+        class="filter-btn <?= empty($filterAgency) ? 'active' : '' ?>">
+        <i class="bi bi-grid-3x3-gap"></i> All Agencies
+      </a>
+      <?php foreach ($agencies as $ag): ?>
+        <a href="accounts.php?agency=<?= urlencode($ag['code']) ?>&branch=<?= $filterBranch ?>&country=<?= $filterCountry ?>&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
+          class="filter-btn <?= $filterAgency === $ag['code'] ? 'active' : '' ?>">
+          <?= htmlspecialchars($ag['name']) ?>
+        </a>
+      <?php endforeach; ?>
     </div>
+    
+    <!-- Role Filters -->
+    <?php if ($isSuperAdmin || $isAdmin): ?>
+    <div class="filter-section">
+      <button class="filter-btn active" id="btnViewEmployees">
+        <i class="bi bi-people"></i> Employees
+      </button>
+      <button class="filter-btn" id="btnViewAdmins">
+        <i class="bi bi-person-gear"></i> Admins
+      </button>
+      <?php if ($isSuperAdmin): ?>
+      <button class="filter-btn" id="btnViewSupers">
+        <i class="bi bi-star-fill"></i> Super Admins
+      </button>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+  </div>
 
-    <!-- Branch Filters (CSNK only) -->
+  <!-- Search & Status Filters -->
+  <div class="filter-row">
+    <div class="filter-search">
+      <i class="bi bi-search filter-icon"></i>
+      <form method="GET" style="width:100%;">
+        <input type="hidden" name="agency" value="<?= htmlspecialchars($filterAgency) ?>">
+        <input type="hidden" name="branch" value="<?= $filterBranch ?>">
+        <input type="hidden" name="country" value="<?= $filterCountry ?>">
+        <input type="text" name="search" value="<?= htmlspecialchars($filterSearch) ?>" placeholder="Search accounts..." class="form-control">
+      </form>
+    </div>
+    
+    <div class="filter-section">
+      <select class="form-select filter-dropdown rounded-3xl border-0 shadow-sm py-2 px-3" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        <option value="active" <?= $filterStatus === 'active' ? 'selected' : '' ?>>Active</option>
+        <option value="inactive" <?= $filterStatus === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Branch/Country Dropdowns (Conditional) -->
+  <div class="filter-row">
     <?php if ($filterAgency === 'csnk'): ?>
-      <div class="filter-tabs mt-2">
-        <a href="accounts.php?agency=csnk&branch=0&country=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
-          class="btn btn-secondary btn-sm <?= $filterBranch === 0 ? 'active' : '' ?>">
-          All CSNK
-        </a>
-        <?php foreach ($branches as $branch): ?>
-          <a href="accounts.php?agency=csnk&branch=<?= (int) $branch['id'] ?>&country=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
-            class="btn btn-outline-primary btn-sm <?= $filterBranch === (int) $branch['id'] ? 'active' : '' ?>">
-            <?= htmlspecialchars($branch['code']) ?>
-          </a>
-        <?php endforeach; ?>
+      <div class="filter-section">
+        <select class="form-select filter-dropdown" onchange="filterByBranch(this.value)">
+          <option value="0">All Branches</option>
+          <?php foreach ($branches as $branch): ?>
+            <option value="<?= (int)$branch['id'] ?>" <?= $filterBranch === (int)$branch['id'] ? 'selected' : '' ?>>
+              <?= htmlspecialchars($branch['code'] . ' - ' . $branch['name']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    <?php elseif ($filterAgency === 'smc'): ?>
+      <div class="filter-section">
+        <select class="form-select filter-dropdown" onchange="filterByCountry(this.value)">
+          <option value="0">All Countries</option>
+          <?php foreach ($smcCountries as $country): ?>
+            <option value="<?= (int)$country['id'] ?>" <?= $filterCountry === (int)$country['id'] ? 'selected' : '' ?>>
+              <?= flag_icon($country['iso2'], $country['name']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
       </div>
     <?php endif; ?>
-
-    <!-- NEW: SMC Country Filters (SMC only) - Mirrors branches exactly -->
-    <?php if ($filterAgency === 'smc'): ?>
-      <div class="filter-tabs mt-2">
-        <!-- All SMC FIRST -->
-        <a href="accounts.php?agency=smc&country=0&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
-          class="btn btn-secondary btn-sm <?= $filterCountry === 0 ? 'active' : '' ?>">
-          All SMC
-        </a>
-        <?php foreach ($smcCountries as $country): ?>
-          <a href="accounts.php?agency=smc&country=<?= (int) $country['id'] ?>&branch=0&status=<?= urlencode($filterStatus) ?>&search=<?= urlencode($filterSearch) ?>"
-            class="btn btn-outline-primary btn-sm <?= $filterCountry === (int) $country['id'] ? 'active' : '' ?>">
-            <?= flag_icon($country['iso2'], $country['name']) ?>
-          </a>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-
-
   </div>
 </div>
+
+<script>
+function filterByBranch(branchId) {
+  const url = new URL(window.location);
+  url.searchParams.set('branch', branchId);
+  url.searchParams.delete('country');
+  window.location = url;
+}
+function filterByCountry(countryId) {
+  const url = new URL(window.location);
+  url.searchParams.set('country', countryId);
+  url.searchParams.delete('branch');
+  window.location = url;
+}
+</script>
 
 <?php if (!empty($errors)): ?>
   <div class="alert alert-danger shadow-sm border-start border-4 border-danger rounded-3 mb-4 p-4">
