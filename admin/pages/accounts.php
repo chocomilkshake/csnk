@@ -1487,6 +1487,25 @@ document.addEventListener('DOMContentLoaded', () => {
         emailInput.addEventListener('blur', () => {
           const email = emailInput.value;
           if (email) {
+            if (validateEmailStrictDetectTypos(email)[0]) {
+              emailHint.textContent = 'Valid email ✓';
+              emailHint.className = 'form-text text-success';
+            } else {
+              emailHint.textContent = 'Please check email format';
+              emailHint.className = 'form-text text-danger';
+            }
+          }
+        });
+      }
+
+      // Smooth animations (existing)
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
       });
       document.querySelectorAll('.account-card').forEach(card => {
         card.style.opacity = '0';
