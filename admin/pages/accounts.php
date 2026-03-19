@@ -1217,6 +1217,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
       })();
 
+
+      agencyTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+          const code = e.target.getAttribute('data-agency');
+          updateAgencyFields(code);
+        });
+      });
+
+      if (agencyTabs.length > 0) {
+        const activeTab = document.querySelector('#agencyTabs .active');
+        if (activeTab) updateAgencyFields(activeTab.getAttribute('data-agency'));
+      }
+
+      const addForm = document.getElementById('addAccountForm');
+      if (addForm) {
+        addForm.addEventListener('submit', () => {
+          document.querySelectorAll('#addAccountForm .tab-pane').forEach(pane => {
+            if (!pane.classList.contains('active')) {
+              pane.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
+            }
           });
         });
         const addModal = document.getElementById('addAccountModal');
