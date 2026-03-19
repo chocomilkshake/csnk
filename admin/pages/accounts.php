@@ -1460,6 +1460,33 @@ document.addEventListener('DOMContentLoaded', () => {
             case 5: width = 100; pwdBar.className = 'progress-bar pwd-strong'; break;
           }
           pwdBar.style.width = width + '%';
+        });
+      }
+
+      // Password match validation
+      const pwd2Input = document.getElementById('pwdInput2');
+      const matchHint = document.getElementById('pwdMatchHint');
+      if (pwdInput && pwd2Input && matchHint) {
+        pwd2Input.addEventListener('input', () => {
+          if (pwd2Input.value === pwdInput.value && pwd2Input.value !== '') {
+            matchHint.textContent = 'Passwords match ✓';
+            matchHint.className = 'form-text text-success';
+          } else if (pwd2Input.value !== '') {
+            matchHint.textContent = 'Passwords do not match';
+            matchHint.className = 'form-text text-danger';
+          } else {
+            matchHint.textContent = '';
+          }
+        });
+      }
+
+      // Email validation hint
+      const emailInput = document.getElementById('emailInput');
+      const emailHint = document.getElementById('emailHint');
+      if (emailInput && emailHint) {
+        emailInput.addEventListener('blur', () => {
+          const email = emailInput.value;
+          if (email) {
       });
       document.querySelectorAll('.account-card').forEach(card => {
         card.style.opacity = '0';
