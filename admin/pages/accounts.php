@@ -1210,7 +1210,37 @@ document.addEventListener('DOMContentLoaded', () => {
               <h5 class="modal-title">Reset Password</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-              <div cla('hidden.bs.modal', () => {
+              <div cla
+          agencySelect.addEventListener('change', updateBranchVisibility);
+          updateBranc
+        editModal.addEventListener('shown.bs.modal', (e) => {
+          const btn = e.relatedTarget;
+          if (!btn) return;
+
+          const role = btn.dataset.role || '';
+          const agency = btn.dataset.agency || 'csnk'; // default safe
+          const branchId = parseInt(btn.dataset.branchId || 0);
+
+          // Populate fields
+          document.getElementById('editUserId').value = btn.dataset.userId || '';
+          document.getElementById('editUsername').value = btn.dataset.username || '';
+          document.getElementById('editFullName').value = btn.dataset.fullname || '';
+          document.getElementById('editEmail').value = btn.dataset.email || '';
+          document.getElementById('editStatus').value = btn.dataset.status || 'active';
+
+          // Branch visibility rule
+          if (role === 'employee' && agency === 'csnk') {
+            editBranchWrapper.classList.remove('d-none');
+            editBranch.value = branchId;
+          } else {
+            editBranchWrapper.classList.add('d-none');
+            editBranch.value = '0';
+          }
+
+          editForm.classList.add('was-validated');
+        });
+
+        editModal.addEventListener('hidden.bs.modal', () => {
           editForm.reset();
           editForm.classList.remove('was-validated');
           editBranchWrapper.classList.add('d-none');
