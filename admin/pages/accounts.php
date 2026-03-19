@@ -667,6 +667,9 @@ function filterByCountry(countryId) {
   const url = new URL(window.location);
   url.searchParams.set('country', countryId);
   url.searchParams.delete('branch');
+  window.location = url;
+}
+</script>
 
 <?php if (!empty($errors)): ?>
   <div class="alert alert-danger shadow-sm border-start border-4 border-danger rounded-3 mb-4 p-4">
