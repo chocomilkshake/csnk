@@ -1210,7 +1210,36 @@ document.addEventListener('DOMContentLoaded', () => {
               <h5 class="modal-title">Reset Password</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-              <div class="motElementById('branchWrapper');
+              <div class="modal-body">
+                <input type="hidden" name="user_id" id="resetUserId">
+                <input type="hidden" name="username" id="resetUsername">
+ btn.id.replace('btnView', '');
+              const targetSection = document.getElementById(targetId);
+              if (targetSe
+      function updateAgencyFields(code) {
+        if (!hiddenAgency) return;
+        hiddenAgency.value = code;
+        if (hiddenAgency.tagName === 'SELECT') hiddenAgency.value = code;
+        if (code === 'csnk') {
+          if (roleSelect) roleSelect.closest('.mb-3').classList.remove('d-none');
+          if (branchWrapper) branchWrapper.classList.remove('d-none');
+        } else {
+          if (roleSelect) {
+            roleSelect.closest('.mb-3').classList.add('d-none');
+            roleSelect.value = 'employee';
+          }
+          if (branchWrapper) branchWrapper.classList.add('d-none');
+        }
+      }
+
+      (function () {
+
+        /* ================================
+          CREATE ACCOUNT – AGENCY → BRANCH
+          ================================ */
+
+        const agencySelect = document.getElementById('addAgencySelect');
+        const branchWrapper = document.getElementById('branchWrapper');
         const branchSelect = branchWrapper ? branchWrapper.querySelector('select') : null;
 
         function updateBranchVisibility() {
