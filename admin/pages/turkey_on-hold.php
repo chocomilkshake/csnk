@@ -5,7 +5,7 @@ $pageTitle = 'SMC - On Hold Applicants';
 $ADMIN_ROOT = dirname(__DIR__);
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+  session_start();
 }
 
 require_once $ADMIN_ROOT . '/includes/config.php';
@@ -19,8 +19,8 @@ $auth->requireLogin();
 
 // Check if user has permission to view SMC data
 if (!$auth->canSeeSMC()) {
-    header('Location: applicants.php');
-    exit;
+  header('Location: applicants.php');
+  exit;
 }
 
 $conn = $database->getConnection();
@@ -28,41 +28,42 @@ $conn = $database->getConnection();
 // Find SMC BU ID
 $smcBuId = 0;
 if ($conn instanceof mysqli) {
-    $sqlFindSMCBu = "SELECT bu.id
+  $sqlFindSMCBu = "SELECT bu.id
                      FROM business_units bu
                      JOIN agencies ag ON ag.id = bu.agency_id
                      WHERE ag.code = 'smc' AND bu.active = 1
                      ORDER BY bu.id ASC
                      LIMIT 1";
-    if ($stmt = $conn->prepare($sqlFindSMCBu)) {
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $stmt->close();
-        if (!empty($row['id'])) {
-            $smcBuId = (int) $row['id'];
-            $_SESSION['smc_bu_id'] = $smcBuId;
-        }
+  if ($stmt = $conn->prepare($sqlFindSMCBu)) {
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+    if (!empty($row['id'])) {
+      $smcBuId = (int) $row['id'];
+      $_SESSION['smc_bu_id'] = $smcBuId;
     }
+  }
 }
 
 if (empty($_SESSION['current_bu_id'])) {
-    header('Location: login.php');
-    exit;
+  header('Location: login.php');
+  exit;
 }
 
 // CSRF token
 if (empty($_SESSION['csrf_token'])) {
-    try {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
-    } catch (Throwable $e) {
-        $_SESSION['csrf_token'] = bin2hex((string)mt_rand());
-    }
+  try {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+  } catch (Throwable $e) {
+    $_SESSION['csrf_token'] = bin2hex((string) mt_rand());
+  }
 }
 $csrf = $_SESSION['csrf_token'] ?? '';
 
 // Include the SMC Applicant class
 require_once $ADMIN_ROOT . '/admin-smc/smc-turkey/includes/applicant.php';
+require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 
 // Get current user data
 $currentUser = $auth->getCurrentUser();
@@ -81,40 +82,61 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-// Search handling
-$q = isset($_GET['q']) ? trim($_GET['q']) : '';
-$status = 'on_hold';
+// Initialize SMC filters (replaces hardcoded params)
+$filterState = smc_filter_boot([
+  'base_url' => 'turkey_on-hold.php',
+  'session_ns' => 'smc_tr_onhold',
+  'applicant' => $applicant,
+  'buId' => $smcBuId,
+  'allowed_statuses' => ['all', 'pending', 'on_process', 'approved', 'on_hold'],
+  'not_deleted' => true,
+  'not_blacklisted' => true,
+]);
 
-// Get on_hold applicants for SMC
-$buScope = null; // SMC shows all SMC applicants
-$countryId = null;
-$notDeleted = true;
-$notBlacklisted = true;
+$filters = $filterState['filters'];
+$q = $filterState['q'];
+$status = $filters['status'];  // Dynamic status from filters
 
-$applicants = $applicant->getApplicants($buScope, $countryId, $status, $q, $notDeleted, $notBlacklisted, 1, 1000);
+$applicants = $applicant->getApplicants(
+  $filters['buId'],
+  $filters['countryId'],
+  $filters['status'],
+  $filters['q'],
+  $filters['notDeleted'],
+  $filters['notBlacklisted'],
+  1,
+  1000
+);
+
+// Update preserve for links
+$preserveQ = $filterState['preserveQS'];
 
 /**
  * Helpers
  */
-function renderPreferredLocation(?string $json, int $maxLen = 34): string {
-    if (empty($json)) return 'N/A';
-    $arr = json_decode($json, true);
-    if (!is_array($arr)) {
-        $fallback = trim($json);
-        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
-        return $fallback !== '' ? $fallback : 'N/A';
-    }
-    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
-    if (empty($cities)) return 'N/A';
-    $full = implode(', ', $cities);
-    if (mb_strlen($full) > $maxLen) {
-        return $cities[0] . '…';
-    }
-    return $full;
+function renderPreferredLocation(?string $json, int $maxLen = 34): string
+{
+  if (empty($json))
+    return 'N/A';
+  $arr = json_decode($json, true);
+  if (!is_array($arr)) {
+    $fallback = trim($json);
+    $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+    return $fallback !== '' ? $fallback : 'N/A';
+  }
+  $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+  if (empty($cities))
+    return 'N/A';
+  $full = implode(', ', $cities);
+  if (mb_strlen($full) > $maxLen) {
+    return $cities[0] . '…';
+  }
+  return $full;
 }
 
-function h($str) {
-    return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
+function h($str)
+{
+  return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
 }
 
 // Preserve query in links
@@ -127,12 +149,29 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
   /* Keep dropdowns visible above table clipping */
   .table-card,
   .table-card .card-body,
-  .table-card .table-responsive { overflow: visible !important; }
-  .table-card tr.row-raised { position: relative; z-index: 1060; }
+  .table-card .table-responsive {
+    overflow: visible !important;
+  }
 
-  td.actions-cell { white-space: nowrap; }
-  .actions-inline { display: inline-flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
-  .actions-inline .btn { flex: 0 0 auto; }
+  .table-card tr.row-raised {
+    position: relative;
+    z-index: 1060;
+  }
+
+  td.actions-cell {
+    white-space: nowrap;
+  }
+
+  .actions-inline {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .actions-inline .btn {
+    flex: 0 0 auto;
+  }
 
   .dd-modern .dropdown-menu {
     border-radius: .75rem;
@@ -141,9 +180,23 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     min-width: 180px;
     z-index: 9999 !important;
   }
-  .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
-  .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
-  .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+
+  .dd-modern .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .9rem;
+    font-weight: 500;
+  }
+
+  .dd-modern .dropdown-item .bi {
+    font-size: 1rem;
+    opacity: .9;
+  }
+
+  .dd-modern .dropdown-item:hover {
+    background-color: #f8fafc;
+  }
 
   .badge-onhold {
     background: #f1f5f9;
@@ -159,54 +212,55 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
     border-bottom: none;
     padding-bottom: 0;
   }
+
   .revert-modal .app-header {
-    display: flex; gap: 12px; align-items: center;
+    display: flex;
+    gap: 12px;
+    align-items: center;
     padding: .25rem 0 1rem 0;
     border-bottom: 1px solid #eef2f7;
     margin-bottom: 1rem;
   }
+
   .revert-modal .app-photo {
-    width: 44px; height: 44px; object-fit: cover; border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 8px;
     background: #f1f5f9;
   }
+
   .revert-modal .status-chip {
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: .15rem .5rem; border: 1px solid #e2e8f0; border-radius: .5rem;
-    font-size: .8rem; color: #334155; background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .15rem .5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    font-size: .8rem;
+    color: #334155;
+    background: #f8fafc;
   }
-  .revert-modal .form-text { color: #64748b; }
+
+  .revert-modal .form-text {
+    color: #64748b;
+  }
+
   .revert-modal .counter {
-    font-size: .8rem; color: #64748b;
+    font-size: .8rem;
+    color: #64748b;
   }
-  .revert-modal .modal-footer { border-top: none; }
+
+  .revert-modal .modal-footer {
+    border-top: none;
+  }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0 fw-semibold">SMC - On Hold Applicants</h4>
 </div>
 
-<!-- 🔎 Search -->
-<div class="mb-3 d-flex justify-content-end">
-  <form action="turkey_on-hold.php" method="get" class="w-100" style="max-width: 420px;">
-    <div class="input-group">
-      <input
-        type="text"
-        name="q"
-        class="form-control"
-        placeholder="Search on hold applicants…"
-        value="<?php echo h($q); ?>"
-        autocomplete="off">
-      <button class="btn btn-outline-secondary" type="submit" title="Search">
-        <i class="bi bi-search"></i>
-      </button>
-      <?php if ($q !== ''): ?>
-        <a href="turkey_on-hold.php" class="btn btn-outline-secondary" title="Clear">
-          <i class="bi bi-x-lg"></i>
-        </a>
-      <?php endif; ?>
-    </div>
-  </form>
-</div>
+<?php smc_filter_render($filterState); ?>
 
 <div class="card table-card">
   <div class="card-body">
@@ -224,100 +278,93 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
           </tr>
         </thead>
         <tbody>
-        <?php if (empty($applicants)): ?>
-          <tr>
-            <td colspan="7" class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-              <?php if ($q === ''): ?>
-                No on hold applicants.
-              <?php else: ?>
-                No results for "<strong><?php echo h($q); ?></strong>".
-                <a href="turkey_on-hold.php" class="ms-1">Clear search</a>
-              <?php endif; ?>
-            </td>
-          </tr>
-        <?php else: ?>
-          <?php foreach ($applicants as $app): ?>
-            <?php
-              $id = (int)($app['id'] ?? 0);
+          <?php if (empty($applicants)): ?>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <?php if ($q === ''): ?>
+                  No on hold applicants.
+                <?php else: ?>
+                  No results for "<strong><?php echo h($q); ?></strong>".
+                  <a href="turkey_on-hold.php" class="ms-1">Clear search</a>
+                <?php endif; ?>
+              </td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($applicants as $app): ?>
+              <?php
+              $id = (int) ($app['id'] ?? 0);
               $name = getFullName($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
               $viewUrl = 'turkey_view-applicant.php?id=' . $id . $preserveQ;
               $historyUrl = 'turkey_view-applicant-history.php?id=' . $id . $preserveQ;
               $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
-            ?>
-            <tr>
-              <td>
-                <?php if ($photo): ?>
-                  <img src="<?php echo h($photo); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit:cover;">
-                <?php else: ?>
-                  <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;">
-                    <?php echo strtoupper(substr((string)($app['first_name'] ?? ''), 0, 1)); ?>
+              ?>
+              <tr>
+                <td>
+                  <?php if ($photo): ?>
+                    <img src="<?php echo h($photo); ?>" alt="Photo" class="rounded" width="50" height="50"
+                      style="object-fit:cover;">
+                  <?php else: ?>
+                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                      style="width:50px;height:50px;">
+                      <?php echo strtoupper(substr((string) ($app['first_name'] ?? ''), 0, 1)); ?>
+                    </div>
+                  <?php endif; ?>
+                </td>
+                <td class="fw-semibold">
+                  <?php echo h($name); ?>
+                  <span class="badge badge-<?php echo strtolower($status); ?> ms-2">
+                    <?php echo ucwords(str_replace('_', ' ', $status)); ?>
+                  </span>
+                </td>
+                <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+                <td><?php echo h(formatDate($app['created_at'] ?? '')); ?></td>
+
+                <td class="actions-cell">
+                  <div class="actions-inline dd-modern">
+                    <!-- View -->
+                    <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                    <!-- History -->
+                    <a href="<?php echo h($historyUrl); ?>" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-clock-history"></i> History
+                    </a>
+
+                    <!-- Change Status -->
+                    <div class="dropdown">
+                      <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        data-bs-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false"
+                        id="changeStatusBtn-<?php echo $id; ?>">
+                        <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                        <li>
+                          <!-- Revert to Pending -->
+                          <a class="dropdown-item js-open-revert" href="#" data-bs-toggle="modal"
+                            data-bs-target="#revertModal" data-app-id="<?php echo $id; ?>"
+                            data-app-name="<?php echo h($name); ?>" data-app-photo="<?php echo h($photo); ?>">
+                            <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                            <span>Revert to Pending</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a class="dropdown-item" href="turkey_blacklist-applicant.php?id=<?php echo $id; ?>">
+                            <i class="bi bi-slash-circle text-danger"></i>
+                            <span>Blacklist</span>
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                <?php endif; ?>
-              </td>
-              <td class="fw-semibold">
-                <?php echo h($name); ?>
-                <span class="badge-onhold ms-2">On Hold</span>
-              </td>
-              <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-              <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-              <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-              <td><?php echo h(formatDate($app['created_at'] ?? '')); ?></td>
-
-              <td class="actions-cell">
-                <div class="actions-inline dd-modern">
-                  <!-- View -->
-                  <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
-                    <i class="bi bi-eye"></i> View
-                  </a>
-
-                  <!-- History -->
-                  <a href="<?php echo h($historyUrl); ?>" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-clock-history"></i> History
-                  </a>
-
-                  <!-- Change Status -->
-                  <div class="dropdown">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary dropdown-toggle"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="true"
-                      data-bs-display="static"
-                      data-bs-offset="0,8"
-                      aria-expanded="false"
-                      id="changeStatusBtn-<?php echo $id; ?>">
-                      <i class="bi bi-arrow-left-right me-1"></i> Change Status
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
-                      <li>
-                        <!-- Revert to Pending -->
-                        <a
-                          class="dropdown-item js-open-revert"
-                          href="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#revertModal"
-                          data-app-id="<?php echo $id; ?>"
-                          data-app-name="<?php echo h($name); ?>"
-                          data-app-photo="<?php echo h($photo); ?>"
-                        >
-                          <i class="bi bi-arrow-counterclockwise text-warning"></i>
-                          <span>Revert to Pending</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="turkey_blacklist-applicant.php?id=<?php echo $id; ?>">
-                          <i class="bi bi-slash-circle text-danger"></i>
-                          <span>Blacklist</span>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </tbody>
       </table>
     </div>
@@ -325,9 +372,8 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 </div>
 
 <!-- 🔁 Single, reusable modal (NOTE: OUTSIDE the table) -->
-<div class="modal fade revert-modal" id="revertModal" tabindex="-1"
-     aria-labelledby="revertModalLabel" aria-hidden="true"
-     data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade revert-modal" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel"
+  aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <form class="modal-content border-0 shadow-lg" method="POST" action="turkey_revert-onhold.php">
       <div class="modal-header bg-light border-0 pb-0">
@@ -352,12 +398,13 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
             <div class="d-flex align-items-center gap-3">
               <div class="photo-slot">
                 <!-- will be filled by JS -->
-                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none"
-                     id="revertAvatarFallback" style="width:56px;height:56px;">
+                <div
+                  class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none"
+                  id="revertAvatarFallback" style="width:56px;height:56px;">
                   <span class="fs-5 fw-bold" id="revertAvatarLetter">A</span>
                 </div>
-                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56"
-                     style="object-fit: cover;" alt="Photo" id="revertAvatarImg">
+                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56" style="object-fit: cover;"
+                  alt="Photo" id="revertAvatarImg">
               </div>
               <div class="flex-grow-1">
                 <div class="fw-bold fs-5" id="revertApplicantName">Applicant Name</div>
@@ -399,13 +446,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
               <span>Description <span class="text-danger">*</span></span>
               <span class="counter badge bg-light text-secondary" id="revertDescCounter">0/1000</span>
             </label>
-            <textarea
-              id="revertDescription"
-              name="description"
-              class="form-control"
-              rows="4"
-              maxlength="1000"
-              required
+            <textarea id="revertDescription" name="description" class="form-control" rows="4" maxlength="1000" required
               placeholder="Provide details (e.g., proof of recovery, availability confirmation, notes from applicant)…"></textarea>
             <div class="form-text mt-1">This will be added to Reports and Status History.</div>
           </div>
@@ -416,7 +457,8 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
           <div class="d-flex align-items-start gap-2">
             <i class="bi bi-info-circle-fill text-info mt-1"></i>
             <div class="small">
-              <strong>Note:</strong> The applicant will be moved to Pending status and this action will be recorded in the reports.
+              <strong>Note:</strong> The applicant will be moved to Pending status and this action will be recorded in
+              the reports.
             </div>
           </div>
         </div>
@@ -435,75 +477,74 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Raise row above others while a dropdown is open (nice polish)
-  document.querySelectorAll('td.actions-cell .dropdown').forEach(function(dd) {
-    dd.addEventListener('show.bs.dropdown', function() {
-      var tr = dd.closest('tr'); if (tr) tr.classList.add('row-raised');
+  document.addEventListener('DOMContentLoaded', function () {
+    // Raise row above others while a dropdown is open (nice polish)
+    document.querySelectorAll('td.actions-cell .dropdown').forEach(function (dd) {
+      dd.addEventListener('show.bs.dropdown', function () {
+        var tr = dd.closest('tr'); if (tr) tr.classList.add('row-raised');
+      });
+      dd.addEventListener('hidden.bs.dropdown', function () {
+        var tr = dd.closest('tr'); if (tr) tr.classList.remove('row-raised');
+      });
     });
-    dd.addEventListener('hidden.bs.dropdown', function() {
-      var tr = dd.closest('tr'); if (tr) tr.classList.remove('row-raised');
+
+    // Single shared modal elements
+    var modalEl = document.getElementById('revertModal');
+    var applicantIdInput = document.getElementById('revertApplicantId');
+    var applicantNameEl = document.getElementById('revertApplicantName');
+    var avatarImg = document.getElementById('revertAvatarImg');
+    var avatarFallback = document.getElementById('revertAvatarFallback');
+    var avatarLetter = document.getElementById('revertAvatarLetter');
+    var reasonSelect = document.getElementById('revertReason');
+    var descTA = document.getElementById('revertDescription');
+    var descCounter = document.getElementById('revertDescCounter');
+
+    // Update counter
+    var updateCounter = function () {
+      var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
+      descCounter.textContent = (descTA.value.length) + '/' + max;
+    };
+    descTA.addEventListener('input', updateCounter);
+    updateCounter();
+
+    // Wire up triggers
+    document.querySelectorAll('.js-open-revert').forEach(function (trigger) {
+      trigger.addEventListener('click', function (e) {
+        // Let the modal open (Bootstrap handles it), but populate first
+        var id = trigger.getAttribute('data-app-id') || '';
+        var name = trigger.getAttribute('data-app-name') || 'Applicant';
+        var photo = trigger.getAttribute('data-app-photo') || '';
+
+        applicantIdInput.value = id;
+        applicantNameEl.textContent = name;
+
+        // Photo / fallback
+        if (photo && photo.trim() !== '') {
+          avatarImg.src = photo;
+          avatarImg.classList.remove('d-none');
+          avatarFallback.classList.add('d-none');
+        } else {
+          // initial letter
+          var firstLetter = name.trim().charAt(0).toUpperCase() || 'A';
+          avatarLetter.textContent = firstLetter;
+          avatarImg.classList.add('d-none');
+          avatarFallback.classList.remove('d-none');
+        }
+
+        // Clear selects & description each time for safety
+        reasonSelect.value = '';
+        descTA.value = '';
+        updateCounter();
+      });
     });
+
+    // Autofocus reason on open
+    if (modalEl) {
+      modalEl.addEventListener('shown.bs.modal', function () {
+        if (reasonSelect) reasonSelect.focus();
+      });
+    }
   });
-
-  // Single shared modal elements
-  var modalEl = document.getElementById('revertModal');
-  var applicantIdInput = document.getElementById('revertApplicantId');
-  var applicantNameEl = document.getElementById('revertApplicantName');
-  var avatarImg = document.getElementById('revertAvatarImg');
-  var avatarFallback = document.getElementById('revertAvatarFallback');
-  var avatarLetter = document.getElementById('revertAvatarLetter');
-  var reasonSelect = document.getElementById('revertReason');
-  var descTA = document.getElementById('revertDescription');
-  var descCounter = document.getElementById('revertDescCounter');
-
-  // Update counter
-  var updateCounter = function() {
-    var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
-    descCounter.textContent = (descTA.value.length) + '/' + max;
-  };
-  descTA.addEventListener('input', updateCounter);
-  updateCounter();
-
-  // Wire up triggers
-  document.querySelectorAll('.js-open-revert').forEach(function(trigger) {
-    trigger.addEventListener('click', function(e) {
-      // Let the modal open (Bootstrap handles it), but populate first
-      var id = trigger.getAttribute('data-app-id') || '';
-      var name = trigger.getAttribute('data-app-name') || 'Applicant';
-      var photo = trigger.getAttribute('data-app-photo') || '';
-
-      applicantIdInput.value = id;
-      applicantNameEl.textContent = name;
-
-      // Photo / fallback
-      if (photo && photo.trim() !== '') {
-        avatarImg.src = photo;
-        avatarImg.classList.remove('d-none');
-        avatarFallback.classList.add('d-none');
-      } else {
-        // initial letter
-        var firstLetter = name.trim().charAt(0).toUpperCase() || 'A';
-        avatarLetter.textContent = firstLetter;
-        avatarImg.classList.add('d-none');
-        avatarFallback.classList.remove('d-none');
-      }
-
-      // Clear selects & description each time for safety
-      reasonSelect.value = '';
-      descTA.value = '';
-      updateCounter();
-    });
-  });
-
-  // Autofocus reason on open
-  if (modalEl) {
-    modalEl.addEventListener('shown.bs.modal', function(){
-      if (reasonSelect) reasonSelect.focus();
-    });
-  }
-});
 </script>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
-
