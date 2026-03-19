@@ -1213,7 +1213,32 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="modal-body">
                 <input type="hidden" name="user_id" id="resetUserId">
                 <input type="hidden" name="username" id="resetUsername">
- btn.id.replace('btnView', '');
+
+                <div class="alert alert-light border mb-3">
+                  <div class="small text-muted">Resetting password for</div>
+                  <div class="fw-semibold" id="resetUserName">—</div>
+                </div>
+
+                <div class="form-floating mb-3">
+<input type="password" class="form-contr
+    (function () {
+      // FIXED Role Filter Buttons - Now fully clickable
+      document.addEventListener('DOMContentLoaded', () => {
+        ['btnViewEmployees', 'btnViewAdmins', 'btnViewSupers'].forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Hide all sections
+              document.querySelectorAll('[id^="section"]').forEach(sec => {
+                sec.classList.add('d-none');
+              });
+              
+              // Show target section
+              const targetId = 'section' + btn.id.replace('btnView', '');
               const targetSection = document.getElementById(targetId);
               if (targetSection) {
                 targetSection.classList.remove('d-none');
