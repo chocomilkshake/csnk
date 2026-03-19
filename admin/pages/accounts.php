@@ -1216,7 +1216,29 @@ document.addEventListener('DOMContentLoaded', () => {
         eye.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            eye.click();'progress-bar pwd-fair'; break;
+            eye.click();
+          }
+        });
+      });
+
+      // Password strength meter
+      const pwdInput = document.getElementById('pwdInput');
+      const pwdBar = document.getElementById('pwdBar');
+      if (pwdInput && pwdBar) {
+        pwdInput.addEventListener('input', () => {
+          const pwd = pwdInput.value;
+          let score = 0;
+          let width = 0;
+          
+          if (pwd.length >= 10) score++;
+          if (/[A-Z]/.test(pwd)) score++;
+          if (/[a-z]/.test(pwd)) score++;
+          if (/\d/.test(pwd)) score++;
+          if (/[\W_]/.test(pwd)) score++;
+          
+          switch(score) {
+            case 0: case 1: width = 20; pwdBar.className = 'progress-bar pwd-weak'; break;
+            case 2: case 3: width = 50; pwdBar.className = 'progress-bar pwd-fair'; break;
             case 4: width = 75; pwdBar.className = 'progress-bar pwd-good'; break;
             case 5: width = 100; pwdBar.className = 'progress-bar pwd-strong'; break;
           }
