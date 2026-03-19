@@ -1212,7 +1212,30 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
               <div cla
           agencySelect.addEventListener('change', updateBranchVisibility);
-          updateBranc
+          updateBranchVisibility(); // initial state
+        }
+
+      })();
+
+          });
+        });
+        const addModal = document.getElementById('addAccountModal');
+        if (addModal) {
+          addModal.addEventListener('shown.bs.modal', () => {
+            addForm.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
+          });
+        }
+      }
+
+      (function () {
+
+        const editModal = document.getElementById('editAccountModal');
+        const editForm = document.getElementById('editAccountForm');
+        const editBranchWrapper = document.getElementById('editBranchWrapper');
+        const editBranch = document.getElementById('editBranch');
+
+        if (!editModal || !editForm) return;
+
         editModal.addEventListener('shown.bs.modal', (e) => {
           const btn = e.relatedTarget;
           if (!btn) return;
