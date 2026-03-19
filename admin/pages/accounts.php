@@ -1215,7 +1215,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="hidden" name="username" id="resetUsername">
  btn.id.replace('btnView', '');
               const targetSection = document.getElementById(targetId);
-              if (targetSe
+              if (targetSection) {
+                targetSection.classList.remove('d-none');
+              }
+              
+              // Update active state
+              document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+              });
+              btn.classList.add('active');
+            });
+          }
+        });
+      });
+
+
+      // Add/Edit modal handlers (existing + NEW EDIT POPULATE)
+      const agencyTabs = document.querySelectorAll('#agencyTabs a');
+      const hiddenAgency = document.getElementById('addAgency');
+      const roleSelect = document.getElementById('roleSelect');
+      const branchWrapper = document.getElementById('branchWrapper');
+
       function updateAgencyFields(code) {
         if (!hiddenAgency) return;
         hiddenAgency.value = code;
