@@ -257,7 +257,7 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0 fw-semibold">SMC - On Hold Applicants</h4>
+  <h4 class="mb-0 fw-semibold">On-hold SMC Applicants</h4>
 </div>
 
 <?php smc_filter_render($filterState); ?>
