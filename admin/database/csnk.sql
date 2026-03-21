@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 18, 2026 at 09:33 AM
+-- Generation Time: Mar 21, 2026 at 01:30 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -50,7 +50,30 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (977, 12, 'Create Branch', 'Created branch \'CSNK Dinagat\' (CSNK-DINAGAT)', '::1', '2026-03-18 08:13:38'),
 (978, 12, 'Create Branch', 'Created branch \'CSNK Cebu\' (CSNK-CEBU)', '::1', '2026-03-18 08:13:58'),
 (979, 12, 'Create Branch', 'Created branch \'CSNK NUEVA ECIJA\' (CSNK-NUEVA-ECIJA)', '::1', '2026-03-18 08:14:36'),
-(980, 12, 'Create Branch', 'Created branch \'CSNK BACOLOD\' (CSNK-BACOLOR)', '::1', '2026-03-18 08:15:04');
+(980, 12, 'Create Branch', 'Created branch \'CSNK BACOLOD\' (CSNK-BACOLOR)', '::1', '2026-03-18 08:15:04'),
+(981, 12, 'Login', 'User logged in successfully', '::1', '2026-03-18 12:04:32'),
+(982, 12, 'Set Default Branch', 'Branch \'CSNK BACOLOD\' (CSNK-BACOLOR) set as default branch', '::1', '2026-03-18 13:24:58'),
+(983, 12, 'Set Default Branch', 'Branch \'CSNK Manila\' (CSNK-MNL) set as default branch', '::1', '2026-03-18 13:25:07'),
+(984, 12, 'Login', 'User logged in successfully', '::1', '2026-03-19 00:14:56'),
+(985, 12, 'Login', 'User logged in successfully', '::1', '2026-03-20 00:48:43'),
+(986, 12, 'Create Account', 'Created employee Mindoro001 (Branch ID:5)', '::1', '2026-03-20 00:50:08'),
+(987, 12, 'Create Account', 'Created employee Palawan001 (Branch ID:6)', '::1', '2026-03-20 00:51:04'),
+(988, 12, 'Create Account', 'Created employee Marinduque001 (Branch ID:7)', '::1', '2026-03-20 00:51:39'),
+(989, 12, 'Create Account', 'Created employee Batangas001 (Branch ID:7)', '::1', '2026-03-20 00:52:13'),
+(990, 12, 'Edit Account', 'Edited ID 30', '::1', '2026-03-20 00:52:27'),
+(991, 12, 'Edit Account', 'Edited ID 30', '::1', '2026-03-20 00:52:45'),
+(992, 12, 'Delete Account', 'Deleted ID 30', '::1', '2026-03-20 00:52:51'),
+(993, 12, 'Create Account', 'Created employee Batangas001 (Branch ID:4)', '::1', '2026-03-20 00:53:47'),
+(994, 12, 'Create Account', 'Created employee Gensan001 (Branch ID:8)', '::1', '2026-03-20 00:54:25'),
+(995, 12, 'Create Account', 'Created employee Iloilo001 (Branch ID:9)', '::1', '2026-03-20 00:55:03'),
+(996, 12, 'Create Account', 'Created employee Dinagat001 (Branch ID:10)', '::1', '2026-03-20 00:55:33'),
+(997, 12, 'Create Account', 'Created employee Cebu001 (Branch ID:11)', '::1', '2026-03-20 00:56:06'),
+(998, 12, 'Create Account', 'Created employee Nuevaecija001 (Branch ID:12)', '::1', '2026-03-20 00:56:57'),
+(999, 12, 'Create Account', 'Created employee Bacolod001 (Branch ID:13)', '::1', '2026-03-20 00:57:50'),
+(1000, 12, 'Logout', 'User logged out', '::1', '2026-03-20 00:58:45'),
+(1001, 28, 'Login', 'User logged in successfully', '::1', '2026-03-20 00:58:56'),
+(1002, 28, 'Logout', 'User logged out', '::1', '2026-03-20 00:59:27'),
+(1003, 12, 'Login', 'User logged in successfully', '::1', '2026-03-20 00:59:32');
 
 -- --------------------------------------------------------
 
@@ -87,7 +110,17 @@ INSERT INTO `admin_users` (`id`, `username`, `email`, `password`, `full_name`, `
 (19, 'SMCsuper', 'ocampojohn13@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVhESWoweG4xVURpLk9ZNg$3nlUFoWx4wueaYi52OP0zi/sXT13cP3UWzZRtZIAjvg', 'super', NULL, 'super_admin', NULL, NULL, 'active', '2026-02-26 06:09:06', '2026-02-26 06:09:06'),
 (24, 'smc001', 'angel@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$Qks5MWRDMWx0UVg0L0lxRw$GVcSaydU57qZskXhBZLGq3WqJOglig4CW1r2C2IbHRE', 'Angel Lazaro', NULL, 'employee', 'smc', NULL, 'active', '2026-03-14 06:56:54', '2026-03-14 06:56:54'),
 (25, 'smc002', 'jasz@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$VlpLRndBRmRXQTJnWk10Lw$WsqlJkKMCDGdaUD5pUKjv9OSYmzqJDSG3X4sbWpigFs', 'Jasz', NULL, 'employee', 'smc', NULL, 'active', '2026-03-14 06:57:40', '2026-03-14 06:57:40'),
-(26, 'csnk001', 'liza@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$aWpHLlZKQUZIb2gudWMxZQ$eiGQdfEiYcDIgVbdRaLn7ABa6vR3zkR4+JXNlmbv838', 'Liza Belarde', NULL, 'employee', 'csnk', 1, 'active', '2026-03-14 06:59:56', '2026-03-14 07:14:19');
+(26, 'csnk001', 'liza@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$aWpHLlZKQUZIb2gudWMxZQ$eiGQdfEiYcDIgVbdRaLn7ABa6vR3zkR4+JXNlmbv838', 'Liza Belarde', NULL, 'employee', 'csnk', 1, 'active', '2026-03-14 06:59:56', '2026-03-14 07:14:19'),
+(27, 'Mindoro001', 'mindoro@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$OGFJRUNReHM2bGdqdm5XYQ$Rbjup6KAa79zYbuPJNAycDI6yRlkZM/on5uaSmmHmwY', 'Mindoro Branch', NULL, 'employee', 'csnk', 5, 'active', '2026-03-20 00:50:08', '2026-03-20 00:50:08'),
+(28, 'Palawan001', 'palawan@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$cVdPZkpsRUVnR1d0RlZ1Vg$e3qrcyshlw67NCxVdf38XbUxtS5rR6e6FBclUVbPiIs', 'Palawan Branch', NULL, 'employee', 'csnk', 6, 'active', '2026-03-20 00:51:04', '2026-03-20 00:51:04'),
+(29, 'Marinduque001', 'marinduque@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$c0lxOWEzbDE4c1JObGE1ag$9PcPPrSMxJA0a+KgiXR6Mwy81dWGWbxtfU+G0hJL4x4', 'Marinduque Branch', NULL, 'employee', 'csnk', 7, 'active', '2026-03-20 00:51:39', '2026-03-20 00:51:39'),
+(31, 'Batangas001', 'batangas@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$SVg3T1Blb0t0MVhzSWM2NQ$IXmnVEVslSmf1uopOMrzV8/QnHRX80ET/Bpf3QyJutg', 'Batangas Branch', NULL, 'employee', 'csnk', 4, 'active', '2026-03-20 00:53:47', '2026-03-20 00:53:47'),
+(32, 'Gensan001', 'gensan@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$RDd0VDZEdW13MzJWTFo4Tw$wXPoAeFbDcVQECvIoqnW0FzZ5LIjsShehZlmp1KuLsQ', 'Gensan Branch', NULL, 'employee', 'csnk', 8, 'active', '2026-03-20 00:54:24', '2026-03-20 00:54:24'),
+(33, 'Iloilo001', 'iloilo@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$NHkuUXR2ZUlCdS81ZE4ybQ$5UBLf6tHZ6RRbycbKtKRlZEIgvCanW8SgC96dlGp5z8', 'Iloilo Branch', NULL, 'employee', 'csnk', 9, 'active', '2026-03-20 00:55:03', '2026-03-20 00:55:03'),
+(34, 'Dinagat001', 'dinagat@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$ZDlGTGFkVHE1UVNaenkxdw$tQplfEwi2GdmkTplkEErYLcos1J6HRMT0DUmifw4vVw', 'Dinagat Branch', NULL, 'employee', 'csnk', 10, 'active', '2026-03-20 00:55:33', '2026-03-20 00:55:33'),
+(35, 'Cebu001', 'cebu@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$ZXI4TElUQXJpMm02OVpIbg$O6mx58OE2GBJrahXYdj7xf3bl01qVuI024iXbMFw4nc', 'Cebu Branch', NULL, 'employee', 'csnk', 11, 'active', '2026-03-20 00:56:06', '2026-03-20 00:56:06'),
+(36, 'Nuevaecija001', 'nuevaecija@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$Yi92emI0RzJiVkxjZ29Heg$rYGwDHzjpSBepPrv42/elW/xONas7YS/VF8h0okHMFQ', 'Nueva Ecija Bnrach', NULL, 'employee', 'csnk', 12, 'active', '2026-03-20 00:56:57', '2026-03-20 00:56:57'),
+(37, 'Bacolod001', 'bacolod@gmail.com', '$argon2id$v=19$m=65536,t=4,p=1$YzNkcjR0QUJsRHM3Wi5LMQ$n11uxTJ6y16N4pwk+US3xTpnBG1wEEN3kOitqw0EX10', 'Bacolod Branch', NULL, 'employee', 'csnk', 13, 'active', '2026-03-20 00:57:50', '2026-03-20 00:57:50');
 
 -- --------------------------------------------------------
 
@@ -946,7 +979,7 @@ CREATE TABLE `csnk_branches` (
 --
 
 INSERT INTO `csnk_branches` (`id`, `code`, `name`, `status`, `is_default`, `sort_order`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'CSNK-MNL', 'CSNK Manila', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-13 03:28:24', 'jmpogi'),
+(1, 'CSNK-MNL', 'CSNK Manila', 'ACTIVE', 1, 0, '2026-03-11 06:16:27', 'system', '2026-03-18 13:25:07', 'jmpogi'),
 (3, 'CSNK-ALAMINOS', 'CSNK Alaminos', 'ACTIVE', 0, 2, '2026-03-13 02:22:43', 'jmpogi', '2026-03-13 03:28:29', 'jmpogi'),
 (4, 'CSNK-BATANGAS', 'CSNK Batangas', 'ACTIVE', 0, 1, '2026-03-13 02:23:16', 'jmpogi', '2026-03-18 08:12:39', 'jmpogi'),
 (5, 'CSNK-MINDORO', 'CSNK Mindoro', 'ACTIVE', 0, 0, '2026-03-18 08:05:55', 'jmpogi', NULL, NULL),
@@ -957,7 +990,7 @@ INSERT INTO `csnk_branches` (`id`, `code`, `name`, `status`, `is_default`, `sort
 (10, 'CSNK-DINAGAT', 'CSNK Dinagat', 'ACTIVE', 0, 0, '2026-03-18 08:13:38', 'jmpogi', NULL, NULL),
 (11, 'CSNK-CEBU', 'CSNK Cebu', 'ACTIVE', 0, 0, '2026-03-18 08:13:58', 'jmpogi', NULL, NULL),
 (12, 'CSNK-NUEVA-ECIJA', 'CSNK NUEVA ECIJA', 'ACTIVE', 0, 0, '2026-03-18 08:14:36', 'jmpogi', NULL, NULL),
-(13, 'CSNK-BACOLOR', 'CSNK BACOLOD', 'ACTIVE', 0, 0, '2026-03-18 08:15:04', 'jmpogi', NULL, NULL);
+(13, 'CSNK-BACOLOR', 'CSNK BACOLOD', 'ACTIVE', 0, 0, '2026-03-18 08:15:04', 'jmpogi', '2026-03-18 13:25:07', NULL);
 
 -- --------------------------------------------------------
 
@@ -1022,7 +1055,8 @@ INSERT INTO `invoice_history` (`id`, `business_unit_id`, `invoice_num`, `invoice
 (10, 2, 'SMC-20260318-576', '2026-03-18', '2026-03-18', 'REF-20260318-975558', 'John Adrian Cabrito', 'cabs@gmail.com', '214 Parola Tondo Manila', 14000.00, '[{\"name\":\"Charmaine Rose Dimapilis Jimenez\",\"start_date\":\"2026-03-18\",\"end_date\":\"2026-03-31\",\"days\":14,\"amount\":14000}]', 'SMC-20260318-576.pdf', '2026-03-18 06:56:54'),
 (11, 2, 'SMC-20260318-753', '2026-03-18', '2026-03-19', 'REF-20260318-330255', 'John Adrian Cabrito', 'cabs@gmail.com', '214 Parola Tondo Manila', 150.00, '[{\"name\":\"Charmaine Rose Dimapilis Jimenez\",\"start_date\":\"2026-03-18\",\"end_date\":\"2026-03-31\",\"days\":14,\"amount\":150}]', 'SMC-20260318-753.pdf', '2026-03-18 07:00:27'),
 (12, 2, 'SMC-20260318-553', '2026-03-18', '2026-03-18', 'REF-20260318-846935', 'John Adrian Cabrito', 'cabs@gmail.com', '214 Parola Tondo Manila', 150.00, '[{\"name\":\"Charmaine Rose Dimapilis Jimenez\",\"start_date\":\"2026-03-18\",\"end_date\":\"2026-03-31\",\"days\":14,\"amount\":150}]', 'SMC-20260318-553.pdf', '2026-03-18 07:01:10'),
-(13, 1, 'CSNK-20260318-370', '2026-03-18', '2026-03-18', 'REF-20260318-216315', 'Ralph Justine Gallentes', 'roannrenz19@gmail.com', '666 Paco Hellfire St. Paco Manila', 17000.00, '[{\"name\":\"Hannah Louise Parker\",\"start_date\":\"2026-03-18\",\"end_date\":\"2026-03-31\",\"days\":14,\"amount\":17000}]', 'CSNK-20260318-370.pdf', '2026-03-18 07:29:09');
+(13, 1, 'CSNK-20260318-370', '2026-03-18', '2026-03-18', 'REF-20260318-216315', 'Ralph Justine Gallentes', 'roannrenz19@gmail.com', '666 Paco Hellfire St. Paco Manila', 17000.00, '[{\"name\":\"Hannah Louise Parker\",\"start_date\":\"2026-03-18\",\"end_date\":\"2026-03-31\",\"days\":14,\"amount\":17000}]', 'CSNK-20260318-370.pdf', '2026-03-18 07:29:09'),
+(14, 1, 'CSNK-20260318-285', '2026-03-18', '2026-03-18', 'REF-20260318-181967', 'Ralph Justine Gallentes', 'roannrenz19@gmail.com', '666 Paco Hellfire St. Paco Manila', 100.00, '[{\"name\":\"Hannah Louise Parker\",\"start_date\":\"2026-03-11\",\"end_date\":\"2026-03-20\",\"days\":10,\"amount\":100}]', 'CSNK-20260318-285.pdf', '2026-03-18 12:12:27');
 
 -- --------------------------------------------------------
 
@@ -1038,6 +1072,17 @@ CREATE TABLE `session_logs` (
   `login_time` datetime NOT NULL DEFAULT current_timestamp(),
   `logout_time` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `session_logs`
+--
+
+INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
+(243, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-18 20:04:32', NULL),
+(244, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-19 08:14:56', NULL),
+(245, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 08:48:43', '2026-03-20 08:58:45'),
+(246, 28, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 08:58:56', '2026-03-20 08:59:27'),
+(247, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 08:59:32', NULL);
 
 --
 -- Indexes for dumped tables
@@ -1212,13 +1257,13 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=981;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1004;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
 --
 ALTER TABLE `admin_users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `applicant_replacements`
@@ -1272,13 +1317,13 @@ ALTER TABLE `csnk_branches`
 -- AUTO_INCREMENT for table `invoice_history`
 --
 ALTER TABLE `invoice_history`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=243;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=248;
 
 --
 -- Constraints for dumped tables
