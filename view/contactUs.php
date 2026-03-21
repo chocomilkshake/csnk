@@ -113,7 +113,119 @@ function pickFirstReadable(array $paths): ?string {
 function buildBodies(array $data, int $year): array {
   $senderName  = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? ''));
   $senderEmail = $data['email'] ?? '';
+  $senderPhone = $data['phone'] ?? '';
+  $topicSafe   = $data['topic'] ?? '';
+  $messageSafe = $data['message'] ?? '';
 
+  $text =
+    "You have a new CSNK contact form submission:\n\n" .
+    "Name: {$senderName}\n" .
+    "Email: {$senderEmail}\n" .
+    "Phone: {$senderPhone}\n" .
+    "Topic: {$topicSafe}\n\n" .
+    "Message:\n{$messageSafe}\n";
+
+  $html = '<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSNK Manpower Agency</title>
+</head>
+<body style="margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:40px 0;background:#f2f4f7;">
+    <tr><td align="center">
+      <table width="700" cellpadding="0" cellspacing="0" role="presentation" style="width:700px;max-width:95%;background:rgba(255,255,255,0.88);backdrop-filter:blur(14px);border-radius:24px;border:1px solid #e4e7eb;box-shadow:0 8px 28px rgba(0,0,0,0.08);overflow:hidden;">
+        <tr>
+          <td align="center" style="padding:20px 0 10px;">
+            <table cellspacing="0" cellpadding="0" role="presentation">
+              <tr>
+                <td style="padding:0 14px;">
+                  <img src="cid:whychoose_cid" style="max-width:150px;height:auto;display:block;" alt="">
+                </td>
+                <td style="padding:0 14px;">
+                  <img src="cid:secondary_logo_cid" style="max-width:150px;height:auto;display:block;" alt="">
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:linear-gradient(135deg,#d21f3c,#e63c43,#ff5a63);padding:26px 32px;border-top-left-radius:24px;border-top-right-radius:24px;">
+            <div style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">🌐 New Contact Message</div>
+            <div style="color:#ffecec;font-size:13px;margin-top:4px;">Received via the CSNK Website</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 34px 10px;">
+            <table width="100%" cellspacing="0" cellpadding="0" role="presentation" style="background:#ffffff;border-radius:18px;border:1px solid #e9ecef;padding:20px 24px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+              <tr>
+                <td style="width:140px;padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">👤 Name</td>
+                <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:700;">' . h($senderName) . '</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">✉ Email</td>
+                <td style="padding:10px 0;">
+                  <a href="mailto:' . h($senderEmail) . '" style="color:#2563eb;font-size:15px;text-decoration:none;font-weight:600;">' . h($senderEmail) . '</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">📱 Phone</td>
+                <td style="padding:10px 0;color:#111827;font-size:15px;font-weight:600;">' . h($senderPhone) . '</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;font-size:14px;font-weight:600;">🏷 Topic</td>
+                <td style="padding:10px 0;">
+                  <span style="display:inline-block;padding:6px 14px;background:#fff2f4;border:1px solid #f7cfd4;border-radius:999px;color:#d21f3c;font-size:13px;font-weight:700;">' . h($topicSafe) . '</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 34px 30px;">
+            <div style="font-size:15px;color:#d21f3c;font-weight:700;margin-bottom:10px;">💬 Message</div>
+            <div style="background:#ffffff;border-radius:16px;padding:18px 22px;border:1px solid #f0c7cb;line-height:1.7;font-size:15px;color:#374151;white-space:pre-wrap;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+              ' . nl2br(h($messageSafe)) . '
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#faf6f7;padding:16px 26px;border-top:1px solid #e5d1d4;text-align:center;">
+            <div style="font-size:12px;color:#888888;font-style:italic;margin-bottom:4px;">This email was sent automatically from the CSNK website contact form.</div>
+            <div style="font-size:12px;color:#aaaaaa;">© ' . $year . ' CSNK. All rights reserved.</div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>';
+
+
+
+    // Header injection protection (strip newlines from inputs used in email headers)
+    $firstName = str_replace(["\r", "\n"], '', $firstName);
+    $lastName  = str_replace(["\r", "\n"], '', $lastName);
+    $topic     = str_replace(["\r", "\n"], '', $topic);
+
+    // Validate
+    if ($firstName === '' || mb_strlen($firstName) > 80) $errors['firstName'] = 'Please enter your first name (max 80 characters).';
+    if ($lastName === ''  || mb_strlen($lastName)  > 80) $errors['lastName']  = 'Please enter your last name (max 80 characters).';
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Please enter a valid email address.';
+    if ($phone !== '' && !preg_match('/^\d{11}$/', $phone)) $errors['phone'] = 'Please enter an 11-digit phone number.';
+    if ($topic === '' || !in_array($topic, $ALLOWED_TOPICS, true)) $errors['topic'] = 'Please select a topic.';
+    if ($message === '' || mb_strlen($message) > (int)$CONFIG['max_message']) $errors['message'] = 'Please enter your message (max ' . (int)$CONFIG['max_message'] . ' characters).';
+    if (empty($_POST['consent'])) $errors['consent'] = 'Consent is required.';
+
+    if (!$errors) {
+      [$ok, $err] = sendSmart($CONFIG, [
+        'firstName' => $firstName,
+        'lastName'  => $lastName,
+        'email'     => $email,
+        'phone'     => $phone,
+        'topic'     => $topic,
         'message'   => $message,
       ], $phpmailerLoaded);
 
