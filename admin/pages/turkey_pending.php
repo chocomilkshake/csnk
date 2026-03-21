@@ -56,6 +56,27 @@ if (empty($_SESSION['current_bu_id'])) {
     exit;
 }
 
+// Grab ALL active SMC BU IDs to enforce SMC-only scope
+$smcBuIds = [];
+if ($conn instanceof mysqli) {
+    $sqlSmcBus = "
+        SELECT bu.id
+        FROM business_units bu
+        JOIN agencies ag ON ag.id = bu.agency_id
+        WHERE ag.code = 'smc' AND bu.active = 1
+        ORDER BY bu.id ASC
+    ";
+    if ($res = $conn->query($sqlSmcBus)) {
+        while ($r = $res->fetch_assoc()) {
+            $smcBuIds[] = (int) $r['id'];
+        }
+    }
+}
+if (!empty($smcBuIds)) {
+    // Optional: store first SMC BU ID in session
+    $_SESSION['smc_bu_id'] = $smcBuIds[0];
+}
+
 // Build preserved query string but EXCLUDE action parameters that cause loops
 $filterOutKeys = ['page', 'action', 'id', 'to', 'csrf'];
 $preserveQS = '';
@@ -219,46 +240,254 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-
-// TEMP: Debug what the filter bar thinks you’re filtering by
-// Remove in production.
-echo '<pre style="background:#111;color:#0f0;padding:8px">';
-echo "filters = ";
-var_dump($filters);
-echo "status = ";
-var_dump($status);
-echo "country = ";
-var_dump($country);
-echo "counts = ";
-var_dump($counts);
-echo '</pre>';
 $buScope = null;
 // SMC Filter Bar
 require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 
-// Boot with your page-specific options:
-$filterState = smc_filter_boot([
+$buScope = (int) ($_SESSION['smc_bu_id'] ?? 0); // or just use $smcBuId
+$smcState = smc_filter_boot([
     'base_url' => 'turkey_pending.php',
-    'session_ns' => 'smc_tr_applicants',
-    'applicant' => $applicant,   // Applicant model instance
-    'buId' => $buScope,     // optional BU scope
-    // Optional overrides:
-    // 'allowed_statuses' => ['all','pending','on_process','approved'],
-    // 'not_deleted'      => true,
-    // 'not_blacklisted'  => true,
+    'session_ns' => 'smc_turkey_pending',
+    'allowed_statuses' => ['all', 'pending', 'on_process', 'approved'],
+    // You can pass current BU here, but enforce SMC scope in SQL below
+    'buId' => $_SESSION['current_bu_id'] ?? null,
+    'not_deleted' => true,
+    'not_blacklisted' => true,
+    // Optionally enforce a default status on this page if your filter supports it:
+    // 'default_status' => 'pending',
 ]);
+$q = (string) ($smcState['q'] ?? '');
+$status = (string) ($smcState['status'] ?? 'all');
+$country = (string) ($smcState['country'] ?? 'all');
 
+// ---- #3: Status counts (all/pending/on_process/approved) ----
+$counts = ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
 
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPh = implode(',', array_fill(0, count($smcBuIds), '?'));
+    $where = [];
+    $types = str_repeat('i', count($smcBuIds));
+    $params = $smcBuIds;
 
-// Use computed filters to fetch list:
-$filters = $filterState['filters'];
-$q = $filterState['q'];
-$status = $filterState['status'];
-$country = $filterState['country'];
-$counts = $filterState['counts'];
-$countries = $filterState['countriesWithCounts'];
-$preserveQS = $filterState['preserveQS'];            // e.g., for pagination links
-$preserveQSwQ = $filterState['preserveQSWithQuestion'];
+    $where[] = "a.business_unit_id IN ($buPh)";
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    if ($country !== 'all') {
+        $where[] = "a.country_id = ?";
+        $types .= 'i';
+        $params[] = (int) $country;
+    }
+
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . ")";
+        $types .= 'sss';
+        array_push($params, $like, $like, $like);
+    }
+
+    // Count only these statuses
+    $where[] = "a.status IN ('pending','on_process','approved')";
+    $whereSql = implode(' AND ', $where);
+
+    $sqlCounts = "SELECT a.status, COUNT(*) AS cnt
+                  FROM applicants a
+                  WHERE $whereSql
+                  GROUP BY a.status";
+
+    if ($stmt = $conn->prepare($sqlCounts)) {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $total = 0;
+        while ($row = $res->fetch_assoc()) {
+            $st = (string) $row['status'];
+            $cnt = (int) $row['cnt'];
+            if (in_array($st, ['pending', 'on_process', 'approved'], true)) {
+                $counts[$st] = $cnt;
+                $total += $cnt;
+            }
+        }
+        $counts['all'] = $total;
+        $stmt->close();
+    }
+}
+
+$smcState['counts'] = $counts;
+
+// ---- #4: Countries with counts (respecting filters) ----
+$countriesWithCounts = [];
+
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPh = implode(',', array_fill(0, count($smcBuIds), '?'));
+    $where = [];
+    $types = str_repeat('i', count($smcBuIds));
+    $params = $smcBuIds;
+
+    $where[] = "a.business_unit_id IN ($buPh)";
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    if ($status === 'all') {
+        $where[] = "a.status IN ('pending','on_process','approved')";
+    } else {
+        $where[] = "a.status = ?";
+        $types .= 's';
+        $params[] = $status;
+    }
+
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . ")";
+        $types .= 'sss';
+        array_push($params, $like, $like, $like);
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $sqlCountries = "
+        SELECT COALESCE(c.id, 0) AS id,
+               COALESCE(c.name, 'Unspecified') AS name,
+               COUNT(*) AS count
+        FROM applicants a
+        LEFT JOIN countries c ON c.id = a.country_id
+        WHERE $whereSql
+        GROUP BY COALESCE(c.id, 0), COALESCE(c.name, 'Unspecified')
+        ORDER BY name ASC
+    ";
+
+    if ($stmt = $conn->prepare($sqlCountries)) {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $countriesWithCounts[] = [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+                'count' => (int) $row['count'],
+            ];
+        }
+        $stmt->close();
+    }
+}
+
+$smcState['countriesWithCounts'] = $countriesWithCounts;
+
+// ---- #5: Fetch rows (SMC-only + filters) ----
+$rows = [];
+
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPlaceholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+
+    $where = [];
+    $types = '';
+    $params = [];
+
+    // SMC BU restriction
+    $where[] = "a.business_unit_id IN ($buPlaceholders)";
+    $types .= str_repeat('i', count($smcBuIds));
+    array_push($params, ...$smcBuIds);
+
+    // Status: if you want "Pending page" to always be pending, replace this block with:
+    // $where[] = "a.status = 'pending'";
+    if ($status !== 'all') {
+        $where[] = "a.status = ?";
+        $types .= 's';
+        $params[] = $status;
+    } else {
+        $where[] = "a.status IN ('pending','on_process','approved')";
+    }
+
+    // Country
+    if ($country !== 'all') {
+        $where[] = "a.country_id = ?";
+        $types .= 'i';
+        $params[] = (int) $country;
+    }
+
+    // Not deleted / not blacklisted
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    // Search (applicant + latest booking fields)
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . " OR CONCAT_WS(' ', cb.client_first_name, cb.client_middle_name, cb.client_last_name) LIKE ?"
+            . " OR cb.client_email LIKE ?"
+            . " OR cb.client_phone LIKE ?"
+            . ")";
+        $types .= 'ssssss';
+        array_push($params, $like, $like, $like, $like, $like, $like);
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $sql = "SELECT
+                a.id,
+                a.first_name,
+                a.middle_name,
+                a.last_name,
+                a.suffix,
+                a.phone_number,
+                a.email,
+                a.preferred_location,
+                a.picture,
+                a.status,
+                a.created_at,
+                a.business_unit_id,
+                cb.client_first_name,
+                cb.client_middle_name,
+                cb.client_last_name,
+                cb.client_phone,
+                cb.client_email,
+                cb.client_address,
+                cb.appointment_type,
+                cb.appointment_date,
+                cb.appointment_time
+            FROM applicants a
+            LEFT JOIN (
+                SELECT cb1.* 
+                FROM client_bookings cb1
+                INNER JOIN (
+                    SELECT applicant_id, MAX(created_at) as max_created
+                    FROM client_bookings
+                    GROUP BY applicant_id
+                ) cb2 ON cb1.applicant_id = cb2.applicant_id AND cb1.created_at = cb2.max_created
+            ) cb ON a.id = cb.applicant_id
+            WHERE $whereSql
+            ORDER BY a.created_at DESC";
+
+    if ($stmt = $conn->prepare($sql)) {
+        if ($types !== '') {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        $stmt->close();
+    }
+}
 
 function renderPreferredLocation(?string $json, int $maxLen = 30): string
 {
@@ -416,9 +645,8 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         margin-bottom: 0;
     }
 </style>
-
 <div class="container-fluid px-2">
-    <?php smc_filter_render($filterState); ?>
+    <?php smc_filter_render($smcState); ?>
     <div class="row align-items-center justify-content-between mb-3">
 
         <div class="row mb-2">
@@ -456,44 +684,72 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($applicants)): ?>
+                            <?php if (empty($rows)): ?>
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted py-5">No pending applicants found.</td>
+                                    <td colspan="8" class="text-center text-muted py-5">No applicants found for the selected
+                                        filters.</td>
                                 </tr>
                             <?php else: ?>
-                                <?php foreach ($applicants as $app): ?>
+                                <?php foreach ($rows as $app): ?>
                                     <?php
                                     // Roles: super_admin/admin/employee can edit in SMC pages
                                     $canEdit = ($isSuperAdmin || $isAdmin || $isEmployee);
+
+                                    // Normalize/defensive defaults
+                                    $appId = (int) ($app['id'] ?? 0);
+                                    $status = (string) ($app['status'] ?? 'pending');
+                                    $pic = (string) ($app['picture'] ?? '');
+                                    $fname = (string) ($app['first_name'] ?? '');
+                                    $mname = (string) ($app['middle_name'] ?? '');
+                                    $lname = (string) ($app['last_name'] ?? '');
+                                    $suffix = (string) ($app['suffix'] ?? '');
+                                    $phone = (string) ($app['phone_number'] ?? '—');
+                                    $email = (string) ($app['email'] ?? 'N/A');
+                                    $created = (string) ($app['created_at'] ?? '');
                                     ?>
                                     <tr>
                                         <td>
-                                            <?php if (!empty($app['picture'])): ?>
-                                                <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded"
-                                                    width="50" height="50" style="object-fit: cover;">
+                                            <?php if ($pic !== ''): ?>
+                                                <img src="<?php echo h(getFileUrl($pic)); ?>" alt="Photo" class="rounded" width="50"
+                                                    height="50" style="object-fit: cover;">
                                             <?php else: ?>
                                                 <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
                                                     style="width: 50px; height: 50px;">
-                                                    <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
+                                                    <?php echo strtoupper(substr($fname, 0, 1)); ?>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
-                                        <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
+                                        <td>
+                                            <strong><?php echo h(getFullName($fname, $mname, $lname, $suffix)); ?></strong>
                                         </td>
-                                        <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-                                        <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                                        <td><?php echo h($phone); ?></td>
+                                        <td><?php echo h($email); ?></td>
                                         <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
-                                        <td><span class="badge bg-warning">Pending</span></td>
-                                        <td><?php echo h(formatDate($app['created_at'])); ?></td>
+                                        <td>
+                                            <?php
+                                            // Color-code status
+                                            $badge = [
+                                                'pending' => 'warning',
+                                                'on_process' => 'info',
+                                                'approved' => 'success',
+                                            ][$status] ?? 'secondary';
+                                            ?>
+                                            <span class="badge bg-<?php echo $badge; ?>">
+                                                <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo h(formatDate($created)); ?></td>
                                         <td>
                                             <div class="btn-group dropup dd-modern">
-                                                <a href="view-applicant.php?id=<?php echo (int) $app['id']; ?>"
+                                                <a href="view-applicant.php?id=<?php echo $appId; ?>"
                                                     class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
+
                                                 <?php if ($canEdit): ?>
-                                                    <a href="edit-applicant.php?id=<?php echo (int) $app['id']; ?>"
+                                                    <a href="edit-applicant.php?id=<?php echo $appId; ?>"
                                                         class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+
                                                     <!-- Delete -->
-                                                    <a href="turkey_pending.php?action=delete&id=<?php echo (int) $app['id']; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"
+                                                    <a href="turkey_pending.php?action=delete&id=<?php echo $appId; ?><?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>"
                                                         class="btn btn-sm btn-danger" title="Delete"
                                                         onclick="return confirm('Are you sure you want to delete this applicant?');">
                                                         <i class="bi bi-trash"></i>
@@ -507,29 +763,29 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
                                                         data-bs-toggle="dropdown" data-bs-auto-close="true"
                                                         data-bs-display="static" data-bs-offset="0,8" aria-expanded="false"
                                                         aria-haspopup="true" title="Change Status"
-                                                        id="changeStatusBtn-<?php echo (int) $app['id']; ?>">
+                                                        id="changeStatusBtn-<?php echo $appId; ?>">
                                                         <i class="bi bi-arrow-left-right me-1"></i>
                                                         Change Status
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end shadow"
-                                                        aria-labelledby="changeStatusBtn-<?php echo (int) $app['id']; ?>">
+                                                        aria-labelledby="changeStatusBtn-<?php echo $appId; ?>">
                                                         <li>
-                                                            <a class="dropdown-item <?php echo ($app['status'] === 'pending') ? 'disabled' : ''; ?>"
-                                                                href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <a class="dropdown-item <?php echo ($status === 'pending') ? 'disabled' : ''; ?>"
+                                                                href="turkey_pending.php?action=update_status&id=<?php echo $appId; ?>&to=pending<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
                                                                 <i class="bi bi-hourglass-split text-warning"></i>
                                                                 <span>Pending</span>
                                                             </a>
                                                         </li>
                                                         <li>
-                                                            <a class="dropdown-item <?php echo ($app['status'] === 'on_process') ? 'disabled' : ''; ?>"
-                                                                href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=on_process<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <a class="dropdown-item <?php echo ($status === 'on_process') ? 'disabled' : ''; ?>"
+                                                                href="turkey_pending.php?action=update_status&id=<?php echo $appId; ?>&to=on_process<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
                                                                 <i class="bi bi-arrow-repeat text-info"></i>
                                                                 <span>On Process</span>
                                                             </a>
                                                         </li>
                                                         <li>
-                                                            <a class="dropdown-item <?php echo ($app['status'] === 'approved') ? 'disabled' : ''; ?>"
-                                                                href="turkey_pending.php?action=update_status&id=<?php echo (int) $app['id']; ?>&to=approved<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
+                                                            <a class="dropdown-item <?php echo ($status === 'approved') ? 'disabled' : ''; ?>"
+                                                                href="turkey_pending.php?action=update_status&id=<?php echo $appId; ?>&to=approved<?php echo $preserveQS; ?>&csrf=<?php echo h($csrf); ?>">
                                                                 <i class="bi bi-check2-circle text-success"></i>
                                                                 <span>Approved</span>
                                                             </a>
@@ -547,5 +803,5 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
             </div>
         </div>
     </div>
-
-    <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
+</div>
+<?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
