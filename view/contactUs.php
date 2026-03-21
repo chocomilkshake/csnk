@@ -544,7 +544,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </div>
                 </div>
               </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <!-- Last name -->
+                  <input type="text" id="lastName" name="lastName"
+                    class="form-control <?= InvalidArgumentExceptio
+          </div>
 
+          <!-- Info -->
+          <div class="col-lg-5 bg-white">
+            <div class="p-4 p-md-5 h-100 d-flex flex-column justify-content-center">
+
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-danger rounded-pill px-3 py-2">CSNK Manpower Agency</span>
+              </div>
+
+              <h5 class="fw-bold mb-3">Office Information</h5>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-location-dot"></i></div>
+                <div>
+                  <div class="fw-semibold">Address</div>
+                  <div class="text-muted small">
+                    Ground Floor Unit 1 Eden Townhouse<br>
+                    2001 Eden St. Cor Pedro Gil, Sta Ana<br>
+                    Barangay 866, City of Manila, NCR, Sixth District
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <div class="fw-semibold">Phone</div>
+                  <div class="text-muted small">0945 657 0878</div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mb-3">
+                <div class="text-danger fs-5"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                  <div class="fw-semibold">Email</div>
+  <!-- Font Awesome & Bootstrap JS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Policy Modals Handler -->
+  <script src="../resources/js/policy-modals.js"></script>
+
+  <script>
+    // Character counter (emoji-safe)
+    const messageEl = document.getElementById('message');
+    const counterEl = document.getElementById('charCount');
+    const limit = parseInt(messageEl?.getAttribute('maxlength') || '500', 10);
+    function updateCounter() {
+      const len = [...(messageEl.value || '')].length;
+      counterEl.textContent = `${len} / ${limit}`;
+      const threshold = Math.floor(limit * 0.9);
+      counterEl.classList.toggle('warning', len >= threshold);
+    }
+    if (messageEl) { messageEl.addEventListener('input', updateCounter); updateCounter(); }
+
+    // Submit button loading UI
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = submitBtn?.querySelector('.submit-text');
     const submitLoading = submitBtn?.querySelector('.submit-loading');
     form?.addEventListener('submit', () => {
       submitText?.classList.add('d-none');
