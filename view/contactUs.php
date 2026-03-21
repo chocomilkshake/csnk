@@ -261,6 +261,41 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
               'ssl' => [
                 'verify_peer' => false,
                 'verify_peer_name' => false,
+                'allow_self_signed' => true,
+              ],
+            ];
+          }
+
+          // Recipients & headers
+          $mail->setFrom($CONFIG['from_email'], $CONFIG['from_name']);
+          $mail->addAddress($toEmail, $toName);
+          if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+            $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+            $replyName = str_replace(["\r", "\n"], ' ', $replyName);
+            $mail->addCC($post['email']);
+            $mail->addReplyTo($post['email'], $replyName);
+          }
+          $mail->Subject = $subject;
+
+          // Embedded images (CID)
+          $whychoosePath = pickFirstReadable([
+            __DIR__ . '/../resources/img/whychoose.png',
+            __DIR__ . '/resources/img/whychoose.png',
+            __DIR__ . '/public/resources/img/whychoose.png',
+          ]);
+          $secondaryPath = pickFirstReadable([
+            __DIR__ . '/../resources/img/emailogo.png',
+            __DIR__ . '/resources/img/emailogo.png',
+            __DIR__ . '/public/resources/img/emailogo.png',
+            __DIR__ . '/../resources/img/crempco-logo.png',
+            __DIR__ . '/resources/img/crempco-logo.png',
+            __DIR__ . '/public/resources/img/crempco-logo.png',
+          ]);
+          if ($whychoosePath) {
+            $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+          } else {
+            error_log('Email embed: whychoose.png not found.');
+          }
           if ($secondaryPath) {
             $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
             $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
