@@ -1,7 +1,6 @@
 <?php
 // contactUs.php
 declare(strict_types=1);
-use Psr\SimpleCache\InvalidArgumentException;
 session_start();
 
 /**
@@ -548,7 +547,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-floating">
                   <!-- Last name -->
                   <input type="text" id="lastName" name="lastName"
-                    class="form-control <?= InvalidArgumentException
+                    class="form-control <?= inva
           </div>
 
           <!-- Info -->
