@@ -251,7 +251,30 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
           $mail->Username   = $CONFIG['smtp_user'];
           $mail->Password   = str_replace(' ', '', (string)$CONFIG['smtp_pass']); // strip spaces
           $mail->SMTPSecure = $p['secure'];
+          $mail->SMTPAutoTLS = true;
+          $mail->Port       = (int)$p['port'];
 
+          // Allow self-signed only on localhost dev
+          $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+          if (in_array($host, ['localhosAIL)) {
+    $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+    $headers .= 'Reply-To: ' . ($replyName ? "{$replyName} <{$post['email']}>" : $post['email']) . "\r\n";
+  }
+  $headers .= "MIME-Version: 1.0\r\n";
+  $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+  [, $plain] = buildBodies($post, (int)date('Y'));
+  $ok = @mail($to, $subj, $plain, $headers);
+  if ($ok) {
+    error_log('Mail sent via PHP mail() fallback (no PHPMailer available).');
+    return [true, ''];
+  }
+  return [false, 'Mail function failed on the server.'];
+}
+
+// -------------------- Handle POST --------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Rate limit (server-side, per session)
   $cooldown = 30; // seconds
   $lastSubmit = (int)($_SESSION['contact_last_submit'] ?? 0);
   if (time() - $lastSubmit < $cooldown) {
