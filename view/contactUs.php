@@ -548,7 +548,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-floating">
                   <!-- Last name -->
                   <input type="text" id="lastName" name="lastName"
-                    class="form-control <?= InvalidArgumentExceptio
+                    class="form-control <?= InvalidArgumentException
           </div>
 
           <!-- Info -->
