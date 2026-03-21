@@ -66,9 +66,13 @@ $success = false;
 
 // -------------------- Helpers --------------------
 function clean(string $v): string {
+  // Normalize and remove dangerous content
   $v = trim($v);
+  $v = str_replace("\0", "", $v);             // null-byte removal
   $v = str_replace(["\r\n", "\r"], "\n", $v);
-  return preg_replace('/[\x00-\x1F\x7F]/', '', $v);
+  $v = strip_tags($v);                             // strip HTML/script tags
+  $v = preg_replace('/[\x00-\x1F\x7F]/u', '', $v); // control characters
+  return $v;
 }
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -213,7 +217,9 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
   $toName  = $CONFIG['to_name'] ?? '';
   $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
   $topic  = trim($post['topic'] ?? '');
+  $topic  = str_replace(["\r", "\n"], ' ', $topic);
   $subject = $subjectBase . ($topic !== '' ? ' - ' . $topic : '');
+  $subject = str_replace(["\r", "\n"], ' ', $subject); // prevent header injection
 
   // If PHPMailer is available, use it
   if ($phpmailerLoaded) {
@@ -264,6 +270,7 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
           $mail->addAddress($toEmail, $toName);
           if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
             $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+            $replyName = str_replace(["\r", "\n"], ' ', $replyName);
             $mail->addCC($post['email']);
             $mail->addReplyTo($post['email'], $replyName);
           }
@@ -324,6 +331,7 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
         $mail->addAddress($toEmail, $toName);
         if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
           $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+          $replyName = str_replace(["\r", "\n"], ' ', $replyName);
           $mail->addReplyTo($post['email'], $replyName);
         }
         $mail->Subject = $subject;
@@ -391,6 +399,13 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
 
 // -------------------- Handle POST --------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Rate limit (server-side, per session)
+  $cooldown = 30; // seconds
+  $lastSubmit = (int)($_SESSION['contact_last_submit'] ?? 0);
+  if (time() - $lastSubmit < $cooldown) {
+    $errors['general'] = 'Please wait ' . ($cooldown - (time() - $lastSubmit)) . ' seconds before sending again.';
+  }
+
   // Honeypot
   $honeypot = $_POST['website'] ?? '';
 
@@ -403,16 +418,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!empty($honeypot)) {
     // Silently succeed for bots (do not actually send)
     $success = true;
+    $_SESSION['contact_last_submit'] = time();
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     $_POST = [];
   } else {
     // Gather
     $firstName = clean($_POST['firstName'] ?? '');
     $lastName  = clean($_POST['lastName']  ?? '');
-    $email     = clean($_POST['email']     ?? '');
+    $email     = filter_var(clean($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
     $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
-    $topic     = clean($_POST['topic']     ?? '');
-    $message   = clean($_POST['message']   ?? '');
+    $topic     = clean($_POST['topic'] ?? '');
+    $message   = clean($_POST['message'] ?? '');
+
+    // Header injection protection (strip newlines from inputs used in email headers)
+    $firstName = str_replace(["\r", "\n"], '', $firstName);
+    $lastName  = str_replace(["\r", "\n"], '', $lastName);
+    $topic     = str_replace(["\r", "\n"], '', $topic);
 
     // Validate
     if ($firstName === '' || mb_strlen($firstName) > 80) $errors['firstName'] = 'Please enter your first name (max 80 characters).';
@@ -435,6 +456,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       if ($ok) {
         $success = true;
+        $_SESSION['contact_last_submit'] = time();
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // rotate token
         $_POST = []; // clear form
       } else {
