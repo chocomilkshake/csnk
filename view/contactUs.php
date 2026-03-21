@@ -549,7 +549,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <input type="text" id="lastName" name="lastName"
                     class="form-control <?= invalidClass($errors, 'lastName') ?>" placeholder="Last name" required
                     maxlength="80" autocomplete="family-name" value="<?= old('lastName') ?>" />
-                  <label for="lastName">Last name</labe
+                  <label for="lastName">Last name</label>
+                  <div class="invalid-feedback">
+                    <?= htmlspecialchars($errors['lastName'] ?? 'Please enter your last name.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>ter an 11-digit phone number.', ENT_QUOTES, 'UTF-8') ?>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <select id="topic" name="topic" class="form-s
+                  <span id="charCount" class="char-counter" aria-live="polite">
+                    0 / <?= (int)$CONFIG['max_message'] ?>
+                  </spannt') ?>" type="checkbox" value="1"
+                      id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
+                    <label class="form-check-label" for="consent">
+                      <a>I agree to the privacy policy. </a>
+                    </label>
+                    <div class="invalid-feedback">
+                      <?= htmlspecialchars($errors['consent'] ?? 'Consent is required.', ENT_QUOTES, 'UTF-8') ?></div>
+                  </div>
+                  <button id="submitBtn" class="btn btn-accent px-4" type="submit">
+                    <span class="submit-text">Send message</span>
+                    <span class="submit-loading d-none">
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Sending…
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </form>
