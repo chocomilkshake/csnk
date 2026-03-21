@@ -383,7 +383,7 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">Approved Applicants (SMC - Turkey)</h4>
+    <h4 class="mb-0 fw-semibold">Approved SMC Applicants</h4>
     <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
     </a>
