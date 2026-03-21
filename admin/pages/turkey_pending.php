@@ -645,6 +645,11 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         margin-bottom: 0;
     }
 </style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-semibold">Pending SMC Applicants</h4>
+</div>
+
 <div class="container-fluid px-2">
     <?php smc_filter_render($smcState); ?>
     <div class="row align-items-center justify-content-between mb-3">
