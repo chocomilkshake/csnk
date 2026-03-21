@@ -256,7 +256,37 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
 
           // Allow self-signed only on localhost dev
           $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
-          if (in_array($host, ['localhosAIL)) {
+          if (in_array($host, ['localhost', '127.0.0
+        // Use domain-based From for SPF/DMARC alignment on local send
+        $localFrom = fallbackFromForLocal();
+        $mail->setFrom($localFrom, $CONFIG['from_name'] ?? 'Website');
+        $mail->addAddress($toEmail, $toName);
+        if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
+          $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
+          $replyName = str_replace(["\r", "\n"], ' ', $replyName);
+          $mail->addReplyTo($post['email'], $replyName);
+        }
+        $mail->AltBody = $textBody;
+
+        $mail->send();
+        error_log('Mail sent via local sendmail fallback.');
+        return [true, ''];
+      } catch (\Throwable $sendmailEx) {
+        error_log('Local sendmail fallback failed: ' . $sendmailEx->getMessage());
+        return [false, 'Email service is unreachable right now. (SMTP blocked and local MTA failed)'];
+      }
+    } catch (\Throwable $e) {
+      error_log('PHPMailer overall failure: ' . $e->getMessage());
+      return [false, 'Unexpected mailer error.'];
+    }
+  }
+
+  // -------------------- PHPMailer not available → PHP mail() plain text --------------------
+  $to   = $toEmail;
+  $subj = $subject;
+  $from = fallbackFromForLocal();
+  $headers  = "From: " . $CONFIG['from_name'] . " <{$from}>\r\n";
+  if (!empty($post['email']) && filter_var($post['email'], FILTER_VALIDATE_EMAIL)) {
     $replyName = trim(($post['firstName'] ?? '') . ' ' . ($post['lastName'] ?? ''));
     $headers .= 'Reply-To: ' . ($replyName ? "{$replyName} <{$post['email']}>" : $post['email']) . "\r\n";
   }
