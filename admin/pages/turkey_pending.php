@@ -219,43 +219,46 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
-// SMC Filter Bar
+
+// TEMP: Debug what the filter bar thinks you’re filtering by
+// Remove in production.
+echo '<pre style="background:#111;color:#0f0;padding:8px">';
+echo "filters = ";
+var_dump($filters);
+echo "status = ";
+var_dump($status);
+echo "country = ";
+var_dump($country);
+echo "counts = ";
+var_dump($counts);
+echo '</pre>';
 $buScope = null;
+// SMC Filter Bar
 require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
+
+// Boot with your page-specific options:
 $filterState = smc_filter_boot([
     'base_url' => 'turkey_pending.php',
-    'session_ns' => 'smc_tr_pending',
-    'applicant' => $applicant,
-    'buId' => $buScope,
-    'allowed_statuses' => ['pending'],
-    'not_deleted' => true,
-    'not_blacklisted' => true,
+    'session_ns' => 'smc_tr_applicants',
+    'applicant' => $applicant,   // Applicant model instance
+    'buId' => $buScope,     // optional BU scope
+    // Optional overrides:
+    // 'allowed_statuses' => ['all','pending','on_process','approved'],
+    // 'not_deleted'      => true,
+    // 'not_blacklisted'  => true,
 ]);
+
+
+
+// Use computed filters to fetch list:
 $filters = $filterState['filters'];
 $q = $filterState['q'];
-
-$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$pageSize = 25;
-
-$applicants = $applicant->getApplicants(
-    $filters['buId'],
-    $filters['countryId'],
-    $filters['status'],
-    $filters['q'],
-    $filters['notDeleted'],
-    $filters['notBlacklisted'],
-    $page,
-    $pageSize
-);
-$totalApplicants = $applicant->getApplicantsCount(
-    $filters['buId'],
-    $filters['countryId'],
-    $filters['status'],
-    $filters['q'],
-    $filters['notDeleted'],
-    $filters['notBlacklisted']
-);
-$totalPages = ceil($totalApplicants / $pageSize);
+$status = $filterState['status'];
+$country = $filterState['country'];
+$counts = $filterState['counts'];
+$countries = $filterState['countriesWithCounts'];
+$preserveQS = $filterState['preserveQS'];            // e.g., for pagination links
+$preserveQSwQ = $filterState['preserveQSWithQuestion'];
 
 function renderPreferredLocation(?string $json, int $maxLen = 30): string
 {

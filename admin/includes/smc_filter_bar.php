@@ -120,12 +120,11 @@ if (!function_exists('smc_filter_boot')) {
         ];
 
         // --- Fetch country rows + counts (replicating your behavior)
-        // We do 4 calls total (status=selected, and per-bucket) then map to avoid O(N²).
         $countriesWithCounts = [];
         $counts = ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
 
         if ($applicant && method_exists($applicant, 'getCountriesWithCounts')) {
-            // Base list for the current status selection
+            // Base list for the current status selection (kept as-is for display order)
             $countries = $applicant->getCountriesWithCounts(
                 $filters['buId'],
                 $filters['status'],
@@ -152,17 +151,19 @@ if (!function_exists('smc_filter_boot')) {
             $onProcessMap = $toMap($onProcessList);
             $approvedMap = $toMap($approvedList);
 
-            // Complete country rows and global counts
+            // ✅ Compute global totals independent of current selection
+            $counts['pending'] = array_sum($pendingMap);
+            $counts['on_process'] = array_sum($onProcessMap);
+            $counts['approved'] = array_sum($approvedMap);
+            $counts['all'] = $counts['pending'] + $counts['on_process'] + $counts['approved'];
+
+            // Enrich the current display list with per-bucket values
             foreach ($countries as &$c) {
                 $cid = (int) $c['id'];
                 $c['pending'] = $pendingMap[$cid] ?? 0;
                 $c['on_process'] = $onProcessMap[$cid] ?? 0;
                 $c['approved'] = $approvedMap[$cid] ?? 0;
-
-                $counts['all'] += (int) ($c['count'] ?? 0); // count for selected status list
-                $counts['pending'] += $c['pending'];
-                $counts['on_process'] += $c['on_process'];
-                $counts['approved'] += $c['approved'];
+                // Keep $c['count'] as-is: represents the count for *selected* status (used by your renderer)
             }
             unset($c);
 
