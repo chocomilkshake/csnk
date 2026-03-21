@@ -562,6 +562,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?= htmlspecialchars($CONFIG['to_email'], ENT_QUOTES, 'UTF-8') ?>
             </a>
             &nbsp;•&nbsp; Call us:
+            <a href="tel:+639000000000" class="link-secondary">+63 900 000 0000</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Map -->
+  <section id="contact" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-4">
         <h2 class="fw-bold mb-1">Contact and Location</h2>
         <p class="text-muted mb-0">Visit our office or reach us using the details below</p>
       </div>
