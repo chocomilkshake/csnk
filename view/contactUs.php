@@ -256,7 +256,41 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
 
           // Allow self-signed only on localhost dev
           $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
-          if (in_array($host, ['localhost', '127.0.0
+          if (in_array($host, ['localhost', '127.0.0.1'], true) || stripos($host, 'localhost') !== false) {
+            $mail->SMTPOptions = [
+              'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+          if ($secondaryPath) {
+            $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+            $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+            $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+          } else {
+            error_log('Email embed: secondary logo not found.');
+          }
+
+          $mail->isHTML(true);
+          $mail->Body    = $htmlBody;
+          $mail->AltBody = $textBody;
+
+          $mail->send();
+          $connected = true;
+          break; // success via SMTP
+        } catch (\Throwable $smtpEx) {
+          $lastError = $smtpEx->getMessage();
+          error_log('SMTP attempt failed on port ' . $p['port'] . ': ' . $lastError);
+        }
+      }
+
+      if ($connected) {
+        return [true, ''];
+      }
+
+      // If we got here, SMTP failed (blocked/timeout/etc). Try local sendmail via PHPMailer.
+      try {
+        $mail = new PHPMailer(true);
+        $mail->CharSet = 'UTF-8';
+        $mail->isMail(); // local MTA (Exim/sendmail)
         // Use domain-based From for SPF/DMARC alignment on local send
         $localFrom = fallbackFromForLocal();
         $mail->setFrom($localFrom, $CONFIG['from_name'] ?? 'Website');
