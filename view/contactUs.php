@@ -588,7 +588,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <select id="topic" name="topic" class="form-s
                   <span id="charCount" class="char-counter" aria-live="polite">
                     0 / <?= (int)$CONFIG['max_message'] ?>
-                  </spannt') ?>" type="checkbox" value="1"
+                  </span>
+                </div>
+              </div>
+
+              <!-- Honeypot (hidden) -->
+              <div class="visually-hidden" aria-hidden="true">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="form-check">
+                    <input class="form-check-input <?= invalidClass($errors, 'consent') ?>" type="checkbox" value="1"
                       id="consent" name="consent" <?= isset($_POST['consent']) ? 'checked' : '' ?> required />
                     <label class="form-check-label" for="consent">
                       <a>I agree to the privacy policy. </a>
