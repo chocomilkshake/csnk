@@ -203,7 +203,84 @@ function buildBodies(array $data, int $year): array {
 </body>
 </html>';
 
+  return [$html, $text];
+}
 
+/**
+ * Try Gmail SMTP (587 → 465), else local sendmail, else PHP mail()
+ * Returns [bool $ok, string $err]
+ */
+function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
+  [$htmlBody, $textBody] = buildBodies($post, (int)date('Y'));
+
+  // Recipient and subject
+  $toEmail = $CONFIG['to_email'];
+  $toName  = $CONFIG['to_name'] ?? '';
+  $subjectBase = $CONFIG['subject'] ?? 'CSNK Contact Message';
+  $topic  = trim($post['topic'] ?? '');
+  $topic  = str_replace(["\r", "\n"], ' ', $topic);
+  $subject = $subjectBase . ($topic !== '' ? ' - ' . $topic : '');
+  $subject = str_replace(["\r", "\n"], ' ', $subject); // prevent header injection
+
+  // If PHPMailer is available, use it
+  if ($phpmailerLoaded) {
+    try {
+      $mail = new PHPMailer(true);
+      $mail->CharSet = 'UTF-8';
+      $mail->SMTPDebug = (int)($CONFIG['smtp_debug'] ?? 0);
+      $mail->Debugoutput = function ($str, $level) { error_log("PHPMailer debug {$level}: {$str}"); };
+
+      // We'll attempt two SMTP profiles first:
+      $smtpProfiles = [
+        ['port' => 587, 'secure' => PHPMailer::ENCRYPTION_STARTTLS],
+        ['port' => 465, 'secure' => PHPMailer::ENCRYPTION_SMTPS],
+      ];
+
+      $connected = false;
+      $lastError = '';
+
+      foreach ($smtpProfiles as $p) {
+        try {
+          $mail->clearAllRecipients();
+          $mail->clearAttachments();
+          $mail->clearCustomHeaders();
+
+          $mail->isSMTP();
+          $mail->Host       = $CONFIG['smtp_host'];
+          $mail->SMTPAuth   = true;
+          $mail->Username   = $CONFIG['smtp_user'];
+          $mail->Password   = str_replace(' ', '', (string)$CONFIG['smtp_pass']); // strip spaces
+          $mail->SMTPSecure = $p['secure'];
+
+  $cooldown = 30; // seconds
+  $lastSubmit = (int)($_SESSION['contact_last_submit'] ?? 0);
+  if (time() - $lastSubmit < $cooldown) {
+    $errors['general'] = 'Please wait ' . ($cooldown - (time() - $lastSubmit)) . ' seconds before sending again.';
+  }
+
+  // Honeypot
+  $honeypot = $_POST['website'] ?? '';
+
+  // CSRF
+  $csrf = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    $errors['general'] = 'Security verification failed. Please refresh and try again.';
+  }
+
+  if (!empty($honeypot)) {
+    // Silently succeed for bots (do not actually send)
+    $success = true;
+    $_SESSION['contact_last_submit'] = time();
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_POST = [];
+  } else {
+    // Gather
+    $firstName = clean($_POST['firstName'] ?? '');
+    $lastName  = clean($_POST['lastName']  ?? '');
+    $email     = filter_var(clean($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $phone     = preg_replace('/\D+/', '', clean($_POST['phone'] ?? ''));
+    $topic     = clean($_POST['topic'] ?? '');
+    $message   = clean($_POST['message'] ?? '');
 
     // Header injection protection (strip newlines from inputs used in email headers)
     $firstName = str_replace(["\r", "\n"], '', $firstName);
