@@ -100,7 +100,21 @@ $canViewReports = ($isAdmin || $isSuperAdmin || $isEmployee);
 $showRegionPlaceholders = true;
 
 /* BU ID helper */
-$buId = (int) ($_SESSION['current_bu_id'] ?? 0);
+// ✅ FIX: Ensure correct BU for sidebar counts
+// ✅ FINAL FIX: CSNK applicants belong to CSNK BUSINESS UNIT (id = 1)
+if ($isEmployee && ($currentUser['agency'] ?? '') === 'csnk') {
+    // CSNK employees always see CSNK applicants
+    $buId = 1;
+} else {
+    // Admin / Super Admin / SMC logic stays the same
+    $buId = (int) ($_SESSION['current_bu_id'] ?? 0);
+}
+
+// Safety: if still empty, do not break queries
+if ($buId <= 0) {
+    $buId = 0;
+}
+
 
 $conn = $database->getConnection();
 
