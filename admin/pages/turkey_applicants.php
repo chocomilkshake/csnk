@@ -172,6 +172,7 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">List of SMC Applicants</h4>
 </div>
+
 <?php smc_filter_render($filterState); ?>
 
 <div class="container-fluid px-2">
