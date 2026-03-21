@@ -406,7 +406,7 @@ $smcState['countriesWithCounts'] = $countriesWithCounts;
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h4 class="mb-2 fw-semibold">SMC Applicants</h4>
+    <h4 class="mb-2 fw-semibold">On-process SMC Applicants</h4>
     <?php smc_filter_render($smcState); ?>
   </div>
 </div>
