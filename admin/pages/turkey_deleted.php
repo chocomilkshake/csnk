@@ -104,7 +104,7 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
 <div class="container-fluid px-2">
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-auto">
-            <h4 class="mb-2 fw-semibold">SMC - Deleted Applicants</h4>
+            <h4 class="mb-2 fw-semibold">Deleted SMC Applicants</h4>
         </div>
     </div>
 
