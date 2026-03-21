@@ -266,6 +266,33 @@ function sendSmart(array $CONFIG, array $post, bool $phpmailerLoaded): array {
           $replyName = str_replace(["\r", "\n"], ' ', $replyName);
           $mail->addReplyTo($post['email'], $replyName);
         }
+        $mail->Subject = $subject;
+
+        // Note: Local mail can embed images, but if sendmail strips cids in some stacks, it still degrades safely.
+        $whychoosePath = pickFirstReadable([
+          __DIR__ . '/../resources/img/whychoose.png',
+          __DIR__ . '/resources/img/whychoose.png',
+          __DIR__ . '/public/resources/img/whychoose.png',
+        ]);
+        $secondaryPath = pickFirstReadable([
+          __DIR__ . '/../resources/img/emailogo.png',
+          __DIR__ . '/resources/img/emailogo.png',
+          __DIR__ . '/public/resources/img/emailogo.png',
+          __DIR__ . '/../resources/img/crempco-logo.png',
+          __DIR__ . '/resources/img/crempco-logo.png',
+          __DIR__ . '/public/resources/img/crempco-logo.png',
+        ]);
+        if ($whychoosePath) {
+          $mail->addEmbeddedImage($whychoosePath, 'whychoose_cid', basename($whychoosePath), 'base64', 'image/png');
+        }
+        if ($secondaryPath) {
+          $ext  = strtolower(pathinfo($secondaryPath, PATHINFO_EXTENSION));
+          $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+          $mail->addEmbeddedImage($secondaryPath, 'secondary_logo_cid', basename($secondaryPath), 'base64', $mime);
+        }
+
+        $mail->isHTML(true);
+        $mail->Body    = $htmlBody;
         $mail->AltBody = $textBody;
 
         $mail->send();
