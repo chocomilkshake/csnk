@@ -103,7 +103,20 @@ if (!$conn) {
 $activeTab = 'CSNK'; // default
 H', { minimumFractionDigits: 2 });
 
-        const tbody = document.glass="text-center text-danger py-3">Failed to load applicants</td></tr>';
+        const tbody = document.getElementById('pv-items');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>';
+
+        try {
+            // Fetch enriched ="text-end fw-semibold">
+                                ₱${parseFloat(app.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load applicants:', error);
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Failed to load applicants</td></tr>';
         }
 
         // Setup PDF download
