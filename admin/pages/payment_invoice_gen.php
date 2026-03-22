@@ -590,7 +590,27 @@ while ($row = $r->fetch_assoc()) {
                                     <?php foreach ($clients as $c): ?>
                                         <option value="<?= h($c['client_email']) ?>"
                                             data-name="<?= h($c['client_name']) ?>"
-                                            data-
+                                            data-address="<?= h($c['client_address']) ?>"
+                                            data-apps="<?= htmlspecialchars(json_encode($c['applicants']), ENT_QUOTES, 'UTF-8') ?>"
+                                            data-bu="<?= (int)$c['business_unit_id'] ?>">
+                                            <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?> applicants)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+    .inv-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 14px;
+    }
+
+    .inv-header img {
+        max-height: 54px;
+    }
+
+    .inv-address {
+        font-size: 12px;
+        color: #555;
         margin-top: 6px;
     }
 
