@@ -580,6 +580,30 @@ while ($row = $r->fetch_assoc()) {
     /* DECLARATION */
     .inv-declaration {
         margin-top: 26px;
+        font-size: 13px;
+    }
+
+    /* PAYMENT */
+    .inv-payment {
+        margin-top: 30px;
+        font-size: 13px;
+    }
+
+    .invoice-paper {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 2.5rem;
+        max-width: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
         padding-bottom: 1.5rem;
         border-bottom: 3px solid #dee2e6;
     }
