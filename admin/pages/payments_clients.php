@@ -146,7 +146,19 @@ $stmt->execute();
                                     data-bs-toggle="modal"
                                     data-bs-target="#viewModal"
                                     data-id="<?= $inv['id'] ?>"
-                      
+                                    data-client="<?= h($inv['client_name']) ?>"
+                                    data-email="<?= h($inv['client_email']) ?>"
+                                    data-address="<?= h($inv['client_address']) ?>"
+                                    data-invoice="<?= h($inv['invoice_num']) ?>"
+                                    data-date="<?= $inv['invoice_date'] ?>"
+                                    data-due="<?= $inv['due_date'] ?>"
+                                    data-ref="<?= h($inv['reference_no']) ?>"
+                                    data-total="<?= (float) $inv['total_amount'] ?>"
+                                    data-applicants='<?= $inv['applicants_data'] ?>'
+                                    data-pdf="<?= h($inv['pdf_filename']) ?>"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                </button>
 
                                 <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
                                     <i class="bi bi-pencil"></i>
