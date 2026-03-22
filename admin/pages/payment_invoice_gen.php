@@ -527,6 +527,36 @@ while ($row = $r->fetch_assoc()) {
                                 <td colspan="7" class="empty">No applicants yet</td>
                             </tr>
 
+        text-align: center;
+            </td>
+        csnkBody.innerHTML = '';
+        smcBody.innerHTML = '';
+
+        let hasItems = false;
+                    <td class="text-center">${days}</td>
+                    <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                </tr>
+        }
+
+        // ✅ Update totals on BOTH previews
+        document.getElementById('smc-total').textContent =
+            document.getElementById('pv-total').textContent;
+    }
+
+    function filterClientsByAgency() {
+        const agencyId = document.getElementById('agency-select').value;
+        const clientSelect = document.getElementById('client-select');
+
+        clientSelect.value = '';
+        clientSelect.disabled = true;
+        document.getElementById('client-info').classList.add('d-none');
+
+        Array.from(clientSelect.options).forEach(opt => {
+            if (opt.value === '') {
+                opt.hidden = false;
+                return;
+            }
+            opt.hidden = true;
             if (agencyId && opt.dataset.bu === agencyId) {
                 opt.hidden = false;
             }
