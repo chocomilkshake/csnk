@@ -563,7 +563,35 @@ while ($row = $r->fetch_assoc()) {
                 <div class="card shadow-lg border-0 h-100 rounded-4 overflow-hidden">
 <div class="card-header bg-success text-white border-0">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-gea
+                            <i class="bi bi-gear-fill me-2"></i>Invoice Builder
+                        </h6>
+                    </div>
+                    <div class="car
+
+    .inv-table .right {
+        text-align: right;
+    }
+
+    .inv-table .empty {
+        text-align: center;
+        color: #999;
+    }
+
+    /* DECLARATION */
+    .inv-declaration {
+        margin-top: 26px;
+        padding-bottom: 1.5rem;
+        border-bottom: 3px solid #dee2e6;
+    }
+
+    .logo-left img,
+    .logo-right img {
+        max-height: 70px;
+        border-radius: 8px;
+    }
+
+    .logo-left {
+        display: flex;
         flex-direction: column;
     }
 
