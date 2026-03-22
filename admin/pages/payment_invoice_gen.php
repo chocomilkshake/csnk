@@ -540,7 +540,60 @@ while ($row = $r->fetch_assoc()) {
                         I declare that all information contained in this invoice are certified true and correct.
                     </div>
 
+                    <div class="payment">
+                        <strong>Issued By:</strong> SMC Agency<br><br>
+                        <strong>Payment Method:</strong><br>
+                        Bank Transfer / International Remittance
+                    </div>
 
+                </div>
+
+
+
+            </div>
+        </div>
+
+
+        <!-- RIGHT: INPUT FORM (col-lg-6) -->
+        <div class="col-lg-6 ps-lg-2">
+            <form method="POST">
+                <input type="hidden" name="generate_invoice" value="1">
+                <input type="hidden" name="business_unit_id" id="business_unit_id">
+
+                <div class="card shadow-lg border-0 h-100 rounded-4 overflow-hidden">
+<div class="card-header bg-success text-white border-0">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-gea
+        flex-direction: column;
+    }
+
+    .company-address {
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+        line-height: 1.4;
+    }
+
+    .invoice-title {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #212529;
+        margin: 2rem 0 1.5rem;
+        text-transform: uppercase;
+    }
+
+    .invoice-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 1.5rem 0;
+        border-bottom: 2px dashed #dee2e6;
+    }
+
+    .meta-right {
+        text-align: right;
     }
 
     .meta-right div {
