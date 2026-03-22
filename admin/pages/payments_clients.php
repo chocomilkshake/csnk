@@ -144,7 +144,28 @@ $stmt->execute();
                 <thead class="table-light">
                     <tr>
                         <th>Avatar</th>
-                       
+                        <th>Client</th>
+                        <th>Invoice #</th>
+                        <th>Amount</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                <?php if (!$invoices): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No invoices found
+                        </td>
+                    </tr>
+                <?php endif; ?>
+
+                <?php foreach ($invoices as $inv): ?>
+                    <tr>
+                        <td><?= renderAvatar($inv['picture'], $inv['client_name']) ?></td>
+                        <td>
                             <strong><?= h($inv['client_name']) ?></strong><br>
                             <small class="text-muted"><?= h($inv['client_email']) ?></small>
                         </td>
