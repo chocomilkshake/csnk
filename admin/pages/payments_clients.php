@@ -138,6 +138,130 @@ $prefix = $activeTab . '-%'; // CSNK-% or SMC-%
 $stmt->bind_param('ss', $like, $prefix);
 $stmt->execute();
 
+$invoices = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+/* ================= HELPERS ================= */
+function formatCurrency($amount)
+{
+    return '₱' . number_format((float) $amount, 2);
+}
+
+function renderAvatar($picture, $client_name)
+{
+    if ($picture) {
+        return '<img src="' . htmlspecialchars(getFileUrl($picture)) . '"
+                     class="rounded-circle shadow-sm"
+                     width="48" height="48">';
+    }
+
+    return '<div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm"
+                style="width:48px;height:48px;background:#0d6efd;">
+                ' . strtoupper($client_name[0]) . '
+            </div>';
+}
+
+// Use existing getFullName from functions.php
+
+?>
+<?php include '../includes/header.php'; ?>
+
+<style>
+/* === INVOICE TABS (MODERN) === */
+.invoice-tabs {
+    display: flex;
+    gap: 12px;
+}
+
+.tab-btn {
+    padding: 10px 26px;
+    font-weight: 700;
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: all 0.25s ease;
+}
+
+.tab-csnk {
+    background: linear-gradient(135deg, #c62828, #e53935);
+    color: #fff;
+}
+
+.tab-smc {
+    background: linear-gradient(135deg, #0b1c3d, #102a5e);
+    color: #d4af37;
+}
+
+.tab-btn.inactive {
+    opacity: 0.45;
+    box-shadow: none;
+}
+
+.tab-btn:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+
+/* === ONLY REQUIRED CSS FOR VIEW MODAL === */
+.invoice-preview-paper {
+    background: #fff;
+    padding: 40px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.inv-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+}
+.inv-title {
+    text-align: center;
+    font-size: 28px;
+    margin: 25px 0;
+    font-weight: bold;
+}
+.inv-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.inv-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.inv-table th,
+.inv-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <!-- LEFT: TAB BUTTONS -->
+        <div class="invoice-tabs">
+            <a href="payments_clients.php?tab=CSNK"
+            class="tab-btn tab-csnk <?= $activeTab === 'CSNK' ? '' : 'inactive' ?>">
+                CSNK
+            </a>
+
+            <a href="payments_clients.php?tab=SMC"
+            class="tab-btn tab-smc <?= $activeTab === 'SMC' ? '' : 'inactive' ?>">
+                SMC
+            </a>
+        </div>
+
+        <!-- RIGHT: ADD INVOICE BUTTON -->
+        <a href="payment_invoice_gen.php" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Add New Invoice
+        </a>
+
+    </div>
+
     <div class="card shadow-lg">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
