@@ -613,7 +613,51 @@ while ($row = $r->fetch_assoc()) {
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-semibold">Client Email</label>
-                                <input type="e
+                                <input type="email" name="client_email" id="client_email" class="form-control form-control-lg" placeholder="client@example.com" oninput="updatePreview()">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Address</label>
+                                <textarea name="client_address" id="client_address" class="form-control" rows="3" placeholder="Complete billing address" oninput="updatePreview()"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Applicant Items -->
+                        <h6 class="fw-bold mb-3 pb-2 border-bottom">Salary Items <span class="badge bg-secondary ms-2" id="applicant-count">0</span></h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%">Applicant</th>
+                                        <th style="width: 20%">Start Date</th>
+                                        <th style="width: 20%">End Date</th>
+                                        <th style="width: 10%" class="text-center">Days</th>
+                                        <th style="width: 15%" class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items">
+                                    <tr>
+                                        <td><input name="applicants[0][name]" class="form-control" placeholder="Applicant name"></td>
+                                        <td><input name="applicants[0][start_date]" type="date" class="form-control start-date" oninput="calcDays(0)"></td>
+                                        <td><input name="applicants[0][end_date]" type="date" class="form-control end-date" oninput="calcDays(0)"></td>
+                                        <td class="text-center"><span class="days badge bg-secondary" data-index="0">0 days</span></td>
+                                        <td><input name="applicants[0][amount]" class="form-control text-end amount" placeholder="0.00" oninput="calcTotal()"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="addApplicant()">
+                                <i class="bi bi-plus-circle me-2"></i>Add Applicant
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Invoice PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
