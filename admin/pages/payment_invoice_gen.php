@@ -536,7 +536,30 @@ while ($row = $r->fetch_assoc()) {
     }
 </style>
 
-<script>nt = opt.dataset.name || '';
+<script>
+    let applicantCounter = 0;
+
+    function loadClient(sel) {
+        if (!document.getElementById('agency-select').value) {
+            alert('Please select an agency first.');
+            sel.value = '';
+            return;
+        }
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt || opt.value === '') return;
+
+        // CLIENT INFO
+        document.getElementById('client_name').value = opt.dataset.name || '';
+        document.getElementById('client_email').value = opt.value || '';
+        document.getElementById('client_address').value = opt.dataset.address || '';
+        document.getElementById('due_date').value = '';
+
+        updatePreview();
+
+        // SHOW CLIENT INFO
+        const info = document.getElementById('client-info');
+        info.classList.remove('d-none');
+        document.getElementById('client-name').textContent = opt.dataset.name || '';
         document.getElementById('client-email').textContent = opt.value || '';
         document.getElementById('client-address').textContent = opt.dataset.address || '';
 
