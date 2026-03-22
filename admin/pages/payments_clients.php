@@ -140,6 +140,27 @@ $stmt->execute();
 
     <div class="card shadow-lg">
         <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Avatar</th>
+                       
+                            <strong><?= h($inv['client_name']) ?></strong><br>
+                            <small class="text-muted"><?= h($inv['client_email']) ?></small>
+                        </td>
+                        <td>
+                            <?= h($inv['invoice_num']) ?>
+
+                            <span class="badge ms-2 <?= str_starts_with($inv['invoice_num'], 'SMC-') ? 'bg-primary' : 'bg-danger' ?>">
+                                <?= str_starts_with($inv['invoice_num'], 'SMC-') ? 'SMC' : 'CSNK' ?>
+                            </span>
+                        </td>
+                        <td class="fw-bold" style="color:#198754;font-size:15px;">
+                            <?= formatCurrency($inv['total_amount']) ?>
+                        </td>
+                        <td><?= date('M j, Y', strtotime($inv['invoice_date'])) ?></td>
+                        <td><?= date('M j, Y', strtotime($inv['due_date'])) ?></td>
+                        <td>
                             <div class="btn-group btn-group-sm">
                                 <button
                                     class="btn btn-outline-info view-btn"
