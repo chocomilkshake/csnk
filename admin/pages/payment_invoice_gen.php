@@ -527,6 +527,43 @@ while ($row = $r->fetch_assoc()) {
                                 <td colspan="7" class="empty">No applicants yet</td>
                             </tr>
 
+                        </tbody>
+                        <tfoot>
+                            <tr class="total">
+                                <td colspan="4" class="right">Total</td>
+                                <td class="right">₱<span id="smc-total">0.00</span></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="note">
+                        I declare that all information contained in this invoice are certified true and correct.
+                    </div>
+
+
+    }
+
+    .meta-right div {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .ref {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .invoice-table {
+        width: 100%;
+        margin-bottom: 2rem;
+        border-collapse: collapse;
+    }
+
+    .invoice-table th {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 1rem 0.75rem;
         text-align: left;
         font-weight: 600;
         font-size: 0.9rem;
