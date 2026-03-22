@@ -527,6 +527,32 @@ while ($row = $r->fetch_assoc()) {
                                 <td colspan="7" class="empty">No applicants yet</td>
                             </tr>
 
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-bottom: 3px solid #dee2e6;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .invoice-table td {
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.95rem;
+    }
+
+    .invoice-table .right {
+        text-align: right;
+    }
+
+    .invoice-table tfoot td {
+        border-top: 3px double #dee2e6;
+        padding-top: 1.25rem;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .invoice-table .empty {
         text-align: center;
         color: #adb5bd;
         font-style: italic;
