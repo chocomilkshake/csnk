@@ -536,6 +536,32 @@ while ($row = $r->fetch_assoc()) {
                     <td class="text-center">${days}</td>
                     <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                 </tr>
+            `);
+
+            /* ===== SMC ROW ===== */
+            smcBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${name}</td>
+                    <td>${start}</td>
+                    <td>${end}</td>
+                    <td class="center">${days}</td>
+                    <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                </tr>
+            `);
+        });
+
+        if (!hasItems) {
+            csnkBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty">No applicants yet</td>
+            </tr>
+        `;
+
+            smcBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="center">No applicants yet</td>
+            </tr>
+            `;
         }
 
         // ✅ Update totals on BOTH previews
