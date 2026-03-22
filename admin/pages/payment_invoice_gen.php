@@ -528,6 +528,38 @@ while ($row = $r->fetch_assoc()) {
                             </tr>
 
         text-align: center;
+
+    @media (max-width: 768px) {
+        .invoice-paper {
+            padding: 1.5rem;
+            const row = tbody.insertRow();
+
+            row.innerHTML = `
+            <td>
+                <input type="text"
+                       class="form-control"
+                       name="applicants[${index}][name]"
+                       value="${app.name}"
+                       readonly>
+            </td>
+            <td>
+                <input type="date"
+                       name="applicants[${index}][start_date]"
+                       class="form-control start-date"
+                       oninput="calcDays(${index})">
+            </td>
+            <td>
+                <input type="date"
+                       name="applicants[${index}][end_date]"
+                       class="form-control end-date"
+                       oninput="calcDays(${index})">
+            </td>
+            <td class="text-center">
+                <span class="days badge bg-secondary" data-index="${index}">0 days</span>
+                <input type="hidden"
+                    name="applicants[${index}][days]"
+                    class="days-input"
+                    value="0">
             </td>
             <td>
                 <input type="number"
