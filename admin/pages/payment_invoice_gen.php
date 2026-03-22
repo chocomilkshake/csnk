@@ -679,7 +679,6 @@ while ($row = $r->fetch_assoc()) {
         transition: transform 0.2s ease;
     }
     .back-btn:hover i {
-        transform: translateX(-3px);
     .back-btn:hover {
         background: #fff;
         transform: translateY(-2px);
