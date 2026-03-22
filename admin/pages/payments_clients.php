@@ -417,7 +417,30 @@ function renderAvatar($picture, $client_name)
 
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">📄 Invoice Preview</h5>
-claration">
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="invoice-preview-paper">
+
+                    <div class="inv-header">
+                        <div>
+                            <img src="../resources/img/whychoose.png" height="50"><br>
+                            <small>Unit 1 Eden Tow
+
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">TOTAL:</td>
+                                <td class="text-end fw-bold text-success">
+                                    ₱<span id="pv-total">0.00</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="inv-declaration">
                         I declare that all information contained ie).toLocaleDateString('en-PH');
         document.getElementById('pv-ref-no').textContent = d.ref;
         document.getElementById('pv-total').textContent = 
