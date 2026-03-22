@@ -528,6 +528,31 @@ while ($row = $r->fetch_assoc()) {
                             </tr>
 
         text-align: center;
+        color: #adb5bd;
+        font-style: italic;
+        padding: 3rem 1rem;
+    }
+
+    .declaration {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-left: 5px solid #0d6efd;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    .payment-info {
+        margin-top: 1.5rem;
+        padding: 1.25rem;
+        background: #f1f3f4;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .payment-info strong {
+        color: #495057;
+    }
 
     @media (max-width: 768px) {
         .invoice-paper {
