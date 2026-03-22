@@ -527,7 +527,32 @@ while ($row = $r->fetch_assoc()) {
                                 <td colspan="7" class="empty">No applicants yet</td>
                             </tr>
 
-            if (agencyId && opt.dataset.b
+            if (agencyId && opt.dataset.bu === agencyId) {
+                opt.hidden = false;
+            }
+        });
+
+        if (agencyId) {
+            clientSelect.disabled = false;
+            document.getElementById('business_unit_id').value = agencyId;
+        }
+        updateInvoiceNumPreview();
+    }
+
+    function updateInvoiceNumPreview() {
+        const agency = document.getElementById('agency-select').value;
+
+        document.getElementById('preview-csnk').classList.add('d-none');
+        document.getElementById('preview-smc').classList.add('d-none');
+
+        if (!agency) return;
+
+        const prefix = agency === '2' ? 'SMC' : 'CSNK';
+        const today = new Date();
+        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+
+        const rand = Math.floor(Math.random() * 900) + 100;
+        const invoiceNum = `${prefix}-${dateStr}-${rand}`;
 
         if (agency === '2') {
             document.getElementById('preview-smc').classList.remove('d-none');
