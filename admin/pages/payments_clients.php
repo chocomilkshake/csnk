@@ -145,7 +145,18 @@ $stmt->execute();
                                     class="btn btn-outline-info view-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#viewModal"
-                       
+                                    data-id="<?= $inv['id'] ?>"
+                      
+
+                                <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <a href="payments_clients.php?action=delete&id=<?= $inv['id'] ?>"
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('Delete this invoice?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
                             </div>
                         </td>
                     </tr>
