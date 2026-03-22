@@ -111,7 +111,27 @@ $q = '';
 if (isset($_GET['q'])) {
     $q = trim((string) $_GET['q']);
     $_SESSION['invoices_q'] = $q;
-} elseif (!empty($_SESSION['invoice
+} elseif (!empty($_SESSION['invoices_q'])) {
+    $q = $_SESSION['invoices_q'];
+}
+
+if (isset($_GET['clear']) && $_GET['clear'] === '1') {
+    unset($_SESSION['invoices_q']);
+    redirect('payments_clients.php');
+    exit;
+}
+
+/* ================= FETCH INVOICES ================= */
+$sql = "
+    SELECT ih.*, NULL AS picture
+    FROM invoice_history ih
+    WHERE ih.client_name LIKE ?
+      AND ih.invoice_num LIKE ?
+    ORDER BY ih.id DESC
+";
+
+$stmt = $conn->prepare($sql);
+
 $like   = '%' . $q . '%';
 $prefix = $activeTab . '-%'; // CSNK-% or SMC-%
 
