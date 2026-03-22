@@ -576,7 +576,31 @@ while ($row = $r->fetch_assoc()) {
                                 <option value="">Select Agency</option>
                                 <option value="1">CSNK</option>
                                 <option value="2">SMC</option>
-                            </selec
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Select Client <span class="badge bg-info">Auto-fill</span></label>
+                                <select class="form-select form-control-lg"
+                                    id="client-select"
+                                    disabled
+                                    onchange="loadClient(this)">
+                                    <option value="">Select agency first</option>
+                                    <?php foreach ($clients as $c): ?>
+                                        <option value="<?= h($c['client_email']) ?>"
+                                            data-name="<?= h($c['client_name']) ?>"
+                                            data-
+        margin-top: 6px;
+    }
+
+    /* TITLE */
+    .inv-title {
+        text-align: center;
+        font-size: 28px;
+        letter-spacing: 4px;
+        margin: 28px 0;
+        font-weight: 700;
     }
 
     /* META */
