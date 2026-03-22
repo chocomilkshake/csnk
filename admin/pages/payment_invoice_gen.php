@@ -616,6 +616,25 @@ while ($row = $r->fetch_assoc()) {
                                 <input type="e
     </div>
 </div>
+
+<style>
+    .back-btn {
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1050;
+        backdrop-filter: blur(12px);
+    }
+    .back-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 40px rgba(13, 110, 253, 0.4) !important;
+        text-decoration: none !important;
+    }
+    .back-btn i {
+        transition: transform 0.2s ease;
+    }
+    .back-btn:hover i {
         transform: translateX(-3px);
     }
     .back-btn:hover {
