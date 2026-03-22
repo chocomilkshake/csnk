@@ -597,6 +597,26 @@ while ($row = $r->fetch_assoc()) {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <div id="client-info" class="mt-2 p-3 bg-light rounded border small d-none">
+                                    <strong id="client-name"></strong><br>
+                                    <small class="text-muted" id="client-email"></small><br>
+                                    <small class="text-muted" id="client-address"></small>
+                                </div>
+                            </div>
+        padding: 24px;
+    }
+
+    .invoice-preview-paper {
+        background: #fff;
+        max-width: 820px;
+        margin: auto;
+        padding: 48px 40px;
+        border: 1px solid #ddd;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #222;
+    }
+
+    /* HEADER */
     .inv-header {
         display: flex;
         justify-content: space-between;
