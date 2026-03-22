@@ -1,6 +1,49 @@
 <?php
 session_start();
 
+
+/* ======================================================
+   DELETE INVOICE
+====================================================== */
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    if (!$conn) {
+        die('Database connection failed.');
+    }
+
+    $invoice_id = (int) $_GET['id'];
+
+    // ✅ Get PDF filename first (to delete file)
+    $stmt = $conn->prepare("SELECT pdf_filename FROM invoice_history WHERE id = ?");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    if ($row) {
+        $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $row['pdf_filename'];
+
+        // ✅ Delete PDF file if exists
+        if (!empty($row['pdf_filename']) && file_exists($pdfPath)) {
+            unlink($pdfPath);
+        }
+
+        // ✅ Delete invoice record
+        $del = $conn->prepare("DELETE FROM invoice_history WHERE id = ?");
+        $del->bind_param('i', $invoice_id);
+        $del->execute();
+    }
+
+    // ✅ Redirect back to invoice list
+    header('Location: payments_clients.php');
+    exit;
+}
+
 /* ======================================================
    AJAX: Get Invoice Applicants (MUST BE FIRST)
 ====================================================== */
@@ -166,6 +209,89 @@ function renderAvatar($picture, $client_name)
 <?php include '../includes/header.php'; ?>
 
 <style>
+/* === MODERN DELETE TOAST (LIGHT THEME) === */
+.delete-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    min-width: 300px;
+    z-index: 9999;
+    animation: slideUp 0.3s ease;
+}
+
+.delete-toast.hidden {
+    display: none;
+}
+
+.toast-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+}
+
+.toast-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.toast-text strong {
+    font-size: 14px;
+    color: #212529;
+}
+
+.toast-sub {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.toast-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-undo {
+    background: none;
+    border: none;
+    color: #0d6efd;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.toast-undo:hover {
+    text-decoration: underline;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.toast-close:hover {
+    color: #212529;
+}
+
+/* Animation */
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* === 2026 MODERN SEARCH BAR === */
 .search-container {
     width: 320px;
@@ -477,16 +603,30 @@ function renderAvatar($picture, $client_name)
                                     <i class="bi bi-pencil"></i>
                                 </button>
 
-                                <a href="payments_clients.php?action=delete&id=<?= $inv['id'] ?>"
-                                   class="btn btn-outline-danger"
-                                   onclick="return confirm('Delete this invoice?')">
+                                <button class="btn btn-outline-danger"
+                                        onclick="softDeleteInvoice(<?= $inv['id'] ?>)">
                                     <i class="bi bi-trash"></i>
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
+                    <!-- DELETE TOAST -->
+                    <div id="deleteToast" class="delete-toast hidden">
+                        <div class="toast-body">
+                            <div class="toast-text">
+                                <strong>Invoice deleted</strong>
+                                <div class="toast-sub">
+                                    Undo available for <span id="toastCountdown">10</span>s
+                                </div>
+                            </div>
 
+                            <div class="toast-actions">
+                                <button id="undoBtn" class="toast-undo">UNDO</button>
+                                <button id="closeToast" class="toast-close">✕</button>
+                            </div>
+                        </div>
+                    </div>
                 </tbody>
             </table>
         </div>
@@ -709,11 +849,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <a href="payments_clients.php?action=delete&id=${inv.id}"
-                           class="btn btn-outline-danger"
-                           onclick="return confirm('Delete this invoice?')">
+
+                        <button class="btn btn-outline-danger"
+                                onclick="softDeleteInvoice(<?= $inv['id'] ?>)">
                             <i class="bi bi-trash"></i>
-                        </a>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -876,6 +1016,75 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentInvoiceData = {};
 });
+
+
+    let deleteTimer = null;
+    let countdownTimer = null;
+    let pendingDeleteId = null;
+    let countdownValue = 10;
+
+    function softDeleteInvoice(id) {
+        if (!confirm('Delete this invoice?')) return;
+
+        pendingDeleteId = id;
+        countdownValue = 10;
+
+        // Hide row immediately
+        const row = document.querySelector(
+            `button[onclick="softDeleteInvoice(${id})"]`
+        ).closest('tr');
+        row.style.display = 'none';
+
+        showDeleteToast();
+
+        // Countdown display
+        document.getElementById('toastCountdown').textContent = countdownValue;
+
+        countdownTimer = setInterval(() => {
+            countdownValue--;
+            document.getElementById('toastCountdown').textContent = countdownValue;
+
+            if (countdownValue <= 0) {
+                clearInterval(countdownTimer);
+            }
+        }, 1000);
+
+        // Final delete after 10s
+        deleteTimer = setTimeout(() => {
+            finalizeDelete(id);
+        }, 10000);
+    }
+
+    function showDeleteToast() {
+        const toast = document.getElementById('deleteToast');
+        toast.classList.remove('hidden');
+
+        document.getElementById('undoBtn').onclick = undoDelete;
+        document.getElementById('closeToast').onclick = closeToast;
+    }
+
+    function undoDelete() {
+        clearTimeout(deleteTimer);
+        clearInterval(countdownTimer);
+
+        // Restore row
+        const row = document.querySelector(
+            `button[onclick="softDeleteInvoice(${pendingDeleteId})"]`
+        ).closest('tr');
+        row.style.display = '';
+
+        pendingDeleteId = null;
+        closeToast();
+    }
+
+    function closeToast() {
+        clearInterval(countdownTimer);
+        document.getElementById('deleteToast').classList.add('hidden');
+    }
+
+    function finalizeDelete(id) {
+        window.location.href = `payments_clients.php?action=delete&id=${id}`;
+    }
 </script>
 
 <?php include '../includes/footer.php'; ?>
