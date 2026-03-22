@@ -605,7 +605,23 @@ while ($row = $r->fetch_assoc()) {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Due Date</label>
-                                <input type="
+                                <input type="date" name="due_date" id="due_date" class="form-control form-control-lg" oninput="updatePreview()">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Name</label>
+                                <input type="text" name="client_name" id="client_name" class="form-control form-control-lg" oninput="updatePreview()">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Client Email</label>
+                                <input type="e
+    </div>
+</div>
+        transform: translateX(-3px);
+    }
+    .back-btn:hover {
+        background: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
         color: #212529;
         text-decoration: none;
     }
