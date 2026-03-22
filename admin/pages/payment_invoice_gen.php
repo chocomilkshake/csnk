@@ -530,6 +530,33 @@ while ($row = $r->fetch_assoc()) {
         text-align: center;
             </td>
             <td>
+                <input type="number"
+                       name="applicants[${index}][amount]"
+                       class="form-control text-end amount"
+                       value="0"
+                       oninput="calcTotal()">
+            </td>
+        `;
+        });
+
+        // ✅ THIS WAS MISSING
+        updatePreviewItems();
+        calcTotal();
+    }
+
+
+    function addApplicant() {
+        const tbody = document.getElementById('items');
+        const row = tbody.insertRow();
+        const index = applicantCounter++;
+        row.innerHTML = `
+        <td><input name="applicants[${index}][name]" class="form-control" placeholder="Applicant name" oninput="calcTotal()"></td>
+        <td><input name="applicants[${index}][start_date]" type="date" class="form-control start-date" oninput="calcDays(${index})"></td>
+        <td><input name="applicants[${index}][end_date]" type="date" class="form-control end-date" oninput="calcDays(${index})"></td>
+        <td class="text-center"><span class="days badge bg-secondary" data-index="${index}">0 days</span></td>
+        <td><input name="applicants[${index}][amount]" class="form-control text-end amount" value="0" oninput="calcTotal()" step="100"></td>
+    `;
+        updateApplicantCount();
         calcTotal();
     }
 
