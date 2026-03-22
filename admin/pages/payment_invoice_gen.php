@@ -603,6 +603,28 @@ while ($row = $r->fetch_assoc()) {
                                     <small class="text-muted" id="client-address"></small>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Due Date</label>
+                                <input type="
+        color: #212529;
+        text-decoration: none;
+    }
+    .back-btn:active {
+        transform: translateY(0);
+    }
+    .back-btn i {
+        font-size: 16px;
+    }
+    @media (max-width: 768px) {
+        .back-btn {
+            padding: 10px 16px;
+            font-size: 13px;
+            margin-right: 1rem;
+        }
+    }
+
+    .invoice-preview-wrapper {
+        background: #f5f5f5;
         padding: 24px;
     }
 
