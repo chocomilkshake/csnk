@@ -101,7 +101,24 @@ if (!$conn) {
 
 /* ================= TAB FILTER ================= */
 $activeTab = 'CSNK'; // default
-H', { minimumFractionDigits: 2 });
+
+if (isset($_GET['tab']) && $_GET['tab'] === 'SMC') {
+    $activeTab = 'SMC';
+}
+
+/* ================= SEARCH ================= */
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim((string) $_GET['q']);
+    $_SESSION['invoices_q'] = $q;
+} elseif (!empty($_SESSION['invoice
+$like   = '%' . $q . '%';
+$prefix = $activeTab . '-%'; // CSNK-% or SMC-%
+
+$stmt->bind_param('ss', $like, $prefix);
+$stmt->execute()-no').textContent = d.ref;
+        document.getElementById('pv-total').textContent = 
+            parseFloat(d.total).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
         const tbody = document.getElementById('pv-items');
         tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>';
