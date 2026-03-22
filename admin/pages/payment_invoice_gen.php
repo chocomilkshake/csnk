@@ -578,6 +578,29 @@ while ($row = $r->fetch_assoc()) {
                                 <option value="2">SMC</option>
                             </selec
     }
+
+    /* META */
+    .inv-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 28px;
+    }
+
+    .inv-info {
+        text-align: right;
+        font-size: 13px;
+    }
+
+    .inv-info .ref {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    .muted {
+        color: #666;
+    }
+
     /* TABLE */
     .inv-table {
         width: 100%;
