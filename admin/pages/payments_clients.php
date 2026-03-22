@@ -508,22 +508,33 @@ function renderAvatar($picture, $client_name)
             <div class="modal-body">
                 <div class="invoice-preview-paper">
 
-                <!-- HEADER -->
-                <div class="inv-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <!-- CSNK LOGO -->
-                        <img id="logo-csnk" src="../../resources/img/csnk-iconz.png" height="60">
+            <!-- HEADER -->
+            <div class="inv-header d-flex justify-content-between align-items-center">
+                
+                <!-- LEFT SIDE: MAIN LOGO + INFO -->
+                <div>
+                    <!-- CSNK MAIN LOGO -->
+                    <img id="logo-csnk" src="../../resources/img/whychoose.png" height="65">
 
-                        <!-- SMC LOGO -->
-                        <img id="logo-smc" src="../../resources/img/smc.png" height="60" class="d-none">
+                    <!-- SMC MAIN LOGO -->
+                    <img id="logo-smc" src="../../resources/img/smcbrandname.png" height="90" class="d-none">
 
-                        <br>
-                        <small id="company-address">
-                            Unit 1 Eden Townhomes<br>
-                            Pedro Gil Street, Manila
-                        </small>
+                    <div class="mt-1 small text-muted" id="company-address">
+                        Unit 1 Eden Townhomes<br>
+                        Pedro Gil Street, Manila
                     </div>
                 </div>
+
+                <!-- RIGHT SIDE: BADGE LOGO -->
+                <div>
+                    <!-- CSNK BADGE -->
+                    <img id="badge-csnk" src="../../resources/img/csnk-iconz.png" height="95">
+
+                    <!-- SMC BADGE -->
+                    <img id="badge-smc" src="../../resources/img/smc.png" height="90" class="d-none">
+                </div>
+
+            </div>
 
                 <!-- TITLE -->
                 <div class="inv-title">INVOICE</div>
@@ -773,12 +784,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // ✅ Detect company
         const isSMC = d.invoice && d.invoice.startsWith('SMC-');
 
-        // ✅ Toggle logos
+        // ✅ Toggle LEFT logos
         document.getElementById('logo-csnk').classList.toggle('d-none', isSMC);
         document.getElementById('logo-smc').classList.toggle('d-none', !isSMC);
 
+        // ✅ Toggle RIGHT badge logos
+        document.getElementById('badge-csnk').classList.toggle('d-none', isSMC);
+        document.getElementById('badge-smc').classList.toggle('d-none', !isSMC);
+
         // ✅ Modal title
-        document.getElementById('modal-company').textContent = isSMC ? 'SMC' : 'CSNK';
+        document.getElementById('modal-company').textContent = isSMC
 
         // ✅ Issued by
         document.getElementById('issued-by').textContent =
