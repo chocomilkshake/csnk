@@ -235,7 +235,37 @@ function renderAvatar($picture, $client_name)
 .inv-table td {
     padding: 10px;
     border-bottom: 1px solid #eee;
+}
+.inv-table th {
+    background: #f5f5f5;
+}
+.inv-declaration {
+    margin-top: 20px;
+    font-style: italic;
+}
+.inv-payment {
+}
 
+/* === ACTION BUTTONS === */
+.btn-group .btn {
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.btn-outline-info:hover {
+    background: #0dcaf0;
+    color: #fff;
+}
+
+.btn-outline-warning:hover {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: #fff;
+}
 </style>
 
 <div class="container-fluid py-4">
