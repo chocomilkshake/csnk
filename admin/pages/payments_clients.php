@@ -144,7 +144,22 @@ $stmt->execute();
                                 <button
                                     class="btn btn-outline-info view-btn"
                                     data-bs-toggle="modal"
-                             g-centered">
+                                    data-bs-target="#viewModal"
+                       
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= VIEW MODAL ================= -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header bg-primary text-white">
