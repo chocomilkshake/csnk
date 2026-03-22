@@ -503,7 +503,57 @@ while ($row = $r->fetch_assoc()) {
                             </td>
                             <td width="40%" class="meta-right">
                                 <div><strong>Invoice #:</strong> <span id="smc-invoice-num"></span></div>
-= addr;
+                                <div><strong>Invoice Date:</strong> <?= $invoice_date ?></div>
+                                <div><strong>Due Date:</strong> <span id="smc-due-date">—</span></div>
+                                <div>Ref No: <?= $reference_no ?></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- ================= ITEMS ================= -->
+                    <table class="items">
+                        <thead>
+                            <tr>
+                                <th>Applicant Name</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>No. Days</th>
+                                <th class="right">Service Fee</th>
+
+                            </tr>
+                        </thead>
+                        <tbody id="smc-items">
+                            <tr>
+                                <td colspan="7" class="empty">No applicants yet</td>
+                            </tr>
+
+            if (agencyId && opt.dataset.b
+
+        if (agency === '2') {
+            document.getElementById('preview-smc').classList.remove('d-none');
+            document.getElementById('smc-invoice-num').textContent = invoiceNum;
+        } else {
+            document.getElementById('preview-csnk').classList.remove('d-none');
+            document.getElementById('pv-invoice-num').innerHTML = `<strong>Invoice #</strong> ${invoiceNum}`;
+        }
+    }
+
+    function updatePreview() {
+        const name = document.getElementById('client_name').value || 'Client Name';
+        const email = document.getElementById('client_email').value || 'Client Email';
+        const addr = document.getElementById('client_address').value || 'Client Address';
+        const due = document.getElementById('due_date').value || '—';
+
+        /* ===== CSNK PREVIEW ===== */
+        document.getElementById('pv-client-name').textContent = name;
+        document.getElementById('pv-client-email').textContent = email;
+        document.getElementById('pv-client-address').textContent = addr;
+        document.getElementById('pv-due-date').textContent = due;
+
+        /* ===== SMC PREVIEW ===== */
+        document.getElementById('smc-client-name').textContent = name;
+        document.getElementById('smc-client-email').textContent = email;
+        document.getElementById('smc-client-address').textContent = addr;
         document.getElementById('smc-due-date').textContent = due;
 
         calcTotal();
