@@ -244,6 +244,40 @@ function renderAvatar($picture, $client_name)
     font-style: italic;
 }
 .inv-payment {
+    margin-top: 20px;
+}
+
+
+/* === INVOICE TABLE (MODERN) === */
+.table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c757d;
+    border: none;
+}
+
+.table tbody tr {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table tbody tr:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+
+.table tbody td {
+    vertical-align: middle;
+    border: none;
+    padding: 14px 16px;
 }
 
 /* === ACTION BUTTONS === */
