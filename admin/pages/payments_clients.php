@@ -137,7 +137,21 @@ $prefix = $activeTab . '-%'; // CSNK-% or SMC-%
 
 $stmt->bind_param('ss', $like, $prefix);
 $stmt->execute();
--no').textContent = d.ref;
+
+    <div class="card shadow-lg">
+        <div class="table-responsive">
+                            <div class="btn-group btn-group-sm">
+                                <button
+                                    class="btn btn-outline-info view-btn"
+                                    data-bs-toggle="modal"
+                             g-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">📄 Invoice Preview</h5>
+claration">
+                        I declare that all information contained ie).toLocaleDateString('en-PH');
+        document.getElementById('pv-ref-no').textContent = d.ref;
         document.getElementById('pv-total').textContent = 
             parseFloat(d.total).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
