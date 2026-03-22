@@ -431,6 +431,14 @@ function renderAvatar($picture, $client_name)
                     <table class="inv-table">
                         <thead>
                             <tr>
+                                <th>Applicant</th>
+                                <th>Period</th>
+                                <th class="text-center">Days</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pv-items"></tbody>
+                        <tfoot>
                             <tr>
                                 <td colspan="3" class="text-end fw-bold">TOTAL:</td>
                                 <td class="text-end fw-bold text-success">
