@@ -696,6 +696,10 @@ document.addEventListener('DOMContentLoaded', function() {
             </tr>
         `).join('');
     }
+
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', viewInvoiceHandler);
+    });
     
     function updateResultsCount(count) {
         resultsCount.innerHTML = count === 1 ? 
@@ -743,41 +747,83 @@ document.addEventListener('DOMContentLoaded', function() {
     // View modal handler
     function viewInvoiceHandler() {
         const d = this.dataset;
+
+        // ✅ Store for PDF download
         currentInvoiceData = {
             pdf: d.pdf,
             total: parseFloat(d.total)
         };
-        
-        // Populate modal fields...
-        document.getElementById('pv-client-name').textContent = d.client;
-        // ... rest of modal logic
-        
+
+        // ✅ BASIC INFO
+        document.getElementById('pv-client-name').textContent = d.client || '';
+        document.getElementById('pv-client-email').textContent = d.email || '';
+        document.getElementById('pv-client-address').textContent = d.address || '';
+        document.getElementById('pv-invoice-num').textContent = d.invoice || '';
+        document.getElementById('pv-invoice-date').textContent =
+            new Date(d.date).toLocaleDateString('en-PH');
+        document.getElementById('pv-due-date').textContent =
+            new Date(d.due).toLocaleDateString('en-PH');
+        document.getElementById('pv-ref-no').textContent = d.ref || '';
+
+        // ✅ TOTAL
+        document.getElementById('pv-total').textContent =
+            parseFloat(d.total || 0).toLocaleString('en-PH', {
+                minimumFractionDigits: 2
+            });
+
+        // ✅ RESET ITEMS
         const tbody = document.getElementById('pv-items');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>';
-        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center">
+                    <div class="spinner-border spinner-border-sm"></div> Loading...
+                </td>
+            </tr>
+        `;
+
+        // ✅ FETCH APPLICANTS VIA AJAX
         fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(apps => {
                 tbody.innerHTML = '';
+
                 if (!apps || apps.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No applicants assigned</td></tr>';
-                } else {
-                    apps.forEach(app => {
-                        tbody.insertAdjacentHTML('beforeend', `
-                            <tr>
-                                <td>${app.name || 'Unknown'}</td>
-                                <td>${app.start_date || ''} - ${app.end_date || ''}</td>
-                                <td class="text-center">${Number(app.days) > 0 ? app.days : 0}</td>
-                                <td class="text-end fw-semibold">₱${parseFloat(app.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                        `);
-                    });
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No applicants assigned
+                            </td>
+                        </tr>
+                    `;
+                    return;
                 }
+
+                apps.forEach(app => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${app.name}</td>
+                            <td>${app.start_date} - ${app.end_date}</td>
+                            <td class="text-center">${app.days}</td>
+                            <td class="text-end fw-semibold">
+                                ₱${parseFloat(app.amount).toLocaleString('en-PH', {
+                                    minimumFractionDigits: 2
+                                })}
+                            </td>
+                        </tr>
+                    `);
+                });
             })
             .catch(() => {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Failed to load applicants</td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">
+                            Failed to load applicants
+                        </td>
+                    </tr>
+                `;
             });
-        
+
+        // ✅ PDF DOWNLOAD
         document.getElementById('downloadPdfBtn').onclick = () => {
             window.open('../../uploads/invoices/' + currentInvoiceData.pdf, '_blank');
         };
