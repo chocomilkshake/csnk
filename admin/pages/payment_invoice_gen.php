@@ -532,6 +532,34 @@ while ($row = $r->fetch_assoc()) {
     @media (max-width: 768px) {
         .invoice-paper {
             padding: 1.5rem;
+        }
+    }
+</style>
+
+<script>nt = opt.dataset.name || '';
+        document.getElementById('client-email').textContent = opt.value || '';
+        document.getElementById('client-address').textContent = opt.dataset.address || '';
+
+        // LOAD APPLICANTS
+        let apps = [];
+        try {
+            apps = JSON.parse(opt.dataset.apps || '[]');
+        } catch (e) {
+            console.error('Invalid applicants JSON', e);
+        }
+
+        const tbody = document.getElementById('items');
+        tbody.innerHTML = '';
+        applicantCounter = 0;
+
+        if (apps.length === 0) {
+            addApplicant();
+            updatePreviewItems();
+            return;
+        }
+
+        apps.forEach(app => {
+            const index = applicantCounter++;
             const row = tbody.insertRow();
 
             row.innerHTML = `
