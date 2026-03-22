@@ -476,6 +476,38 @@ function renderAvatar($picture, $client_name)
                         <strong>Issued By:</strong> CSNK Agency
                     </div>
 
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="downloadPdfBtn">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+let currentInvoiceData = {};
+
+document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const d = btn.dataset;
+        
+        // Store data globally
+        currentInvoiceData = {
+            pdf: d.pdf,
+            total: parseFloat(d.total)
+        };
+        
+        // Populate static fields
+        document.getElementById('pv-client-name').textContent = d.client;
+        document.getElementById('pv-client-email').textContent = d.email;
+        document.getElementById('pv-client-address').textContent = d.address;
+        document.getElementById('pv-invoice-num').textContent = d.invoice;
         document.getElementById('pv-invoice-date').textContent = new Date(d.date).toLocaleDateString('en-PH');
         document.getElementById('pv-due-date').textContent = new Date(d.due).toLocaleDateString('en-PH');
         document.getElementById('pv-ref-no').textContent = d.ref;
