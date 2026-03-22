@@ -469,7 +469,15 @@ function renderAvatar($picture, $client_name)
                     </table>
 
                     <div class="inv-declaration">
-                        I declare that all information contained ie).toLocaleDateString('en-PH');
+                        I declare that all information contained in this invoice are certified true and correct.
+                    </div>
+
+                    <div class="inv-payment">
+                        <strong>Issued By:</strong> CSNK Agency
+                    </div>
+
+        document.getElementById('pv-invoice-date').textContent = new Date(d.date).toLocaleDateString('en-PH');
+        document.getElementById('pv-due-date').textContent = new Date(d.due).toLocaleDateString('en-PH');
         document.getElementById('pv-ref-no').textContent = d.ref;
         document.getElementById('pv-total').textContent = 
             parseFloat(d.total).toLocaleString('en-PH', { minimumFractionDigits: 2 });
