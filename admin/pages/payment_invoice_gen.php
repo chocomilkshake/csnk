@@ -529,6 +529,35 @@ while ($row = $r->fetch_assoc()) {
 
         text-align: center;
             </td>
+            <td>
+        calcTotal();
+    }
+
+    function updateApplicantCount() {
+        const count = document.getElementById('items').rows.length;
+        document.getElementById('applicant-count').textContent = count;
+    }
+
+    function calcTotal() {
+        const amounts = document.querySelectorAll('.amount');
+        let total = 0;
+        amounts.forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('pv-total').textContent = total.toLocaleString('en-PH', {
+            minimumFractionDigits: 2
+        });
+
+        // Update preview items table
+        updatePreviewItems();
+    }
+
+    function updatePreviewItems() {
+        const csnkBody = document.getElementById('pv-items');
+        const smcBody = document.getElementById('smc-items');
+
+        const rows = document.querySelectorAll('#items tr');
+
         csnkBody.innerHTML = '';
         smcBody.innerHTML = '';
 
