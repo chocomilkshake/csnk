@@ -566,7 +566,37 @@ while ($row = $r->fetch_assoc()) {
                             <i class="bi bi-gear-fill me-2"></i>Invoice Builder
                         </h6>
                     </div>
-                    <div class="car
+                    <div class="card-body p-4">
+                        <!-- Client Info -->
+                        <h6 class="fw-bold mb-3 pb-2 border-bottom">Client Details</h6>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Select Agency</label>
+                            <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency(); updateInvoiceNumPreview();">
+                                <option value="">Select Agency</option>
+                                <option value="1">CSNK</option>
+                                <option value="2">SMC</option>
+                            </selec
+    }
+    /* TABLE */
+    .inv-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 28px;
+    }
+
+    .inv-table th {
+        background: #f2f2f2;
+        border-bottom: 2px solid #ccc;
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .inv-table td {
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 13px;
+    }
 
     .inv-table .right {
         text-align: right;
