@@ -427,7 +427,22 @@ claration">
         tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>';
 
         try {
-            // Fetch enriched ="text-end fw-semibold">
+            // Fetch enriched applicants via AJAX
+            const response = await fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
+            const apps = await response.json();
+            
+            tbody.innerHTML = '';
+            
+            if (!apps || apps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No applicants assigned</td></tr>';
+            } else {
+                apps.forEach(app => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${app.name || 'Unknown'}</td>
+                            <td>${app.start_date || ''} - ${app.end_date || ''}</td>
+                            <td class="text-center">${Number(app.days) > 0 ? app.days : 0}</td>
+                            <td class="text-end fw-semibold">
                                 ₱${parseFloat(app.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}
                             </td>
                         </tr>
