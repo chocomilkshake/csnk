@@ -499,22 +499,34 @@ function renderAvatar($picture, $client_name)
         <div class="modal-content">
 
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">📄 Invoice Preview</h5>
+                <h5 class="modal-title">
+                    📄 <span id="modal-company">CSNK</span> Invoice Preview
+                </h5>
                 <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
                 <div class="invoice-preview-paper">
 
-                    <div class="inv-header">
-                        <div>
-                            <img src="../resources/img/whychoose.png" height="50"><br>
-                            <small>Unit 1 Eden Townhomes<br>Pedro Gil Street, Manila</small>
-                        </div>
-                        <img src="../../resources/img/csnk-iconz.png" height="80">
-                    </div>
+                <!-- HEADER -->
+                <div class="inv-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <!-- CSNK LOGO -->
+                        <img id="logo-csnk" src="../../resources/img/csnk-iconz.png" height="60">
 
-                    <div class="inv-title">INVOICE</div>
+                        <!-- SMC LOGO -->
+                        <img id="logo-smc" src="../../resources/img/smc.png" height="60" class="d-none">
+
+                        <br>
+                        <small id="company-address">
+                            Unit 1 Eden Townhomes<br>
+                            Pedro Gil Street, Manila
+                        </small>
+                    </div>
+                </div>
+
+                <!-- TITLE -->
+                <div class="inv-title">INVOICE</div>
 
                     <div class="inv-meta">
                         <div>
@@ -556,7 +568,7 @@ function renderAvatar($picture, $client_name)
                     </div>
 
                     <div class="inv-payment">
-                        <strong>Issued By:</strong> CSNK Agency
+                        <strong>Issued By:</strong> <span id="issued-by">CSNK Agency</span>
                     </div>
 
                 </div>
@@ -695,6 +707,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
             </tr>
         `).join('');
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', viewInvoiceHandler);
+        });
     }
 
     document.querySelectorAll('.view-btn').forEach(btn => {
@@ -748,13 +764,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function viewInvoiceHandler() {
         const d = this.dataset;
 
-        // ✅ Store for PDF download
+        // ✅ Store PDF info
         currentInvoiceData = {
             pdf: d.pdf,
             total: parseFloat(d.total)
         };
 
-        // ✅ BASIC INFO
+        // ✅ Detect company
+        const isSMC = d.invoice && d.invoice.startsWith('SMC-');
+
+        // ✅ Toggle logos
+        document.getElementById('logo-csnk').classList.toggle('d-none', isSMC);
+        document.getElementById('logo-smc').classList.toggle('d-none', !isSMC);
+
+        // ✅ Modal title
+        document.getElementById('modal-company').textContent = isSMC ? 'SMC' : 'CSNK';
+
+        // ✅ Issued by
+        document.getElementById('issued-by').textContent =
+            isSMC ? 'SMC Agency' : 'CSNK Agency';
+
+        // ✅ Client info
         document.getElementById('pv-client-name').textContent = d.client || '';
         document.getElementById('pv-client-email').textContent = d.email || '';
         document.getElementById('pv-client-address').textContent = d.address || '';
@@ -765,13 +795,13 @@ document.addEventListener('DOMContentLoaded', function() {
             new Date(d.due).toLocaleDateString('en-PH');
         document.getElementById('pv-ref-no').textContent = d.ref || '';
 
-        // ✅ TOTAL
+        // ✅ Total
         document.getElementById('pv-total').textContent =
             parseFloat(d.total || 0).toLocaleString('en-PH', {
                 minimumFractionDigits: 2
             });
 
-        // ✅ RESET ITEMS
+        // ✅ Applicants
         const tbody = document.getElementById('pv-items');
         tbody.innerHTML = `
             <tr>
@@ -781,7 +811,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </tr>
         `;
 
-        // ✅ FETCH APPLICANTS VIA AJAX
         fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
             .then(res => res.json())
             .then(apps => {
@@ -812,24 +841,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         </tr>
                     `);
                 });
-            })
-            .catch(() => {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-danger">
-                            Failed to load applicants
-                        </td>
-                    </tr>
-                `;
             });
 
-        // ✅ PDF DOWNLOAD
-        document.getElementById('downloadPdfBtn').onclick = () => {
-            window.open('../../uploads/invoices/' + currentInvoiceData.pdf, '_blank');
-        };
-    }
+            // ✅ Download PDF
+            document.getElementById('downloadPdfBtn').onclick = () => {
+                if (!currentInvoiceData.pdf) {
+                    alert('PDF file not found.');
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.href = '../../uploads/invoices/' + currentInvoiceData.pdf;
+                link.download = currentInvoiceData.pdf;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        }
     
-let currentInvoiceData = {};
+    let currentInvoiceData = {};
 });
 </script>
 
