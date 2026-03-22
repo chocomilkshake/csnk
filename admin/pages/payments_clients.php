@@ -136,7 +136,8 @@ $like   = '%' . $q . '%';
 $prefix = $activeTab . '-%'; // CSNK-% or SMC-%
 
 $stmt->bind_param('ss', $like, $prefix);
-$stmt->execute()-no').textContent = d.ref;
+$stmt->execute();
+-no').textContent = d.ref;
         document.getElementById('pv-total').textContent = 
             parseFloat(d.total).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
