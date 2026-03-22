@@ -533,6 +533,30 @@ while ($row = $r->fetch_assoc()) {
         smcBody.innerHTML = '';
 
         let hasItems = false;
+
+        rows.forEach(row => {
+            const nameInput = row.querySelector('[name*="[name]"]');
+            const startInput = row.querySelector('[name*="[start_date]"]');
+            const endInput = row.querySelector('[name*="[end_date]"]');
+            const daysSpan = row.querySelector('.days');
+            const amtInput = row.querySelector('[name*="[amount]"]');
+
+            if (!nameInput || !nameInput.value.trim()) return;
+
+            hasItems = true;
+
+            const name = nameInput.value;
+            const start = startInput?.value || '—';
+            const end = endInput?.value || '—';
+            const days = parseInt(daysSpan?.textContent) || 0;
+            const amt = parseFloat(amtInput?.value || 0);
+
+            /* ===== CSNK ROW ===== */
+            csnkBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${name}</td>
+                    <td>${start}</td>
+                    <td>${end}</td>
                     <td class="text-center">${days}</td>
                     <td class="right">₱${amt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                 </tr>
