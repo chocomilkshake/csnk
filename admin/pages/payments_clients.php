@@ -426,7 +426,27 @@ function renderAvatar($picture, $client_name)
                     <div class="inv-header">
                         <div>
                             <img src="../resources/img/whychoose.png" height="50"><br>
-                            <small>Unit 1 Eden Tow
+                            <small>Unit 1 Eden Townhomes<br>Pedro Gil Street, Manila</small>
+                        </div>
+                        <img src="../../resources/img/csnk-iconz.png" height="80">
+                    </div>
+
+                    <div class="inv-title">INVOICE</div>
+
+                    <div class="inv-meta">
+                        <div>
+                            <strong>Billed To:</strong><br>
+                            <span id="pv-client-name"></span><br>
+                            <span id="pv-client-email"></span><br>
+                            <span id="pv-client-address"></span>
+                        </div>
+                        <div class="text-end">
+                            <div><strong>Invoice #:</strong> <span id="pv-invoice-num"></span></div>
+                            <div><strong>Date:</strong> <span id="pv-invoice-date"></span></div>
+                            <div><strong>Due:</strong> <span id="pv-due-date"></span></div>
+                            <div><strong>Ref:</strong> <span id="pv-ref-no"></span></div>
+                        </div>
+                    </div>
 
                     <table class="inv-table">
                         <thead>
