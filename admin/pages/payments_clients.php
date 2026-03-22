@@ -26,7 +26,34 @@ if (isset($_GET['get_invoice_applicants']) && isset($_GET['id'])) {
         FROM invoice_history
         WHERE id = ?
     ");
-    $stmt->bind_param('i', $intable
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    if (!$row) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $decoded = json_decode($row['applicants_data'] ?? '[]', true);
+    if (!is_array($decoded)) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $enriched_apps = [];
+
+    foreach ($decoded as $app) {
+        $item = [
+            'name'        => $app['name'] ?? 'Unknown Applicant',
+            'start_date'  => $app['start_date'] ?? '',
+            'end_date'    => $app['end_date'] ?? '',
+            'days'        => isset($app['days']) ? (int)$app['days'] : 0,
+            'amount'      => isset($app['amount']) ? (float)$app['amount'] : 0
+        ];
+
+
+        // Optional: enrich name from applicants table
         if (!empty($app['applicant_id'])) {
             $app_stmt = $conn->prepare("
                 SELECT first_name, middle_name, last_name, suffix
