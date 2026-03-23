@@ -63,6 +63,38 @@ if (method_exists($applicant, 'getAll')) {
             $res = $conn->query($sql);
                   <div class="dropdown">
                     <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary dropdown-toggle"
+                      data-bs-toggle="dropdown"
+                      data-bs-auto-close="true"
+                      data-bs-display="static"
+                      data-bs-offset="0,8"
+                      aria-expanded="false"
+                      id="changeStatusBtn-<?php echo $id; ?>">
+                      <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                      <li>
+                        <!-- Trigger single shared modal -->
+                        <a
+                          class="dropdown-item js-open-revert"
+                          href="#"
+                          data-bs-toggle="modal"
+                          data-bs-target="#revertModal"
+                          data-app-id="<?php echo $id; ?>"
+                          data-app-name="<?php echo h($name); ?>"
+                          data-app-photo="<?php echo h($photo); ?>"
+                        >
+                          <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                          <span>Revert to Pending</span>
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="blacklist-applicant.php?id=<?php echo $id; ?>">
+                          <i class="bi bi-slash-circle text-danger"></i>
+                          <span>Blacklist</span>
+                        </a>
+                      </li>
                     </ul>
                   </div>
                 </div>
