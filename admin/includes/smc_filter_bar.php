@@ -1,6 +1,6 @@
 <?php
 /**
- * SMC Filter Bar (Status + Country) - Reusable include
+ * SMC Filter Bar (Country only UI) - Reusable include
  *
  * Usage (in a page):
  *
@@ -16,7 +16,7 @@
  *       // 'not_blacklisted'  => true,
  *   ]);
  *
- *   // Render the bars (Status + Country)
+ *   // Render the country filter bar
  *   smc_filter_render($filterState);
  *
  *   // Get the computed filters to fetch your list:
@@ -42,7 +42,9 @@ if (!function_exists('smc_h')) {
 
 if (!function_exists('smc_filter_boot')) {
     /**
-     * Initialize filters (GET + SESSION), compute counts and provide render state
+     * Initialize filters (GET + SESSION), compute counts and provide render state.
+     * Status handling is preserved for page/query compatibility, but the shared UI
+     * now renders only the country filter.
      */
     function smc_filter_boot(array $opts): array
     {
@@ -215,7 +217,7 @@ if (!function_exists('smc_filter_boot')) {
 
 if (!function_exists('smc_filter_render')) {
     /**
-     * Render the Status + Country bars with the same styles and markup pattern
+     * Render the shared country filter bar.
      */
     function smc_filter_render(array $state): void
     {
@@ -225,67 +227,11 @@ if (!function_exists('smc_filter_render')) {
         $country = (string) ($state['country'] ?? 'all');
         $counts = $state['counts'] ?? ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
         $countriesWithCounts = $state['countriesWithCounts'] ?? [];
+        $currentTotal = (int) (($status !== 'all' && isset($counts[$status])) ? $counts[$status] : ($counts['all'] ?? 0));
 
-        // --------- Styles (copied from your page) ---------
+        // --------- Styles ---------
         ?>
         <style>
-            .status-group {
-                display: inline-flex;
-                gap: .5rem;
-                padding: .5rem;
-                border: 1px solid #e5e7eb;
-                border-radius: 1rem;
-                background: rgba(255, 255, 255, .85);
-                backdrop-filter: saturate(140%) blur(2px);
-                box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 3px rgba(0, 0, 0, .10);
-            }
-
-            .status-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: .5rem;
-                padding: .45rem .9rem;
-                border-radius: .75rem;
-                font-size: .875rem;
-                font-weight: 500;
-                text-decoration: none;
-                border: 1px solid #cbd5e1;
-                color: #334155;
-                background: #fff;
-                transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
-            }
-
-            .status-btn:hover {
-                transform: translateY(-2px);
-                background: #f8fafc;
-                border-color: #94a3b8;
-                box-shadow: 0 6px 12px rgba(15, 23, 42, .06);
-            }
-
-            .status-btn:focus {
-                outline: 3px solid rgba(99, 102, 241, .35);
-                outline-offset: 2px;
-            }
-
-            .status-btn--active {
-                color: #fff;
-                border-color: #4f46e5;
-                background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
-                box-shadow: 0 8px 18px rgba(79, 70, 229, .25);
-            }
-
-            .status-btn--active:hover {
-                background: linear-gradient(180deg, #5457ee 0%, #463fd3 100%);
-                border-color: #463fd3;
-            }
-
-            .status-icon {
-                font-size: .95em;
-                line-height: 1;
-                opacity: .9;
-            }
-
             .badge-pill {
                 display: inline-flex;
                 align-items: center;
@@ -361,29 +307,9 @@ if (!function_exists('smc_filter_render')) {
         </style>
         <?php
 
-        // --------- Render Status buttons ---------
-        $qParam = $q;
-        $renderBtn = function (string $label, string $value, string $currentStatus, string $q, string $icon, int $count) use ($baseUrl) {
-            $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
-            $href = $baseUrl . '?status=' . urlencode($value);
-            if ($q !== '')
-                $href .= '&q=' . urlencode($q);
-            $classes = 'status-btn' . ($isActive ? ' status-btn--active' : '');
-            $iconHtml = $icon !== '' ? '<i class="status-icon ' . smc_h($icon) . '"></i>' : '';
-            $countHtml = '<span class="badge-pill ms-1">' . (int) $count . '</span>';
-            return '<a href="' . smc_h($href) . '" class="' . $classes . '">' . $iconHtml . '<span>' . smc_h($label) . '</span>' . $countHtml . '</a>';
-        };
-
-        echo '<div class="status-group">';
-        echo $renderBtn('All', 'all', $status, $qParam, 'bi bi-list-ul', (int) ($counts['all'] ?? 0));
-        echo $renderBtn('Pending', 'pending', $status, $qParam, 'bi bi-hourglass-split', (int) ($counts['pending'] ?? 0));
-        echo $renderBtn('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat', (int) ($counts['on_process'] ?? 0));
-        echo $renderBtn('Hired', 'approved', $status, $qParam, 'bi bi-check2-circle', (int) ($counts['approved'] ?? 0));
-        echo '</div>';
-
         // --------- Render Country buttons (if any) ---------
         if (!empty($countriesWithCounts)) {
-            echo '<div class="col-12 mt-2">';
+            echo '<div class="col-12">';
             echo '  <div class="filter-label">Filter by Country</div>';
             echo '  <div class="country-group">';
 
@@ -399,8 +325,8 @@ if (!function_exists('smc_filter_render')) {
                 return '<a href="' . smc_h($href) . '" class="' . $classes . '"><span>' . smc_h($label) . '</span>' . $countHtml . '</a>';
             };
 
-            // "All" first, showing the count for the selected status
-            echo $renderCountryBtn('All', 'all', $country, $q, $status, (int) ($counts['all'] ?? 0));
+            // "All" first, showing the count for the active page status.
+            echo $renderCountryBtn('All', 'all', $country, $q, $status, $currentTotal);
 
             foreach ($countriesWithCounts as $c) {
                 $countryName = smc_h($c['name'] ?? 'Unknown');
