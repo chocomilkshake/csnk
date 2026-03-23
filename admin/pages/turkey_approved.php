@@ -447,7 +447,40 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                         $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
                         // Change Status target links (preserve q)
-                        $toPendingUrl = 'turkey_approved.php?action=upda
+                        $toPendingUrl = 'turkey_approved.php?action=update_status&id=' . $id . '&to=pending' . $preserveQ;
+                        $toOnProcessUrl = 'turkey_approved.php?action=update_status&id=' . $id . '&to=on_process' . $preserveQ;
+                        $toApprovedUrl = 'turkey_approved.php?action=update_status&id=' . $id . '&to=approved' . $preserveQ;
+                        ?>
+                        <tr>
+                            <td>
+                                <?php if (!empty($row['picture'])): ?>
+                                    <img src="<?php echo htmlspecialchars(getFileUrl($row['picture']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                <?php else: ?>
+                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                        style="width: 50px; height: 50px;">
+                                        <?php echo strtoupper(substr((string) $row['first_name'], 0, 1)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">
+                                    <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['email'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars($row['phone_number'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(renderPreferredLocation($row['preferred_location'] ?? null), ENT_QUOTES, 'UTF-8'); ?>
+                            </td>
+                            <td><?php echo htmlspecialchars(formatDate($row['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="actions-cell">
+                                <div class="btn-group dd-modern dropup">
+                                    <!-- View -->
+                                    <a href="<?php echo htmlspecialchars($viewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                        class="btn btn-sm btn-info" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
                                     <!-- Edit -->
                                     <a href="<?php echo htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                         class="btn btn-sm btn-warning" title="Edit">
