@@ -113,7 +113,7 @@ if ($q !== '') {
     margin-bottom: 1rem;
   }
   .revert-modal .app-photo {
-    width: 44px; height: 44px; object-fit: cover; border-rius: 8px;
+    width: 44px; height: 44px; object-fit: cover; border-radius: 8px;
     background: #f1f5f9;
   }
   .revert-modal .status-chip {
