@@ -14,6 +14,33 @@ if (empty($_SESSION['csrf_token'])) {
     try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
     catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
 }
+
+$applicant = new Applicant($database);
+
+/**
+ * --- Search Memory (same behavior as other lists) ---
+ */
+if (isset($_GET['clear']) && $_GET['clear'] === '1') {
+    unset($_SESSION['onhold_q']);
+    redirect('on-hold.php'); exit;
+}
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim((string)$_GET['q']);
+    if (mb_strlen($q) > 100) $q = mb_substr($q, 0, 100);
+    $_SESSION['onhold_q'] = $q;
+} elseif (!empty($_SESSION['onhold_q'])) {
+    $q = (string)$_SESSION['onhold_q'];
+}
+
+/**
+ * Load list - Filter by CSNK agency only
+ */
+// Load on-hold applicants for CSNK agency (avoid non-existing getAllByStatus method)
+$applicants = [];
+if (method_exists($applicant, 'getAll')) {
+    $applicants = $applicant->getAll('on_hold', null, CSNK_AGENCY_CODE);
+} else {
     // Fallback: no helper; query directly
     $conn = $database->getConnection();
     if ($conn instanceof mysqli) {
