@@ -73,6 +73,42 @@ $currentUser = $auth->getCurrentUser();
                       <i class="bi bi-eye"></i> View
                     </a>
 
+                    <!-- History -->
+                    <a href="<?php echo h($historyUrl); ?>" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-clock-history"></i> History
+                    </a>
+
+                    <!-- Change Status -->
+                    <div class="dropdown">
+                      <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        data-bs-auto-close="true" data-bs-display="static" data-bs-offset="0,8" aria-expanded="false"
+                        id="changeStatusBtn-<?php echo $id; ?>">
+                        <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                        <?php if ($appStatus === 'on_hold'): ?>
+                        <li>
+                          <!-- Revert to Pending -->
+                          <a class="dropdown-item js-open-revert" href="#" data-bs-toggle="modal"
+                            data-bs-target="#revertModal" data-app-id="<?php echo $id; ?>"
+                            data-app-name="<?php echo h($name); ?>" data-app-photo="<?php echo h($photo); ?>">
+                            <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                            <span>Revert to Pending</span>
+                          </a>
+                        </li>
+                        <?php else: ?>
+                        <li>
+                          <span class="dropdown-item disabled text-muted" title="Only on-hold applicants can be reverted">
+                            <i class="bi bi-exclamation-circle text-secondary"></i>
+                            <span>Revert to Pending (only on-hold)</span>
+                          </span>
+                        </li>
+                        <?php endif; ?>
+                        <li>
+                          <a class="dropdown-item" href="turkey_blacklist-applicant.php?id=<?php echo $id; ?>">
+                            <i class="bi bi-slash-circle text-danger"></i>
+                            <span>Blacklist</span>
                           </a>
                         </li>
                       </ul>
