@@ -21,7 +21,36 @@
  *
  *   // Get the computed filters to fetch your list:
  *   $filters      = $filterState['filters'];
- *   $q            = $filterState['q']; enforce BU
+ *   $q            = $filterState['q'];
+ *   $status       = $filterState['status'];
+ *   $country      = $filterState['country'];
+ *   $counts       = $filterState['counts'];
+ *   $countries    = $filterState['countriesWithCounts'];
+ *   $preserveQS   = $filterState['preserveQS'];
+ *   $preserveQSwQ = $filterState['preserveQSWithQuestion'];
+ */
+
+if (!function_exists('smc_h')) {
+    // HTML escape helper; use existing h() if you already have it
+    function smc_h(string $v): string
+    {
+        if (function_exists('h'))
+            return h($v);
+        return htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
+if (!function_exists('smc_filter_boot')) {
+    /**
+     * Initialize filters (GET + SESSION), compute counts and provide render state
+     */
+    function smc_filter_boot(array $opts): array
+    {
+        // --- Options
+        $baseUrl = $opts['base_url'] ?? basename($_SERVER['PHP_SELF']);
+        $sessionNs = $opts['session_ns'] ?? 'smc_filter';
+        $applicant = $opts['applicant'] ?? null;      // Applicant model
+        $buScope = $opts['buId'] ?? null;      // optional: enforce BU
         $allowedStatuses = $opts['allowed_statuses'] ?? ['all', 'pending', 'on_process', 'approved'];
 
         // typical flags used across pages
