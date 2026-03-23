@@ -99,7 +99,8 @@ if ($q !== '') {
     border-radius: .5rem;
     padding: .25rem .5rem;
     font-weight: 600;
-  };
+  }
+;
     padding: .25rem 0 1rem 0;
     border-bottom: 1px solid #eef2f7;
     margin-bottom: 1rem;
