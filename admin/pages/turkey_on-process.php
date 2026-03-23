@@ -625,7 +625,33 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
-                                $deleteUrl     = 'turkey_on-procee
+                                $deleteUrl     = 'turkey_on-proceepe">
+    <form method="post" action="turkey_on-process.php" id="statusReportForm" class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-light border-0 pb-0">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-primary bg-opacity-25 p-2 rounded-circle">
+            <i class="bi bi-arrow-left-right text-primary fs-5"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="statusReportModalLabel">Change Status & Add Report</h5>
+            <p class="text-muted small mb-0">This change will be recorded in the reports log.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body py-3">
+        <!-- Applicant header card -->
+        <div class="card app-card mb-4">
+          <div class="card-body py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="photo-slot">
+                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none" id="srAvatarFallback" style="width:56px;height:56px;">
+                  <span class="fs-5 fw-bold" id="srAvatarLetter">A</span>
+                </div>
+                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56" style="object-fit: cover;" alt="Photo" id="srAvatarImg">
+              </div>
+              <div class="flex-grow-1">
                 <div class="fw-bold fs-5" id="sr-applicant">Applicant Name</div>
                 <div class="d-flex align-items-center gap-2 mt-1">
                   <span class="badge-soft"><i class="bi bi-arrow-repeat"></i><span id="sr-from">on process</span></span>
