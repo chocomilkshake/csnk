@@ -627,7 +627,37 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
 
                                 $deleteUrl     = 'turkey_on-process.php?action=delete&id=' . $id . $csrfQS . $qsAppend;
 
-                                $toPendingUrl   = 'turkey_on-process.php
+                                $toPendingUrl   = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=pending'    . $csrfQS . $qsAppend;
+                                $toOnProcessUrl = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=on_process' . $csrfQS . $qsAppend;
+                                $toApprovedUrl  = 'turkey_on-process.php?action=update_status&id=' . $id . '&to=approved'   . $csrfQS . $qsAppend;
+
+                                
+                                // Client info
+                                $clientName = trim(($row['client_first_name'] ?? '') . ' ' . ($row['client_middle_name'] ?? '') . ' ' . ($row['client_last_name'] ?? ''));
+                                $clientName = $clientName !== '' ? $clientName : '—';
+                                
+                                // Interview info
+                                $apptType = $row['appointment_type'] ?? '—';
+                                $apptDate = (string)($row['appointment_date'] ?? '');
+                                $apptTime = (string)($row['appointment_time'] ?? '');
+                                $dateTimeDisplay = trim($apptDate . ' ' . $apptTime);
+                                $dateTimeDisplay = $dateTimeDisplay !== '' ? $dateTimeDisplay : '—';
+                                
+                                // Contacts
+                                $appEmail = $row['email'] ?? '';
+                                $appContact = trim(($row['phone_number'] ?? '') . (!empty($appEmail) ? ' / ' . $appEmail : ''));
+                                $appContact = $appContact !== '' ? $appContact : '—';
+                                
+                                $cliEmail = $row['client_email'] ?? '';
+                                $cliContact = trim(($row['client_phone'] ?? '') . (!empty($cliEmail) ? ' / ' . $cliEmail : ''));
+                                $cliContact = $cliContact !== '' ? $cliContact : '—';
+                                
+                                $applicantName = htmlspecialchars(getFullName($row['first_name'], $row['middle_name'], $row['last_name'], $row['suffix']), ENT_QUOTES, 'UTF-8');
+                                $photo = !empty($row['picture']) ? getFileUrl($row['picture']) : '';
+                            ?>
+                            <tr>
+                                <td>
+                                    <?php if (!empty($row['picture'])): ?>
                                         <img src="<?php echo h(getFileUrl($row['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
                                     <?php else: ?>
                                         <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
