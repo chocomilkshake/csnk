@@ -627,6 +627,29 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
 
                                 $deleteUrl     = 'turkey_on-process.php?action=delete&id=' . $id . $csrfQS . $qsAppend;
 
+                                $toPendingUrl   = 'turkey_on-process.php
+                                        <img src="<?php echo h(getFileUrl($row['picture'])); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <?php echo strtoupper(substr($row['first_name'] ?? '', 0, 1)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold"><?php echo $applicantName; ?></div>
+                                    <div class="text-muted small"><?php echo h(renderPreferredLocation($row['preferred_location'] ?? null)); ?></div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold"><?php echo h($clientName); ?></div>
+                                    <div class="text-muted small"><?php echo h($row['client_address'] ?? '—'); ?></div>
+                                </td>
+
+                                <td><?php echo h($apptType); ?></td>
+                                <td><?php echo h($dateTimeDisplay); ?></td>
+                                <td><?php echo h($appContact); ?></td>
+                                <td><?php echo h($cliContact); ?></td>
                                 <td><?php echo h(formatDate($row['created_at'])); ?></td>
 
                                 <td class="actions-cell">
