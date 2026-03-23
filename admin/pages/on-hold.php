@@ -76,7 +76,39 @@ if ($q !== '') {
         $middle = (string)($app['middle_name']  ?? '');
         $last   = (string)($app['last_name']    ?? '');
         $suffix = (string)($app['suffix']       ?? '');
-        $email  = (string)($app['email']        
+        $email  = (string)($app['email']        ?? '');
+        $phone  = (string)($app['phone_number'] ?? '');
+        $loc    = (string)($app['preferred_location'] ?? '');
+
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .15rem .5rem; border: 1px solid #e2e8f0; border-radius: .5rem;
+    font-size: .8rem; color: #334155; background      <button class="btn btn-outline-secondary" type="submit" title="Search">
+        <i class="bi bi-search"></i>
+      </button>
+      <?php if ($q !== ''): ?>
+        <a href="on-hold.php?clear=1" class="btn btn-outline-secondary" title="Clear">
+          <i class="bi bi-x-lg"></i>
+        </a>
+      <?php endif; ?>
+    </div>
+  </form>
+</div>
+
+<div class="card table-card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Date Applied</th>
+            <th style="width: 360px;">Actions</th>
+          </tr>
+        </thead>
         <tbody>
         <?php if (empty($applicants)): ?>
           <tr>
