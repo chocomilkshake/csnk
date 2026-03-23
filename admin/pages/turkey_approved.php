@@ -249,7 +249,14 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
 
 // Preserve query in links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
-$exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
+$exportParams = ['page' => 'approved'];
+if ($q !== '') {
+    $exportParams['q'] = $q;
+}
+if (($filterState['country'] ?? 'all') !== 'all') {
+    $exportParams['country'] = (string) $filterState['country'];
+}
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 ?>
 <!-- ===== Dropdown Fix Styles ===== -->
 <style>
