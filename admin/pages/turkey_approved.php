@@ -441,7 +441,39 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                         <?php
                         $id = (int) $row['id'];
                         $currentStatus = (string) ($row['stalit text-warning"></i>
-                                                    <span>
+                                                    <span>Pending</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?>"
+                                                    href="<?php echo $currentStatus === 'on_process' ? '#' : htmlspecialchars($toOnProcessUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-arrow-repeat text-info"></i>
+                                                    <span>On-Process</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?>"
+                                                    href="<?php echo $currentStatus === 'approved' ? '#' : htmlspecialchars($toApprovedUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <i class="bi bi-check2-circle text-success"></i>
+                                                    <span>Approved</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== Replace Modal ===== -->
+<div class="modal fade" id="replaceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
             <form id="replaceInitForm" enctype="multipart/form-data">
                 <div class="modal-header">
                     <h5 class="modal-title">Replace Applicant — <span id="replaceApplicantName"></span></h5>
