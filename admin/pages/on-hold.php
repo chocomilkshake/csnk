@@ -61,6 +61,42 @@ if (method_exists($applicant, 'getAll')) {
             }
         } else {
             $res = $conn->query($sql);
+            $applicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        }id . $preserveQ;
+              $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
+            ?>
+            <tr>
+              <td>
+                <?php if ($photo): ?>
+                  <img src="<?php echo h($photo); ?>" alt="Photo" class="rounded" width="50" height="50" style="object-fit:cover;">
+                <?php else: ?>
+                  <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;">
+                    <?php echo strtoupper(substr((string)($app['first_name'] ?? ''), 0, 1)); ?>
+                  </div>
+                <?php endif; ?>
+              </td>
+              <td class="fw-semibold">
+                <?php echo h($name); ?>
+                <span class="badge-onhold ms-2">On Hold</span>
+              </td>
+              <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+              <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+              <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+              <td><?php echo h(formatDate($app['created_at'] ?? '')); ?></td>
+
+              <td class="actions-cell">
+                <div class="actions-inline dd-modern">
+                  <!-- View -->
+                  <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+
+                  <!-- History -->
+                  <a href="<?php echo h($historyUrl); ?>" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-clock-history"></i> History
+                  </a>
+
+                  <!-- Change Status -->
                   <div class="dropdown">
                     <button
                       type="button"
