@@ -2,6 +2,37 @@
 // FILE: admin/pages/on-hold.php
 $pageTitle = 'On Hold Applicants (CSNK)';
 require_once '../includes/header.php';
+require_once '../includes/Applicant.php';
+
+        </div>
+
+        <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['csrf_token']); ?>">
+        <input type="hidden" name="applicant_id" i
+
+        <!-- Info box -->
+        <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle-fill text-info mt-1"></i>
+            <div class="small">
+              <strong>Note:</strong> The applicant will be moved to Pending status and this action will be recorded in the reports.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+          <i class="bi bi-x-lg me-1"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-warning btn-lg text-dark">
+          <i class="bi bi-check2-circle me-2"></i> Revert to Pending
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
 document.addEventListener('DOMContentLoaded', function() {
   // Raise row above others while a dropdown is open (nice polish)
   document.querySelectorAll('td.actions-cell .dropdown').forEach(function(dd) {
