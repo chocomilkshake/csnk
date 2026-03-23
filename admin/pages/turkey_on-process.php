@@ -622,7 +622,29 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $id = (int)$row['id'];
                                 $currentStatus = (string)($row['status'] ?? 'on_process');
                                 
-                                $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !
+                                $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+                                $editUrl = 'edit-applicant.php?id=' . $id . ($q !=
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dropdowns
+    var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+    btns.forEach(function(btn) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+        }
+    });
+
+    var modalEl = document.getElementById('statusReportModal');
+    var modal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? new bootstrap.Modal(modalEl) : null;
+
+    // Modal elements
+    var applicantNameEl = document.getElementById('sr-applicant');
+    var fromBadgeEl = document.getElementById('sr-from');
+    var toBadgeEl = document.getElementById('sr-to');
+    var idInput = document.getElementById('sr-id');
+    var toInput = document.getElementById('sr-to-val');
+    var reasonSelect = document.getElementById('sr-reason');
+    var descTA = document.getElementById('sr-text');
     var counterEl = document.getElementById('sr-counter');
     var avatarImg = document.getElementById('srAvatarImg');
     var avatarFallback = document.getElementById('srAvatarFallback');
