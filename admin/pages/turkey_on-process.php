@@ -394,6 +394,29 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
         while ($row = $res->fetch_assoc()) {
             $countriesWithCounts[] = [
                 'id'    => (int)$row['id'],
+                'name'  => (string)$row['name'],
+        SELECT 1 FROM blacklisted_applicants b
+        WHERE b.applicant_id = a.id AND b.is_active = 1
+    )";
+
+    // Query search across applicant + latest client booking fields
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $where[] = "("
+            . "CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name) LIKE ?"
+            . " OR a.email LIKE ?"
+            . " OR a.phone_number LIKE ?"
+            . " OR CONCAT_WS(' ', cb.client_first_name, cb.client_middle_name, cb.client_last_name) LIKE ?"
+            . " OR cb.client_email LIKE ?"
+            . " OR cb.client_phone LIKE ?"
+            . ")";
+        $types  .= 'ssssss';
+        array_push($params, $like, $like, $like, $like, $like, $like);
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $sql = "SELECT
                 a.id,
                 a.first_name,
                 a.middle_name,
