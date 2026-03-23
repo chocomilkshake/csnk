@@ -394,6 +394,29 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
         while ($row = $res->fetch_assoc()) {
             $countriesWithCounts[] = [
                 'id'    => (int)$row['id'],
+                a.id,
+                a.first_name,
+                cb.appointment_time
+            FROM applicants a
+            LEFT JOIN (
+                SELECT cb1.* 
+                FROM client_bookings cb1
+                INNER JOIN (
+                    SELECT applicant_id, MAX(created_at) as max_created
+                    FROM client_bookings
+                    GROUP BY applicant_id
+                ) cb2 ON cb1.applicant_id = cb2.applicant_id AND cb1.created_at = cb2.max_created
+            ) cb ON a.id = cb.applicant_id
+            WHERE $whereSql
+            ORDER BY a.created_at DESC";
+
+    if ($stmt = $conn->prepare($sql)) {
+        if ($types !== '') {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $res  = $stmt->get_result();
+        $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         $stmt->close();
     }
 }
