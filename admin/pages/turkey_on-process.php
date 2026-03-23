@@ -626,6 +626,35 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
     var counterEl = document.getElementById('sr-counter');
     var avatarImg = document.getElementById('srAvatarImg');
     var avatarFallback = document.getElementById('srAvatarFallback');
+    var avatarLetter = document.getElementById('srAvatarLetter');
+
+    // Counter
+    // Reason options by target status
+  const approvalReasons = [
+    { value: 'All requirements completed', label: 'All requirements completed', icon: 'bi-check-all' },
+    { value: 'Passed interview / assessment', label: 'Passed interview/assessment', icon: 'bi-mic-fill' },
+    { value: 'Client confirmed approval', label: 'Client confirmed approval', icon: 'bi-person-check-fill' },
+    { value: 'Qualified based on evaluation', label: 'Qualified on evaluation', icon: 'bi-star-fill' },
+    { value: 'Cleared for endorsement', label: 'Cleared for endorsement', icon: 'bi-hand-thumbs-up-fill' },
+    { value: 'Ready for deployment / assignment', label: 'Ready for deployment', icon: 'bi-rocket-takeoff-fill' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  const pendingReasons = [
+    { value: 'Client request / feedback', label: 'Client request/feedback', icon: 'bi-chat-heart' },
+    { value: 'Documents incomplete / pending', label: 'Docs incomplete/pending', icon: 'bi-file-earmark-x' },
+    { value: 'Interview reschedule needed', label: 'Interview reschedule', icon: 'bi-calendar-x' },
+    { value: 'Needs further evaluation', label: 'Needs more evaluation', icon: 'bi-search' },
+    { value: 'Applicant availability issue', label: 'Applicant availability', icon: 'bi-clock' },
+    { value: 'Compliance / verification pending', label: 'Compliance pending', icon: 'bi-shield-check' },
+    { value: 'Client decision delayed', label: 'Client decision delayed', icon: 'bi-pause-circle' },
+    { value: 'Other', label: 'Other (specify below)', icon: 'bi-plus-circle' }
+  ];
+
+  // Function to populate reason select
+  function populateReasons(options) {
+    const select = document.getElementById('sr-reason');
+    select.innerHTML = '<option value="" selected disabled>Select a reason</option>';
     options.forEach(opt => {
       const el = document.createElement('option');
       el.value = opt.value;
