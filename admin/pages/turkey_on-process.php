@@ -622,6 +622,30 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $id = (int)$row['id'];
                                 $currentStatus = (string)($row['status'] ?? 'on_process');
                                 
+                                $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !
+    var counterEl = document.getElementById('sr-counter');
+    var avatarImg = document.getElementById('srAvatarImg');
+    var avatarFallback = document.getElementById('srAvatarFallback');
+    options.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      el.dataset.icon = opt.icon;
+      select.appendChild(el);
+    });
+    select.value = options[0]?.value || '';
+  }
+
+    var updateCounter = function() {
+        var max = parseInt(descTA.getAttribute('maxlength') || '1000', 10);
+        counterEl.textContent = (descTA.value.length) + '/' + max;
+    };
+    descTA.addEventListener('input', updateCounter);
+    updateCounter();
+
+    // Open modal (require report only when FROM on_process and TO != from)
+    document.querySelectorAll('.change-status').forEach(function(el) {
+        el.addEventListener('click', function(ev) {
             ev.preventDefault();
             if (el.classList.contains('disabled')) return;
 
