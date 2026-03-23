@@ -70,6 +70,37 @@ $currentUser = $auth->getCurrentUser();
 
   .actions-inline .btn {
 
+  .dd-modern .dropdown-item:hover {
+    background-color: #f8fafc;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f1f5f9;
+  }
+
+  .revert-modal .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .15rem .5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    font-size: .8rem;
+    color: #334155;
+    background: #f8fafc;
+  }
+
+  .revert-modal .form-text {
+    color: #64748b;
+  }
+
+  .revert-modal .counter {
+    font-size: .8rem;
+    color: #64748b;
+  }
+
+  .revert-modal .modal-footer {
+    border-top: none;
+  }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
