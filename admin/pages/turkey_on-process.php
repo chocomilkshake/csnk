@@ -620,6 +620,29 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $csrfQS   = '&csrf_token=' . urlencode($csrf); // optional but recommended for GET actions
 
                                 $id = (int)$row['id'];
+                                $currentStatus = (string)($row['status'] ?? 'on_process');
+                                
+            ev.preventDefault();
+            if (el.classList.contains('disabled')) return;
+
+            var fromSt = (el.dataset.from || '').toLowerCase();
+            var toSt = (el.dataset.to || '').toLowerCase();
+            var href = el.dataset.href || '#';
+            var id = el.dataset.id || '';
+            var name = el.dataset.applicant || '';
+            var photo = el.dataset.appPhoto || '';
+
+            // Require a report when changing FROM on_process
+            if (fromSt === 'on_process' && toSt !== fromSt) {
+                idInput.value = id;
+                toInput.value = toSt;
+                applicantNameEl.textContent = name;
+                fromBadgeEl.textContent = fromSt.replace('_', ' ');
+                toBadgeEl.textContent = toSt.replace('_', ' ');
+
+                // Photo or fallback
+                if (photo && photo.trim() !== '') {
+                    avatarImg.src = photo;
                     avatarImg.classList.remove('d-none');
                     avatarFallback.classList.add('d-none');
                 } else {
