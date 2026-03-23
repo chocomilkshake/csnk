@@ -36,28 +36,34 @@ if (isset($_GET['q'])) {
 /**
  * Load list - Filter by CSNK agency only
  */
+// Load on-hold applicants for CSNK agency (avoid non-existing getAllByStatus method)
 $applicants = [];
-if (method_exists($applicant, 'getAllByStatus')) {
-    // For getAllByStatus, we need to filter manually by CSNK
-    $allOnHold = $applicant->getAllByStatus('on_hold');
-    // Filter to CSNK only by checking business_unit_id
+if (method_exists($applicant, 'getAll')) {
+    $applicants = $applicant->getAll('on_hold', null, CSNK_AGENCY_CODE);
+} else {
+    // Fallback: no helper; query directly
     $conn = $database->getConnection();
-    $csnkBuIds = [];
     if ($conn instanceof mysqli) {
-        $sql = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'csnk' AND bu.active = 1";
-        if ($res = $conn->query($sql)) {
-            while ($r = $res->fetch_assoc()) {
-                $csnkBuIds[] = (int)$r['id'];
+        $sql = "SELECT a.* FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE a.status = 'on_hold' AND a.deleted_at IS NULL AND ag.code = 'csnk'";
+        if ($q !== '') {
+            $qLike = '%' . $q . '%';
+            $sql .= " AND (a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ? OR a.phone_number LIKE ? )";
+            $stmt = $conn->prepare($sql);
+            if ($stmt) {
+                $stmt->bind_param('ssss', $qLike, $qLike, $qLike, $qLike);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $applicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+                $stmt->close();
             }
+        } else {
+            $res = $conn->query($sql);
+            $applicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         }
     }
-    $applicants = array_values(array_filter($allOnHold, function($app) use ($csnkBuIds) {
-        $buId = (int)($app['business_unit_id'] ?? 0);
-        return in_array($buId, $csnkBuIds, true);
-    }));
-} elseif (method_exists($applicant, 'getAll')) {
-    // fallback if your class uses getAll(status)
-    $applicants = $applicant->getAll('on_hold', null, CSNK_AGENCY_CODE);
 }
 
 /**
