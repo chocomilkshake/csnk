@@ -396,6 +396,38 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
                 'id'    => (int)$row['id'],
                 'name'  => (string)$row['name'],
                 'count' => (int)$row['count'],
+            ];
+        }
+        $stmt->close();
+    }
+}
+
+$smcState['countriesWithCounts'] = $countriesWithCounts;
+?>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-2 fw-semibold">On-process SMC Applicants</h4>
+    <?php smc_filter_render($smcState); ?>
+  </div>
+</div>
+
+
+<?php
+$q       = (string)($smcState['q'] ?? '');
+$status  = (string)($smcState['status'] ?? 'all');
+$country = (string)($smcState['country'] ?? 'all');
+
+$rows = [];
+
+if ($conn instanceof mysqli && !empty($smcBuIds)) {
+    $buPlaceholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+
+    $where  = [];
+    $types  = '';
+    $params = [];
+
+    // SMC BU restriction
     $where[] = "a.business_unit_id IN ($buPlaceholders)";
     $types  .= str_repeat('i', count($smcBuIds));
     array_push($params, ...$smcBuIds);
