@@ -62,7 +62,41 @@ if (method_exists($applicant, 'getAll')) {
         } else {
             $res = $conn->query($sql);
             $applicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-        }id . $preserveQ;
+        }
+    }
+}
+
+/**
+ * Filter by search
+ */
+if ($q !== '') {
+    $needle = mb_strtolower($q);
+    $applicants = array_values(array_filter($applicants, function(array $app) use ($needle) {
+        $first  = (string)($app['first_name']   ?? '');
+        $middle = (string)($app['middle_name']  ?? '');
+        $last   = (string)($app['last_name']    ?? '');
+        $suffix = (string)($app['suffix']       ?? '');
+        $email  = (string)($app['email']        
+        <tbody>
+        <?php if (empty($applicants)): ?>
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+              <?php if ($q === ''): ?>
+                No on hold applicants.
+              <?php else: ?>
+                No results for "<strong><?php echo h($q); ?></strong>".
+                <a href="on-hold.php?clear=1" class="ms-1">Clear search</a>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php else: ?>
+          <?php foreach ($applicants as $app): ?>
+            <?php
+              $id = (int)($app['id'] ?? 0);
+              $name = getFullNameSafe($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
+              $viewUrl = 'view-applicant.php?id=' . $id . $preserveQ;
+              $historyUrl = 'view-applicant-history.php?id=' . $id . $preserveQ;
               $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
             ?>
             <tr>
