@@ -506,6 +506,18 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         return $cities[0];
     return $full;
 }
+
+$exportParams = ['page' => 'pending'];
+if ($q !== '') {
+    $exportParams['q'] = $q;
+}
+if ($status !== 'all') {
+    $exportParams['status'] = $status;
+}
+if ($country !== 'all') {
+    $exportParams['country'] = $country;
+}
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 ?>
 <style>
     .status-group {
@@ -647,6 +659,9 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0 fw-semibold">Pending SMC Applicants</h4>
+    <a href="<?php echo h($exportUrl); ?>" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+    </a>
 </div>
 
 <div class="container-fluid px-2">
