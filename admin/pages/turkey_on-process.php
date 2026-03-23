@@ -403,6 +403,18 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
 }
 
 $smcState['countriesWithCounts'] = $countriesWithCounts;
+
+$exportParams = ['page' => 'on_process'];
+if ($q !== '') {
+    $exportParams['q'] = $q;
+}
+if ($status !== 'all') {
+    $exportParams['status'] = $status;
+}
+if ($country !== 'all') {
+    $exportParams['country'] = $country;
+}
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -410,6 +422,9 @@ $smcState['countriesWithCounts'] = $countriesWithCounts;
     <h4 class="mb-2 fw-semibold">On-process SMC Applicants</h4>
     <?php smc_filter_render($smcState); ?>
   </div>
+  <a href="<?php echo h($exportUrl); ?>" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+  </a>
 </div>
 
 
