@@ -41,6 +41,13 @@ function flag_icon($iso2, $name)
   return '<span class="' . $flagClass . '" style="width:20px;height:15px;border-radius:2px;"></span>' . htmlspecialchars($name);
 }
 
+// Initialize filters (must happen before filter logic uses them)
+$filterAgency = sanitizeInput($_GET['agency'] ?? '');
+$filterBranch = (int) ($_GET['branch'] ?? 0);
+$filterCountry = (int) ($_GET['country'] ?? 0);
+$filterStatus = sanitizeInput($_GET['status'] ?? '');
+$filterSearch = sanitizeInput($_GET['search'] ?? '');
+
 // ✅ Hide incompatible filters (ADMIN / SUPER ADMIN ONLY)
 if (!$isEmployee) {
     if ($filterAgency === 'smc') {
@@ -52,12 +59,6 @@ if (!$isEmployee) {
 
 // load agency list from db (codes like 'csnk','smc' with human name)
 $agencies = $admin->getAgencies();
-
-$filterAgency = sanitizeInput($_GET['agency'] ?? '');
-$filterBranch = (int) ($_GET['branch'] ?? 0);
-$filterCountry = (int) ($_GET['country'] ?? 0);
-$filterStatus = sanitizeInput($_GET['status'] ?? '');
-$filterSearch = sanitizeInput($_GET['search'] ?? '');
 $errors = [];
 
 
