@@ -7,7 +7,40 @@ require_once '../includes/Applicant.php';
         </div>
 
         <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['csrf_token']); ?>">
-        <input type="hidden" name="applicant_id" i
+        <input type="hidden" name="applicant_id" id="revertApplicantId" value="">
+
+        <div class="row g-4">
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold">
+              Reason <span class="text-danger">*</span>
+            </label>
+            <select name="reason" class="form-select form-select-lg" required id="revertReason">
+              <option value="" selected>Select a reason</option>
+              <option value="Health Issues Resolved">Health Issues Resolved</option>
+              <option value="Personal Problems Solved">Personal Problems Solved</option>
+              <option value="Ready to Work">Ready to Work</option>
+              <option value="Documents Complete">Documents Complete</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="form-text mt-1">Pick the most accurate reason for reverting.</div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold d-flex justify-content-between">
+              <span>Description <span class="text-danger">*</span></span>
+              <span class="counter badge bg-light text-secondary" id="revertDescCounter">0/1000</span>
+            </label>
+            <textarea
+              id="revertDescription"
+              name="description"
+              class="form-control"
+              rows="4"
+              maxlength="1000"
+              required
+              placeholder="Provide details (e.g., proof of recovery, availability confirmation, notes from applicant)…"></textarea>
+            <div class="form-text mt-1">This will be added to Reports and Status History.</div>
+          </div>
+        </div>
 
         <!-- Info box -->
         <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
