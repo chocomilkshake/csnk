@@ -82,7 +82,31 @@ if ($q !== '') {
 
     display: inline-flex; align-items: center; gap: .35rem;
     padding: .15rem .5rem; border: 1px solid #e2e8f0; border-radius: .5rem;
-    font-size: .8rem; color: #334155; background      <button class="btn btn-outline-secondary" type="submit" title="Search">
+    font-size: .8rem; color: #334155; background: #f8fafc;
+  }
+  .revert-modal .form-text { color: #64748b; }
+  .revert-modal .counter {
+    font-size: .8rem; color: #64748b;
+  }
+  .revert-modal .modal-footer { border-top: none; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0 fw-semibold">On Hold Applicants</h4>
+</div>
+
+<!-- 🔎 Search -->
+<div class="mb-3 d-flex justify-content-end">
+  <form action="on-hold.php" method="get" class="w-100" style="max-width: 420px;">
+    <div class="input-group">
+      <input
+        type="text"
+        name="q"
+        class="form-control"
+        placeholder="Search on hold applicants…"
+        value="<?php echo h($q); ?
+        autocomplete="off">
+      <button class="btn btn-outline-secondary" type="submit" title="Search">
         <i class="bi bi-search"></i>
       </button>
       <?php if ($q !== ''): ?>
