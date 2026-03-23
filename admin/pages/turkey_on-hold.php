@@ -69,6 +69,45 @@ require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 $currentUser = $auth->getCurrentUser();
 
   .actions-inline .btn {
+
+</style>              </td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($applicants as $app): ?>
+              <?php
+              $id = (int) ($app['id'] ?? 0);
+              $name = getFullName($app['first_name'] ?? '', $app['middle_name'] ?? '', $app['last_name'] ?? '', $app['suffix'] ?? '');
+              $appStatus = (string) ($app['status'] ?? 'pending');
+              $viewUrl = 'turkey_view-applicant.php?id=' . $id . $preserveQ;
+              $historyUrl = 'turkey_view-applicant-history.php?id=' . $id . $preserveQ;
+              $photo = !empty($app['picture']) ? getFileUrl($app['picture']) : '';
+              ?>
+              <tr>
+                <td>
+                  <?php if ($photo): ?>
+                    <img src="<?php echo h($photo); ?>" alt="Photo" class="rounded" width="50" height="50"
+                      style="object-fit:cover;">
+                  <?php else: ?>
+                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                      style="width:50px;height:50px;">
+                      <?php echo strtoupper(substr((string) ($app['first_name'] ?? ''), 0, 1)); ?>
+                    </div>
+                  <?php endif; ?>
+                </td>
+                <td class="fw-semibold">
+                  <?php echo h($name); ?>
+                  <span class="badge badge-<?php echo strtolower($appStatus); ?> ms-2">
+                    <?php echo ucwords(str_replace('_', ' ', $appStatus)); ?>
+                  </span>
+                </td>
+                <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?></td>
+                <td><?php echo h(formatDate($app['created_at'] ?? '')); ?></td>
+
+                <td class="actions-cell">
+                  <div class="actions-inline dd-modern">
+                    <!-- View -->
                     <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
                       <i class="bi bi-eye"></i> View
                     </a>
