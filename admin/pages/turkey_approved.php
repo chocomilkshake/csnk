@@ -344,6 +344,31 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
         background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
     }
 
+    .country-group {
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, .85);
+    }
+
+    .country-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .35rem .75rem;
+        border-radius: .75rem;
+        font-size: .8rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        background: #fff;
+    }
+
+    .country-btn--active {
+        color: #fff;
         border-color: #059669;
         background: linear-gradient(180deg, #10b981 0%, #059669 100%);
     }
