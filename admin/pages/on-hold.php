@@ -4,6 +4,39 @@ $pageTitle = 'On Hold Applicants (CSNK)';
 require_once '../includes/header.php';
 require_once '../includes/Applicant.php';
 
+if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+
+// CSNK agency constant
+          <?php endforeach; ?>
+        <?php endif; ?>
+      <div class="modal-body py-3">
+        <!-- Applicant header card -->
+        <div class="card border bg-light mb-4">
+          <div class="card-body py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="photo-slot">
+                <!-- will be filled by JS -->
+                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm d-none"
+                     id="revertAvatarFallback" style="width:56px;height:56px;">
+                  <span class="fs-5 fw-bold" id="revertAvatarLetter">A</span>
+                </div>
+                <img src="" class="rounded-circle shadow-sm d-none" width="56" height="56"
+                     style="object-fit: cover;" alt="Photo" id="revertAvatarImg">
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-bold fs-5" id="revertApplicantName">Applicant Name</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="badge bg-secondary bg-opacity-25 text-dark">
+                    <i class="bi bi-pause-circle me-1"></i>On Hold
+                  </span>
+                  <i class="bi bi-arrow-right text-muted"></i>
+                  <span class="badge bg-warning bg-opacity-25 text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i>Pending
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['csrf_token']); ?>">
