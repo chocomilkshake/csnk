@@ -87,7 +87,39 @@ if ($q !== '') {
 
         $stack = mb_strtolower(implode(' | ', [
             $first, $middle, $last, $suffix,
-            $fullName1, $fullName2,
+            $fullName1, $fullName2, $fullName3, $fullName4,
+            $email, $phone, $loc
+        ]));
+        return mb_strpos($stack, $needle) !== false;
+    }));
+}
+
+/**
+ * Helpers
+ */
+function renderPreferredLocation(?string $json, int $maxLen = 34): string {
+    if (empty($json)) return 'N/A';
+    $arr = json_decode($json, true);
+    if (!is_array($arr)) {
+        $fallback = trim($json);
+        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+        return $fallback !== '' ? $fallback : 'N/A';
+    }
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+    if (empty($cities)) return 'N/A';
+    $full = implode(', ', $cities);
+    if (mb_strlen($full) > $maxLen) {
+        return $cities[0] . '…';
+    }
+    return $full;
+}
+
+function getFullNameSafe($first, $middle, $last, $suffix) {
+    return getFullName($first, $middle, $last, $suffix);
+}
+
+function h($str) {
+    return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
 // Preserve query in links
