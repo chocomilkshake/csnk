@@ -625,7 +625,30 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
-                                $deleteUrl     = 'turkey_on-proceepe">
+                                $deleteUrl     = 'turkey_on-proceepeat text-info"></i><span>On-Process</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'approved' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toApprovedUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="approved" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-check2-circle text-success"></i><span>Approved</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- === Status Change Report Modal === -->
+<div class="modal fade status-modal" id="statusReportModal" tabindex="-1" aria-labelledby="statusReportModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <form method="post" action="turkey_on-process.php" id="statusReportForm" class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-light border-0 pb-0">
         <div class="d-flex align-items-center gap-3">
