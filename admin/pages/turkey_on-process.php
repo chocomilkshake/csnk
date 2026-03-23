@@ -395,6 +395,31 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
             $countriesWithCounts[] = [
                 'id'    => (int)$row['id'],
                 'name'  => (string)$row['name'],
+                'count' => (int)$row['count'],
+    $where[] = "a.business_unit_id IN ($buPlaceholders)";
+    $types  .= str_repeat('i', count($smcBuIds));
+    array_push($params, ...$smcBuIds);
+
+    // Status
+    if ($status !== 'all') {
+        $where[] = "a.status = ?";
+        $types   .= 's';
+        $params[] = $status;
+    } else {
+        $where[] = "a.status IN ('pending','on_process','approved')";
+    }
+
+    // Country
+    if ($country !== 'all') {
+        // 🔁 Change a.country_id if needed
+        $where[] = "a.country_id = ?";
+        $types   .= 'i';
+        $params[] = (int)$country;
+    }
+
+    // Not deleted / not blacklisted
+    $where[] = "a.deleted_at IS NULL";
+    $where[] = "NOT EXISTS (
         SELECT 1 FROM blacklisted_applicants b
         WHERE b.applicant_id = a.id AND b.is_active = 1
     )";
