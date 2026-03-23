@@ -1,5 +1,6 @@
 <?php
-function uploadFile($file, $folder = 'general') {
+function uploadFile($file, $folder = 'general')
+{
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return false;
     }
@@ -41,7 +42,8 @@ function uploadFile($file, $folder = 'general') {
  * NEW: Upload multiple files from an <input type="file" name="attachments[]"> control.
  * Returns array of relative paths (e.g., ['replacements/abc.jpg', ...]).
  */
-function uploadMultipleFiles(array $filesControl, string $folder = 'general'): array {
+function uploadMultipleFiles(array $filesControl, string $folder = 'general'): array
+{
     $saved = [];
     if (!isset($filesControl['name']) || !is_array($filesControl['name'])) {
         return $saved;
@@ -49,11 +51,11 @@ function uploadMultipleFiles(array $filesControl, string $folder = 'general'): a
     $count = count($filesControl['name']);
     for ($i = 0; $i < $count; $i++) {
         $file = [
-            'name'     => $filesControl['name'][$i],
-            'type'     => $filesControl['type'][$i],
+            'name' => $filesControl['name'][$i],
+            'type' => $filesControl['type'][$i],
             'tmp_name' => $filesControl['tmp_name'][$i],
-            'error'    => $filesControl['error'][$i],
-            'size'     => $filesControl['size'][$i],
+            'error' => $filesControl['error'][$i],
+            'size' => $filesControl['size'][$i],
         ];
         $path = uploadFile($file, $folder);
         if ($path !== false) {
@@ -63,7 +65,8 @@ function uploadMultipleFiles(array $filesControl, string $folder = 'general'): a
     return $saved;
 }
 
-function deleteFile($filePath) {
+function deleteFile($filePath)
+{
     $fullPath = UPLOAD_PATH . $filePath;
     if (is_string($filePath) && $filePath !== '' && file_exists($fullPath)) {
         return unlink($fullPath);
@@ -71,22 +74,26 @@ function deleteFile($filePath) {
     return false;
 }
 
-function formatDate($date, $format = 'M d, Y') {
+function formatDate($date, $format = 'M d, Y')
+{
     return date($format, strtotime($date));
 }
 
-function formatDateTime($datetime, $format = 'M d, Y h:i A') {
+function formatDateTime($datetime, $format = 'M d, Y h:i A')
+{
     return date($format, strtotime($datetime));
 }
 
-function sanitizeInput($data) {
-    $data = trim((string)$data);
+function sanitizeInput($data)
+{
+    $data = trim((string) $data);
     $data = stripslashes($data);
     $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
     return $data;
 }
 
-function generateRandomPassword($length = 8) {
+function generateRandomPassword($length = 8)
+{
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $password = '';
     $maxIndex = strlen($characters) - 1;
@@ -97,21 +104,24 @@ function generateRandomPassword($length = 8) {
     return $password;
 }
 
-function getFileUrl($filePath) {
+function getFileUrl($filePath)
+{
     if (empty($filePath)) {
         return null;
     }
     return rtrim(UPLOAD_URL, '/') . '/' . ltrim($filePath, '/');
 }
 
-function setFlashMessage($type, $message) {
+function setFlashMessage($type, $message)
+{
     $_SESSION['flash_message'] = [
-        'type'    => $type,
+        'type' => $type,
         'message' => $message
     ];
 }
 
-function getFlashMessage() {
+function getFlashMessage()
+{
     if (isset($_SESSION['flash_message'])) {
         $message = $_SESSION['flash_message'];
         unset($_SESSION['flash_message']);
@@ -120,11 +130,15 @@ function getFlashMessage() {
     return null;
 }
 
-function getFullName($firstName, $middleName, $lastName, $suffix = null) {
+function getFullName($firstName, $middleName, $lastName, $suffix = null)
+{
     $parts = [];
-    if (!empty($firstName))  $parts[] = $firstName;
-    if (!empty($middleName)) $parts[] = $middleName;
-    if (!empty($lastName))   $parts[] = $lastName;
+    if (!empty($firstName))
+        $parts[] = $firstName;
+    if (!empty($middleName))
+        $parts[] = $middleName;
+    if (!empty($lastName))
+        $parts[] = $lastName;
 
     $name = trim(implode(' ', $parts));
     if (!empty($suffix)) {
@@ -133,7 +147,8 @@ function getFullName($firstName, $middleName, $lastName, $suffix = null) {
     return $name;
 }
 
-function isValidEmail($email) {
+function isValidEmail($email)
+{
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
@@ -141,7 +156,8 @@ function isValidEmail($email) {
  * Safe redirect that works even if output already started.
  * Prevents: "Warning: Cannot modify header information - headers already sent..."
  */
-function redirect($url) {
+function redirect($url)
+{
     // Normalize URL (avoid header splitting etc.)
     $url = filter_var($url, FILTER_SANITIZE_URL);
 
@@ -152,7 +168,7 @@ function redirect($url) {
 
     // Fallback: JS + <noscript> meta refresh if headers already sent
     echo '<script>';
-    echo 'window.location.href = ' . json_encode($url, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) . ';';
+    echo 'window.location.href = ' . json_encode($url, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';';
     echo '</script>';
     echo '<noscript>';
     echo '<meta http-equiv="refresh" content="0;url=' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">';
@@ -163,22 +179,26 @@ function redirect($url) {
 /* =========================
  * NEW: JSON & Similarity Utils
  * ========================= */
-function json_to_array_safe($json) {
-    if ($json === null || $json === '' || $json === '[]') return [];
-    $arr = json_decode((string)$json, true);
+function json_to_array_safe($json)
+{
+    if ($json === null || $json === '' || $json === '[]')
+        return [];
+    $arr = json_decode((string) $json, true);
     return is_array($arr) ? $arr : [];
 }
-function normalize_string_array(array $arr): array {
+function normalize_string_array(array $arr): array
+{
     $out = [];
     foreach ($arr as $v) {
-        $s = strtolower(trim((string)$v));
+        $s = strtolower(trim((string) $v));
         if ($s !== '' && !in_array($s, $out, true)) {
             $out[] = $s;
         }
     }
     return $out;
 }
-function overlap_count(array $a, array $b): int {
+function overlap_count(array $a, array $b): int
+{
     $a = normalize_string_array($a);
     $b = normalize_string_array($b);
     return count(array_intersect($a, $b));
@@ -187,7 +207,8 @@ function overlap_count(array $a, array $b): int {
 /**
  * Get client details by email from client_bookings
  */
-function get_client_details($conn, $client_email) {
+function get_client_details($conn, $client_email)
+{
     $stmt = $conn->prepare("
         SELECT 
             CONCAT(client_first_name, ' ', client_last_name) AS client_name,
@@ -206,7 +227,8 @@ function get_client_details($conn, $client_email) {
 /**
  * Get applicants booked by client (with names)
  */
-function get_client_applicants($conn, $client_email) {
+function get_client_applicants($conn, $client_email)
+{
     $applicants = [];
     $stmt = $conn->prepare("
         SELECT DISTINCT
@@ -226,4 +248,15 @@ function get_client_applicants($conn, $client_email) {
         $applicants[] = $row;
     }
     return $applicants;
+}
+
+function exportTurkeyApplicants(array $data, string $status, string $filename): void
+{
+    $headers = ['ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Status', 'Date Applied'];
+    $title = "Turkey Applicants Export - $status";
+    $subject = "Turkey Applicants - $status";
+    $description = "Export of Turkey applicants with status: $status";
+    $sheetTitle = "Turkey $status";
+
+    exportToExcel($data, $headers, $title, $subject, $description, $sheetTitle, $filename);
 }
