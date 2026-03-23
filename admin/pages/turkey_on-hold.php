@@ -74,6 +74,38 @@ $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
 // Use SMC BU for SMC pages
 $smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
 // Update preserve for links
+$preserveQ = $filterState['preserveQS'];
+
+/**
+ * Helpers
+ */
+function renderPreferredLocation(?string $json, int $maxLen = 34): string
+{
+  if (empty($json))
+    return 'N/A';
+  $arr = json_decode($json, true);
+  if (!is_array($arr)) {
+    $fallback = trim($json);
+    $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+    return $fallback !== '' ? $fallback : 'N/A';
+  }
+  $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+  if (empty($cities))
+    return 'N/A';
+  $full = implode(', ', $cities);
+  if (mb_strlen($full) > $maxLen) {
+    return $cities[0] . '…';
+  }
+  return $full;
+}
+
+function h($str)
+{
+  return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
+}
+
+// Preserve query in links
+$preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 ?>
 
 <?php require_once $ADMIN_ROOT . '/includes/header.php'; ?>
