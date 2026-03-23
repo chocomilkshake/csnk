@@ -80,6 +80,30 @@ if ($q !== '') {
         $phone  = (string)($app['phone_number'] ?? '');
         $loc    = (string)($app['preferred_location'] ?? '');
 
+        $fullName1 = trim($first . ' ' . $last);
+        $fullName2 = trim($first . ' ' . $middle . ' ' . $last);
+        $fullName3 = trim($last . ', ' . $first . ' ' . $middle);
+        $fullName4 = trim($first . ' ' . $middle . ' ' . $last . ' ' . $suffix);
+
+        $stack = mb_strtolower(implode(' | ', [
+            $first, $middle, $last, $suffix,
+            $fullName1, $fullName2,
+  .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+  .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+  .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+
+  .badge-onhold {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    padding: .25rem .5rem;
+    font-weight: 600;
+  };
+    padding: .25rem 0 1rem 0;
+    border-bottom: 1px solid #eef2f7
+  }
+  .revert-modal .status-chip {
     display: inline-flex; align-items: center; gap: .35rem;
     padding: .15rem .5rem; border: 1px solid #e2e8f0; border-radius: .5rem;
     font-size: .8rem; color: #334155; background: #f8fafc;
