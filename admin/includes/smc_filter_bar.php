@@ -98,8 +98,21 @@ if (!function_exists('smc_filter_boot')) {
         // --- Gather status
         $status = $_GET['status'] ?? ($_SESSION[$SESSION_KEY_STATUS] ?? 'all');
         $status = strtolower(trim((string) $status));
-        if (!in_array($status, $allowedStatuses, true))
-            $status = 'all';
+
+        $defaultStatus = isset($opts['default_status']) ? strtolower(trim((string) $opts['default_status'])) : null;
+        if ($defaultStatus !== null && !in_array($defaultStatus, $allowedStatuses, true)) {
+            $defaultStatus = null;
+        }
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = $defaultStatus ?? 'all';
+        }
+
+        // If no explicit `status` is set, but a page-specific default exists, apply it
+        if ($status === 'all' && $defaultStatus !== null) {
+            $status = $defaultStatus;
+        }
+
         $_SESSION[$SESSION_KEY_STATUS] = $status;
 
         // --- Gather country
