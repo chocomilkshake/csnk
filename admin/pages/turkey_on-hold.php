@@ -142,6 +142,18 @@ function h($str)
 
 // Preserve query in links
 $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+
+$exportParams = ['page' => 'on_hold'];
+if ($q !== '') {
+  $exportParams['q'] = $q;
+}
+if ($status !== 'all') {
+  $exportParams['status'] = $status;
+}
+if (($filterState['country'] ?? 'all') !== 'all') {
+  $exportParams['country'] = (string) $filterState['country'];
+}
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 ?>
 
 <?php require_once $ADMIN_ROOT . '/includes/header.php'; ?>
@@ -259,6 +271,9 @@ $preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0 fw-semibold">On-hold SMC Applicants</h4>
+  <a href="<?php echo h($exportUrl); ?>" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+  </a>
 </div>
 
 <?php smc_filter_render($filterState); ?>
