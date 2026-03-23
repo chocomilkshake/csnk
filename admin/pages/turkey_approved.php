@@ -311,6 +311,30 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
         border-radius: .75rem;
     }
 
+    table.table-styled {
+        margin-bottom: 0;
+    }
+
+    .status-group {
+        display: inline-flex;
+        gap: .5rem;
+        padding: .5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, .85);
+    }
+
+    .status-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .45rem .9rem;
+        border-radius: .75rem;
+        font-size: .875rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        color: #334155;
         background: #fff;
     }
 
