@@ -101,7 +101,12 @@ if ($q !== '') {
     font-weight: 600;
   };
     padding: .25rem 0 1rem 0;
-    border-bottom: 1px solid #eef2f7
+    border-bottom: 1px solid #eef2f7;
+    margin-bottom: 1rem;
+  }
+  .revert-modal .app-photo {
+    width: 44px; height: 44px; object-fit: cover; border-rius: 8px;
+    background: #f1f5f9;
   }
   .revert-modal .status-chip {
     display: inline-flex; align-items: center; gap: .35rem;
