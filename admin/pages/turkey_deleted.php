@@ -89,6 +89,12 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
         return $cities[0];
     return $full;
 }
+
+$exportParams = ['page' => 'deleted'];
+if ($q !== '') {
+    $exportParams['q'] = $q;
+}
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 ?>
 <style>
     .filter-label {
@@ -105,6 +111,11 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     <div class="row align-items-center justify-content-between mb-3">
         <div class="col-auto">
             <h4 class="mb-2 fw-semibold">Deleted SMC Applicants</h4>
+        </div>
+        <div class="col-auto">
+            <a href="<?php echo h($exportUrl); ?>" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+            </a>
         </div>
     </div>
 
