@@ -622,6 +622,27 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $id = (int)$row['id'];
                     avatarImg.classList.remove('d-none');
                     avatarFallback.classList.add('d-none');
+                } else {
+                    var firstLetter = (name.trim().charAt(0) || 'A').toUpperCase();
+                    avatarLetter.textContent = firstLetter;
+                    avatarImg.classList.add('d-none');
+                    avatarFallback.classList.remove('d-none');
+                }
+
+                // Reset and populate based on target status
+                reasonSelect.value = '';
+                descTA.value = '';
+                descTA.placeholder = toSt === 'approved' ? 
+                  'Write concise details for approval (e.g., documents verified, client confirmation date, deployment readiness).' : 
+                  'Write concise details for reverting to pending (e.g., missing docs, client feedback, needs reschedule).';
+                updateCounter();
+
+                // Populate appropriate reasons
+                if (toSt === 'approved') {
+                  populateReasons(approvalReasons);
+                } else if (toSt === 'pending') {
+                  populateReasons(pendingReasons);
+                }
 
                 if (modal) modal.show();
                 return;
