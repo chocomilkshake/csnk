@@ -70,7 +70,41 @@ $currentUser = $auth->getCurrentUser();
 
   .actions-inline .btn {
 
-</style>              </td>
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0 fw-semibold">On-hold SMC Applicants</h4>
+</div>
+
+<?php smc_filter_render($filterState); ?>
+
+<div class="card table-card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Date Applied</th>
+            <th style="width: 360px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (empty($applicants)): ?>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <?php if ($q === ''): ?>
+                  No on hold applicants.
+                <?php else: ?>
+                  No results for "<strong><?php echo h($q); ?></strong>".
+                  <a href="turkey_on-hold.php" class="ms-1">Clear search</a>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php else: ?>
             <?php foreach ($applicants as $app): ?>
