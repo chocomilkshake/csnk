@@ -393,6 +393,27 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
         $res = $stmt->get_result();
         while ($row = $res->fetch_assoc()) {
             $countriesWithCounts[] = [
+                'id'    => (int)$row['id'],
+        $stmt->close();
+    }
+}
+/** Helpers */
+function renderPreferredLocation(?string $json, int $maxLen = 30): string {
+    if (empty($json)) return 'N/A';
+    $arr = json_decode($json, true);
+    if (!is_array($arr)) {
+        $fallback = trim($json);
+        $fallback = trim($fallback, " \t\n\r\0\x0B[]\"");
+        return $fallback !== '' ? $fallback : 'N/A';
+    }
+    $cities = array_values(array_filter(array_map('trim', $arr), fn($v) => is_string($v) && $v !== ''));
+    if (empty($cities)) return 'N/A';
+    $full = implode(', ', $cities);
+    if (mb_strlen($full) > $maxLen) return $cities[0];
+    return $full;
+}
+?>
+
 <style>
     .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
     .status-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
