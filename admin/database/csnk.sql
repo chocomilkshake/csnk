@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 23, 2026 at 02:36 AM
+-- Generation Time: Mar 23, 2026 at 06:03 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -997,6 +997,7 @@ CREATE TABLE `invoice_history` (
   `invoice_num` varchar(50) NOT NULL,
   `invoice_date` date NOT NULL,
   `due_date` date NOT NULL,
+  `paid_date` date DEFAULT NULL,
   `reference_no` varchar(50) NOT NULL,
   `client_name` varchar(255) NOT NULL,
   `client_email` varchar(255) DEFAULT NULL,
@@ -1005,8 +1006,18 @@ CREATE TABLE `invoice_history` (
   `applicants_data` longtext DEFAULT NULL,
   `pdf_filename` varchar(100) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `company_type` enum('CSNK','SMC') NOT NULL DEFAULT 'CSNK'
+  `company_type` enum('CSNK','SMC') NOT NULL DEFAULT 'CSNK',
+  `status` enum('Pending','OverDue','Paid') NOT NULL DEFAULT 'Pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `invoice_history`
+--
+
+INSERT INTO `invoice_history` (`id`, `business_unit_id`, `invoice_num`, `invoice_date`, `due_date`, `paid_date`, `reference_no`, `client_name`, `client_email`, `client_address`, `total_amount`, `applicants_data`, `pdf_filename`, `created_at`, `company_type`, `status`) VALUES
+(18, 1, 'CSNK-20260323-887', '2026-03-23', '2026-03-24', NULL, 'REF-20260323-107773', 'Andrei Jherico Javillio', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 20000.00, '[{\"name\":\"Emily Rose Johnson\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-29\",\"days\":28,\"amount\":20000}]', 'CSNK-20260323-887.pdf', '2026-03-23 02:43:29', 'CSNK', 'Pending'),
+(19, 2, 'SMC-20260323-976', '2026-03-23', '0000-00-00', NULL, 'REF-20260323-637234', 'Trial Trial', 'ocasmcapcia@gmail.com', '123131 snytgrfdehjghgfd', 21000.00, '[{\"name\":\"Johny Ocamps\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-31\",\"days\":30,\"amount\":21000}]', 'SMC-20260323-976.pdf', '2026-03-23 02:44:10', 'SMC', 'Pending'),
+(20, 1, 'CSNK-20260323-117', '2026-03-23', '2026-03-25', NULL, 'REF-20260323-148812', 'Andrei Jherico Javillio', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 31000.00, '[{\"name\":\"Emily Rose Johnson\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-31\",\"days\":30,\"amount\":31000}]', 'CSNK-20260323-117.pdf', '2026-03-23 03:14:07', 'CSNK', 'Pending');
 
 -- --------------------------------------------------------
 
@@ -1256,7 +1267,7 @@ ALTER TABLE `csnk_branches`
 -- AUTO_INCREMENT for table `invoice_history`
 --
 ALTER TABLE `invoice_history`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `session_logs`

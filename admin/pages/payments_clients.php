@@ -1,6 +1,105 @@
 <?php
 session_start();
 
+/* ======================================================
+   AJAX: Get Client Invoice History
+====================================================== */
+if (
+    isset($_GET['get_client_history']) &&
+    isset($_GET['email']) &&
+    isset($_GET['tab'])
+) {
+    header('Content-Type: application/json');
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    if (!$conn) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $email = strtolower(trim((string)($_GET['email'] ?? '')));
+    $tab   = strtoupper(trim((string)($_GET['tab'] ?? 'CSNK')));
+    $likeInvoice = ($tab === 'SMC') ? 'SMC-%' : 'CSNK-%';
+
+    $stmt = $conn->prepare("
+        SELECT
+            id,
+            invoice_num,
+            invoice_date,
+            due_date,
+            total_amount,
+            CASE
+                WHEN status = 'Paid' THEN 'Paid'
+                WHEN due_date < CURDATE() THEN 'OverDue'
+                ELSE 'Pending'
+            END AS status,
+            reference_no,
+            client_name,
+            client_email,
+            client_address,
+            applicants_data,
+            pdf_filename
+        FROM invoice_history
+        WHERE LOWER(TRIM(client_email)) = ?
+        AND company_type = ?
+        ORDER BY invoice_date DESC
+    ");
+
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['error' => 'DB prepare failed: ' . $conn->error]);
+        exit;
+    }
+
+    $stmt->bind_param('ss', $email, $likeInvoice);
+    if (!$stmt->execute()) {
+        http_response_code(500);
+        echo json_encode(['error' => 'DB execute failed: ' . $stmt->error]);
+        exit;
+    }
+
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    if (empty($rows)) {
+        $fallback = $conn->prepare("
+            SELECT
+                id,
+                invoice_num,
+                invoice_date,
+                due_date,
+                total_amount,
+                CASE
+                    WHEN status = 'Paid' THEN 'Paid'
+                    WHEN due_date < CURDATE() THEN 'OverDue'
+                    ELSE 'Pending'
+                END AS status,
+                reference_no,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                pdf_filename
+            FROM invoice_history
+            WHERE LOWER(TRIM(client_email)) = ?
+            ORDER BY invoice_date DESC
+            LIMIT 200
+        ");
+
+        if ($fallback) {
+            $fallback->bind_param('s', $email);
+            $fallback->execute();
+            $rows = $fallback->get_result()->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+
+    echo json_encode($rows);
+    exit;
+}
 
 /* ======================================================
    DELETE INVOICE
@@ -166,19 +265,28 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 
 /* ================= FETCH INVOICES ================= */
 $sql = "
-    SELECT ih.*, NULL AS picture
-    FROM invoice_history ih
-    WHERE ih.client_name LIKE ?
-      AND ih.invoice_num LIKE ?
-    ORDER BY ih.id DESC
+    SELECT
+        client_name,
+        client_email,
+        client_address,
+        MAX(created_at) AS last_invoice_date,
+        COUNT(*) AS total_invoices,
+        SUM(total_amount) AS total_amount,
+        SUM(status = 'Paid') AS paid_count,
+        SUM(status != 'Paid') AS unpaid_count
+    FROM invoice_history
+    WHERE client_name LIKE ?
+      AND company_type = ?
+    GROUP BY client_name, client_email, client_address
+    ORDER BY last_invoice_date DESC
 ";
 
 $stmt = $conn->prepare($sql);
 
-$like   = '%' . $q . '%';
-$prefix = $activeTab . '-%'; // CSNK-% or SMC-%
+$likeClient = '%' . $q . '%';
+$companyType = $activeTab; // CSNK or SMC
 
-$stmt->bind_param('ss', $like, $prefix);
+$stmt->bind_param('ss', $likeClient, $companyType);
 $stmt->execute();
 
 $invoices = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -209,292 +317,43 @@ function renderAvatar($picture, $client_name)
 <?php include '../includes/header.php'; ?>
 
 <style>
-/* === MODERN DELETE TOAST (LIGHT THEME) === */
-.delete-toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: #ffffff;
-    border-radius: 14px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-    min-width: 300px;
-    z-index: 9999;
-    animation: slideUp 0.3s ease;
-}
-
-.delete-toast.hidden {
-    display: none;
-}
-
-.toast-body {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 18px;
-}
-
-.toast-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.toast-text strong {
-    font-size: 14px;
-    color: #212529;
-}
-
-.toast-sub {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-.toast-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.toast-undo {
-    background: none;
-    border: none;
-    color: #0d6efd;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-.toast-undo:hover {
-    text-decoration: underline;
-}
-
-.toast-close {
-    background: none;
-    border: none;
-    color: #adb5bd;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.toast-close:hover {
-    color: #212529;
-}
-
-/* Animation */
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* === 2026 MODERN SEARCH BAR === */
-.search-container {
-    width: 320px;
-    max-width: 100%;
-}
-
-.search-input {
-    padding: 12px 16px 12px 45px;
-    border: 2px solid #e9ecef;
-    border-radius: 16px;
-    font-size: 15px;
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(16px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-
-.search-input:focus {
-    border-color: #0d6efd;
-    background: #fff;
-    box-shadow: 0 8px 32px rgba(13,110,253,0.15);
-    transform: translateY(-1px);
-}
-
-.search-input::placeholder {
-    color: #adb5bd;
-    font-weight: 400;
-}
-
-.search-clear {
-    display: none;
-    background: none;
-    border: none;
-    color: #6c757d;
-    padding: 0 8px;
-    opacity: 0.6;
-}
-
-.search-input:focus ~ .search-clear,
-.search-clear:hover {
-    opacity: 1;
-}
-
-.search-clear:not(:hover) i {
-    font-size: 14px;
-}
-
-/* === INVOICE TABS (MODERN) === */
-.invoice-tabs {
-    display: flex;
-    gap: 12px;
-}
-
-/* Results counter */
-.search-results {
-    font-size: 14px;
-    color: #6c757d;
-    margin-top: 8px;
-}
-
-/* No results */
-.no-results {
-    text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
-}
-
-.no-results i {
-    font-size: 64px;
-    opacity: 0.3;
-    display: block;
-    margin-bottom: 16px;
-}
-
-
-.tab-btn {
-    padding: 10px 26px;
-    font-weight: 700;
-    border-radius: 999px;
-    border: none;
-    text-decoration: none;
-    letter-spacing: 0.5px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    transition: all 0.25s ease;
-}
-
-.tab-csnk {
-    background: linear-gradient(135deg, #c62828, #e53935);
-    color: #fff;
-}
-
-.tab-smc {
-    background: linear-gradient(135deg, #0b1c3d, #102a5e);
-    color: #d4af37;
-}
-
-.tab-btn.inactive {
-    opacity: 0.45;
-    box-shadow: none;
-}
-
-.tab-btn:hover {
-    opacity: 1;
-    transform: translateY(-2px);
-}
-
-
-/* === ONLY REQUIRED CSS FOR VIEW MODAL === */
-.invoice-preview-paper {
-    background: #fff;
-    padding: 40px;
-    font-family: Arial, Helvetica, sans-serif;
-}
-.inv-header {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 15px;
-}
-.inv-title {
-    text-align: center;
-    font-size: 28px;
-    margin: 25px 0;
-    font-weight: bold;
-}
-.inv-meta {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-.inv-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.inv-table th,
-.inv-table td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-.inv-table th {
-    background: #f5f5f5;
-}
-.inv-declaration {
-    margin-top: 20px;
-    font-style: italic;
-}
-.inv-payment {
-    margin-top: 20px;
-}
-
-
-/* === INVOICE TABLE (MODERN) === */
-.table {
-    border-collapse: separate;
-    border-spacing: 0 10px;
-}
-
-.table thead th {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #6c757d;
-    border: none;
-}
-
-.table tbody tr {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.table tbody tr:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
-}
-
-.table tbody td {
-    vertical-align: middle;
-    border: none;
-    padding: 14px 16px;
-}
-
-/* === ACTION BUTTONS === */
-.btn-group .btn {
-    border-radius: 8px;
-    padding: 6px 10px;
-}
-
-.btn-outline-info:hover {
-    background: #0dcaf0;
-    color: #fff;
-}
-
-.btn-outline-warning:hover {
-    background: #ffc107;
-    color: #000;
-}
-
-.btn-outline-danger:hover {
-    background: #dc3545;
-    color: #fff;
-}
+:root{--primary:#0d6efd;--success:#198754;--warning:#ffc107;--danger:#dc3545;--muted:#6c757d;--shadow-sm:0 4px 20px rgba(0,0,0,.06);--shadow-md:0 8px 24px rgba(0,0,0,.08);--shadow-lg:0 12px 30px rgba(0,0,0,.15)}
+.delete-toast{position:fixed;bottom:24px;right:24px;min-width:300px;background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);z-index:9999;animation:slideUp .3s ease}
+.delete-toast.hidden{display:none}
+.toast-body{display:flex;justify-content:space-between;align-items:center;padding:16px 18px}
+.toast-text strong{font-size:14px}
+.toast-sub{font-size:12px;color:var(--muted)}
+.toast-actions{display:flex;gap:10px}
+.toast-undo,.toast-close{border:none;background:none;cursor:pointer}
+.toast-undo{color:var(--primary);font-weight:700}
+.toast-close{font-size:16px;color:#adb5bd}
+.search-container{width:320px;max-width:100%}
+.search-input{padding:12px 16px 12px 45px;border:2px solid #e9ecef;border-radius:16px;font-size:15px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);box-shadow:var(--shadow-sm);transition:.3s}
+.search-input:focus{border-color:var(--primary);box-shadow:0 8px 32px rgba(13,110,253,.15)}
+.search-clear{display:none;border:none;background:none;color:var(--muted)}
+.invoice-tabs{display:flex;gap:12px}
+.tab-btn{padding:10px 26px;border-radius:999px;font-weight:700;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.08);transition:.25s}
+.tab-btn.inactive{opacity:.45;box-shadow:none}
+.tab-csnk{background:linear-gradient(135deg,#c62828,#e53935);color:#fff}
+.tab-smc{background:linear-gradient(135deg,#0b1c3d,#102a5e);color:#d4af37}
+.table{border-collapse:separate;border-spacing:0 10px}
+.table thead th{font-size:12px;text-transform:uppercase;color:var(--muted);border:none}
+.table tbody tr{background:#fff;border-radius:12px;box-shadow:var(--shadow-md);transition:.2s}
+.table tbody tr:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.table tbody td{padding:14px 16px;vertical-align:middle;border:none}
+.btn-group .btn{border-radius:8px;padding:6px 10px}
+.btn-outline-info:hover{background:#0dcaf0;color:#fff}
+.btn-outline-warning:hover{background:var(--warning);color:#000}
+.btn-outline-danger:hover{background:var(--danger);color:#fff}
+.invoice-preview-paper{background:#fff;padding:40px;font-family:Arial,Helvetica,sans-serif}
+.inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #ddd;padding-bottom:15px}
+.inv-title{text-align:center;font-size:28px;margin:25px 0;font-weight:700}
+.inv-meta{display:flex;justify-content:space-between;margin-bottom:20px}
+.inv-table{width:100%;border-collapse:collapse}
+.inv-table th,.inv-table td{padding:10px;border-bottom:1px solid #eee}
+.inv-table th{background:#f5f5f5}
+.inv-declaration,.inv-payment{margin-top:20px}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 </style>
 
 <div class="container-fluid py-4">
@@ -542,91 +401,65 @@ function renderAvatar($picture, $client_name)
                     <tr>
                         <th>Avatar</th>
                         <th>Client</th>
-                        <th>Invoice #</th>
-                        <th>Amount</th>
-                        <th>Invoice Date</th>
-                        <th>Due Date</th>
+                        <th>Total Invoices</th>
+                        <th>Total Amount</th>
+                        <th>Paid</th>
+                        <th>Unpaid</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
 
-                <?php if (!$invoices): ?>
+                    <?php if (!$invoices): ?>
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
-                            No invoices found
+                            No clients found
                         </td>
                     </tr>
-                <?php endif; ?>
+                    <?php else: ?>
 
-                <?php foreach ($invoices as $inv): ?>
+                    <?php foreach ($invoices as $inv): ?>
+
                     <tr>
-                        <td><?= renderAvatar($inv['picture'], $inv['client_name']) ?></td>
+                        <td><?= renderAvatar(null, $inv['client_name']) ?></td>
+
                         <td>
                             <strong><?= h($inv['client_name']) ?></strong><br>
                             <small class="text-muted"><?= h($inv['client_email']) ?></small>
                         </td>
-                        <td>
-                            <?= h($inv['invoice_num']) ?>
 
-                            <span class="badge ms-2 <?= str_starts_with($inv['invoice_num'], 'SMC-') ? 'bg-primary' : 'bg-danger' ?>">
-                                <?= str_starts_with($inv['invoice_num'], 'SMC-') ? 'SMC' : 'CSNK' ?>
+                        <td class="fw-bold"><?= (int)$inv['total_invoices'] ?></td>
+
+                        <td class="fw-bold text-success">
+                            ₱<?= number_format($inv['total_amount'], 2) ?>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-success">
+                                <?= (int)$inv['paid_count'] ?>
                             </span>
                         </td>
-                        <td class="fw-bold" style="color:#198754;font-size:15px;">
-                            <?= formatCurrency($inv['total_amount']) ?>
-                        </td>
-                        <td><?= date('M j, Y', strtotime($inv['invoice_date'])) ?></td>
-                        <td><?= date('M j, Y', strtotime($inv['due_date'])) ?></td>
+
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <button
-                                    class="btn btn-outline-info view-btn"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#viewModal"
-                                    data-id="<?= $inv['id'] ?>"
-                                    data-client="<?= h($inv['client_name']) ?>"
-                                    data-email="<?= h($inv['client_email']) ?>"
-                                    data-address="<?= h($inv['client_address']) ?>"
-                                    data-invoice="<?= h($inv['invoice_num']) ?>"
-                                    data-date="<?= $inv['invoice_date'] ?>"
-                                    data-due="<?= $inv['due_date'] ?>"
-                                    data-ref="<?= h($inv['reference_no']) ?>"
-                                    data-total="<?= (float) $inv['total_amount'] ?>"
-                                    data-applicants='<?= $inv['applicants_data'] ?>'
-                                    data-pdf="<?= h($inv['pdf_filename']) ?>"
-                                >
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                            <span class="badge bg-warning text-dark">
+                                <?= (int)$inv['unpaid_count'] ?>
+                            </span>
+                        </td>
 
-                                <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-
-                                <button class="btn btn-outline-danger"
-                                        onclick="softDeleteInvoice(<?= $inv['id'] ?>)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                onclick="openClientHistory(
+                                    '<?= addslashes($inv['client_email']) ?>',
+                                    '<?= addslashes($activeTab) ?>'
+                                )">
+                                <i class="bi bi-clock-history"></i> History
+                            </button>
                         </td>
                     </tr>
-                <?php endforeach; ?>
-                    <!-- DELETE TOAST -->
-                    <div id="deleteToast" class="delete-toast hidden">
-                        <div class="toast-body">
-                            <div class="toast-text">
-                                <strong>Invoice deleted</strong>
-                                <div class="toast-sub">
-                                    Undo available for <span id="toastCountdown">10</span>s
-                                </div>
-                            </div>
 
-                            <div class="toast-actions">
-                                <button id="undoBtn" class="toast-undo">UNDO</button>
-                                <button id="closeToast" class="toast-close">✕</button>
-                            </div>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+
                 </tbody>
             </table>
         </div>
@@ -763,22 +596,22 @@ document.addEventListener('DOMContentLoaded', function() {
         minMatchCharLength: 2
     });
 
-    searchInput.addEventListener('input', function(e) {
-        const query = e.target.value.trim();
+    // searchInput.addEventListener('input', function(e) {
+    //     const query = e.target.value.trim();
         
-        if (query.length === 0) {
-            filteredInvoices = [...allInvoices];
-        } else {
-        const results = fuse.search(query);
-        filteredInvoices = results.length ? results.map(r => r.item) : [];
-        }
+    //     if (query.length === 0) {
+    //         filteredInvoices = [...allInvoices];
+    //     } else {
+    //     const results = fuse.search(query);
+    //     filteredInvoices = results.length ? results.map(r => r.item) : [];
+    //     }
         
-        renderInvoices(filteredInvoices);
-        updateResultsCount(filteredInvoices.length);
+    //     renderInvoices(filteredInvoices);
+    //     updateResultsCount(filteredInvoices.length);
         
-        // Show/hide clear button
-        document.querySelector('.search-clear').style.display = query ? 'block' : 'none';
-    });
+    //     // Show/hide clear button
+    //     document.querySelector('.search-clear').style.display = query ? 'block' : 'none';
+    // });
     
     // Clear search
     document.querySelector('.search-clear').addEventListener('click', function() {
@@ -789,81 +622,11 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.display = 'none';
     });
     
-    // Initial render
-    renderInvoices(allInvoices);
-    updateResultsCount(allInvoices.length);
+        // ✅ Client list is rendered by PHP now
+        // renderInvoices(allInvoices);
+        // updateResultsCount(allInvoices.length);
     
-    function renderInvoices(invoices) {
-        const tbody = document.querySelector('tbody');
-        
-        if (invoices.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7">
-                        <div class="no-results">
-                            <i class="bi bi-search"></i>
-                            <h5>No invoices found</h5>
-                            <p class="mb-0">Try adjusting your search terms</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        tbody.innerHTML = invoices.map(inv => `
-            <tr>
-                <td>${renderAvatar(inv.picture, inv.client_name)}</td>
-                <td>
-                    <strong>${escapeHtml(inv.client_name)}</strong><br>
-                    <small class="text-muted">${escapeHtml(inv.client_email)}</small>
-                </td>
-                <td>
-                    ${escapeHtml(inv.invoice_num)}
-                    <span class="badge ms-2 ${inv.invoice_num.startsWith('SMC-') ? 'bg-primary' : 'bg-danger'}">
-                        ${inv.invoice_num.startsWith('SMC-') ? 'SMC' : 'CSNK'}
-                    </span>
-                </td>
-                <td class="fw-bold" style="color:#198754;font-size:15px;">
-                    ${formatCurrency(inv.total_amount)}
-                </td>
-                <td>${new Date(inv.invoice_date).toLocaleDateString('en-PH')}</td>
-                <td>${new Date(inv.due_date).toLocaleDateString('en-PH')}</td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-info view-btn"
-                                data-bs-toggle="modal" data-bs-target="#viewModal"
-                                data-id="${inv.id}"
-                                data-client="${escapeHtml(inv.client_name)}"
-                                data-email="${escapeHtml(inv.client_email)}"
-                                data-address="${escapeHtml(inv.client_address)}"
-                                data-invoice="${escapeHtml(inv.invoice_num)}"
-                                data-date="${inv.invoice_date}"
-                                data-due="${inv.due_date}"
-                                data-ref="${escapeHtml(inv.reference_no)}"
-                                data-total="${parseFloat(inv.total_amount)}"
-                                data-applicants='${inv.applicants_data}'
-                                data-pdf="${escapeHtml(inv.pdf_filename)}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-
-                        <button class="btn btn-outline-danger"
-                                onclick="softDeleteInvoice(<?= $inv['id'] ?>)">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', viewInvoiceHandler);
-        });
-    }
-
+    
     document.querySelectorAll('.view-btn').forEach(btn => {
         btn.addEventListener('click', viewInvoiceHandler);
     });
@@ -873,14 +636,17 @@ document.addEventListener('DOMContentLoaded', function() {
             '<i class="bi bi-check-circle-fill text-success me-1"></i>1 result' : 
             `<i class="bi bi-check-circle-fill text-success me-1"></i>${count} results`;
     }
-    
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-    
-    function renderAvatar(picture, name) {
+
+});
+
+// Make escapeHtml global so openClientHistory can reuse it
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function renderAvatar(picture, name) {
         // If image exists
         if (picture && picture !== '') {
             return `
@@ -933,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('badge-smc').classList.toggle('d-none', !isSMC);
 
         // ✅ Modal title
-        document.getElementById('modal-company').textContent = isSMC
+        document.getElementById('modal-company').textContent = isSMC ? 'SMC' : 'CSNK';
 
         // ✅ Issued by
         document.getElementById('issued-by').textContent =
@@ -1014,8 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
     
-    let currentInvoiceData = {};
-});
+let currentInvoiceData = {};
 
 
     let deleteTimer = null;
@@ -1085,6 +850,169 @@ document.addEventListener('DOMContentLoaded', function() {
     function finalizeDelete(id) {
         window.location.href = `payments_clients.php?action=delete&id=${id}`;
     }
+
+function openClientHistory(clientEmail, tab) {
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    modal.show();
+    document.getElementById('historyClientName').textContent = clientEmail;
+    const tbody = document.getElementById('historyTableBody');
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center">
+                <div class="spinner-border spinner-border-sm"></div>
+                Loading invoice history...
+            </td>
+        </tr>
+    `;
+    fetch(
+        'payments_clients.php?get_client_history=1' +
+        '&email=' + encodeURIComponent(clientEmail) +
+        '&tab=' + encodeURIComponent(tab)
+    )
+
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok (' + res.status + ')');
+        }
+        return res.json();
+    })
+    .then(data => {
+
+        tbody.innerHTML = '';
+
+        if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No invoice history found for this client.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(inv => {
+            tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>${inv.invoice_num}</td>
+
+                <td>${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH') : '-'}</td>
+
+                <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH') : '-'}</td>
+
+                <td>₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH')}</td>
+
+                <td>
+                    <span class="badge ${
+                        inv.status === 'Paid'
+                            ? 'bg-success'
+                            : (inv.status && inv.status.toLowerCase() === 'overdue')
+                            ? 'bg-danger'
+                            : 'bg-warning text-dark'
+                    }">
+                        ${inv.status || 'Pending'}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="btn-group btn-group-sm">
+
+                        <!-- ✅ VIEW (OLD LIVE PREVIEW MODAL) -->
+                        <button class="btn btn-outline-info view-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#viewModal"
+                            data-id="${inv.id}"
+                            data-client="${escapeHtml(inv.client_name)}"
+                            data-email="${escapeHtml(inv.client_email)}"
+                            data-address="${escapeHtml(inv.client_address)}"
+                            data-invoice="${escapeHtml(inv.invoice_num)}"
+                            data-date="${inv.invoice_date}"
+                            data-due="${inv.due_date}"
+                            data-ref="${escapeHtml(inv.reference_no)}"
+                            data-total="${parseFloat(inv.total_amount)}"
+                            data-applicants='${inv.applicants_data}'
+                            data-pdf="${escapeHtml(inv.pdf_filename)}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+
+                        <!-- ✅ EDIT (SAME AS OLD) -->
+                        <button class="btn btn-outline-warning"
+                            onclick="editInvoiceFromHistory(${inv.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <!-- ✅ DELETE (SAME AS OLD) -->
+                        <button class="btn btn-outline-danger"
+                            onclick="softDeleteInvoice(${inv.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                    </div>
+                </td>
+            </tr>
+            `);
+        });
+
+        // ✅ Attach live preview handler to newly added buttons
+        tbody.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', viewInvoiceHandler);
+        });
+
+    })
+    .catch(error => {
+        console.error('Error loading invoice history:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger">
+                    Error loading invoice history. Check console for details.
+                </td>
+            </tr>
+        `;
+    })
+}
+
+function viewInvoiceFromHistory(id) {
+    // reuse existing modal logic or redirect
+    window.location.href = 'payments_clients.php?view=' + id;
+}
+
+function editInvoiceFromHistory(id) {
+    window.location.href = 'payment_invoice_edit.php?id=' + id;
+}
+
 </script>
+
+<!-- ================= CLIENT INVOICE HISTORY MODAL ================= -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">
+                    📜 Invoice History — <span id="historyClientName"></span>
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Invoice Date</th>
+                            <th>Due Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <?php include '../includes/footer.php'; ?>
