@@ -95,3 +95,29 @@ if (!function_exists('smc_filter_boot')) {
             $q = (string) $_SESSION[$SESSION_KEY_Q];
         }
 
+        // --- Gather status
+        $status = $_GET['status'] ?? ($_SESSION[$SESSION_KEY_STATUS] ?? 'all');
+        $status = strtolower(trim((string) $status));
+
+        $defaultStatus = isset($opts['default_status']) ? strtolower(trim((string) $opts['default_status'])) : null;
+
+                if ($q !== '')
+                    $href .= '&q=' . urlencode($q);
+                if ($status !== 'all')
+                    $href .= '&status=' . urlencode($status);
+                $classes = 'country-btn' . ($isActive ? ' country-btn--active' : '');
+                $countHtml = $count > 0 ? '<span class="badge-pill ms-1">' . (int) $count . '</span>' : '';
+                return '<a href="' . smc_h($href) . '" class="' . $classes . '"><span>' . smc_h($label) . '</span>' . $countHtml . '</a>';
+            };
+
+            // "All" first, showing the count for the selected status
+            echo $renderCountryBtn('All', 'all', $country, $q, $status, (int) ($counts['all'] ?? 0));
+
+            foreach ($countriesWithCounts as $c) {
+                $countryName = smc_h($c['name'] ?? 'Unknown');
+                $countryId = (string) ((int) ($c['id'] ?? 0));
+            echo '  </div>';
+            echo '</div>';
+        }
+    }
+}
