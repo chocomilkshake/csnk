@@ -379,3 +379,43 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
         color: #64748b;
         text-transform: uppercase;
         letter-spacing: .5px;
+        margin-bottom: .25rem;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-semibold">Approved SMC Applicants</h4>
+    <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+    </a>
+</div>
+
+<?php smc_filter_render($filterState); ?>
+
+
+
+<!-- Search bar -->
+<div class="mb-3 d-flex justify-content-end">
+    <form method="get" action="turkey_approved.php" class="w-100" style="max-width: 420px;">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search approved applicants..."
+                value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+            <button class="btn btn-outline-secondary" type="submit" title="Search"><i class="bi bi-search"></i></button>
+            <?php if ($q !== ''): ?>
+                <a class="btn btn-outline-secondary" href="turkey_approved.php?clear=1" title="Clear"><i
+                        class="bi bi-x-lg"></i></a>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
+
+<div class="card table-card">
+    <div class="card-body">
+        <table class="table table-bordered table-striped table-hover table-styled align-middle">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Applicant</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Preferred Location</th>
