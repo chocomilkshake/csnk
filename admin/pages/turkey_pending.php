@@ -248,13 +248,12 @@ $buScope = (int) ($_SESSION['smc_bu_id'] ?? 0); // or just use $smcBuId
 $smcState = smc_filter_boot([
     'base_url' => 'turkey_pending.php',
     'session_ns' => 'smc_turkey_pending',
-    'allowed_statuses' => ['all', 'pending', 'on_process', 'approved'],
+    'allowed_statuses' => ['pending', 'on_process', 'approved'],
+    'default_status' => 'pending',
     // You can pass current BU here, but enforce SMC scope in SQL below
     'buId' => $_SESSION['current_bu_id'] ?? null,
     'not_deleted' => true,
     'not_blacklisted' => true,
-    // Optionally enforce a default status on this page if your filter supports it:
-    // 'default_status' => 'pending',
 ]);
 $q = (string) ($smcState['q'] ?? '');
 $status = (string) ($smcState['status'] ?? 'all');
