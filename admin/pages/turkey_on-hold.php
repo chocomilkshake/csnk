@@ -69,6 +69,41 @@ require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 $currentUser = $auth->getCurrentUser();
 
   .actions-inline .btn {
+                    <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 🔁 Single, reusable modal (NOTE: OUTSIDE the table) -->
+<div class="modal fade revert-modal" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel"
+  aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <form class="modal-content border-0 shadow-lg" method="POST" action="turkey_revert-onhold.php">
+      <div class="modal-header bg-light border-0 pb-0">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-warning bg-opacity-25 p-2 rounded-circle">
+            <i class="bi bi-arrow-counterclockwise text-warning fs-5"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="revertModalLabel">
+              Revert to Pending
+            </h5>
+            <p class="text-muted small mb-0">Applicant will be moved back to pending status</p>
+          </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
