@@ -100,7 +100,66 @@ if (!function_exists('smc_filter_boot')) {
         $status = strtolower(trim((string) $status));
 
         $defaultStatus = isset($opts['default_status']) ? strtolower(trim((string) $opts['default_status'])) : null;
+        if ($defaultStatus !== null && !in_array($defaultStatus, $allowedStatuses, true)) {
+            $defaultStatus = null;
+        }
 
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = $defaultStatus ?? 'all';
+        }
+
+        // If no explicit `status` is set, but a page-specific default exists, apply it
+        if ($status === 'all' && $defaultStatus !== null) {
+            $status = $defaultStatus;
+        }
+
+        $_SESSION[$SESSION_KEY_STATUS] = $status;
+
+        // --- Gather country
+        $country = $_GET['country'] ?? ($_SESSION[$SESSION_KEY_COUNTRY] ?? 'all');
+        $country = (string) $country;
+        if (!($country === 'all' || is_numeric($country)))
+            $country = 'all';
+        $_SESSION[$SESSION_KEY_COUNTRY] = $country;
+
+        // --- Build filters array for the model
+        $filters = [
+            'buId' => $buScope,                      // can be null if no BU constraint
+            'countryId' => ($country !== 'all') ? (int) $country : null,
+            'status' => $status,
+            'q' => $q,
+            'notDeleted' => $notDeleted,
+            'notBlacklisted' => $notBlacklisted,
+        ];
+
+        // --- Fetch country rows + counts (replicating your behavior)
+        $countriesWithCounts = [];
+        $counts = ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
+
+        if ($applicant && method_exists($applicant, 'getCountriesWithCounts')) {
+            // Base list for the current status selection (kept as-is for display order)
+            $countries = $applicant->getCountriesWithCounts(
+                $filters['buId'],
+                $filters['status'],
+                $filters['q'],
+                $filters['notDeleted'],
+                $filters['notBlacklisted']
+            );
+
+            // Preload per-status lists once
+            $pendingList = $applicant->getCountriesWithCounts($filters['buId'], 'pending', $filters['q'], $filters['notDeleted'], $filters['notBlacklisted']);
+            $onProcessList = $applicant->getCountriesWithCounts($filters['buId'], 'on_process', $filters['q'], $filters['notDeleted'], $filters['notBlacklisted']);
+            $approvedList = $applicant->getCountriesWithCounts($filters['buId'], 'approved', $filters['q'], $filters['notDeleted'], $filters['notBlacklisted']);
+
+            // Convert to maps keyed by country_id
+            $toMap = function (array $rows): array {
+            echo '<div class="col-12 mt-2">';
+            echo '  <div class="filter-label">Filter by Country</div>';
+            echo '  <div class="country-group">';
+
+            $renderCountryBtn = function (string $label, string $countryId, string $currentCountry, string $q, string $status, int $count) use ($baseUrl) {
+                $isActive = ($countryId === $currentCountry) || ($countryId === 'all' && $currentCountry === 'all');
+                $href = $baseUrl . '?country=' . urlencode($countryId);
                 if ($q !== '')
                     $href .= '&q=' . urlencode($q);
                 if ($status !== 'all')
