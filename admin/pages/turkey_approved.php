@@ -422,7 +422,34 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                     <th>Date Approved</th>
                     <th style="width: 420px;">Actio
                         <div class="col-md-6">
-                            <label class="form-label"show.bs.modal', function (ev) {
+                            <label class="form-label">Reason <span class="text-danger">*</span></label>
+                            <select name="reason" class="form-select" required>
+                                <option value="C
+                    </div>
+
+                    <hr class="my-3">
+                    <h6 class="fw-semibold">Suggested Replacement Candidates</h6>
+                    <div id="replacementCandidates" class="mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-arrow-repeat me-1"></i> Start & Suggest
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts for Replace Modal binding (SMC Turkey Version) -->
+<script src="../js/turkey_replacements.js"></script>
+<script>
+    // expose CSRF to JS
+    window.CSRF_TOKEN = "<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>";
+
+    // Fill hidden id + label when opening modal
+    document.getElementById('replaceModal')?.addEventListener('show.bs.modal', function (ev) {
         const btn = ev.relatedTarget;
         if (!btn) return;
         const id = btn.getAttribute('data-applicant-id') || '';
