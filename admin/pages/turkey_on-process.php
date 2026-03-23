@@ -627,7 +627,28 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
 
                                 $deleteUrl     = 'turkey_on-process.php?action=delete&id=' . $id . $csrfQS . $qsAppend;
 
-                                <td><?php echo h(formatD
+                                <td><?php echo h(formatDate($row['created_at'])); ?></td>
+
+                                <td class="actions-cell">
+                                    <div class="btn-group dd-modern dropup">
+                                        <!-- View -->
+                                        <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View"><i class="bi bi-eye"></i></a>
+                                        
+                                        <!-- Edit -->
+                                        <?php if ($canEdit): ?>
+                                            <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Delete -->
+                                        <?php if ($canEdit): ?>
+                                            <a href="<?php echo h($deleteUrl); ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this applicant?');"><i class="bi bi-trash"></i></a>
+                                        <?php endif; ?>
+
+                                        <!-- Change Status Dropdown -->
+                                        <div class="dropdown dropup">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle btn-status"
+                                                    data-bs-toggle="dropdown"
                                                     data-bs-auto-close="false"
                                                     aria-expanded="false"
                                                     title="Change Status"
