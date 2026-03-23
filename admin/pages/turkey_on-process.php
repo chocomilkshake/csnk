@@ -626,6 +626,35 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
                                 $deleteUrl     = 'turkey_on-procee
+                <div class="fw-bold fs-5" id="sr-applicant">Applicant Name</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="badge-soft"><i class="bi bi-arrow-repeat"></i><span id="sr-from">on process</span></span>
+                  <i class="bi bi-arrow-right text-muted"></i>
+                  <span class="badge-soft"><i class="bi bi-check2"></i><span id="sr-to">status</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden fields -->
+        <input type="hidden" name="action" value="update_status_report">
+        <input type="hidden" name="id" id="sr-id" value="">
+        <input type="hidden" name="to" id="sr-to-val" value="">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+
+        <div class="row g-4">
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold">Reason</label>
+            <!-- Dynamic reason select populated by JS -->
+            <select class="form-select form-select-lg" id="sr-reason">
+              <option value="" selected disabled>Select reason based on status change</option>
+            </select>
+            <div class="form-text mt-1">Pick a quick label; you can add details on the right.</div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold d-flex justify-content-between">
               <span>Description <span class="text-danger">*</span></span>
               <span class="counter badge bg-light text-secondary" id="sr-counter">0/1000</span>
             </label>
