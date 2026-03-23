@@ -266,7 +266,8 @@ require_once $ADMIN_ROOT . '/includes/header.php';
 $smcState = smc_filter_boot([
     'base_url'         => 'turkey_on-process.php',
     'session_ns'       => 'smc_turkey_onprocess',
-    'allowed_statuses' => ['all', 'pending', 'on_process', 'approved'],
+    'allowed_statuses' => ['pending', 'on_process', 'approved'],
+    'default_status'   => 'on_process',
     'buId'             => $_SESSION['current_bu_id'] ?? null,
     'not_deleted'      => true,
     'not_blacklisted'  => true,
@@ -966,4 +967,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
-
