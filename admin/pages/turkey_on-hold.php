@@ -68,6 +68,40 @@ require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 // Get current user data
 $currentUser = $auth->getCurrentUser();
 
+$applicant = new Applicant($database);
+$currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+// Use SMC BU for SMC pages
+$smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+// Update preserve for links
+?>
+
+<?php require_once $ADMIN_ROOT . '/includes/header.php'; ?>
+
+<style>
+  /* Keep dropdowns visible above table clipping */
+  .table-card,
+  .table-card .card-body,
+  .table-card .table-responsive {
+    overflow: visible !important;
+  }
+
+  .table-card tr.row-raised {
+    position: relative;
+    z-index: 1060;
+  }
+
+  td.actions-cell {
+    white-space: nowrap;
+  }
+
+  .actions-inline {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
   .actions-inline .btn {
     flex: 0 0 auto;
   }
