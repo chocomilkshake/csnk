@@ -193,7 +193,38 @@ if (!function_exists('smc_filter_boot')) {
             $paramsForLinks['country'] = $country;
 
         $preserveQS = !empty($paramsForLinks) ? ('&' . http_build_query($paramsForLinks)) : '';
-        $preserveQSWithQuestion = !empty($paramsForLinks) ? 
+        $preserveQSWithQuestion = !empty($paramsForLinks) ? ('?' . http_build_query($paramsForLinks)) : '';
+
+        return [
+            // for rendering
+            'baseUrl' => $baseUrl,
+            'sessionNs' => $sessionNs,
+            'q' => $q,
+            'status' => $status,
+            'country' => $country,
+            'counts' => $counts,
+            'countriesWithCounts' => $countriesWithCounts,
+            // for data fetching
+            'filters' => $filters,
+            // qs helpers
+            'preserveQS' => $preserveQS,
+            'preserveQSWithQuestion' => $preserveQSWithQuestion,
+        ];
+    }
+}
+
+if (!function_exists('smc_filter_render')) {
+    /**
+     * Render the Status + Country bars with the same styles and markup pattern
+     */
+    function smc_filter_render(array $state): void
+    {
+        $baseUrl = $state['baseUrl'];
+        $q = (string) ($state['q'] ?? '');
+        $status = (string) ($state['status'] ?? 'all');
+        $country = (string) ($state['country'] ?? 'all');
+        $counts = $state['counts'] ?? ['all' => 0, 'pending' => 0, 'on_process' => 0, 'approved' => 0];
+        $countriesWithCounts = $state['countriesWithCounts'] ?? [];
 
         // --------- Styles (copied from your page) ---------
         ?>
