@@ -157,6 +157,34 @@ if (!function_exists('smc_filter_boot')) {
                 foreach ($rows as $row) {
                     $cid = (int) ($row['id'] ?? 0);
                     $map[$cid] = (int) ($row['count'] ?? 0);
+                }
+                return $map;
+            };
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+            }
+
+            .country-btn:hover {
+                transform: translateY(-1px);
+                background: #f8fafc;
+                border-color: #94a3b8;
+            }
+
+            .country-btn--active {
+                color: #fff;
+                border-color: #059669;
+                background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+                box-shadow: 0 4px 10px rgba(5, 150, 105, .25);
+            }
+
+            .country-btn--active:hover {
+                background: linear-gradient(180deg, #0ea56e 0%, #047857 100%);
+            }
+
+            .filter-label {
+                font-size: .75rem;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
                 letter-spacing: .5px;
                 margin-bottom: .25rem;
             }
