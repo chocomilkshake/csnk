@@ -625,7 +625,24 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
                                 $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
 
-                                $deleteUrl     = 'turkey_on-proceepeat text-info"></i><span>On-Process</span>
+                                $deleteUrl     = 'turkey_on-process.php?action=delete&id=' . $id . $csrfQS . $qsAppend;
+
+                                <td><?php echo h(formatD
+                                                    data-bs-auto-close="false"
+                                                    aria-expanded="false"
+                                                    title="Change Status"
+                                                    id="changeStatusBtn-<?php echo $id; ?>">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Change Status
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="changeStatusBtn-<?php echo $id; ?>">
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'pending' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toPendingUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="pending" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-hourglass-split text-warning"></i><span>Pending</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item <?php echo $currentStatus === 'on_process' ? 'disabled' : ''; ?> change-status" href="#" data-href="<?php echo h($toOnProcessUrl); ?>" data-id="<?php echo $id; ?>" data-from="<?php echo h($currentStatus); ?>" data-to="on_process" data-applicant="<?php echo $applicantName; ?>" data-app-photo="<?php echo h($photo); ?>">
+                                                        <i class="bi bi-arrow-repeat text-info"></i><span>On-Process</span>
                                                     </a>
                                                 </li>
                                                 <li>
