@@ -73,6 +73,42 @@ $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
 
 // Use SMC BU for SMC pages
 $smcBuId = (int) ($_SESSION['smc_bu_id'] ?? 0);
+
+// Get current user role
+$currentRole = $currentUser['role'] ?? 'employee';
+
+// Roles
+$isSuperAdmin = ($currentRole === 'super_admin');
+$isAdmin = ($currentRole === 'admin');
+$isEmployee = ($currentRole === 'employee');
+
+// Initialize SMC filters (replaces hardcoded params)
+$filterState = smc_filter_boot([
+  'base_url' => 'turkey_on-hold.php',
+  'session_ns' => 'smc_tr_onhold',
+  'applicant' => $applicant,
+  'buId' => $smcBuId,
+  'allowed_statuses' => ['on_hold', 'pending', 'on_process', 'approved'],
+  'default_status' => 'on_hold',
+  'not_deleted' => true,
+  'not_blacklisted' => true,
+]);
+
+$filters = $filterState['filters'];
+$q = $filterState['q'];
+$status = $filters['status'];  // Dynamic status from filters
+
+$applicants = $applicant->getApplicants(
+  $filters['buId'],
+  $filters['countryId'],
+  $filters['status'],
+  $filters['q'],
+  $filters['notDeleted'],
+  $filters['notBlacklisted'],
+  1,
+  1000
+);
+
 // Update preserve for links
 $preserveQ = $filterState['preserveQS'];
 
