@@ -153,6 +153,42 @@ if (!function_exists('smc_filter_boot')) {
 
             // Convert to maps keyed by country_id
             $toMap = function (array $rows): array {
+                $map = [];
+                foreach ($rows as $row) {
+                    $cid = (int) ($row['id'] ?? 0);
+                    $map[$cid] = (int) ($row['count'] ?? 0);
+                letter-spacing: .5px;
+                margin-bottom: .25rem;
+            }
+
+            .page-header-row {
+                row-gap: .5rem;
+            }
+        </style>
+        <?php
+
+        // --------- Render Status buttons ---------
+        $qParam = $q;
+        $renderBtn = function (string $label, string $value, string $currentStatus, string $q, string $icon, int $count) use ($baseUrl) {
+            $isActive = ($value === $currentStatus) || ($value === 'all' && $currentStatus === 'all');
+            $href = $baseUrl . '?status=' . urlencode($value);
+            if ($q !== '')
+                $href .= '&q=' . urlencode($q);
+            $classes = 'status-btn' . ($isActive ? ' status-btn--active' : '');
+            $iconHtml = $icon !== '' ? '<i class="status-icon ' . smc_h($icon) . '"></i>' : '';
+            $countHtml = '<span class="badge-pill ms-1">' . (int) $count . '</span>';
+            return '<a href="' . smc_h($href) . '" class="' . $classes . '">' . $iconHtml . '<span>' . smc_h($label) . '</span>' . $countHtml . '</a>';
+        };
+
+        echo '<div class="status-group">';
+        echo $renderBtn('All', 'all', $status, $qParam, 'bi bi-list-ul', (int) ($counts['all'] ?? 0));
+        echo $renderBtn('Pending', 'pending', $status, $qParam, 'bi bi-hourglass-split', (int) ($counts['pending'] ?? 0));
+        echo $renderBtn('On-Process', 'on_process', $status, $qParam, 'bi bi-arrow-repeat', (int) ($counts['on_process'] ?? 0));
+        echo $renderBtn('Hired', 'approved', $status, $qParam, 'bi bi-check2-circle', (int) ($counts['approved'] ?? 0));
+        echo '</div>';
+
+        // --------- Render Country buttons (if any) ---------
+        if (!empty($countriesWithCounts)) {
             echo '<div class="col-12 mt-2">';
             echo '  <div class="filter-label">Filter by Country</div>';
             echo '  <div class="country-group">';
@@ -175,6 +211,10 @@ if (!function_exists('smc_filter_boot')) {
             foreach ($countriesWithCounts as $c) {
                 $countryName = smc_h($c['name'] ?? 'Unknown');
                 $countryId = (string) ((int) ($c['id'] ?? 0));
+                $count = (int) ($c['count'] ?? 0); // count is for current status selection
+                echo $renderCountryBtn($countryName, $countryId, $country, $q, $status, $count);
+            }
+
             echo '  </div>';
             echo '</div>';
         }
