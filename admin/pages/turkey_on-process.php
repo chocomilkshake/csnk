@@ -623,7 +623,33 @@ $clearHref = 'turkey_on-process.php' . ($smcState['preserveQSWithQuestion'] ? '?
                                 $currentStatus = (string)($row['status'] ?? 'on_process');
                                 
                                 $viewUrl = 'turkey_view-onprocess.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
-                                $editUrl = 'edit-applicant.php?id=' . $id . ($q !=
+                                $editUrl = 'edit-applicant.php?id=' . $id . ($q !== '' ? '&q=' . urlencode($q) : '');
+
+                                $deleteUrl     = 'turkey_on-procee
+              <span>Description <span class="text-danger">*</span></span>
+              <span class="counter badge bg-light text-secondary" id="sr-counter">0/1000</span>
+            </label>
+            <textarea class="form-control" id="sr-text" name="report_text" rows="4" maxlength="1000" required placeholder="Write details for this status change..."></textarea>
+            <div class="form-text mt-1">Minimum 5 characters. This will be stored in the reports log.</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info bg-info bg-opacity-10 border-0 mt-3 mb-0">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle-fill text-info mt-1"></i>
+            <div class="small"><strong>Note:</strong> The applicant's status will be updated and this action recorded in Reports.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i> Cancel</button>
+        <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check2-square me-2"></i> Save & Update Status</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize dropdowns
