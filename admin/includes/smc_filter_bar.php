@@ -160,7 +160,35 @@ if (!function_exists('smc_filter_boot')) {
                 }
                 return $map;
             };
-            $pendingMap = $toMap($pendingList);                gap: .5rem;
+            $pendingMap = $toMap($pendingList);
+            $onProcessMap = $toMap($onProcessList);
+            $approvedMap = $toMap($approvedList);
+
+            // ✅ Compute global totals independent of c
+                font-size: .95em;
+                line-height: 1;
+                opacity: .9;
+            }
+
+            .badge-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 22px;
+                height: 20px;
+                padding: 0 .4rem;
+                border-radius: 999px;
+                font-weight: 700;
+                font-size: .75rem;
+                line-height: 1;
+                background: #eef2ff;
+                color: #4338ca;
+                border: 1px solid rgba(0, 0, 0, .04);
+            }
+
+            .country-group {
+                display: inline-flex;
+                gap: .5rem;
                 padding: .5rem;
                 border: 1px solid #e5e7eb;
                 border-radius: 1rem;
