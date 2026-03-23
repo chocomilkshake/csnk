@@ -419,3 +419,36 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Preferred Location</th>
+                    <th>Date Approved</th>
+                    <th style="width: 420px;">Actio
+                        <div class="col-md-6">
+                            <label class="form-label"show.bs.modal', function (ev) {
+        const btn = ev.relatedTarget;
+        if (!btn) return;
+        const id = btn.getAttribute('data-applicant-id') || '';
+        const name = btn.getAttribute('data-applicant-name') || '';
+        document.getElementById('replaceOriginalId').value = id;
+        document.getElementById('replaceApplicantName').textContent = name;
+        const wrap = document.getElementById('replacementCandidates');
+        if (wrap) wrap.innerHTML = '';
+    });
+
+    // Bind the form to the helper (SMC version)
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.TurkeyReplacements) {
+            TurkeyReplacements.bindInit('#replaceInitForm', '#replacementCandidates');
+        }
+    });
+
+    // Dropdown popper fix
+    document.addEventListener('DOMContentLoaded', function () {
+        var btns = document.querySelectorAll('.btn-status[data-bs-toggle="dropdown"]');
+        btns.forEach(function (btn) {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                new bootstrap.Dropdown(btn, { boundary: 'viewport', popperConfig: { strategy: 'fixed' } });
+            }
+        });
+    });
+</script>
+
+<?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
