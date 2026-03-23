@@ -100,7 +100,14 @@ if ($q !== '') {
     padding: .25rem .5rem;
     font-weight: 600;
   }
-;
+
+  /* Modal polish */
+  .revert-modal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .revert-modal .app-header {
+    display: flex; gap: 12px; align-items: center;
     padding: .25rem 0 1rem 0;
     border-bottom: 1px solid #eef2f7;
     margin-bottom: 1rem;
