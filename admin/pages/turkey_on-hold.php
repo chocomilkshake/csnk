@@ -72,6 +72,35 @@ $currentUser = $auth->getCurrentUser();
 
   .dd-modern .dropdown-item:hover {
     background-color: #f8fafc;
+  }
+
+  .badge-onhold {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    padding: .25rem .5rem;
+    font-weight: 600;
+  }
+
+  /* Modal polish */
+  .revert-modal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .revert-modal .app-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: .25rem 0 1rem 0;
+    border-bottom: 1px solid #eef2f7;
+    margin-bottom: 1rem;
+  }
+
+  .revert-modal .app-photo {
+    width: 44px;
+    height: 44px;
     object-fit: cover;
     border-radius: 8px;
     background: #f1f5f9;
