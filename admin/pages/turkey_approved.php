@@ -420,7 +420,39 @@ $exportUrl = '../includes/excel_approved.php' . ($q !== '' ? ('?q=' . urlencode(
                     <th>Phone</th>
                     <th>Preferred Location</th>
                     <th>Date Approved</th>
-                    <th style="width: 420px;">Actio
+                    <th style="width: 420px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($applicants)): ?>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <?php if ($q === ''): ?>
+                                No approved applicants yet.
+                            <?php else: ?>
+                                No results for "<strong><?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?></strong>".
+                                <a href="turkey_approved.php?clear=1" class="ms-1">Clear search</a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($applicants as $row): ?>
+                        <?php
+                        $id = (int) $row['id'];
+                        $currentStatus = (string) ($row['stalit text-warning"></i>
+                                                    <span>
+            <form id="replaceInitForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Replace Applicant — <span id="replaceApplicantName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="original_applicant_id" id="replaceOriginalId" value="">
+                    <input type="hidden" name="csrf_token"
+                        value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+
+                    <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Reason <span class="text-danger">*</span></label>
                             <select name="reason" class="form-select" required>
