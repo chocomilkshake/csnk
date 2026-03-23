@@ -173,6 +173,30 @@ if (!function_exists('smc_filter_boot')) {
             // Enrich the current display list with per-bucket values
             foreach ($countries as &$c) {
                 $cid = (int) $c['id'];
+                $c['pending'] = $pendingMap[$cid] ?? 0;
+                $c['on_process'] = $onProcessMap[$cid] ?? 0;
+                $c['approved'] = $approvedMap[$cid] ?? 0;
+                // Keep $c['count'] as-is: represents the count for *selected* status (used by your renderer)
+            }
+            unset($c);
+
+            $countriesWithCounts = $countries;
+        }
+
+        // --- Query string helpers (for your pagination/links reuse)
+        $paramsForLinks = [];
+        if ($q !== '')
+            $paramsForLinks['q'] = $q;
+        if ($status !== 'all')
+            $paramsForLinks['status'] = $status;
+        if ($country !== 'all')
+            $paramsForLinks['country'] = $country;
+
+        $preserveQS = !empty($paramsForLinks) ? ('&' . http_build_query($paramsForLinks)) : '';
+        $preserveQSWithQuestion = !empty($paramsForLinks) ? 
+
+        // --------- Styles (copied from your page) ---------
+        ?>
         <style>
             .status-group {
                 display: inline-flex;
