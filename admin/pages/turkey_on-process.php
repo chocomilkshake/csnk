@@ -389,6 +389,36 @@ if ($conn instanceof mysqli && !empty($smcBuIds)) {
 
     if ($stmt = $conn->prepare($sqlCountries)) {
         $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $countriesWithCounts[] = [
+<style>
+    .status-group { display: inline-flex; gap: .5rem; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: rgba(255, 255, 255, .85); }
+    .status-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
+    .status-btn--active { color: #fff; border-color: #4f46e5; background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%); }
+    .filter-label { font-size: .75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .25rem; }
+    
+    /* Dropdown Fix */
+    .table-card, .table-card .card-body, .table-card .table-responsive, .table-card table, .table-card thead, .table-card tbody, .table-card tr, .table-card th, .table-card td { overflow: visible !important; }
+    .table-card { position: relative; z-index: 0; }
+    td.actions-cell { position: relative; overflow: visible; white-space: nowrap; }
+    .table-card tr.row-raised { position: relative; z-index: 1060; }
+    .dd-modern .dropdown-menu { border-radius: .75rem; border: 1px solid #e5e7eb; box-shadow: 0 12px 28px rgba(15, 23, 42, .12); min-width: 180px; z-index: 9999 !important; }
+    .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
+    .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
+    .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
+    .dd-modern .dropdown-item.disabled, .dd-modern .dropdown-item:disabled { color:#9aa0a6; background:transparent; pointer-events:none; }
+    .btn-status { border-radius: .75rem; }
+    table.table-styled { margin-bottom: 0; }
+    
+    /* Modal styles */
+    .status-modal .modal-header { border-bottom: none; padding-bottom: 0; }
+    .status-modal .modal-footer { border-top: none; }
+    .status-modal .app-card { border: 1px solid #eef2f7; background: #f8fafc; }
+    .status-modal .badge-soft { display:inline-flex; align-items:center; gap:.35rem; padding:.15rem .5rem; border-radius:.5rem; font-size:.8rem; border: 1px solid #e2e8f0; background:#f8fafc; color:#334155; }
+    .status-modal .counter { font-size:.8rem; color:#64748b; }
+    .status-modal .form-text { color:#64748b; }
 </style>
 
 
