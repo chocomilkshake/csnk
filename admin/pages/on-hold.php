@@ -104,7 +104,7 @@ if ($q !== '') {
         name="q"
         class="form-control"
         placeholder="Search on hold applicants…"
-        value="<?php echo h($q); ?
+        value="<?php echo h($q); ?>"
         autocomplete="off">
       <button class="btn btn-outline-secondary" type="submit" title="Search">
         <i class="bi bi-search"></i>
