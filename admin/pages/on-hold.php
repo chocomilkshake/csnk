@@ -88,6 +88,29 @@ if ($q !== '') {
         $stack = mb_strtolower(implode(' | ', [
             $first, $middle, $last, $suffix,
             $fullName1, $fullName2,
+}
+
+// Preserve query in links
+$preserveQ = ($q !== '') ? ('&q=' . urlencode($q)) : '';
+?>
+<style>
+  /* Keep dropdowns visible above table clipping */
+  .table-card,
+  .table-card .card-body,
+  .table-card .table-responsive { overflow: visible !important; }
+  .table-card tr.row-raised { position: relative; z-index: 1060; }
+
+  td.actions-cell { white-space: nowrap; }
+  .actions-inline { display: inline-flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
+  .actions-inline .btn { flex: 0 0 auto; }
+
+  .dd-modern .dropdown-menu {
+    border-radius: .75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    min-width: 180px;
+    z-index: 9999 !important;
+  }
   .dd-modern .dropdown-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; font-weight:500; }
   .dd-modern .dropdown-item .bi { font-size: 1rem; opacity: .9; }
   .dd-modern .dropdown-item:hover { background-color: #f8fafc; }
