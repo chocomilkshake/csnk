@@ -160,6 +160,28 @@ if (!function_exists('smc_filter_boot')) {
                 }
                 return $map;
             };
+            $pendingMap = $toMap($pendingList);                gap: .5rem;
+                padding: .5rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 1rem;
+                background: rgba(255, 255, 255, .85);
+                backdrop-filter: saturate(140%) blur(2px);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 3px rgba(0, 0, 0, .10);
+            }
+
+            .country-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: .35rem;
+                padding: .35rem .75rem;
+                border-radius: .75rem;
+                font-size: .8rem;
+                font-weight: 500;
+                text-decoration: none;
+                border: 1px solid #cbd5e1;
+                color: #334155;
+                background: #fff;
+                transition: all .15s ease;
                 box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
             }
 
