@@ -7,6 +7,40 @@ require_once '../includes/Applicant.php';
 if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
 
 // CSNK agency constant
+const CSNK_AGENCY_CODE = 'csnk';
+
+// CSRF token (used by revert form)
+if (empty($_SESSION['csrf_token'])) {
+    try { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
+    catch (Throwable $e) { $_SESSION['csrf_token'] = bin2hex((string)mt_rand()); }
+}
+    // Fallback: no helper; query directly
+    $conn = $database->getConnection();
+    if ($conn instanceof mysqli) {
+        $sql = "SELECT a.* FROM applicants a
+            JOIN business_units bu ON bu.id = a.business_unit_id
+            JOIN agencies ag ON ag.id = bu.agency_id
+            WHERE a.status = 'on_hold' AND a.deleted_at IS NULL AND ag.code = 'csnk'";
+        if ($q !== '') {
+            $qLike = '%' . $q . '%';
+            $sql .= " AND (a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ? OR a.phone_number LIKE ? )";
+            $stmt = $conn->prepare($sql);
+            if ($stmt) {
+                $stmt->bind_param('ssss', $qLike, $qLike, $qLike, $qLike);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $applicants = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+                $stmt->close();
+            }
+        } else {
+            $res = $conn->query($sql);
+                  <div class="dropdown">
+                    <button
+                    </ul>
+                  </div>
+                </div>
+              </td>
+            </tr>
           <?php endforeach; ?>
         <?php endif; ?>
         </tbody>
