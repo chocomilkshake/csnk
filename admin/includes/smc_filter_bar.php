@@ -164,7 +164,39 @@ if (!function_exists('smc_filter_boot')) {
             $onProcessMap = $toMap($onProcessList);
             $approvedMap = $toMap($approvedList);
 
-            // ✅ Compute global totals independent of c
+            // ✅ Compute global totals independent of current selection
+            $counts['pending'] = array_sum($pendingMap);
+            $counts['on_process'] = array_sum($onProcessMap);
+            $counts['approved'] = array_sum($approvedMap);
+            $counts['all'] = $counts['pending'] + $counts['on_process'] + $counts['approved'];
+
+            // Enrich the current display list with per-bucket values
+            foreach ($countries as &$c) {
+                $cid = (int) $c['id'];
+        <style>
+            .status-group {
+                border-color: #94a3b8;
+                box-shadow: 0 6px 12px rgba(15, 23, 42, .06);
+            }
+
+            .status-btn:focus {
+                outline: 3px solid rgba(99, 102, 241, .35);
+                outline-offset: 2px;
+            }
+
+            .status-btn--active {
+                color: #fff;
+                border-color: #4f46e5;
+                background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+                box-shadow: 0 8px 18px rgba(79, 70, 229, .25);
+            }
+
+            .status-btn--active:hover {
+                background: linear-gradient(180deg, #5457ee 0%, #463fd3 100%);
+                border-color: #463fd3;
+            }
+
+            .status-icon {
                 font-size: .95em;
                 line-height: 1;
                 opacity: .9;
