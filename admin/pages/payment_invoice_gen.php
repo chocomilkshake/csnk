@@ -79,39 +79,51 @@ function createXenditInvoice(array $data)
     return $result;
 }
 
+// POST HANDLER BLOCK
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
 
-    $client_name    = trim($_POST['client_name']);
-    $business_unit_id = (int) ($_POST['business_unit_id'] ?? 0);
-    $company_type = ($business_unit_id == 2) ? 'SMC' : 'CSNK';
+    // ================= BASIC INPUTS =================
+    $client_name       = trim($_POST['client_name']);
+    $business_unit_id  = (int) ($_POST['business_unit_id'] ?? 0);
+    $company_type      = ($business_unit_id == 2) ? 'SMC' : 'CSNK';
 
-    // ✅ Set invoice prefix & template based on agency
-    if ($business_unit_id == 2) {
-        // SMC
-        $invoice_prefix = 'SMC';
-        $template_name  = 'smc';
-    } else {
-        // CSNK (default)
-        $invoice_prefix = 'CSNK';
-        $template_name  = 'csnk';
+    // ✅ STEP 3 — READ client_booking_id HERE (VERY IMPORTANT)
+    $booking_id = (int) ($_POST['client_booking_id'] ?? 0);
+
+    if ($booking_id <= 0) {
+        setFlashMessage('error', 'Client booking not selected.');
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
+        exit;
     }
 
-    // ✅ Generate invoice number dynamically
-    $invoice_num = $invoice_prefix . '-' . date('Ymd') . '-' . rand(100, 999);
-
+    // ================= AGENCY VALIDATION =================
     if ($business_unit_id <= 0) {
         setFlashMessage('error', 'Please select an agency before generating invoice.');
         header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
 
-    // ✅ existing validation
     if (!$client_name || empty($_POST['applicants'])) {
         setFlashMessage('error', 'Missing invoice details.');
         header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
 
+    // ================= INVOICE TEMPLATE SETUP =================
+    if ($business_unit_id == 2) {
+        // SMC
+        $invoice_prefix = 'SMC';
+        $template_name  = 'smc';
+    } else {
+        // CSNK
+        $invoice_prefix = 'CSNK';
+        $template_name  = 'csnk';
+    }
+
+    // ✅ Generate invoice number
+    $invoice_num = $invoice_prefix . '-' . date('Ymd') . '-' . rand(100, 999);
+
+    // ================= INIT PDF =================
     $invoicr = new Invoicr();
     $invoicr->template($template_name);
 
@@ -217,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
         $stmt = $conn->prepare("
             INSERT INTO invoice_history (
                 business_unit_id,
+                client_booking_id,
                 reference_no,
                 invoice_num,
                 invoice_date,
@@ -228,11 +241,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                 total_amount,
                 pdf_filename,
                 company_type
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
+
         $stmt->bind_param(
-            "issssssssdss",
+            "iissssssssdss",
             $business_unit_id,
+            $booking_id,
             $reference_no,
             $invoice_num,
             $invoice_date,
@@ -245,7 +260,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             $filename,
             $company_type
         );
-        $stmt->execute(); // ✅ save invoice FIRST
+
+        $stmt->execute();
+
         // ✅ CREATE XENDIT INVOICE
         try {
             $xenditInvoice = createXenditInvoice([
@@ -304,41 +321,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
         exit;
     }
 
-/* ================= FETCH CLIENTS ================= */
-$clients = [];
-$q = "
-    SELECT cb.client_email,
-           CONCAT(cb.client_first_name,' ',cb.client_last_name) AS client_name,
-           cb.client_phone,
-           cb.client_address,
-           cb.business_unit_id
-    FROM client_bookings cb
-    JOIN business_units bu ON bu.id = cb.business_unit_id
-    JOIN agencies ag ON ag.id = bu.agency_id
-    WHERE cb.status IN ('submitted','confirmed')
-";
-$r = $conn->query($q);
-while ($row = $r->fetch_assoc()) {
-
-    $apps = [];
-    $s = $conn->prepare("
-        SELECT a.id AS applicant_id,
-               CONCAT(a.first_name, IF(a.middle_name IS NOT NULL AND a.middle_name != '', CONCAT(' ', a.middle_name), ''), ' ', a.last_name, IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')) AS name,
-               a.email
-        FROM applicants a
-        JOIN client_bookings cb ON cb.applicant_id = a.id
-        WHERE cb.client_email = ? AND a.status IN ('on_process','approved')
-    ");
-
-
-    $s->bind_param("s", $row['client_email']);
-    $s->execute();
-    $apps = $s->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $row['applicants'] = $apps;
-    $clients[] = $row;
-}
-?>
+    /* ================= FETCH CLIENTS ================= */
+    $clients = [];
+    $q = "
+        SELECT
+            cb.id AS booking_id,
+            cb.client_email,
+            CONCAT(cb.client_first_name,' ',cb.client_last_name) AS client_name,
+            cb.client_phone,
+            cb.client_address,
+            cb.business_unit_id
+        FROM client_bookings cb
+        WHERE cb.status IN ('submitted','confirmed','on_process','approved')
+        ORDER BY cb.client_last_name, cb.client_first_name
+            ";
+    $r = $conn->query($q);
+    while ($row = $r->fetch_assoc()) {
+        $apps = get_client_applicants($conn, (int)$row['booking_id']);
+        $row['applicants'] = $apps;
+        $clients[] = $row;
+    }
+    ?>
 
 <?php include '../includes/header.php'; ?>
 
@@ -653,9 +656,10 @@ while ($row = $r->fetch_assoc()) {
             <form method="POST">
                 <input type="hidden" name="generate_invoice" value="1">
                 <input type="hidden" name="business_unit_id" id="business_unit_id">
+                <input type="hidden" name="client_booking_id" id="client_booking_id">
 
                 <div class="card shadow-lg border-0 h-100 rounded-4 overflow-hidden">
-<div class="card-header bg-success text-white border-0">
+                    <div class="card-header bg-success text-white border-0">
                         <h6 class="mb-0 fw-bold">
                             <i class="bi bi-gear-fill me-2"></i>Invoice Builder
                         </h6>
@@ -682,11 +686,14 @@ while ($row = $r->fetch_assoc()) {
                                     onchange="loadClient(this)">
                                     <option value="">Select agency first</option>
                                     <?php foreach ($clients as $c): ?>
-                                        <option value="<?= h($c['client_email']) ?>"
+                                        <option
+                                            value="<?= (int)$c['booking_id'] ?>"
+                                            data-email="<?= h($c['client_email']) ?>"
                                             data-name="<?= h($c['client_name']) ?>"
                                             data-address="<?= h($c['client_address']) ?>"
                                             data-apps="<?= htmlspecialchars(json_encode($c['applicants']), ENT_QUOTES, 'UTF-8') ?>"
-                                            data-bu="<?= (int)$c['business_unit_id'] ?>">
+                                            data-bu="<?= (int)$c['business_unit_id'] ?>"
+                                        >
                                             <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?> applicants)
                                         </option>
                                     <?php endforeach; ?>
@@ -699,7 +706,12 @@ while ($row = $r->fetch_assoc()) {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Due Date</label>
-                                <input type="date" name="due_date" id="due_date" class="form-control form-control-lg" oninput="updatePreview()">
+                                <input type="date"
+                                    name="due_date"
+                                    id="due_date"
+                                    class="form-control form-control-lg"
+                                    min="<?= date('Y-m-d') ?>"
+                                    oninput="updatePreview()">
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-semibold">Client Name</label>
@@ -1051,11 +1063,11 @@ while ($row = $r->fetch_assoc()) {
             return;
         }
         const opt = sel.options[sel.selectedIndex];
+        document.getElementById('client_booking_id').value = opt.value;
         if (!opt || opt.value === '') return;
-
         // CLIENT INFO
         document.getElementById('client_name').value = opt.dataset.name || '';
-        document.getElementById('client_email').value = opt.value || '';
+        document.getElementById('client_email').value = opt.dataset.email || '';
         document.getElementById('client_address').value = opt.dataset.address || '';
         document.getElementById('due_date').value = '';
 
@@ -1065,7 +1077,7 @@ while ($row = $r->fetch_assoc()) {
         const info = document.getElementById('client-info');
         info.classList.remove('d-none');
         document.getElementById('client-name').textContent = opt.dataset.name || '';
-        document.getElementById('client-email').textContent = opt.value || '';
+        document.getElementById('client-email').textContent = opt.dataset.email || '';
         document.getElementById('client-address').textContent = opt.dataset.address || '';
 
         // LOAD APPLICANTS
@@ -1356,6 +1368,14 @@ while ($row = $r->fetch_assoc()) {
 
         updateApplicantCount();
         calcTotal();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dueDate = document.getElementById('due_date');
+        if (dueDate) {
+            const today = new Date().toISOString().split('T')[0];
+            dueDate.setAttribute('min', today);
+        }
     });
 </script>
 
