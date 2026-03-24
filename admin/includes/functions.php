@@ -1,19 +1,27 @@
 <?php
+/**
+ * =========================================================
+ * FILE UPLOAD UTILITIES
+ * =========================================================
+ */
+
 function uploadFile($file, $folder = 'general')
 {
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return false;
     }
 
-    // Allow common document/image types plus common video containers
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'mp4', 'mov', 'webm', 'ogg', 'mkv', 'avi', 'mpeg'];
-    // Increase limit to allow larger video files (200MB)
+    $allowedExtensions = [
+        'jpg','jpeg','png','gif','pdf','doc','docx',
+        'mp4','mov','webm','ogg','mkv','avi','mpeg'
+    ];
+
     $maxFileSize = 200 * 1024 * 1024; // 200MB
 
     $fileName = $file['name'];
     $fileSize = $file['size'];
-    $fileTmp = $file['tmp_name'];
-    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $fileTmp  = $file['tmp_name'];
+    $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
     if (!in_array($fileExt, $allowedExtensions, true)) {
         return false;
@@ -23,12 +31,12 @@ function uploadFile($file, $folder = 'general')
         return false;
     }
 
-    $uploadDir = UPLOAD_PATH . $folder . '/';
+    $uploadDir = rtrim(UPLOAD_PATH, '/') . '/' . trim($folder, '/') . '/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
 
-    $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
+    $newFileName = uniqid('file_', true) . '.' . $fileExt;
     $destination = $uploadDir . $newFileName;
 
     if (move_uploaded_file($fileTmp, $destination)) {
@@ -38,70 +46,76 @@ function uploadFile($file, $folder = 'general')
     return false;
 }
 
-/**
- * NEW: Upload multiple files from an <input type="file" name="attachments[]"> control.
- * Returns array of relative paths (e.g., ['replacements/abc.jpg', ...]).
- */
 function uploadMultipleFiles(array $filesControl, string $folder = 'general'): array
 {
     $saved = [];
+
     if (!isset($filesControl['name']) || !is_array($filesControl['name'])) {
         return $saved;
     }
+
     $count = count($filesControl['name']);
+
     for ($i = 0; $i < $count; $i++) {
         $file = [
-            'name' => $filesControl['name'][$i],
-            'type' => $filesControl['type'][$i],
+            'name'     => $filesControl['name'][$i],
+            'type'     => $filesControl['type'][$i],
             'tmp_name' => $filesControl['tmp_name'][$i],
-            'error' => $filesControl['error'][$i],
-            'size' => $filesControl['size'][$i],
+            'error'    => $filesControl['error'][$i],
+            'size'     => $filesControl['size'][$i],
         ];
+
         $path = uploadFile($file, $folder);
         if ($path !== false) {
             $saved[] = $path;
         }
     }
+
     return $saved;
 }
 
 function deleteFile($filePath)
 {
-    $fullPath = UPLOAD_PATH . $filePath;
-    if (is_string($filePath) && $filePath !== '' && file_exists($fullPath)) {
-        return unlink($fullPath);
+    if (!is_string($filePath) || $filePath === '') {
+        return false;
     }
-    return false;
+
+    $fullPath = rtrim(UPLOAD_PATH, '/') . '/' . ltrim($filePath, '/');
+    return file_exists($fullPath) ? unlink($fullPath) : false;
 }
+
+/**
+ * =========================================================
+ * FORMATTERS & HELPERS
+ * =========================================================
+ */
 
 function formatDate($date, $format = 'M d, Y')
 {
-    return date($format, strtotime($date));
+    return $date ? date($format, strtotime($date)) : '';
 }
 
 function formatDateTime($datetime, $format = 'M d, Y h:i A')
 {
-    return date($format, strtotime($datetime));
+    return $datetime ? date($format, strtotime($datetime)) : '';
 }
 
 function sanitizeInput($data)
 {
-    $data = trim((string) $data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-    return $data;
+    return htmlspecialchars(trim((string) $data), ENT_QUOTES, 'UTF-8');
 }
 
 function generateRandomPassword($length = 8)
 {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $password = '';
-    $maxIndex = strlen($characters) - 1;
+    $chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $pass  = '';
+    $max   = strlen($chars) - 1;
+
     for ($i = 0; $i < $length; $i++) {
-        // random_int is cryptographically secure
-        $password .= $characters[random_int(0, $maxIndex)];
+        $pass .= $chars[random_int(0, $max)];
     }
-    return $password;
+
+    return $pass;
 }
 
 function getFileUrl($filePath)
@@ -112,39 +126,41 @@ function getFileUrl($filePath)
     return rtrim(UPLOAD_URL, '/') . '/' . ltrim($filePath, '/');
 }
 
+/**
+ * =========================================================
+ * FLASH MESSAGES
+ * =========================================================
+ */
+
 function setFlashMessage($type, $message)
 {
     $_SESSION['flash_message'] = [
-        'type' => $type,
+        'type'    => $type,
         'message' => $message
     ];
 }
 
 function getFlashMessage()
 {
-    if (isset($_SESSION['flash_message'])) {
-        $message = $_SESSION['flash_message'];
+    if (!empty($_SESSION['flash_message'])) {
+        $msg = $_SESSION['flash_message'];
         unset($_SESSION['flash_message']);
-        return $message;
+        return $msg;
     }
     return null;
 }
 
-function getFullName($firstName, $middleName, $lastName, $suffix = null)
-{
-    $parts = [];
-    if (!empty($firstName))
-        $parts[] = $firstName;
-    if (!empty($middleName))
-        $parts[] = $middleName;
-    if (!empty($lastName))
-        $parts[] = $lastName;
+/**
+ * =========================================================
+ * VALIDATION
+ * =========================================================
+ */
 
-    $name = trim(implode(' ', $parts));
-    if (!empty($suffix)) {
-        $name .= ' ' . $suffix;
-    }
-    return $name;
+function getFullName($first, $middle, $last, $suffix = null)
+{
+    $parts = array_filter([$first, $middle, $last]);
+    $name  = implode(' ', $parts);
+    return $suffix ? $name . ' ' . $suffix : $name;
 }
 
 function isValidEmail($email)
@@ -153,39 +169,39 @@ function isValidEmail($email)
 }
 
 /**
- * Safe redirect that works even if output already started.
- * Prevents: "Warning: Cannot modify header information - headers already sent..."
+ * =========================================================
+ * SAFE REDIRECT
+ * =========================================================
  */
+
 function redirect($url)
 {
-    // Normalize URL (avoid header splitting etc.)
     $url = filter_var($url, FILTER_SANITIZE_URL);
 
     if (!headers_sent()) {
         header("Location: $url", true, 302);
-        exit();
+        exit;
     }
 
-    // Fallback: JS + <noscript> meta refresh if headers already sent
-    echo '<script>';
-    echo 'window.location.href = ' . json_encode($url, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';';
-    echo '</script>';
-    echo '<noscript>';
-    echo '<meta http-equiv="refresh" content="0;url=' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">';
-    echo '</noscript>';
-    exit();
+    echo '<script>window.location.href=' . json_encode($url) . ';</script>';
+    echo '<noscript><meta http-equiv="refresh" content="0;url=' .
+         htmlspecialchars($url, ENT_QUOTES) . '"></noscript>';
+    exit;
 }
 
-/* =========================
- * NEW: JSON & Similarity Utils
- * ========================= */
+/**
+ * =========================================================
+ * JSON & STRING HELPERS
+ * =========================================================
+ */
+
 function json_to_array_safe($json)
 {
-    if ($json === null || $json === '' || $json === '[]')
-        return [];
-    $arr = json_decode((string) $json, true);
+    if (!$json || $json === '[]') return [];
+    $arr = json_decode($json, true);
     return is_array($arr) ? $arr : [];
 }
+
 function normalize_string_array(array $arr): array
 {
     $out = [];
@@ -197,66 +213,90 @@ function normalize_string_array(array $arr): array
     }
     return $out;
 }
+
 function overlap_count(array $a, array $b): int
 {
-    $a = normalize_string_array($a);
-    $b = normalize_string_array($b);
-    return count(array_intersect($a, $b));
+    return count(array_intersect(
+        normalize_string_array($a),
+        normalize_string_array($b)
+    ));
 }
 
 /**
- * Get client details by email from client_bookings
+ * =========================================================
+ * CLIENT DATA
+ * =========================================================
  */
-function get_client_details($conn, $client_email)
+
+function get_client_details(mysqli $conn, string $client_email): array
 {
     $stmt = $conn->prepare("
         SELECT 
-            CONCAT(client_first_name, ' ', client_last_name) AS client_name,
+            CONCAT(client_first_name,' ',client_last_name) AS client_name,
             client_phone,
-            business_unit_id 
-        FROM client_bookings 
-        WHERE client_email = ? 
+            business_unit_id
+        FROM client_bookings
+        WHERE client_email = ?
+        ORDER BY created_at DESC
         LIMIT 1
     ");
+
     $stmt->bind_param("s", $client_email);
     $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_assoc() ?: [];
+    return $stmt->get_result()->fetch_assoc() ?: [];
 }
 
 /**
- * Get applicants booked by client (with names)
+ * ✅ FIXED: Get ONLY correct applicants per client
  */
-function get_client_applicants($conn, $client_email)
+function get_client_applicants(mysqli $conn, int $booking_id): array
 {
-    $applicants = [];
-    $stmt = $conn->prepare("
-        SELECT DISTINCT
-            cb.applicant_id,
-            CONCAT(a.first_name, ' ', a.last_name, IF(a.suffix != '', CONCAT(' ', a.suffix), '')) AS applicant_name,
-            cb.status
+    $apps = [];
+
+    $sql = "
+        SELECT
+            CONCAT(
+                a.first_name,
+                IF(a.middle_name IS NOT NULL AND a.middle_name != '', CONCAT(' ', a.middle_name), ''),
+                ' ',
+                a.last_name,
+                IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+            ) AS full_name
         FROM client_bookings cb
-        JOIN applicants a ON a.id = cb.applicant_id
-        WHERE cb.client_email = ?
-        AND cb.status IN ('pending', 'on_process', 'approved')
-        ORDER BY cb.created_at DESC
-    ");
-    $stmt->bind_param("s", $client_email);
+        INNER JOIN applicants a ON a.id = cb.applicant_id
+        WHERE cb.id = ?
+          AND cb.status IN ('submitted','confirmed','on_process','approved')
+          AND a.status IN ('pending','on_process','approved')
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $booking_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $applicants[] = $row;
+
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $apps[] = [
+            'name' => $row['full_name']
+        ];
     }
-    return $applicants;
+
+    return $apps;
 }
 
-function exportTurkeyApplicants(array $data, string $status, string $filename): void
-{
-    $headers = ['ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Status', 'Date Applied'];
-    $title = "Turkey Applicants Export - $status";
-    $subject = "Turkey Applicants - $status";
-    $description = "Export of Turkey applicants with status: $status";
-    $sheetTitle = "Turkey $status";
+/**
+ * =========================================================
+ * EXPORT
+ * =========================================================
+ */
 
-    exportToExcel($data, $headers, $title, $subject, $description, $sheetTitle, $filename);
+function exportToExcel(
+    array $data,
+    array $headers,
+    string $title,
+    string $subject,
+    string $description,
+    string $sheetTitle,
+    string $filename
+) {
+    // TODO: implement export logic
 }
