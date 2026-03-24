@@ -98,7 +98,7 @@ if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
 ====================================================== */
 if (
     isset($_GET['get_client_history']) &&
-    isset($_GET['email']) &&
+    isset($_GET['booking_id']) &&
     isset($_GET['tab'])
 ) {
     header('Content-Type: application/json');
@@ -109,14 +109,9 @@ if (
     $db = new Database();
     $conn = $db->getConnection();
 
-    if (!$conn) {
-        echo json_encode([]);
-        exit;
-    }
-
-    $email = strtolower(trim((string)($_GET['email'] ?? '')));
-    $tab   = strtoupper(trim((string)($_GET['tab'] ?? 'CSNK')));
-    $likeInvoice = ($tab === 'SMC') ? 'SMC-%' : 'CSNK-%';
+    $booking_id = (int) $_GET['booking_id'];
+    $tab = strtoupper(trim($_GET['tab']));
+    $companyType = ($tab === 'SMC') ? 'SMC' : 'CSNK';
 
     $stmt = $conn->prepare("
         SELECT
@@ -137,61 +132,15 @@ if (
             applicants_data,
             pdf_filename
         FROM invoice_history
-        WHERE LOWER(TRIM(client_email)) = ?
-        AND company_type = ?
-        ORDER BY 
-            CASE WHEN status = 'Pending' THEN 1 ELSE 2 END,
-            invoice_date DESC
-    "); 
+        WHERE client_booking_id = ?
+          AND company_type = ?
+        ORDER BY invoice_date DESC
+    ");
 
-    if (!$stmt) {
-        http_response_code(500);
-        echo json_encode(['error' => 'DB prepare failed: ' . $conn->error]);
-        exit;
-    }
+    $stmt->bind_param('is', $booking_id, $companyType);
+    $stmt->execute();
 
-    $stmt->bind_param('ss', $email, $likeInvoice);
-    if (!$stmt->execute()) {
-        http_response_code(500);
-        echo json_encode(['error' => 'DB execute failed: ' . $stmt->error]);
-        exit;
-    }
-
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    if (empty($rows)) {
-$fallback = $conn->prepare("
-            SELECT
-                id,
-                invoice_num,
-                invoice_date,
-                due_date,
-                total_amount,
-                CASE
-                    WHEN payment_status = 'Paid' THEN 'Paid'
-                    WHEN due_date < CURDATE() THEN 'OverDue'
-                    ELSE 'Pending'
-                END AS status,
-                reference_no,
-                client_name,
-                client_email,
-                client_address,
-                applicants_data,
-                pdf_filename
-            FROM invoice_history
-            WHERE LOWER(TRIM(client_email)) = ?
-            ORDER BY invoice_date DESC
-            LIMIT 200
-        "); 
-
-        if ($fallback) {
-            $fallback->bind_param('s', $email);
-            $fallback->execute();
-            $rows = $fallback->get_result()->fetch_all(MYSQLI_ASSOC);
-        }
-    }
-
-    echo json_encode($rows);
+    echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     exit;
 }
 
@@ -360,6 +309,7 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 /* ================= FETCH INVOICES ================= */
 $sql = "
     SELECT
+        client_booking_id,
         client_name,
         client_email,
         client_address,
@@ -371,7 +321,7 @@ $sql = "
     FROM invoice_history
     WHERE client_name LIKE ?
       AND company_type = ?
-    GROUP BY client_name, client_email, client_address
+    GROUP BY client_booking_id
     ORDER BY last_invoice_date DESC
 ";
 
@@ -559,13 +509,9 @@ function renderAvatar($picture, $client_name)
                         </td>
 
                         <td>
-                            <button class="btn btn-outline-secondary btn-sm"
-                                onclick="openClientHistory(
-                                    '<?= addslashes($inv['client_email']) ?>',
-                                    '<?= addslashes($activeTab) ?>'
-                                )">
-                                <i class="bi bi-clock-history"></i> History
-                            </button>
+<button class="btn btn-outline-secondary btn-sm" onclick="openClientHistory(<?= (int)$inv['client_booking_id'] ?>, '<?= addslashes($activeTab) ?>')">
+    <i class="bi bi-clock-history"></i> History
+</button>
                         </td>
                     </tr>
 
@@ -573,7 +519,7 @@ function renderAvatar($picture, $client_name)
                     <?php endif; ?>
                     
                     <!-- ================= ACTION MODAL (GLOBAL) ================= -->
-<div class="modal fade" id="actionModal" tabindex="-1">
+                    <div class="modal fade" id="actionModal" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content shadow-xl border-0 rounded-3 bg-white backdrop-blur-lg">
 
@@ -1135,111 +1081,125 @@ let currentInvoiceData = {};
 
 let currentHistoryData = [];
 
-function openClientHistory(clientEmail, tab) {
-    console.log('Opening history for email:', clientEmail, 'tab:', tab);
-    
+function openClientHistory(bookingId, tab) {
+    console.log('Opening history for booking:', bookingId, 'tab:', tab);
+
     const historyModalEl = document.getElementById('historyModal');
-    if (!historyModalEl) {
-        alert('History modal not found. Page may need reload.');
-        return;
-    }
-    
-    // Reset search
-    document.getElementById('modalSearch').value = '';
-    document.getElementById('modalSearchClear').style.opacity = '0';
-    
     const modal = new bootstrap.Modal(historyModalEl);
     modal.show();
-    
-    // Reset client info to loading state
+
     document.getElementById('historyClientFullName').textContent = 'Loading Client...';
-    document.getElementById('historyClientEmail').textContent = 'client@example.com';
-    document.getElementById('historyClientAddress').textContent = 'Address';
+    document.getElementById('historyClientEmail').textContent = '';
+    document.getElementById('historyClientAddress').textContent = '';
     document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
-    
-    const historyClientNameEl = document.getElementById('historyClientName');
-    if (historyClientNameEl) {
-        historyClientNameEl.textContent = clientEmail;
-    }
-    
+
     const tbody = document.getElementById('historyTableBody');
     tbody.innerHTML = `
         <tr>
             <td colspan="6" class="text-center py-5">
-                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <div class="spinner-border text-primary"></div>
+                <div class="mt-3 text-muted">Loading invoice history...</div>
+            </td>
+        </tr>
+    `;
+
+        fetch(
+            'payments_clients.php?get_client_history=1' +
+            '&booking_id=' + encodeURIComponent(bookingId) +
+            '&tab=' + encodeURIComponent(tab)
+        )
+        .then(res => res.json())
+        .then(data => {
+            if (data.length > 0) {
+                const first = data[0];
+                document.getElementById('historyClientFullName').textContent = first.client_name;
+                document.getElementById('historyClientEmail').textContent = first.client_email;
+                document.getElementById('historyClientAddress').textContent = first.client_address;
+                document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
+            }
+            renderHistoryTable(data);
+        });
+    }
+
+    const historyClientNameEl = document.getElementById('historyClientName');
+    if (historyClientNameEl) {
+        historyClientNameEl.textContent = clientEmail;
+    }
+
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <div class="mt-3 h5 text-muted">Loading invoice history...</div>
             </td>
         </tr>
     `;
-    
+
     fetch(
         'payments_clients.php?get_client_history=1' +
-        '&email=' + encodeURIComponent(clientEmail) +
+        '&booking_id=' + encodeURIComponent(bookingId) +
         '&tab=' + encodeURIComponent(tab)
     )
     .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok (' + res.status + ')');
+        if (!res.ok) {
+            throw new Error('Network error (' + res.status + ')');
+        }
         return res.json();
     })
     .then(data => {
-        currentHistoryData = data;
-        
-        // Show client info (use first invoice data - all invoices have same client info)
-        if (data.length > 0) {
-            const firstInv = data[0];
-            document.getElementById('historyClientFullName').textContent = firstInv.client_name || 'Unknown Client';
-            document.getElementById('historyClientEmail').textContent = firstInv.client_email || 'No email';
-            document.getElementById('historyClientAddress').textContent = firstInv.client_address || 'No address';
-            document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
+        currentHistoryData = Array.isArray(data) ? data : [];
+
+        // Populate client info
+        if (currentHistoryData.length > 0) {
+            const firstInv = currentHistoryData[0];
+            document.getElementById('historyClientFullName').textContent =
+                firstInv.client_name || 'Unknown Client';
+            document.getElementById('historyClientEmail').textContent =
+                firstInv.client_email || clientEmail;
+            document.getElementById('historyClientAddress').textContent =
+                firstInv.client_address || 'N/A';
+            document.getElementById('historyInvoiceCount').textContent =
+                currentHistoryData.length + ' Invoices';
         } else {
-            document.getElementById('historyClientFullName').textContent = 'No Client Data';
-            document.getElementById('historyClientEmail').textContent = clientEmail;
+            document.getElementById('historyClientFullName').textContent = 'No Invoices Found';
             document.getElementById('historyClientAddress').textContent = 'N/A';
             document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
         }
-        
-        renderHistoryTable(data);
-        
-        // Setup search listener
-        const searchInput = document.getElementById('modalSearch');
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            const filtered = currentHistoryData.filter(inv => 
-                inv.invoice_num.toLowerCase().includes(query) ||
-                inv.invoice_date?.toLowerCase().includes(query) ||
-                inv.total_amount.toString().includes(query) ||
-                inv.status?.toLowerCase().includes(query)
-            );
-            renderHistoryTable(filtered);
-        });
-        
-        // Clear search
-        document.getElementById('modalSearchClear').onclick = function() {
-            searchInput.value = '';
-            this.style.opacity = '0';
-            renderHistoryTable(currentHistoryData);
-        };
-        
-        searchInput.oninput = function() {
-            document.getElementById('modalSearchClear').style.opacity = this.value ? '1' : '0';
-        };
+
+        renderHistoryTable(currentHistoryData);
+
+        // Search inside modal
+        if (modalSearch) {
+            modalSearch.oninput = function () {
+                const q = this.value.toLowerCase().trim();
+                const filtered = currentHistoryData.filter(inv =>
+                    inv.invoice_num?.toLowerCase().includes(q) ||
+                    inv.reference_no?.toLowerCase().includes(q) ||
+                    inv.status?.toLowerCase().includes(q) ||
+                    String(inv.total_amount).includes(q)
+                );
+                renderHistoryTable(filtered);
+                if (modalSearchClear) {
+                    modalSearchClear.style.opacity = q ? '1' : '0';
+                }
+            };
+        }
+
+        if (modalSearchClear) {
+            modalSearchClear.onclick = function () {
+                if (modalSearch) modalSearch.value = '';
+                modalSearchClear.style.opacity = '0';
+                renderHistoryTable(currentHistoryData);
+            };
+        }
     })
     .catch(error => {
         console.error('Error loading invoice history:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-danger py-5">
-                    <i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>
-                    <div class="h5 fw-bold mb-1">Error loading history</div>
-                    <div class="text-muted">${error.message}</div>
-                    <small class="text-danger mt-2">Check console for details</small>
-                </td>
-            </tr>
-        `;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>Error loading history</td></tr>`;
     });
-}
 
 function renderHistoryTable(data) {
     const tbody = document.getElementById('historyTableBody');
@@ -1393,6 +1353,56 @@ function resendInvoiceEmail(invoiceId) {
                 );
             });
     }
+}
+
+function openClientHistory(bookingId, tab) {
+    console.log('Opening history for booking:', bookingId, 'tab:', tab);
+
+    const historyModalEl = document.getElementById('historyModal');
+    const modal = new bootstrap.Modal(historyModalEl);
+    modal.show();
+
+    document.getElementById('historyClientFullName').textContent = 'Loading Client...';
+    document.getElementById('historyClientEmail').textContent = '';
+    document.getElementById('historyClientAddress').textContent = '';
+    document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <div class="mt-3 text-muted">Loading invoice history...</div>
+            </td>
+        </tr>
+    `;
+
+    fetch(
+        'payments_clients.php?get_client_history=1' +
+        '&booking_id=' + encodeURIComponent(bookingId) +
+        '&tab=' + encodeURIComponent(tab)
+    )
+    .then(res => res.json())
+    .then(data => {
+        if (data.length > 0) {
+            const first = data[0];
+            document.getElementById('historyClientFullName').textContent = first.client_name;
+            document.getElementById('historyClientEmail').textContent = first.client_email;
+            document.getElementById('historyClientAddress').textContent = first.client_address;
+            document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
+        }
+        renderHistoryTable(data);
+    })
+    .catch(err => {
+        console.error(err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger py-5">
+                    Failed to load invoice history
+                </td>
+            </tr>
+        `;
+    });
 }
 
 </script>
