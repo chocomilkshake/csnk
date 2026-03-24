@@ -178,7 +178,7 @@ function safe(?string $s): string
       </svg>
       <input type="text" name="booking_search" value="<?= safe($bookingSearch) ?>"
         placeholder="Search by client, applicant, email or phone..."
-        class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-blue-500 focus:border-blue-500">
       <?php if (!empty($bookingSearch)): ?>
         <a href="?<?= !empty($applicantStatus) && $applicantStatus !== 'all' ? 'status=' . safe($applicantStatus) . '&' : '' ?>sort=<?= safe($sortBy) ?>"
           class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
