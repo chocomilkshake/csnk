@@ -138,25 +138,25 @@ function safe(?string $s): string
 </div>
 
 <!-- Filter Tabs -->
-<div class="flex justify-end bg-gray-100 rounded-xl p-2 mb-8 gap-2">
+<div class="flex justify-end border-b border-gray-200 mb-6 gap-4">
 
 
   <a href="client-management.php"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'all' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'all' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     All <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'all' ? 'bg-white text-blue-900' : 'text-gray-600'; ?>"><?= $statusCounts['total'] ?></span>
 
   </a>
   <a href="?status=on_process"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'on_process' ? 'bg-cyan-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'on_process' ? 'bg-cyan-500 text-white ' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     On Process <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'on_process' ? 'bg-white text-cyan-900' : 'text-gray-600'; ?>"><?= $statusCounts['on_process'] ?></span>
 
   </a>
   <a href="?status=approved"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'approved' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'approved' ? 'bg-emerald-500 text-white ' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     Approved <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'approved' ? 'bg-white text-emerald-900' : 'text-gray-600'; ?>"><?= $statusCounts['approved'] ?></span>
@@ -165,7 +165,7 @@ function safe(?string $s): string
 </div>
 
 <!-- Search Form -->
-<form method="GET" action="" class="bg-white shadow-md rounded-xl p-6 mb-8">
+<form method="GET" action="" class="bg-white rounded-xl p-6 mb-8">
   <?php if (!empty($applicantStatus) && $applicantStatus !== 'all'): ?>
     <input type="hidden" name="status" value="<?= safe($applicantStatus) ?>">
   <?php endif; ?>
@@ -178,7 +178,7 @@ function safe(?string $s): string
       </svg>
       <input type="text" name="booking_search" value="<?= safe($bookingSearch) ?>"
         placeholder="Search by client, applicant, email or phone..."
-        class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-blue-500 focus:border-blue-500">
       <?php if (!empty($bookingSearch)): ?>
         <a href="?<?= !empty($applicantStatus) && $applicantStatus !== 'all' ? 'status=' . safe($applicantStatus) . '&' : '' ?>sort=<?= safe($sortBy) ?>"
           class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -207,7 +207,7 @@ function safe(?string $s): string
 </form>
 
 <!-- Table -->
-<div class="bg-white shadow-lg rounded-xl overflow-hidden max-w-none">
+<div class="bg-white  rounded-xl overflow-hidden max-w-none">
   <?php if (empty($clientBookings)): ?>
     <div class="text-center py-16">
       <svg class="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,16 +224,32 @@ function safe(?string $s): string
       <table class="w-full">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Client</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Applicant</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80">Contact</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Appointment
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              Client</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              Applicant</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80 border-r border-gray-300">
+              Contact</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              Appointment
             </th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">Status</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Business Unit
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              Status</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64 border-r border-gray-300">
+              Business Unit
             </th>
-            <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Booked</th>
-            <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Action</th>
+            <th
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48 border-r border-gray-300">
+              Booked</th>
+            <th
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32 border-r border-gray-300">
+              Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -279,29 +295,31 @@ function safe(?string $s): string
             };
             ?>
             <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <div class="font-semibold text-gray-900"><?= safe($clientFullName) ?></div>
                 <div class="text-sm text-gray-600 mt-1"><?= safe($booking['client_address'] ?? '—') ?></div>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <a href="<?= safe($viewApplicantUrl) ?>"
                   class="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                   <?= safe($applicantFullName) ?>
                 </a>
                 <div class="text-sm text-gray-600">ID: <?= (int) ($booking['applicant_id'] ?? 0) ?></div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-700"><?= safe($clientContact) ?></td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200"><?= safe($clientContact) ?></td>
+              <td class="px-6 py-4 border-r border-gray-200">
                 <span
                   class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full"><?= safe($booking['appointment_type'] ?? '—') ?></span>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <span
                   class="px-3 py-1 <?= $statusBg ?> text-sm font-medium rounded-full"><?= ucfirst(str_replace('_', ' ', $status)) ?></span>
               </td>
-              <td class="px-6 py-4 text-sm font-medium"><?= safe($booking['business_unit_name'] ?? '—') ?></td>
-              <td class="px-6 py-4 text-center text-sm text-gray-600"><?= safe($bookedDate) ?></td>
-              <td class="px-6 py-4 text-center">
+              <td class="px-6 py-4 text-sm font-medium border-r border-gray-200">
+                <?= safe($booking['business_unit_name'] ?? '—') ?>
+              </td>
+              <td class="px-6 py-4 text-center text-sm text-gray-600 border-r border-gray-200"><?= safe($bookedDate) ?></td>
+              <td class="px-6 py-4 text-center border-r border-gray-200">
                 <a href="client-profile.php?id=<?= (int) ($booking['booking_id'] ?? 0) ?>"
                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
                   <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
