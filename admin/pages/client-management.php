@@ -30,9 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
   if ($bookingId > 0) {
     $sql = "
-      UPDATE client_bookings cb
+      DELETE cb FROM client_bookings cb
       LEFT JOIN business_units bu ON bu.id = cb.business_unit_id
-      SET cb.deleted_at = NOW()
       WHERE cb.id = ?
         AND cb.deleted_at IS NULL
     ";
@@ -70,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       // Log activity
       $ip = $_SERVER['REMOTE_ADDR'] ?? '';
       $userId = $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 0; // Use admin_id first, fallback
-      $desc = "Soft deleted client booking ID {$bookingId}";
-      $logStmt = $conn->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, 'Delete Client Booking', ?, ?)");
+      $desc = "Permanently deleted client booking ID {$bookingId}";
+      $logStmt = $conn->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, 'Hard Delete Client Booking', ?, ?)");
 
       if ($logStmt) {
         $logStmt->bind_param("iss", $userId, $desc, $ip);
@@ -434,8 +433,10 @@ function safe(?string $s): string
                   <?php if ($isAdmin || $isSuperAdmin): ?>
                     <button
                       class="delete-client-btn inline-flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                      data-id="<?= (int) ($booking['booking_id'] ?? 0) ?>" title="Delete client booking"
-                      aria-label="Delete client booking" type="button">
+                      data-bs-toggle="modal" data-bs-target="#confirmHardDeleteModal"
+                      data-id="<?= (int) ($booking['booking_id'] ?? 0) ?>"
+                      data-client-name="<?= htmlspecialchars($clientFullName, ENT_QUOTES, 'UTF-8') ?>"
+                      title="Delete client booking" aria-label="Delete client booking" type="button">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -449,6 +450,39 @@ function safe(?string $s): string
         </tbody>
       </table>
     </div>
+
+    <!-- Hard Delete Confirmation Modal -->
+    <div class="modal fade" id="confirmHardDeleteModal" tabindex="-1" aria-labelledby="confirmHardDeleteLabel"
+      aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger bg-opacity-75 text-white">
+            <h6 class="modal-title" id="confirmHardDeleteLabel">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              Permanent Delete Confirmation
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-4">
+              This will <strong>PERMANENTLY DELETE</strong> the client booking for
+              <strong id="deleteClientName"></strong>.
+            </p>
+            <p class="text-danger fst-italic mb-0">
+              <i class="bi bi-info-circle-fill me-1"></i>
+              This action cannot be undone. The data will be removed from the database immediately.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmHardDeleteBtn">
+              <i class="bi bi-trash-fill me-1"></i> Permanently Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   <?php endif; ?>
 </div>
 
@@ -456,49 +490,65 @@ function safe(?string $s): string
 
 <?php require_once '../includes/footer.php'; ?>
 
+
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.delete-client-btn').forEach(btn => {
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (confirm('Are you sure you want to soft delete this client booking? It will be marked as deleted but data preserved. OK to proceed?')) {
-          const row = this.closest('tr');
-          const id = this.dataset.id;
-          const formData = new FormData();
-          formData.append('action', 'delete');
-          formData.append('id', id);
+  // Hard Delete Modal Logic (no DOMContentLoaded needed for Bootstrap events)
+  let currentDeleteId = null;
+  let currentDeleteRow = null;
 
-          fetch(window.location.href, {
-            method: 'POST',
-            body: formData
-          })
-            .then(async response => {
-              const contentType = response.headers.get('content-type') || '';
-              if (!contentType.includes('application/json')) {
-                const text = await response.text();
-                throw new Error('Unexpected response: ' + text.slice(0, 120));
-              }
+  const hardDeleteModal = document.getElementById('confirmHardDeleteModal');
+  const confirmHardDeleteBtn = document.getElementById('confirmHardDeleteBtn');
+  const deleteClientName = document.getElementById('deleteClientName');
 
-              return response.json();
-            })
-            .then(data => {
-              if (data.success) {
-                row.style.animation = 'fadeOut 0.5s';
-                setTimeout(() => row.remove(), 500);
-              } else {
-                alert('Delete failed: ' + (data.error || 'Unknown error'));
-              }
-            })
-            .catch(err => {
-              console.error('Delete error:', err);
-              alert('Delete failed. Please try again.');
-            });
-        }
-      });
-    });
+  // Modal show event: populate data from button
+  hardDeleteModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    currentDeleteId = button.dataset.id;
+    const clientName = button.dataset.clientName || 'this client';
+    deleteClientName.textContent = clientName;
+    currentDeleteRow = button.closest('tr');
   });
 
-  // Fade out animation
+  // Confirm button click: execute delete
+  confirmHardDeleteBtn.addEventListener('click', function () {
+    if (!currentDeleteId) return;
+
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('id', currentDeleteId);
+
+    fetch(window.location.href, {
+      method: 'POST',
+      body: formData
+    })
+      .then(async response => {
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Unexpected response: ' + text.slice(0, 120));
+        }
+        return response.json();
+      })
+      .then(data => {
+        const modalInstance = bootstrap.Modal.getInstance(hardDeleteModal);
+        modalInstance.hide();
+
+        if (data.success) {
+          if (currentDeleteRow) {
+            currentDeleteRow.style.animation = 'fadeOut 0.5s';
+            setTimeout(() => currentDeleteRow.remove(), 500);
+          }
+        } else {
+          alert('Delete failed: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(err => {
+        console.error('Delete error:', err);
+        alert('Delete failed. Please try again.');
+      });
+  });
+
+  // Fade out animation CSS
   const style = document.createElement('style');
   style.textContent = `
   @keyframes fadeOut {
