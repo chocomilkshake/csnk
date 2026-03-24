@@ -1,5 +1,97 @@
 <?php
 session_start();
+require_once '../includes/invoice_mailer.php';
+
+
+/* ======================================================
+   AJAX: RESEND INVOICE EMAIL
+====================================================== */
+if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
+    header('Content-Type: application/json');
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+    require_once '../includes/functions.php';
+
+    // ✅ load PHPMailer
+    $composerAutoload = __DIR__ . '/../../vendor/autoload.php';
+    if (is_readable($composerAutoload)) {
+        require_once $composerAutoload;
+    } else {
+        require_once __DIR__ . '/../../lib/phpmailer/src/Exception.php';
+        require_once __DIR__ . '/../../lib/phpmailer/src/PHPMailer.php';
+        require_once __DIR__ . '/../../lib/phpmailer/src/SMTP.php';
+    }
+
+    require_once __DIR__ . '/payment_invoice_gen.php'; 
+    // ✅ this allows reuse of sendInvoiceEmail()
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    if (!$conn) {
+        echo json_encode(['success' => false, 'message' => 'DB connection failed']);
+        exit;
+    }
+
+    $invoice_id = (int) $_GET['id'];
+
+    // ✅ Fetch invoice
+    $stmt = $conn->prepare("
+        SELECT
+            invoice_num,
+            client_name,
+            client_email,
+            pdf_filename,
+            company_type,
+            payment_status,
+            payment_link
+        FROM invoice_history
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $inv = $stmt->get_result()->fetch_assoc();
+    
+    if ($inv['payment_status'] === 'Paid') {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invoice already paid. Resending is disabled.'
+    ]);
+    exit;
+}
+
+    if (!$inv || empty($inv['client_email'])) {
+        echo json_encode(['success' => false, 'message' => 'Invoice not found or email missing']);
+        exit;
+    }
+
+    $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $inv['pdf_filename'];
+
+    if (!file_exists($pdfPath)) {
+        echo json_encode(['success' => false, 'message' => 'Invoice PDF file not found']);
+        exit;
+    }
+
+    // ✅ Send email
+    $sent = sendInvoiceEmail(
+        $inv['client_email'],
+        $inv['client_name'],
+        $inv['invoice_num'],
+        $pdfPath,
+        $inv['company_type'],
+        $inv['payment_link'] // ✅ SAME XENDIT LINK
+    );
+
+    if ($sent) {
+        echo json_encode(['success' => true, 'message' => 'Invoice email sent successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to send invoice email']);
+    }
+
+    exit;
+}
 
 /* ======================================================
    AJAX: Get Client Invoice History
@@ -34,7 +126,7 @@ if (
             due_date,
             total_amount,
             CASE
-                WHEN status = 'Paid' THEN 'Paid'
+                WHEN payment_status = 'Paid' THEN 'Paid'
                 WHEN due_date < CURDATE() THEN 'OverDue'
                 ELSE 'Pending'
             END AS status,
@@ -47,8 +139,10 @@ if (
         FROM invoice_history
         WHERE LOWER(TRIM(client_email)) = ?
         AND company_type = ?
-        ORDER BY invoice_date DESC
-    ");
+        ORDER BY 
+            CASE WHEN status = 'Pending' THEN 1 ELSE 2 END,
+            invoice_date DESC
+    "); 
 
     if (!$stmt) {
         http_response_code(500);
@@ -66,7 +160,7 @@ if (
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     if (empty($rows)) {
-        $fallback = $conn->prepare("
+$fallback = $conn->prepare("
             SELECT
                 id,
                 invoice_num,
@@ -74,7 +168,7 @@ if (
                 due_date,
                 total_amount,
                 CASE
-                    WHEN status = 'Paid' THEN 'Paid'
+                    WHEN payment_status = 'Paid' THEN 'Paid'
                     WHEN due_date < CURDATE() THEN 'OverDue'
                     ELSE 'Pending'
                 END AS status,
@@ -88,7 +182,7 @@ if (
             WHERE LOWER(TRIM(client_email)) = ?
             ORDER BY invoice_date DESC
             LIMIT 200
-        ");
+        "); 
 
         if ($fallback) {
             $fallback->bind_param('s', $email);
@@ -272,8 +366,8 @@ $sql = "
         MAX(created_at) AS last_invoice_date,
         COUNT(*) AS total_invoices,
         SUM(total_amount) AS total_amount,
-        SUM(status = 'Paid') AS paid_count,
-        SUM(status != 'Paid') AS unpaid_count
+        SUM(payment_status = 'Paid') AS paid_count,
+        SUM(payment_status != 'Paid') AS unpaid_count
     FROM invoice_history
     WHERE client_name LIKE ?
       AND company_type = ?
@@ -317,7 +411,25 @@ function renderAvatar($picture, $client_name)
 <?php include '../includes/header.php'; ?>
 
 <style>
-:root{--primary:#0d6efd;--success:#198754;--warning:#ffc107;--danger:#dc3545;--muted:#6c757d;--shadow-sm:0 4px 20px rgba(0,0,0,.06);--shadow-md:0 8px 24px rgba(0,0,0,.08);--shadow-lg:0 12px 30px rgba(0,0,0,.15)}
+:root {
+    --primary: #2563eb;
+    --primary-light: #3b82f6;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --muted: #6b7280;
+    --light-bg: #f8fafc;
+    --border-light: #e2e8f0;
+    --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.backdrop-blur-lg { backdrop-filter: blur(20px); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.rounded-3 { border-radius: 1.5rem; }
+.bg-gradient-primary { background: var(--gradient-primary) !important; }
+.fs-1-5 { font-size: 1.75rem; }
+
 .delete-toast{position:fixed;bottom:24px;right:24px;min-width:300px;background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);z-index:9999;animation:slideUp .3s ease}
 .delete-toast.hidden{display:none}
 .toast-body{display:flex;justify-content:space-between;align-items:center;padding:16px 18px}
@@ -459,15 +571,130 @@ function renderAvatar($picture, $client_name)
 
                     <?php endforeach; ?>
                     <?php endif; ?>
+                    
+                    <!-- ================= ACTION MODAL (GLOBAL) ================= -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content shadow-xl border-0 rounded-3 bg-white backdrop-blur-lg">
+
+                                <div class="modal-header bg-gradient-primary text-white rounded-top-3">
+                                    <h6 class="modal-title fw-bold mb-0" id="actionModalTitle">
+                                        <i class="bi bi-hourglass-split me-2"></i>Processing...
+                                    </h6>
+                                    <button class="btn-close btn-close-white shadow-sm" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body text-center py-5 px-4">
+                                    <div id="actionModalIcon" class="mb-4 fs-1">
+                                        <div class="spinner-border spinner-border-sm text-primary shadow-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                    <div class="h4 fw-semibold text-primary mb-2" id="actionModalTitle2">Sending Email</div>
+                                    <p class="text-muted mb-0" id="actionModalMessage">
+                                        Preparing and sending invoice to client...
+                                    </p>
+                                </div>
+
+                                <div class="modal-footer d-none justify-content-center p-4 border-0" id="actionModalFooter">
+                                    <button class="btn btn-lg btn-success px-5 shadow-lg" data-bs-dismiss="modal" id="actionModalOK">
+                                        <i class="bi bi-check-circle-fill me-2"></i>OK
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
 
                 </tbody>
             </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= CLIENT INVOICE HISTORY MODAL (SIMPLE MODERN LIGHT THEME) ================= -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content border-0 shadow-lg rounded-3xl overflow-hidden" style="background: #ffffff; border: 1px solid #e2e8f0;">
+            
+            <!-- Clean Blue Header -->
+            <div class="modal-header bg-gradient-to-r from-[#3b82f6] to-[#1d4ed8] text-white p-4 border-0 shadow-lg">
+                <h4 class="modal-title fw-bold mb-0 d-flex align-items-center">
+                    <i class="bi bi-receipt me-3 fs-4"></i>
+                    Invoice History
+                    <span id="historyClientName" class="ms-2 px-3 py-1 bg-white/30 rounded-full fw-semibold text-blue-900 shadow-sm" style="font-size: 0.9rem;"></span>
+                </h4>
+                <button class="btn-close btn-close-white rounded-circle p-2 shadow-sm" type="button" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0">
+                <!-- Client Info Card -->
+                <div class="p-5 bg-gradient-to-r from-gray-50 to-blue-50 border-b" style="background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%); border-bottom: 1px solid #e2e8f0;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-1" id="historyClientFullName" style="font-size: 1.5rem; color: #1e293b; background: rgba(255,255,255,0.9); padding: 8px 16px; border-radius: 12px; display: inline-block;">Loading Client...</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge px-3 py-1 rounded-pill" id="historyClientEmail" style="background: #dbeafe; color: #1e40af; font-size: 0.9rem; border: 1px solid #93c5fd;">client@example.com</span>
+                                <span class="badge px-3 py-1 rounded-pill" id="historyClientAddress" style="background: #f3f4f6; color: #374151; font-size: 0.9rem; border: 1px solid #d1d5db;">Address</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="h4 fw-bold mb-0" id="historyInvoiceCount" style="color: #1d4ed8;">0 Invoices</div>
+                            <small style="color: #6b7280;">Total invoices for this client</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtle Glass Search -->
+                <div class="p-4" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                    <div class="row">
+                        <div class="col-12 col-md-8">
+                            <div class="position-relative">
+                                <input type="text" id="modalSearch" 
+                                       class="form-control form-control-lg shadow-sm border-0 ps-5" 
+                                       placeholder="Search invoices..." 
+                                       style="background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border-radius: 16px; padding: 14px 20px; font-weight: 500; border: 1px solid #e2e8f0;">
+                                <i class="bi bi-search position-absolute text-gray-500 fs-5" style="left: 20px; top: 50%; transform: translateY(-50%);"></i>
+                                <button id="modalSearchClear" class="position-absolute btn-close opacity-50" style="right: 20px; top: 50%; transform: translateY(-50%);"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clean Scrollable Table -->
+                <div class="table-responsive" style="max-height: 65vh;">
+                    <table class="table table-hover modern-history-table mb-0">
+                        <thead class="table-header-light sticky-top shadow-sm" style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                            <tr>
+                                <th class="ps-4 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Invoice</th>
+                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Date</th>
+                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Due</th>
+                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase text-end tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Amount</th>
+                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Status</th>
+                                <th class="pe-4 py-4 fw-semibold text-gray-600 small text-uppercase text-center tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Dynamic -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-gray-50 border-0 p-4" style="background: #f8fafc;">
+                <button class="btn btn-outline-gray rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="border: 1px solid #d1d5db; color: #64748b;">
+                    <i class="bi bi-x-lg me-1"></i>Close
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
 
 <!-- ================= VIEW MODAL ================= -->
-<div class="modal fade" id="viewModal" tabindex="-1">
+<div class="modal fade" id="viewModal" tabindex="-1">  
+
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
 
@@ -571,6 +798,61 @@ function renderAvatar($picture, $client_name)
 
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 <script>
+let actionModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+    actionModal = new bootstrap.Modal(
+        document.getElementById('actionModal')
+    );
+});
+
+function showActionModal(title, message, type = 'loading') {
+    const modalTitle = document.getElementById('actionModalTitle');
+    const modalTitle2 = document.getElementById('actionModalTitle2');
+    const modalMessage = document.getElementById('actionModalMessage');
+    const icon = document.getElementById('actionModalIcon');
+    const footer = document.getElementById('actionModalFooter');
+    const okBtn = document.getElementById('actionModalOK');
+
+    modalTitle.textContent = title;
+    modalTitle2.textContent = title;
+    modalMessage.textContent = message;
+
+    footer.classList.add('d-none');
+
+    if (type === 'loading') {
+        icon.innerHTML = `
+            <div class="spinner-border spinner-border-sm text-primary shadow-sm mb-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        `;
+    } else if (type === 'success') {
+        icon.innerHTML = `
+            <i class="bi bi-check-circle-fill text-success fs-1 mb-3" style="font-size: 4rem;"></i>
+        `;
+        okBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Done!';
+        okBtn.className = 'btn btn-lg btn-success px-5 shadow-lg';
+        footer.classList.remove('d-none');
+    } else if (type === 'error') {
+        icon.innerHTML = `
+            <i class="bi bi-x-circle-fill text-danger fs-1 mb-3" style="font-size: 4rem;"></i>
+        `;
+        okBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>OK';
+        okBtn.className = 'btn btn-lg btn-outline-danger px-5 shadow-lg';
+        footer.classList.remove('d-none');
+    }
+
+    actionModal.show();
+
+    // ✅ Auto-close success after 3 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            actionModal.hide();
+        }, 3000);
+    }
+}
+
+
 // Client-side search (fuzzy, instant, typo-tolerant)
 let allInvoices = <?= json_encode($invoices, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 let filteredInvoices = [...allInvoices];
@@ -851,77 +1133,165 @@ let currentInvoiceData = {};
         window.location.href = `payments_clients.php?action=delete&id=${id}`;
     }
 
-function openClientHistory(clientEmail, tab) {
-    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-    modal.show();
-    document.getElementById('historyClientName').textContent = clientEmail;
-    const tbody = document.getElementById('historyTableBody');
+let currentHistoryData = [];
 
+function openClientHistory(clientEmail, tab) {
+    console.log('Opening history for email:', clientEmail, 'tab:', tab);
+    
+    const historyModalEl = document.getElementById('historyModal');
+    if (!historyModalEl) {
+        alert('History modal not found. Page may need reload.');
+        return;
+    }
+    
+    // Reset search
+    document.getElementById('modalSearch').value = '';
+    document.getElementById('modalSearchClear').style.opacity = '0';
+    
+    const modal = new bootstrap.Modal(historyModalEl);
+    modal.show();
+    
+    // Reset client info to loading state
+    document.getElementById('historyClientFullName').textContent = 'Loading Client...';
+    document.getElementById('historyClientEmail').textContent = 'client@example.com';
+    document.getElementById('historyClientAddress').textContent = 'Address';
+    document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+    
+    const historyClientNameEl = document.getElementById('historyClientName');
+    if (historyClientNameEl) {
+        historyClientNameEl.textContent = clientEmail;
+    }
+    
+    const tbody = document.getElementById('historyTableBody');
     tbody.innerHTML = `
         <tr>
-            <td colspan="5" class="text-center">
-                <div class="spinner-border spinner-border-sm"></div>
-                Loading invoice history...
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-3 h5 text-muted">Loading invoice history...</div>
             </td>
         </tr>
     `;
+    
     fetch(
         'payments_clients.php?get_client_history=1' +
         '&email=' + encodeURIComponent(clientEmail) +
         '&tab=' + encodeURIComponent(tab)
     )
-
     .then(res => {
-        if (!res.ok) {
-            throw new Error('Network response was not ok (' + res.status + ')');
-        }
+        if (!res.ok) throw new Error('Network response was not ok (' + res.status + ')');
         return res.json();
     })
     .then(data => {
-
-        tbody.innerHTML = '';
-
-        if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted">
-                        No invoice history found for this client.
-                    </td>
-                </tr>
-            `;
-            return;
+        currentHistoryData = data;
+        
+        // Show client info (use first invoice data - all invoices have same client info)
+        if (data.length > 0) {
+            const firstInv = data[0];
+            document.getElementById('historyClientFullName').textContent = firstInv.client_name || 'Unknown Client';
+            document.getElementById('historyClientEmail').textContent = firstInv.client_email || 'No email';
+            document.getElementById('historyClientAddress').textContent = firstInv.client_address || 'No address';
+            document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
+        } else {
+            document.getElementById('historyClientFullName').textContent = 'No Client Data';
+            document.getElementById('historyClientEmail').textContent = clientEmail;
+            document.getElementById('historyClientAddress').textContent = 'N/A';
+            document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
         }
-
-        data.forEach(inv => {
-            tbody.insertAdjacentHTML('beforeend', `
+        
+        renderHistoryTable(data);
+        
+        // Setup search listener
+        const searchInput = document.getElementById('modalSearch');
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const filtered = currentHistoryData.filter(inv => 
+                inv.invoice_num.toLowerCase().includes(query) ||
+                inv.invoice_date?.toLowerCase().includes(query) ||
+                inv.total_amount.toString().includes(query) ||
+                inv.status?.toLowerCase().includes(query)
+            );
+            renderHistoryTable(filtered);
+        });
+        
+        // Clear search
+        document.getElementById('modalSearchClear').onclick = function() {
+            searchInput.value = '';
+            this.style.opacity = '0';
+            renderHistoryTable(currentHistoryData);
+        };
+        
+        searchInput.oninput = function() {
+            document.getElementById('modalSearchClear').style.opacity = this.value ? '1' : '0';
+        };
+    })
+    .catch(error => {
+        console.error('Error loading invoice history:', error);
+        tbody.innerHTML = `
             <tr>
-                <td>${inv.invoice_num}</td>
-
-                <td>${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH') : '-'}</td>
-
-                <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH') : '-'}</td>
-
-                <td>₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH')}</td>
-
-                <td>
-                    <span class="badge ${
-                        inv.status === 'Paid'
-                            ? 'bg-success'
-                            : (inv.status && inv.status.toLowerCase() === 'overdue')
-                            ? 'bg-danger'
-                            : 'bg-warning text-dark'
-                    }">
-                        ${inv.status || 'Pending'}
-                    </span>
+                <td colspan="6" class="text-center text-danger py-5">
+                    <i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>
+                    <div class="h5 fw-bold mb-1">Error loading history</div>
+                    <div class="text-muted">${error.message}</div>
+                    <small class="text-danger mt-2">Check console for details</small>
                 </td>
+            </tr>
+        `;
+    });
+}
 
-                <td>
-                    <div class="btn-group btn-group-sm">
+function renderHistoryTable(data) {
+    const tbody = document.getElementById('historyTableBody');
+    
+    if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 mb-3 opacity-50"></i>
+                    <div class="h5 fw-semibold mb-1">No invoices found</div>
+                    <div class="text-muted">No invoice history matches your search.</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-                        <!-- ✅ VIEW (OLD LIVE PREVIEW MODAL) -->
-                        <button class="btn btn-outline-info view-btn"
-                            data-bs-toggle="modal"
-                            data-bs-target="#viewModal"
+    tbody.innerHTML = '';
+    data.forEach(inv => {
+        const rowClass = inv.status === 'Paid' ? 'table-success-light' : 'table-pending-light';
+        
+        const statusIcon = inv.status === 'Paid' ? 'check-circle-fill' : 
+                          (inv.status?.toLowerCase() === 'overdue' ? 'exclamation-triangle-fill' : 'clock-fill');
+        const statusColor = inv.status === 'Paid' ? '#059669' : 
+                           (inv.status?.toLowerCase() === 'overdue' ? '#dc2626' : '#d97706');
+        
+        tbody.insertAdjacentHTML('beforeend', `
+        <tr class="${rowClass}">
+            <td class="fw-bold fs-4 lh-sm text-primary">
+                <div>#${escapeHtml(inv.invoice_num)}</div>
+                <small class="text-muted">${escapeHtml(inv.reference_no || 'N/A')}</small>
+            </td>
+            <td class="text-muted">
+                <div class="fw-semibold">${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'}) : '-'}</div>
+                <small>${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {weekday:'short'}) : ''}</small>
+            </td>
+            <td class="fw-semibold ${new Date(inv.due_date) < new Date() ? 'text-danger' : 'text-success'}">
+                ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'}) : '-'}
+            </td>
+            <td class="text-end">
+                <div class="h4 fw-bold text-gradient mb-1">₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</div>
+            </td>
+            <td class="text-center">
+                <span class="badge px-3 py-2 fs-6 fw-semibold status-badge rounded-pill" style="background: linear-gradient(135deg, ${statusColor}, ${statusColor}cc); color: white;">
+                    <i class="bi bi-${statusIcon} me-1"></i>
+                    ${inv.status || 'Pending'}
+                </span>
+            </td>
+            <td class="text-center">
+                <div class="action-buttons">
+                    <button class="btn-action btn-view shadow-lg me-1" 
+                            data-bs-toggle="modal" data-bs-target="#viewModal"
                             data-id="${inv.id}"
                             data-client="${escapeHtml(inv.client_name)}"
                             data-email="${escapeHtml(inv.client_email)}"
@@ -931,45 +1301,52 @@ function openClientHistory(clientEmail, tab) {
                             data-due="${inv.due_date}"
                             data-ref="${escapeHtml(inv.reference_no)}"
                             data-total="${parseFloat(inv.total_amount)}"
-                            data-applicants='${inv.applicants_data}'
-                            data-pdf="${escapeHtml(inv.pdf_filename)}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-
-                        <!-- ✅ EDIT (SAME AS OLD) -->
-                        <button class="btn btn-outline-warning"
-                            onclick="editInvoiceFromHistory(${inv.id})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-
-                        <!-- ✅ DELETE (SAME AS OLD) -->
-                        <button class="btn btn-outline-danger"
-                            onclick="softDeleteInvoice(${inv.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-
-                    </div>
-                </td>
-            </tr>
-            `);
-        });
-
-        // ✅ Attach live preview handler to newly added buttons
-        tbody.querySelectorAll('.view-btn').forEach(btn => {
+data-applicants='${JSON.stringify(JSON.parse(inv.applicants_data || '[]')).replace(/'/g, "&apos;")}'
+                            data-pdf="${escapeHtml(inv.pdf_filename)}"
+                            title="Preview">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                    ${inv.status !== 'Paid' ? `
+                    <button class="btn-action btn-resend shadow-lg me-1" data-id="${inv.id}" title="Resend Email">
+                        <i class="bi bi-send-fill"></i>
+                    </button>` : ''}
+                    <button class="btn-action btn-edit shadow-lg me-1" onclick="editInvoiceFromHistory(${inv.id})" title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn-action btn-delete shadow-lg" onclick="softDeleteInvoice(${inv.id})" title="Delete">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        `);
+    });
+    
+    // Re-attach event listeners for dynamic view buttons
+    tbody.querySelectorAll('.btn-action').forEach(btn => {
+        if (btn.matches('.btn-view')) {
             btn.addEventListener('click', viewInvoiceHandler);
-        });
-
-    })
-    .catch(error => {
-        console.error('Error loading invoice history:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-danger">
-                    Error loading invoice history. Check console for details.
-                </td>
-            </tr>
-        `;
-    })
+        }
+    });
+    
+    // Attach resend event listeners
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-resend')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = e.target.closest('.btn-resend');
+            const id = parseInt(btn.dataset.id);
+            resendInvoiceEmail(id);
+        }
+    });
+    
+    // Global event delegation for view buttons (handles dynamic content)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-action.btn-view')) {
+            e.preventDefault();
+            viewInvoiceHandler.call(e.target.closest('.btn-action'));
+        }
+    });
 }
 
 function viewInvoiceFromHistory(id) {
@@ -981,38 +1358,45 @@ function editInvoiceFromHistory(id) {
     window.location.href = 'payment_invoice_edit.php?id=' + id;
 }
 
+
+function resendInvoiceEmail(invoiceId) {
+    // ✅ Show CONFIRMATION first
+    if (confirm('Resend invoice email to client? This will send the same invoice again.')) {
+        showActionModal(
+            'Resending Invoice',
+            'Sending invoice email to client... Please wait.',
+            'loading'
+        );
+
+        fetch('payments_clients.php?resend_invoice_email=1&id=' + invoiceId)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showActionModal(
+                        '✅ Email Sent Successfully!',
+                        data.message || 'Invoice resent successfully to client.',
+                        'success'
+                    );
+                } else {
+                    throw new Error(data.message || 'Failed to send email');
+                }
+            })
+            .catch(error => {
+                console.error('Resend error:', error);
+                showActionModal(
+                    '❌ Failed to Send Email',
+                    error.message || 'Failed to send invoice email. Please try again.',
+                    'error'
+                );
+            });
+    }
+}
+
 </script>
 
-<!-- ================= CLIENT INVOICE HISTORY MODAL ================= -->
-<div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
 
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">
-                    📜 Invoice History — <span id="historyClientName"></span>
-                </h5>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Invoice #</th>
-                            <th>Invoice Date</th>
-                            <th>Due Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody"></tbody>
-                </table>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 <?php include '../includes/footer.php'; ?>
