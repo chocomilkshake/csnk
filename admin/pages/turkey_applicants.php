@@ -59,6 +59,7 @@ require_once $ADMIN_ROOT . '/includes/smc_filter_bar.php';
 
 $buScope = null;
 
+
 $filterState = smc_filter_boot([
     'base_url' => 'turkey_applicants.php',
     'session_ns' => 'smc_tr_applicants',
@@ -72,9 +73,28 @@ $status = $filters['status'] ?? 'all';
 $country = $filters['countryId'] ?? 'all';
 $q = $filterState['q'];
 $preserveQS = $filterState['preserveQS'];
+$preserveQSWithQuestion = $filterState['preserveQSWithQuestion'];
+
+// Export URL includes filters (matching other turkey_*.php pages)
+$exportParams = [];
+if ($q !== '')
+    $exportParams['q'] = $q;
+if ($status !== 'all')
+    $exportParams['status'] = $status;
+if ($country !== 'all')
+    $exportParams['country'] = $country;
+$exportUrl = '../includes/excel_turkey_applicants.php?' . http_build_query($exportParams);
 
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $pageSize = 25;
+
+// Handle export (legacy ?export=1 support)
+if (isset($_GET['export']) && $_GET['export'] === '1') {
+    redirect($exportUrl);
+    exit;
+}
+
+
 
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int) $_GET['id'];
@@ -148,6 +168,7 @@ $totalApplicants = $applicant->getApplicantsCount(
 
 $totalPages = ceil($totalApplicants / $pageSize);
 
+
 function renderPreferredLocation(?string $json, int $maxLen = 30): string
 {
     if (empty($json))
@@ -167,140 +188,137 @@ function renderPreferredLocation(?string $json, int $maxLen = 30): string
     return $full;
 }
 
+
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0 fw-semibold">List of SMC Applicants</h4>
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h4 class="mb-0 fw-semibold">List of SMC Applicants</h4>
+    </div>
+    <div>
+        <a href="<?php echo htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+        </a>
+        <a href="../pages/add-applicant.php?business_unit_id=<?php echo (int) $smcBuId . $preserveQSWithQuestion; ?>"
+            class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Add New Applicant
+        </a>
+    </div>
 </div>
 
 <?php smc_filter_render($filterState); ?>
 
+
 <div class="container-fluid px-2">
     <div class="row align-items-center justify-content-between page-header-row mb-3">
 
-        <div class="row mb-2">
-            <div class="col-12 d-flex justify-content-end">
-                <form method="get" action="turkey_applicants.php" class="d-flex" role="search"
-                    style="max-width: 460px; width: 100%;">
-                    <div class="input-group">
-                        <input type="text" name="q" class="form-control" placeholder="Search applicants..."
-                            value="<?php echo h($q); ?>" autocomplete="off">
-                        <input type="hidden" name="status" value="<?php echo h($filterState['status']); ?>">
-                        <button class="btn btn-outline-secondary" type="submit" title="Search"><i
-                                class="bi bi-search"></i></button>
-                        <?php if ($q !== ''): ?>
-                            <a class="btn btn-outline-secondary"
-                                href="turkey_applicants.php?clear=1<?php echo $filterState['preserveQS']; ?>"
-                                title="Clear search"><i class="bi bi-x-lg"></i></a>
-                        <?php endif; ?>
-                    </div>
-                </form>
-            </div>
 
-            <div class="card table-card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-hover table-styled mb-0"
-                            id="applicantsTable">
-                            <thead>
+        <!-- Search form intentionally kept after smc_filter_render() for layout match -->
+
+
+        <div class="card table-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-styled mb-0"
+                        id="applicantsTable">
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Date Applied</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($applicants)): ?>
                                 <tr>
-                                    <th>Photo</th>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Email</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Date Applied</th>
-                                    <th>Actions</th>
+                                    <td colspan="8" class="text-center text-muted py-5">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                        <?php if ($q === ''): ?>
+                                            No applicants found.
+                                        <?php else: ?>
+                                            No results for "<strong><?php echo h($q); ?></strong>".
+                                            <a href="turkey_applicants.php?clear=1<?php echo $filterState['preserveQS']; ?>"
+                                                class="ms-2">Clear search</a>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($applicants)): ?>
+                            <?php else: ?>
+                                <?php foreach ($applicants as $app): ?>
+                                    <?php
+                                    $currentStatus = (string) ($app['status'] ?? '');
+                                    $params = [];
+                                    if ($q !== '')
+                                        $params['q'] = $q;
+                                    if ($status !== 'all')
+                                        $params['status'] = $status;
+                                    $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
+                                    $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
+                                    $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
+                                    $delUrl = 'turkey_applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
+                                    $appBuId = (int) ($app['business_unit_id'] ?? 0);
+
+                                    $canEdit = false;
+                                    if ($isSuperAdmin || $isAdmin) {
+                                        $canEdit = true;
+                                    } elseif ($isEmployee) {
+                                        $canEdit = true;
+                                    }
+
+                                    $statusColors = ['pending' => 'warning', 'on_process' => 'info', 'approved' => 'success', 'deleted' => 'secondary'];
+                                    $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
+                                    ?>
                                     <tr>
-                                        <td colspan="8" class="text-center text-muted py-5">
-                                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                                            <?php if ($q === ''): ?>
-                                                No applicants found.
+                                        <td>
+                                            <?php if (!empty($app['picture'])): ?>
+                                                <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo" class="rounded"
+                                                    width="50" height="50" style="object-fit: cover;">
                                             <?php else: ?>
-                                                No results for "<strong><?php echo h($q); ?></strong>".
-                                                <a href="turkey_applicants.php?clear=1<?php echo $filterState['preserveQS']; ?>"
-                                                    class="ms-2">Clear search</a>
+                                                <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
+                                                    style="width: 50px; height: 50px;">
+                                                    <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
+                                                </div>
                                             <?php endif; ?>
                                         </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($applicants as $app): ?>
-                                        <?php
-                                        $currentStatus = (string) ($app['status'] ?? '');
-                                        $params = [];
-                                        if ($q !== '')
-                                            $params['q'] = $q;
-                                        if ($status !== 'all')
-                                            $params['status'] = $status;
-                                        $tail = !empty($params) ? ('&' . http_build_query($params)) : '';
-                                        $viewUrl = 'view-applicant.php?id=' . (int) $app['id'] . $tail;
-                                        $editUrl = 'edit-applicant.php?id=' . (int) $app['id'] . $tail;
-                                        $delUrl = 'turkey_applicants.php?action=delete&id=' . (int) $app['id'] . $tail;
-                                        $appBuId = (int) ($app['business_unit_id'] ?? 0);
-
-                                        $canEdit = false;
-                                        if ($isSuperAdmin || $isAdmin) {
-                                            $canEdit = true;
-                                        } elseif ($isEmployee) {
-                                            $canEdit = true;
-                                        }
-
-                                        $statusColors = ['pending' => 'warning', 'on_process' => 'info', 'approved' => 'success', 'deleted' => 'secondary'];
-                                        $badgeColor = $statusColors[$currentStatus] ?? 'secondary';
-                                        ?>
-                                        <tr>
-                                            <td>
-                                                <?php if (!empty($app['picture'])): ?>
-                                                    <img src="<?php echo h(getFileUrl($app['picture'])); ?>" alt="Photo"
-                                                        class="rounded" width="50" height="50" style="object-fit: cover;">
-                                                <?php else: ?>
-                                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center"
-                                                        style="width: 50px; height: 50px;">
-                                                        <?php echo strtoupper(substr($app['first_name'] ?? '', 0, 1)); ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
-                                            </td>
-                                            <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
-                                            <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
-                                            <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?>
-                                            </td>
-                                            <td><span
-                                                    class="badge bg-<?php echo $badgeColor; ?>"><?php echo h(ucfirst(str_replace('_', ' ', $currentStatus))); ?></span>
-                                            </td>
-                                            <td><?php echo h(formatDate($app['created_at'])); ?></td>
-                                            <td>
-                                                <div class="btn-group">
-                                                    <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info"
-                                                        title="View"><i class="bi bi-eye"></i></a>
-                                                    <?php if ($canEdit): ?>
-                                                        <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning"
-                                                            title="Edit"><i class="bi bi-pencil"></i></a>
-                                                        <?php if ($currentStatus === 'pending'): ?>
-                                                            <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger"
-                                                                title="Delete"
-                                                                onclick="return confirm('Are you sure you want to delete this applicant?');"><i
-                                                                    class="bi bi-trash"></i></a>
-                                                        <?php endif; ?>
-                                                    <?php else: ?>
-                                                        <a href="#" class="btn btn-sm btn-secondary" title="Edit"
-                                                            onclick="alert('You do not have access to edit applicants from another country.'); return false;"><i
-                                                                class="bi bi-pencil"></i></a>
+                                        <td><strong><?php echo h(getFullName($app['first_name'], $app['middle_name'], $app['last_name'], $app['suffix'])); ?></strong>
+                                        </td>
+                                        <td><?php echo h($app['phone_number'] ?? '—'); ?></td>
+                                        <td><?php echo h($app['email'] ?? 'N/A'); ?></td>
+                                        <td><?php echo h(renderPreferredLocation($app['preferred_location'] ?? null)); ?>
+                                        </td>
+                                        <td><span
+                                                class="badge bg-<?php echo $badgeColor; ?>"><?php echo h(ucfirst(str_replace('_', ' ', $currentStatus))); ?></span>
+                                        </td>
+                                        <td><?php echo h(formatDate($app['created_at'])); ?></td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="<?php echo h($viewUrl); ?>" class="btn btn-sm btn-info" title="View"><i
+                                                        class="bi bi-eye"></i></a>
+                                                <?php if ($canEdit): ?>
+                                                    <a href="<?php echo h($editUrl); ?>" class="btn btn-sm btn-warning"
+                                                        title="Edit"><i class="bi bi-pencil"></i></a>
+                                                    <?php if ($currentStatus === 'pending'): ?>
+                                                        <a href="<?php echo h($delUrl); ?>" class="btn btn-sm btn-danger" title="Delete"
+                                                            onclick="return confirm('Are you sure you want to delete this applicant?');"><i
+                                                                class="bi bi-trash"></i></a>
                                                     <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                                <?php else: ?>
+                                                    <a href="#" class="btn btn-sm btn-secondary" title="Edit"
+                                                        onclick="alert('You do not have access to edit applicants from another country.'); return false;"><i
+                                                            class="bi bi-pencil"></i></a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
+            <?php require_once $ADMIN_ROOT . '/includes/footer.php'; ?>
