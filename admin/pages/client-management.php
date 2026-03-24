@@ -224,16 +224,32 @@ function safe(?string $s): string
       <table class="w-full">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Client</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">Applicant</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80">Contact</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Appointment
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              Client</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              Applicant</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80 border-r border-gray-300">
+              Contact</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              Appointment
             </th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Status</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Business Unit
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              Status</th>
+            <th
+              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64 border-r border-gray-300">
+              Business Unit
             </th>
-            <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Booked</th>
-            <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Action</th>
+            <th
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48 border-r border-gray-300">
+              Booked</th>
+            <th
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32 border-r border-gray-300">
+              Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -279,29 +295,31 @@ function safe(?string $s): string
             };
             ?>
             <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <div class="font-semibold text-gray-900"><?= safe($clientFullName) ?></div>
                 <div class="text-sm text-gray-600 mt-1"><?= safe($booking['client_address'] ?? '—') ?></div>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <a href="<?= safe($viewApplicantUrl) ?>"
                   class="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                   <?= safe($applicantFullName) ?>
                 </a>
                 <div class="text-sm text-gray-600">ID: <?= (int) ($booking['applicant_id'] ?? 0) ?></div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-700"><?= safe($clientContact) ?></td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200"><?= safe($clientContact) ?></td>
+              <td class="px-6 py-4 border-r border-gray-200">
                 <span
                   class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full"><?= safe($booking['appointment_type'] ?? '—') ?></span>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 border-r border-gray-200">
                 <span
                   class="px-3 py-1 <?= $statusBg ?> text-sm font-medium rounded-full"><?= ucfirst(str_replace('_', ' ', $status)) ?></span>
               </td>
-              <td class="px-6 py-4 text-sm font-medium"><?= safe($booking['business_unit_name'] ?? '—') ?></td>
-              <td class="px-6 py-4 text-center text-sm text-gray-600"><?= safe($bookedDate) ?></td>
-              <td class="px-6 py-4 text-center">
+              <td class="px-6 py-4 text-sm font-medium border-r border-gray-200">
+                <?= safe($booking['business_unit_name'] ?? '—') ?>
+              </td>
+              <td class="px-6 py-4 text-center text-sm text-gray-600 border-r border-gray-200"><?= safe($bookedDate) ?></td>
+              <td class="px-6 py-4 text-center border-r border-gray-200">
                 <a href="client-profile.php?id=<?= (int) ($booking['booking_id'] ?? 0) ?>"
                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
                   <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
