@@ -142,21 +142,21 @@ function safe(?string $s): string
 
 
   <a href="client-management.php"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'all' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'all' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     All <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'all' ? 'bg-white text-blue-900' : 'text-gray-600'; ?>"><?= $statusCounts['total'] ?></span>
 
   </a>
   <a href="?status=on_process"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'on_process' ? 'bg-cyan-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'on_process' ? 'bg-cyan-500 text-white ' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     On Process <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'on_process' ? 'bg-white text-cyan-900' : 'text-gray-600'; ?>"><?= $statusCounts['on_process'] ?></span>
 
   </a>
   <a href="?status=approved"
-    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'approved' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
+    class="px-6 py-3 rounded-lg font-semibold text-sm <?= $applicantStatus === 'approved' ? 'bg-emerald-500 text-white ' : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900'; ?>">
 
     Approved <span
       class="ml-2 px-3 py-1.5 bg-white/60 rounded-lg text-sm font-bold <?= $applicantStatus === 'approved' ? 'bg-white text-emerald-900' : 'text-gray-600'; ?>"><?= $statusCounts['approved'] ?></span>
@@ -165,7 +165,7 @@ function safe(?string $s): string
 </div>
 
 <!-- Search Form -->
-<form method="GET" action="" class="bg-white shadow-md rounded-xl p-6 mb-8">
+<form method="GET" action="" class="bg-white rounded-xl p-6 mb-8">
   <?php if (!empty($applicantStatus) && $applicantStatus !== 'all'): ?>
     <input type="hidden" name="status" value="<?= safe($applicantStatus) ?>">
   <?php endif; ?>
@@ -207,7 +207,7 @@ function safe(?string $s): string
 </form>
 
 <!-- Table -->
-<div class="bg-white shadow-lg rounded-xl overflow-hidden max-w-none">
+<div class="bg-white  rounded-xl overflow-hidden max-w-none">
   <?php if (empty($clientBookings)): ?>
     <div class="text-center py-16">
       <svg class="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
