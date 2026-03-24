@@ -229,7 +229,7 @@ function safe(?string $s): string
             <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80">Contact</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Appointment
             </th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">Status</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56">Status</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Business Unit
             </th>
             <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Booked</th>
