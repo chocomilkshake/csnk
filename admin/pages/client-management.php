@@ -138,7 +138,7 @@ function safe(?string $s): string
 </div>
 
 <!-- Filter Tabs -->
-<div class="flex justify-end bg-gray-100 rounded-xl p-2 mb-8 gap-2">
+<div class="flex justify-end border-b border-gray-200 mb-6 gap-4">
 
 
   <a href="client-management.php"
