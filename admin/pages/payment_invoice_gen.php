@@ -1,10 +1,23 @@
 <?php
-session_start();
-
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/invoice_mailer.php';
 require_once __DIR__ . '/../../lib/invlib/invoicr.php';
+
+// Prevent clickjacking + cross-origin iframe errors
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: frame-ancestors 'self'");
+
+// Normalize URL path to avoid malformed //csnk paths
+$reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+if (strpos($reqPath, '//') !== false) {
+    $cleanPath = preg_replace('#/+#', '/', $reqPath);
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    header('Location: ' . $scheme . '://' . $host . $cleanPath);
+    exit;
+}
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -18,11 +31,53 @@ $invoice_num = 'CSNK-' . date('m-d-Y') . '-' . rand(100, 999);
 
 $download_link = '';
 
-
-
 $client_email   = trim($_POST['client_email'] ?? '');
 $client_address = trim($_POST['client_address'] ?? '');
 $due_date       = $_POST['due_date'] ?? '';
+
+
+function createXenditInvoice(array $data)
+{
+    $url = XENDIT_API_URL . '/v2/invoices';
+
+    $payload = json_encode([
+        'external_id'  => $data['reference_no'],
+        'amount'       => $data['amount'],
+        'payer_email'  => $data['email'],
+        'description'  => $data['description'],
+        'currency'     => 'PHP',
+        'success_redirect_url' => APP_URL . '../payments_success.php',
+        'failure_redirect_url' => APP_URL . '/payments_failed.php',
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Basic ' . base64_encode(XENDIT_SECRET_KEY . ':'),
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if ($response === false) {
+        throw new Exception('Xendit CURL Error: ' . curl_error($ch));
+    }
+
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+
+    if ($httpCode >= 400) {
+        throw new Exception('Xendit API Error: ' . ($result['message'] ?? 'Unknown error'));
+    }
+
+    return $result;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
 
@@ -46,22 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
     if ($business_unit_id <= 0) {
         setFlashMessage('error', 'Please select an agency before generating invoice.');
-        header('Location: payment_invoice_gen.php');
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
 
     // ✅ existing validation
     if (!$client_name || empty($_POST['applicants'])) {
         setFlashMessage('error', 'Missing invoice details.');
-        header('Location: payment_invoice_gen.php');
-        exit;
-    }
-
-    // PDF generation continues here...
-
-    if (!$client_name || empty($_POST['applicants'])) {
-        setFlashMessage('error', 'Missing invoice details.');
-        header('Location: payment_invoice_gen.php');
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
 
@@ -118,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
     if ($total <= 0) {
         setFlashMessage('error', 'Invoice has no valid items.');
-        header('Location: payment_invoice_gen.php');
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
 
@@ -138,12 +185,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     $filepath = $dir . $filename;
 
     $invoicr->outputPDF(3, $filepath);
-
     if (!file_exists($filepath)) {
         setFlashMessage('error', 'PDF generation failed.');
-    } else {
-        // Save to invoice_history
-        $cleanApplicants = [];
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
+        exit;
+    }
+
+    // ✅ PDF exists → continue saving invoice
+    $cleanApplicants = [];
 
         foreach ($_POST['applicants'] as $app) {
 
@@ -196,19 +245,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             $filename,
             $company_type
         );
-        $stmt->execute();
+        $stmt->execute(); // ✅ save invoice FIRST
+        // ✅ CREATE XENDIT INVOICE
+        try {
+            $xenditInvoice = createXenditInvoice([
+                'reference_no' => $reference_no,
+                'amount'       => $total,
+                'email'        => $client_email,
+                'description'  => "Invoice {$invoice_num} - {$client_name}",
+            ]);
 
-        setFlashMessage('success', '✅ Invoice generated successfully and saved to history. <a href="../../uploads/invoices/' . $filename . '" target="_blank" download="' . $filename . '" class="alert-link">Download PDF</a>');
+            $xendit_invoice_id = $xenditInvoice['id'];
+            $payment_link      = $xenditInvoice['invoice_url'];
+
+            // ✅ UPDATE invoice_history WITH XENDIT DATA
+            $upd = $conn->prepare("
+                UPDATE invoice_history
+                SET xendit_invoice_id = ?,
+                    payment_link = ?,
+                    payment_status = 'Pending'
+                WHERE invoice_num = ?
+            ");
+            $upd->bind_param("sss", $xendit_invoice_id, $payment_link, $invoice_num);
+            $upd->execute();
+
+        } catch (Exception $e) {
+            setFlashMessage(
+                'warning',
+                'Invoice saved but Xendit invoice creation failed: ' . $e->getMessage()
+            );
+        }
+
+        // ✅ send email AFTER DB insert
+        if (filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+            $emailSent = sendInvoiceEmail(
+                $client_email,
+                $client_name,
+                $invoice_num,
+                $filepath,
+                $company_type,
+                $payment_link ?? null
+            );
+
+            if ($emailSent) {
+                setFlashMessage(
+                    'success',
+                    '✅ Invoice generated, saved, and emailed to the client successfully.'
+                );
+            }
+        } else {
+            setFlashMessage(
+                'warning',
+                '⚠️ Invoice generated and saved, but client email is invalid.'
+            );
+        }
+
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
+        exit;
     }
-
-    header('Location: payment_invoice_gen.php');
-    exit;
-}
-
-if (!$conn) die('Database connection failed.');
-
-$invoice_date = date('Y-m-d');
-$reference_no = 'REF-' . date('Ymd') . '-' . str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
 
 /* ================= FETCH CLIENTS ================= */
 $clients = [];
