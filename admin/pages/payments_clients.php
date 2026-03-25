@@ -1497,6 +1497,26 @@ function renderAvatar($picture, $client_name)
             style="transition:.15s;"
             onmouseover="this.style.background='#f8fafc'"
             onmouseout="this.style.background='transparent'">
+
+        <!-- INVOICE -->
+        <td class="ps-5">
+            <div class="fw-semibold" style="color:#2563eb;">
+            <div class="d-inline-flex gap-2">
+
+        <button class="btn btn-sm view-btn"
+                title="Preview"
+                data-id="${inv.id}"
+                data-invoice="${escapeHtml(inv.invoice_num)}"
+                data-date="${inv.invoice_date}"
+                data-due="${inv.due_date}"
+                data-total="${inv.total_amount}"
+                data-ref="${escapeHtml(inv.reference_no)}"
+                data-client="${escapeHtml(inv.client_name)}"
+                data-email="${escapeHtml(inv.client_email)}"
+                data-address="${escapeHtml(inv.client_address)}"
+                data-pdf="${escapeHtml(inv.pdf_filename)}"
+                data-bs-toggle="modal"
+                data-bs-target="#viewModal">
             <i class="bi bi-eye"></i>
         </button>
 
