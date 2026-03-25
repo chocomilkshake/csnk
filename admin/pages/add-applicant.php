@@ -12,15 +12,22 @@ $errors = [];
 
 // Get current user's BU (Business Unit/Country)
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$currentBranchId = (int) ($_SESSION['current_branch_id'] ?? 0);
 $allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+$userAgency = strtolower((string) ($_SESSION['agency'] ?? ''));
 
 // Get business units (countries) for dropdown
-// Show ALL active countries from database (not filtered by user's allowed BUs)
 $businessUnits = $applicant->getAllBusinessUnits(true);
 
 // If employee, force their BU as the only option
 $isEmployee = ($currentRole === 'employee');
 $isAdminUser = ($isAdmin || $isSuperAdmin);
+
+if ($isEmployee && $currentBuId > 0) {
+    $businessUnits = array_values(array_filter($businessUnits, static function (array $bu) use ($currentBuId): bool {
+        return (int) ($bu['id'] ?? 0) === $currentBuId;
+    }));
+}
 
 
 /**
@@ -234,6 +241,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get business_unit_id from POST (admin can select country) or fallback to current user's session
     $dataBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+    $postedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null;
+
+    if ($isEmployee) {
+        $dataBuId = $currentBuId > 0 ? $currentBuId : $dataBuId;
+        $postedBranchId = ($userAgency === 'csnk' && $currentBranchId > 0) ? $currentBranchId : null;
+    }
 
     // Validate business_unit_id belongs to allowed BUs if user has restrictions
     // Super admins can add applicants to ANY business unit, so skip this validation for them
@@ -270,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => $status,
             'created_by' => $_SESSION['admin_id'],
             'business_unit_id' => $dataBuId,
-            'branch_id' => isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null
+            'branch_id' => $postedBranchId
         ];
 
         $applicantId = $applicant->create($data);
@@ -680,7 +693,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php
                                 $id = (int) $bu['id'];
                                 $label = htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8');
-                                $selected = $currentBuId === $id ? 'selected' : '';
+                                $selectedBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+                                $selected = $selectedBuId === $id ? 'selected' : '';
                                 ?>
                                 <option value="<?= $id ?>" <?= $selected ?>><?= $label ?></option>
                             <?php endforeach; ?>
@@ -696,6 +710,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php
                         // Get branches for CSNK only
                         $branches = $applicant->getAllBranches(true);
+                        if ($isEmployee && $userAgency === 'csnk' && $currentBranchId > 0) {
+                            $branches = array_values(array_filter($branches, static function (array $branch) use ($currentBranchId): bool {
+                                return (int) ($branch['id'] ?? 0) === $currentBranchId;
+                            }));
+                        }
+                        $selectedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : $currentBranchId;
                         if (!empty($branches)):
                             foreach ($branches as $branch):
                                 $branchId = (int) $branch['id'];
@@ -703,7 +723,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $branchCode = htmlspecialchars($branch['code'], ENT_QUOTES, 'UTF-8');
                                 $isDefault = (int) $branch['is_default'] === 1;
                                 ?>
-                                <option value="<?= $branchId ?>" <?= $isDefault ? 'data-default="1"' : '' ?>>
+                                <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?> <?= $isDefault ? 'data-default="1"' : '' ?>>
                                     <?= $branchName ?> (<?= $branchCode ?>)
                                 </option>
                                 <?php
