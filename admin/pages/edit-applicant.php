@@ -11,11 +11,19 @@ $errors = [];
 
 // Get current user's BU (Business Unit/Country)
 $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+$sessionBranchId = (int) ($_SESSION['current_branch_id'] ?? 0);
 $allowedBuIds = $_SESSION['allowed_bu_ids'] ?? [];
+$userAgency = strtolower((string) ($_SESSION['agency'] ?? ''));
 
 // Get business units (countries) for dropdown
-// Show ALL active countries from database (not filtered by user's allowed BUs)
 $businessUnits = $applicant->getAllBusinessUnits(true);
+$isEmployee = ($currentRole === 'employee');
+
+if ($isEmployee && $currentBuId > 0) {
+    $businessUnits = array_values(array_filter($businessUnits, static function (array $bu) use ($currentBuId): bool {
+        return (int) ($bu['id'] ?? 0) === $currentBuId;
+    }));
+}
 
 /* ------------------------------ Search Context ------------------------------ */
 $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
@@ -374,6 +382,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get business_unit_id from POST
     $businessUnitId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+    $postedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null;
+
+    if ($isEmployee) {
+        $businessUnitId = $currentBuId > 0 ? $currentBuId : $businessUnitId;
+        $postedBranchId = ($userAgency === 'csnk' && $sessionBranchId > 0) ? $sessionBranchId : null;
+    }
 
     if (empty($errors)) {
         $data = [
@@ -398,7 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'education_level' => $educationLevel,
             'years_experience' => $yearsExperience,
             'business_unit_id' => $businessUnitId,
-            'branch_id' => isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null,
+            'branch_id' => $postedBranchId,
         ];
 
         $ok = $applicant->update($id, $data);
@@ -889,7 +903,8 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                         <select class="form-select" name="business_unit_id" required>
                             <option value="">Select Country...</option>
                             <?php foreach ($businessUnits as $bu): ?>
-                                <option value="<?= (int) $bu['id'] ?>" <?= ($currentBuId == (int) $bu['id']) ? 'selected' : '' ?>>
+                                <?php $selectedBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : (int) ($applicantData['business_unit_id'] ?? $currentBuId); ?>
+                                <option value="<?= (int) $bu['id'] ?>" <?= ($selectedBuId === (int) $bu['id']) ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($bu['label'], ENT_QUOTES, 'UTF-8') ?>
                                 </option>
                             <?php endforeach; ?>
@@ -901,7 +916,13 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                 <?php
                 // Get branches for CSNK
                 $branches = $applicant->getAllBranches(true);
+                if ($isEmployee && $userAgency === 'csnk' && $sessionBranchId > 0) {
+                    $branches = array_values(array_filter($branches, static function (array $branch) use ($sessionBranchId): bool {
+                        return (int) ($branch['id'] ?? 0) === $sessionBranchId;
+                    }));
+                }
                 $currentBranchId = isset($applicantData['branch_id']) ? (int) $applicantData['branch_id'] : null;
+                $selectedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : $currentBranchId;
                 ?>
                 <div class="col-md-4">
                     <label class="form-label">Branch <small class="text-muted">(CSNK only)</small>
@@ -913,7 +934,7 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
                                     $branchId = (int) $branch['id'];
                                     $branchName = htmlspecialchars($branch['name'], ENT_QUOTES, 'UTF-8');
                                     $branchCode = htmlspecialchars($branch['code'], ENT_QUOTES, 'UTF-8');
-                                    $selected = $currentBranchId === $branchId ? 'selected' : '';
+                                    $selected = $selectedBranchId === $branchId ? 'selected' : '';
                                     ?>
                                     <option value="<?= $branchId ?>" <?= $selected ?>>
                                         <?= $branchName ?> (<?= $branchCode ?>)
