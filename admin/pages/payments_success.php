@@ -1,85 +1,102 @@
 <?php
-require_once __DIR__ . '/includes/config.php';
+// payments_success.php
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Payment Successful</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Payment Successful</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap (already used in your system) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- ✅ CORRECT BOOTSTRAP LOADING -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #e8f5e9, #f1f8ff);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Segoe UI", Arial, sans-serif;
-        }
-        .success-card {
-            background: #ffffff;
-            border-radius: 18px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.12);
-            padding: 50px 40px;
-            max-width: 520px;
-            width: 100%;
-            text-align: center;
-        }
-        .success-icon {
-            font-size: 64px;
-            color: #198754;
-            margin-bottom: 15px;
-        }
-        .success-title {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .success-text {
-            color: #555;
-            font-size: 15px;
-            margin-bottom: 30px;
-        }
-        .btn-back {
-            padding: 12px 26px;
-            font-weight: 600;
-            border-radius: 10px;
-        }
-        .small-note {
-            margin-top: 25px;
-            font-size: 12px;
-            color: #888;
-        }
-    </style>
+<style>
+:root {
+  --success: #22c55e;
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --muted: #64748b;
+}
+
+body {
+  background: radial-gradient(circle at top, #eef2ff, var(--bg));
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+.payment-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px 42px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.12);
+  text-align: center;
+}
+
+.status-icon {
+  width: 84px;
+  height: 84px;
+  background: var(--success);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 24px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+p {
+  color: var(--muted);
+  font-size: .95rem;
+}
+
+.footer-note {
+  margin-top: 20px;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.close-btn {
+  margin-top: 28px;
+  padding: 10px 28px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  font-weight: 600;
+}
+</style>
 </head>
+
 <body>
 
-<div class="success-card">
-    <div class="success-icon">✅</div>
+<div class="payment-card">
+  <div class="status-icon">✓</div>
 
-    <div class="success-title">
-        Payment Successful
-    </div>
+  <h1>Payment Successful</h1>
+  <p class="mt-2">
+    Thank you. Your payment has been received successfully.
+  </p>
 
-    <p class="success-text">
-        Thank you! Your payment has been received and processed successfully.<br>
-        You may now close this page.
-    </p>
+  <div class="footer-note">
+    No further action is required.<br>
+    You may safely close this page.
+  </div>
 
-    <div class="d-grid gap-2">
-        <a href="<?= APP_URL ?>/pages/payments_clients.php"
-           class="btn btn-success btn-back">
-            Back to Admin Dashboard
-        </a>
-    </div>
-
-    <div class="small-note">
-        This page is shown after successful payment confirmation.
-    </div>
+  <button class="close-btn" onclick="window.close()">
+    Close this page
+  </button>
 </div>
 
 </body>
