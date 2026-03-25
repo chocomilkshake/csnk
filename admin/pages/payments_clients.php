@@ -1556,6 +1556,25 @@ function renderHistoryTable(data, bookingId) {
                 if (hasPending && a.payment_status !== b.payment_status) {
                     return a.payment_status === 'Paid' ? 1 : -1;
                 }
+client_address || '')}"
+                                    data-pdf="${escapeHtml(inv.pdf_filename || '')}"
+                                    data-bs-toggle="modal" data-bs-target="#viewModal">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                ${inv.status !== 'Paid' ? `
+                                <button class="btn btn-sm btn-resend border rounded p-1" title="Resend Email"
+                                    data-id="${inv.id}">
+                                    <i class="bi bi-send"></i>
+                                </button>` : ''}
+                                <a href="payment_invoice_gen.php?edit=${inv.id}&booking_id=${bookingId}" 
+                                   class="btn btn-sm border rounded p-1 text-primary text-decoration-none" title="Edit"
+                                   target="_blank">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-delete border rounded p-1" title="Delete"
+                                    data-id="${inv.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
