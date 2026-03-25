@@ -90,6 +90,12 @@ function getSpecializationOptions()
         'Childcare and Maternity (Yaya)',
         'Elderly and Special Care (Caregiver)',
         'Pet and Outdoor Maintenance',
+        'Driver',
+        'Electrician',
+        'Plumber',
+        'Welder',
+        'Automotive technician',
+        'Carpenter',
     ];
 }
 
@@ -723,7 +729,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $branchCode = htmlspecialchars($branch['code'], ENT_QUOTES, 'UTF-8');
                                 $isDefault = (int) $branch['is_default'] === 1;
                                 ?>
-                                <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?> <?= $isDefault ? 'data-default="1"' : '' ?>>
+                                <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?>
+                                    <?= $isDefault ? 'data-default="1"' : '' ?>>
                                     <?= $branchName ?> (<?= $branchCode ?>)
                                 </option>
                                 <?php
