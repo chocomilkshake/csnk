@@ -1588,6 +1588,31 @@ function renderAvatar($picture, $client_name)
     `);
                             throw new Error(data.message || 'Failed to send email');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Resend error:', error);
+                        showActionModal(
+                            '❌ Failed to Send Email',
+                            error.message || 'Failed to send invoice email. Please try again.',
+                            'error'
+                        );
+                    });
+            }
+        }
+
+        function openClientHistory(bookingId, tab) {
+            console.log('Opening history for booking:', bookingId, 'tab:', tab);
+
+            const historyModalEl = document.getElementById('historyModal');
+            const modal = new bootstrap.Modal(historyModalEl);
+            modal.show();
+
+            document.getElementById('historyClientFullName').textContent = 'Loading Client...';
+            document.getElementById('historyClientEmail').textContent = '';
+            document.getElementById('historyClientAddress').textContent = '';
+            document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+
+            const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = `
         <tr>
             <td colspan="6" class="text-center py-5">
