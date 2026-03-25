@@ -1560,6 +1560,27 @@ function renderHistoryTable(data, bookingId) {
                 // ✅ Always newest first
                 return b.id - a.id;
             });
+
+            tbody.innerHTML = '';
+
+            sortedData.forEach(inv => {
+                const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
+                const statusText = inv.payment_status || 'Pending';
+                const statusStyle = statusText === 'Paid'
+                    ? 'border:1px solid #059669;color:#059669;background:#ecfdf5;'
+                    : (isOverdue
+                                    })
+                                    : ''}
+                            </small>
+                        </td>
+                        <td class="py-3 fw-medium ${isOverdue ? 'text-red-700' : ''}">
+                            ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', { 
+                                month: 'short', day: 'numeric', year: 'numeric' 
+                            }) : '-'}
+                        </td>
+                        <td class="py-3 text-end fw-semibold text-gray-900">
+                            ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
                         <td class="text-center py-3">
                             <span class="px-3 py-1 rounded-pill fw-semibold small" style="${statusStyle}">
                                 ${statusText}
