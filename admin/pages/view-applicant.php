@@ -293,6 +293,10 @@ $educationHtml = renderEducationListHtml($applicantData['educational_attainment'
 $workHtml = renderWorkHistoryListHtml($applicantData['work_history'] ?? '');
 $locBadgesHtml = renderPreferredLocationBadges($applicantData['preferred_location'] ?? '');
 
+// NEW: Agency Scope details
+$branchDetails = $applicant->getBranchDetails((int) ($applicantData['branch_id'] ?? 0));
+$buCountry = $applicant->getBusinessUnitCountry((int) ($applicantData['business_unit_id'] ?? 0));
+
 // Picture URL
 $pictureUrl = !empty($applicantData['picture']) ? getFileUrl($applicantData['picture']) : null;
 
@@ -323,6 +327,13 @@ $hasVideo = !empty($applicantData['video_url']);
 $showAssign = false;
 if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($applicantData['status'] ?? '') === 'pending') {
     $showAssign = true;
+}
+
+// Flag icon helper (copied from accounts.php)
+function flag_icon($iso2, $name)
+{
+    $flagClass = 'fi fi-' . strtolower($iso2) . ' me-1';
+    return '<span class="' . $flagClass . '" style="width:20px;height:15px;border-radius:2px;"></span>' . htmlspecialchars($name);
 }
 
 ?>
@@ -422,6 +433,17 @@ if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($appl
     .btn-assign-top:hover {
         background: #0f766e;
         color: #fff;
+    }
+
+    /* Branch tag styling (matches accounts.php) */
+    .branch-tag {
+        padding: .3rem .8rem;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        color: #374151;
+        font-size: .8rem;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
     }
 </style>
 
@@ -572,6 +594,21 @@ if ($replaceRecord && ($replaceRecord['status'] ?? '') === 'selection' && ($appl
                                 <div class="small-label mb-1">Employment Type</div>
                                 <div class="fw-semibold">
                                     <?php echo !empty($applicantData['employment_type']) ? h($applicantData['employment_type']) : 'N/A'; ?>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small-label mb-1">Agency Scope</div>
+                                <div class="fw-semibold">
+                                    <?php if ($branchDetails): ?>
+                                        <span class="badge bg-primary me-1">CSNK</span>
+                                        Branch:
+                                        <?= htmlspecialchars($branchDetails['name'] . ' (' . $branchDetails['code'] . ')') ?>
+                                    <?php elseif ($buCountry): ?>
+                                        <span class="badge bg-info me-1">SMC</span>
+                                        <?= flag_icon($buCountry['iso2'], $buCountry['country_name']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Unassigned</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="col-md-6">
