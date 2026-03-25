@@ -702,8 +702,6 @@ $inactiveCount = $totalCount - $activeCount;
           <th class="text-center border border-gray-300">Phone</th>
           <th class="text-center border border-gray-300">Currency</th>
           <th class="text-center border border-gray-300">Timezone</th>
-          <th class="text-center border border-gray-300">Locale</th>
-          <th class="text-center border border-gray-300"># BUs</th>
           <th class="text-center border border-gray-300">Status</th>
           <th class="text-center border border-gray-300">Actions</th>
         </tr>
@@ -754,14 +752,6 @@ $inactiveCount = $totalCount - $activeCount;
               </td>
               <td class="text-center border border-gray-300"><small
                   class="text-muted"><?php echo h($c['default_tz']); ?></small></td>
-              <td class="text-center border border-gray-300"><small
-                  class="text-muted"><?php echo h($c['locale']); ?></small></td>
-              <td class="text-center text-center border border-gray-300">
-                <span
-                  class="badge rounded-pill <?php echo $c['bu_count'] > 0 ? 'text-bg-primary' : 'text-bg-secondary'; ?>">
-                  <?php echo (int) $c['bu_count']; ?>
-                </span>
-              </td>
               <td class="text-center text-center border border-gray-300">
                 <a href="country_management.php?action=toggle_active&id=<?php echo (int) $c['id']; ?>"
                   class="text-decoration-none btn btn-outline-<?php echo $isActive ? 'success' : 'danger'; ?> btn-sm btn-toggle px-3"
