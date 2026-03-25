@@ -1501,6 +1501,26 @@ function renderAvatar($picture, $client_name)
         <!-- INVOICE -->
         <td class="ps-5">
             <div class="fw-semibold" style="color:#2563eb;">
+            ${inv.due_date
+                        ? new Date(inv.due_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : '-'}
+        </td>
+
+        <!-- AMOUNT -->
+        <td class="text-end fw-semibold">
+            ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+        </td>
+
+        <!-- STATUS -->
+        <td class="text-center">
+            <span class="px-3 py-1 rounded-pill fw-semibold"
+                style="font-size:.8rem;${statusStyle}">
+            ${statusText}
+            </span>
+        </td>
+
+        <!-- ACTIONS -->
+        <td class="text-center pe-5">
             <div class="d-inline-flex gap-2">
 
         <button class="btn btn-sm view-btn"
