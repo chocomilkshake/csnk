@@ -1564,7 +1564,29 @@ function renderHistoryTable(data, bookingId) {
                     softDeleteInvoice(btn.dataset.id,
 
         /* Edit invoice */
-        const editLink = e.target.closest('.edit-invoi
+        const editLink = e.target.closest('.edit-invoice-link');
+        if (editLink) {
+            window.location.href = `payment_invoice_gen.php?edit=${editLink.dataset.edit}&booking_id=${editLink.dataset.booking}`;
+            return;
+        }
+
+        /* ================= DELETE ================= */
+        const delBtn = e.target.closest('.btn-delete');
+        if (delBtn) {
+            softDeleteInvoice(delBtn.dataset.id, delBtn.closest('tr'));
+            return;
+        }
+
+        /* ================= RESEND ================= */
+        const resendBtn = e.target.closest('.btn-resend');
+        if (resendBtn) {
+            resendInvoiceEmail(resendBtn.dataset.id);
+            return;
+        }
+
+        /* ================= VIEW ================= */
+        const viewBtn = e.target.closest('.view-btn');
+        if (viewBtn) {
             viewInvoiceHandler.call(viewBtn);
             return;
         }
