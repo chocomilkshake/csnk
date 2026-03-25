@@ -1586,6 +1586,32 @@ function renderAvatar($picture, $client_name)
         </td>
         </tr>
     `);
+                            throw new Error(data.message || 'Failed to send email');
+                        }
+            tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <div class="mt-3 text-muted">Loading invoice history...</div>
+            </td>
+        </tr>
+    `;
+
+            fetch(
+                'payments_clients.php?get_client_history=1' +
+                '&booking_id=' + encodeURIComponent(bookingId) +
+                '&tab=' + encodeURIComponent(tab)
+            )
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const first = data[0];
+                        document.getElementById('historyClientFullName').textContent = first.client_name;
+                        document.getElementById('historyClientEmail').textContent = first.client_email;
+                        document.getElementById('historyClientAddress').textContent = first.client_address;
+                        document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
+                    }
+                    renderHistoryTable(data);
                 })
                 .catch(err => {
                     console.error(err);
