@@ -1378,6 +1378,26 @@ function renderAvatar($picture, $client_name)
                 currentHistoryData = Array.isArray(data) ? data : [];
 
                 // Populate client info
+                if (currentHistoryData.length > 0) {
+                    const firstInv = currentHistoryData[0];
+                    document.getElementById('historyClientFullName').textContent =
+                        firstInv.client_name || 'Unknown Client';
+                    document.getElementById('historyClientEmail').textContent =
+                        firstInv.client_email || clientEmail;
+                    document.getElementById('historyClientAddress').textContent =
+                        firstInv.client_address || 'N/A';
+                    document.getElementById('historyInvoiceCount').textContent =
+                        currentHistoryData.length + ' Invoices';
+                } else {
+                    document.getElementById('historyClientFullName').textContent = 'No Invoices Foun
+            <button class="btn btn-sm"
+                    title="Resend"
+                    style="border:1px solid #e5e7eb;border-radius:10px;">
+                <i class="bi bi-send"></i>
+            </button>` : ''}
+
+            <button class="btn btn-sm"
+                    title="Edit"
                     onclick="editInvoiceFromHistory(${inv.id})"
                     style="border:1px solid #e5e7eb;border-radius:10px;">
                 <i class="bi bi-pencil"></i>
