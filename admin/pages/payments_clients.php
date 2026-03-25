@@ -1563,6 +1563,27 @@ function renderHistoryTable(data, bookingId) {
                     e.stopPropagation();
                     softDeleteInvoice(btn.dataset.id,
 
+        /* Edit invoice */
+        const editLink = e.target.closest('.edit-invoi
+            viewInvoiceHandler.call(viewBtn);
+            return;
+        }
+
+    });
+
+    // ================= CONFIRM RESEND HANDLER =================
+    document.getElementById('confirmResendBtn').addEventListener('click', function () {
+
+        if (!pendingResendInvoiceId) return;
+
+        // Close confirm modal
+        bootstrap.Modal.getInstance(
+            document.getElementById('confirmResendModal')
+        ).hide();
+
+        // Show processing modal
+        showActionModal(
+            'Resending Invoice',
             'Sending invoice email to client... Please wait.',
             'loading'
         );
