@@ -1296,6 +1296,35 @@ function renderAvatar($picture, $client_name)
                     clearInterval(countdownTimer);
                 }
             }, 1000);
+
+            // Final delete after 10s
+            deleteTimer = setTimeout(() => {
+                finalizeDelete(id);
+        function closeToast() {
+            clearInterval(countdownTimer);
+            document.getElementById('deleteToast').classList.add('hidden');
+        }
+
+        function finalizeDelete(id) {
+            window.location.href = `payments_clients.php?action=delete&id=${id}`;
+        }
+
+        let currentHistoryData = [];
+
+        function openClientHistory(bookingId, tab) {
+            console.log('Opening history for booking:', bookingId, 'tab:', tab);
+
+            const historyModalEl = document.getElementById('historyModal');
+            const modal = new bootstrap.Modal(historyModalEl);
+            modal.show();
+
+            document.getElementById('historyClientFullName').textContent = 'Loading Client...';
+            document.getElementById('historyClientEmail').textContent = '';
+            document.getElementById('historyClientAddress').textContent = '';
+            document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = `
         <tr>
             <td colspan="6" class="text-center py-5">
                 <div class="spinner-border text-primary"></div>
