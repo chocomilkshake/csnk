@@ -1501,6 +1501,27 @@ function renderAvatar($picture, $client_name)
         <!-- INVOICE -->
         <td class="ps-5">
             <div class="fw-semibold" style="color:#2563eb;">
+            #${escapeHtml(inv.invoice_num)}
+            </div>
+            <div style="font-size:.85rem;color:#64748b;">
+            ${escapeHtml(inv.reference_no || 'N/A')}
+            </div>
+        </td>
+
+        <!-- DATE -->
+        <td>
+            <div>${inv.invoice_date
+                        ? new Date(inv.invoice_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : '-'}</div>
+            <small style="color:#64748b;">
+            ${inv.invoice_date
+                        ? new Date(inv.invoice_date).toLocaleDateString('en-PH', { weekday: 'short' })
+                        : ''}
+            </small>
+        </td>
+
+        <!-- DUE -->
+        <td style="font-weight:500;color:${isOverdue ? '#0f172a' : '#0f172a'};">
             ${inv.due_date
                         ? new Date(inv.due_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
                         : '-'}
