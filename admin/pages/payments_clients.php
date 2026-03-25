@@ -1559,6 +1559,23 @@ function renderHistoryTable(data, bookingId) {
                             </div>
                         </td>
                     </tr>
+                `);
+            });
+
+            // Re-attach event listeners for new buttons
+            tbody.querySelectorAll('.view-btn').forEach(btn => {
+                btn.removeEventListener('click', viewInvoiceHandler);
+                btn.addEventListener('click', viewInvoiceHandler);
+            });
+        tbody.querySelectorAll('.btn-resend').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resendInvoiceEmail(this.dataset.id);
+                });
+            });
+            tbody.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.onclick = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
