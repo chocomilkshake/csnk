@@ -1563,6 +1563,22 @@ function renderHistoryTable(data, bookingId) {
                     e.stopPropagation();
                     softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
                 };
+            });
+        }
+
+        function viewInvoiceFromHistory(id) {
+            // reuse existing modal logic or redirect
+            window.location.href = 'payments_clients.php?view=' + id;
+        }
+
+        function editInvoiceFromHistory(id) {
+            window.location.href = 'payment_invoice_edit.php?id=' + id;
+        }
+
+
+        // ================= RESEND TRIGGER =================
+        let pendingResendInvoiceId = null;
+
         function resendInvoiceEmail(invoiceId) {
 
             if (!invoiceId) return;
