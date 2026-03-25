@@ -1556,7 +1556,27 @@ function renderHistoryTable(data, bookingId) {
                 if (hasPending && a.payment_status !== b.payment_status) {
                     return a.payment_status === 'Paid' ? 1 : -1;
                 }
-client_address || '')}"
+
+                // ✅ Always newest first
+                return b.id - a.id;
+            });
+                        <td class="text-center py-3">
+                            <span class="px-3 py-1 rounded-pill fw-semibold small" style="${statusStyle}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="text-center pe-5 py-3">
+                            <div class="d-inline-flex gap-1">
+                                <button class="btn btn-sm view-btn border rounded p-1" title="Preview"
+                                    data-id="${inv.id}"
+                                    data-invoice="${escapeHtml(inv.invoice_num || '')}"
+                                    data-date="${inv.invoice_date || ''}"
+                                    data-due="${inv.due_date || ''}"
+                                    data-total="${inv.total_amount || 0}"
+                                    data-ref="${escapeHtml(inv.reference_no || '')}"
+                                    data-client="${escapeHtml(inv.client_name || '')}"
+                                    data-email="${escapeHtml(inv.client_email || '')}"
+                                    data-address="${escapeHtml(inv.client_address || '')}"
                                     data-pdf="${escapeHtml(inv.pdf_filename || '')}"
                                     data-bs-toggle="modal" data-bs-target="#viewModal">
                                     <i class="bi bi-eye"></i>
