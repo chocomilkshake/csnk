@@ -650,6 +650,13 @@ function renderAvatar($picture, $client_name)
         border-radius: 22px;
         border: none;
     }
+
+    /* ===== View MODAL ===== */
+
+    .modal-l {
+        max-width: 800px;
+        /* change this value */
+    }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -895,7 +902,7 @@ function renderAvatar($picture, $client_name)
     <!-- ================= VIEW MODAL ================= -->
     <div class="modal fade" id="viewModal" tabindex="-1">
 
-        <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-dialog modal-l modal-dialog-centered">
             <div class="modal-content">
 
                 <div class="modal-header bg-primary text-white">
@@ -1713,4 +1720,4 @@ function renderAvatar($picture, $client_name)
 
 
 
-<?php include '../includes/footer.php'; ?>
+    <?php include '../includes/footer.php'; ?>
