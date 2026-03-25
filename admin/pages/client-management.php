@@ -312,23 +312,23 @@ function safe(?string $s): string
         <thead class="bg-gray-50 border border-gray-300">
           <tr>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
               Client</th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
               Applicant</th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-80 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-80 border-r border-gray-300">
               Contact</th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
               Appointment
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-56 border-r border-gray-300">
               Status</th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64 border-r border-gray-300">
+              class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-64 border-r border-gray-300">
               Business Unit
             </th>
             <th
@@ -399,20 +399,20 @@ function safe(?string $s): string
                   <?= (int) ($booking['applicant_id'] ?? 0) ?>
                 </div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+              <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200 text-center">
                 <?= safe($clientContact) ?>
               </td>
-              <td class="px-6 py-4 border-r border-gray-200">
+              <td class="px-6 py-4 border-r border-gray-200 text-center">
                 <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">
                   <?= safe($booking['appointment_type'] ?? '—') ?>
                 </span>
               </td>
-              <td class="px-6 py-4 border-r border-gray-200">
+              <td class="px-6 py-4 border-r border-gray-200 text-center">
                 <span class="px-3 py-1 <?= $statusBg ?> text-sm font-medium rounded-full">
                   <?= ucfirst(str_replace('_', ' ', $status)) ?>
                 </span>
               </td>
-              <td class="px-6 py-4 text-sm font-medium border-r border-gray-200">
+              <td class="px-6 py-4 text-sm font-medium border-r border-gray-200 text-center">
                 <?= safe($booking['business_unit_name'] ?? '—') ?>
               </td>
               <td class="px-6 py-4 text-center text-sm text-gray-600 border-r border-gray-200">
