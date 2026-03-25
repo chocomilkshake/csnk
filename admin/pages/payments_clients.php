@@ -1474,6 +1474,14 @@ function renderAvatar($picture, $client_name)
 
             tbody.innerHTML = '';
 
+
+            data.sort((a, b) => {
+                const dateA = new Date(a.invoice_date || 0);
+                const dateB = new Date(b.invoice_date || 0);
+                return dateB - dateA;
+            });
+
+
             data.forEach(inv => {
 
                 const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
