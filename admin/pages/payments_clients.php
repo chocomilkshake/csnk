@@ -1713,4 +1713,4 @@ function renderAvatar($picture, $client_name)
 
 
 
-    <?php include '../includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
