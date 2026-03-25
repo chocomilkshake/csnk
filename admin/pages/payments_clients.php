@@ -1563,6 +1563,26 @@ function renderHistoryTable(data, bookingId) {
                     e.stopPropagation();
                     softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
                 };
+        function resendInvoiceEmail(invoiceId) {
+
+            if (!invoiceId) return;
+
+            pendingResendInvoiceId = invoiceId;
+
+            // ✅ AUTO-CLOSE INVOICE HISTORY MODAL IF OPEN
+            const historyModalEl = document.getElementById('historyModal');
+            const historyModalInstance = bootstrap.Modal.getInstance(historyModalEl);
+
+            if (historyModalInstance) {
+                historyModalInstance.hide();
+            }
+
+            // ✅ SMALL DELAY TO AVOID MODAL STACKING
+            setTimeout(() => {
+                const confirmModal = new bootstrap.Modal(
+                    document.getElementById('confirmResendModal')
+                );
+                confirmModal.show();
             }, 300);
         }
 
