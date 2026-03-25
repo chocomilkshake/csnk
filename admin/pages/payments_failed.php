@@ -1,11 +1,11 @@
 <?php
-// payments_success.php
+// payments_failed.php
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Payment Successful</title>
+<title>Payment Failed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- ✅ CORRECT BOOTSTRAP LOADING -->
@@ -13,14 +13,14 @@
 
 <style>
 :root {
-  --success: #22c55e;
+  --danger: #ef4444;
   --bg: #f8fafc;
   --text: #0f172a;
   --muted: #64748b;
 }
 
 body {
-  background: radial-gradient(circle at top, #eef2ff, var(--bg));
+  background: radial-gradient(circle at top, #fee2e2, var(--bg));
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -41,7 +41,7 @@ body {
 .status-icon {
   width: 84px;
   height: 84px;
-  background: var(--success);
+  background: var(--danger);
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -82,16 +82,15 @@ p {
 <body>
 
 <div class="payment-card">
-  <div class="status-icon">✓</div>
+  <div class="status-icon">✕</div>
 
-  <h1>Payment Successful</h1>
+  <h1>Payment Not Completed</h1>
   <p class="mt-2">
-    Thank you. Your payment has been received successfully.
+    Unfortunately, the payment could not be processed.
   </p>
 
   <div class="footer-note">
-    No further action is required.<br>
-    You may safely close this page.
+    Please try again or contact our team for assistance.
   </div>
 
   <button class="close-btn" onclick="window.close()">
