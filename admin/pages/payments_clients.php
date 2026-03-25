@@ -416,6 +416,71 @@ function renderAvatar($picture, $client_name)
 .inv-table th{background:#f5f5f5}
 .inv-declaration,.inv-payment{margin-top:20px}
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+/* ===== CARD ===== */
+.client-table-card {
+  border-radius: 20px;
+  border: none;
+  overflow: hidden;
+}
+
+/* ===== TABLE ===== */
+.client-table thead th {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #64748b;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 14px;
+}
+
+.client-table tbody td {
+  padding: 16px 14px;
+  vertical-align: middle;
+  font-size: .9rem;
+}
+
+.client-table tbody tr {
+  transition: background .15s ease;
+}
+
+.client-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* ===== COUNT CHIP ===== */
+.count-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+}
+
+.count-chip.muted {
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+/* ===== HISTORY BUTTON ===== */
+.history-btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: .8rem;
+  padding: 6px 14px;
+  background: transparent;
+}
+
+.history-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ===== ACTION MODAL ===== */
+.action-modal {
+  border-radius: 22px;
+  border: none;
+}
 </style>
 
 <div class="container-fluid py-4">
@@ -456,186 +521,203 @@ function renderAvatar($picture, $client_name)
 
     </div>
 
-    <div class="card shadow-lg">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Avatar</th>
-                        <th>Client</th>
-                        <th>Total Invoices</th>
-                        <th>Total Amount</th>
-                        <th>Paid</th>
-                        <th>Unpaid</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+<div class="card client-table-card">
+  <div class="table-responsive">
 
-                    <?php if (!$invoices): ?>
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            No clients found
-                        </td>
-                    </tr>
-                    <?php else: ?>
+    <table class="table client-table mb-0">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th class="text-center">Invoices</th>
+          <th class="text-end">Total Amount</th>
+          <th class="text-center">Paid</th>
+          <th class="text-center">Unpaid</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
 
-                    <?php foreach ($invoices as $inv): ?>
+      <tbody>
 
-                    <tr>
-                        <td><?= renderAvatar(null, $inv['client_name']) ?></td>
+      <?php if (!$invoices): ?>
+        <tr>
+          <td colspan="6" class="text-center py-4 text-muted">
+            No clients found
+          </td>
+        </tr>
+      <?php else: foreach ($invoices as $inv): ?>
 
-                        <td>
-                            <strong><?= h($inv['client_name']) ?></strong><br>
-                            <small class="text-muted"><?= h($inv['client_email']) ?></small>
-                        </td>
+        <tr>
 
-                        <td class="fw-bold"><?= (int)$inv['total_invoices'] ?></td>
+          <!-- CLIENT -->
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <?= renderAvatar(null, $inv['client_name']) ?>
+              <div>
+                <div class="fw-semibold"><?= h($inv['client_name']) ?></div>
+                <div class="small text-muted"><?= h($inv['client_email']) ?></div>
+              </div>
+            </div>
+          </td>
 
-                        <td class="fw-bold text-success">
-                            ₱<?= number_format($inv['total_amount'], 2) ?>
-                        </td>
+          <!-- TOTAL INVOICES -->
+          <td class="text-center fw-semibold">
+            <?= (int)$inv['total_invoices'] ?>
+          </td>
 
-                        <td>
-                            <span class="badge bg-success">
-                                <?= (int)$inv['paid_count'] ?>
-                            </span>
-                        </td>
+          <!-- TOTAL AMOUNT -->
+          <td class="text-end fw-semibold">
+            ₱<?= number_format($inv['total_amount'], 2) ?>
+          </td>
 
-                        <td>
-                            <span class="badge bg-warning text-dark">
-                                <?= (int)$inv['unpaid_count'] ?>
-                            </span>
-                        </td>
+          <!-- PAID -->
+          <td class="text-center">
+            <span class="count-chip">
+              <?= (int)$inv['paid_count'] ?>
+            </span>
+          </td>
 
-                        <td>
-<button class="btn btn-outline-secondary btn-sm" onclick="openClientHistory(<?= (int)$inv['client_booking_id'] ?>, '<?= addslashes($activeTab) ?>')">
-    <i class="bi bi-clock-history"></i> History
-</button>
-                        </td>
-                    </tr>
+          <!-- UNPAID -->
+          <td class="text-center">
+            <span class="count-chip muted">
+              <?= (int)$inv['unpaid_count'] ?>
+            </span>
+          </td>
 
-                    <?php endforeach; ?>
-                    <?php endif; ?>
-                    
-                    <!-- ================= ACTION MODAL (GLOBAL) ================= -->
-                    <div class="modal fade" id="actionModal" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content shadow-xl border-0 rounded-3 bg-white backdrop-blur-lg">
+          <!-- ACTION -->
+          <td class="text-center">
+            <button
+              class="btn history-btn"
+              onclick="openClientHistory(<?= (int)$inv['client_booking_id'] ?>, '<?= addslashes($activeTab) ?>')">
+              <i class="bi bi-clock-history"></i>
+              History
+            </button>
+          </td>
 
-                                <div class="modal-header bg-gradient-primary text-white rounded-top-3">
-                                    <h6 class="modal-title fw-bold mb-0" id="actionModalTitle">
-                                        <i class="bi bi-hourglass-split me-2"></i>Processing...
-                                    </h6>
-                                    <button class="btn-close btn-close-white shadow-sm" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
+        </tr>
 
-                                <div class="modal-body text-center py-5 px-4">
-                                    <div id="actionModalIcon" class="mb-4 fs-1">
-                                        <div class="spinner-border spinner-border-sm text-primary shadow-sm" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                    </div>
-                                    <div class="h4 fw-semibold text-primary mb-2" id="actionModalTitle2">Sending Email</div>
-                                    <p class="text-muted mb-0" id="actionModalMessage">
-                                        Preparing and sending invoice to client...
-                                    </p>
-                                </div>
+      <?php endforeach; endif; ?>
+      </tbody>
+    </table>
 
-                                <div class="modal-footer d-none justify-content-center p-4 border-0" id="actionModalFooter">
-                                    <button class="btn btn-lg btn-success px-5 shadow-lg" data-bs-dismiss="modal" id="actionModalOK">
-                                        <i class="bi bi-check-circle-fill me-2"></i>OK
-                                    </button>
-                                </div>
+  </div>
+</div>
+<!-- ================= GLOBAL ACTION MODAL ================= -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content action-modal">
 
-                            </div>
-                        </div>
-                    </div>
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold" id="actionModalTitle">
+          Processing
+        </h6>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
 
-                </tbody>
-            </table>
+      <div class="modal-body text-center py-5">
+        <div class="spinner-border text-primary mb-4" role="status"></div>
+        <div class="fw-semibold" id="actionModalTitle2">
+          Sending Invoice
         </div>
+        <p class="text-muted mb-0" id="actionModalMessage">
+          Please wait a moment…
+        </p>
+      </div>
+
+      <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
+        <button class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
+          OK
+        </button>
+      </div>
 
     </div>
+  </div>
 </div>
 
-<!-- ================= CLIENT INVOICE HISTORY MODAL (SIMPLE MODERN LIGHT THEME) ================= -->
+<!-- ================= IMPROVED CLIENT INVOICE HISTORY MODAL ================= -->
 <div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
-        <div class="modal-content border-0 shadow-lg rounded-3xl overflow-hidden" style="background: #ffffff; border: 1px solid #e2e8f0;">
-            
-            <!-- Clean Blue Header -->
-            <div class="modal-header bg-gradient-to-r from-[#3b82f6] to-[#1d4ed8] text-white p-4 border-0 shadow-lg">
-                <h4 class="modal-title fw-bold mb-0 d-flex align-items-center">
-                    <i class="bi bi-receipt me-3 fs-4"></i>
-                    Invoice History
-                    <span id="historyClientName" class="ms-2 px-3 py-1 bg-white/30 rounded-full fw-semibold text-blue-900 shadow-sm" style="font-size: 0.9rem;"></span>
-                </h4>
-                <button class="btn-close btn-close-white rounded-circle p-2 shadow-sm" type="button" data-bs-dismiss="modal"></button>
-            </div>
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content border-0 shadow-lg overflow-hidden"
+         style="background:#fff;border-radius:20px;font-family:Inter,system-ui,-apple-system,sans-serif;">
 
-            <div class="modal-body p-0">
-                <!-- Client Info Card -->
-                <div class="p-5 bg-gradient-to-r from-gray-50 to-blue-50 border-b" style="background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%); border-bottom: 1px solid #e2e8f0;">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h5 class="fw-bold mb-1" id="historyClientFullName" style="font-size: 1.5rem; color: #1e293b; background: rgba(255,255,255,0.9); padding: 8px 16px; border-radius: 12px; display: inline-block;">Loading Client...</h5>
-                            <div class="d-flex flex-wrap gap-2">
-                                <span class="badge px-3 py-1 rounded-pill" id="historyClientEmail" style="background: #dbeafe; color: #1e40af; font-size: 0.9rem; border: 1px solid #93c5fd;">client@example.com</span>
-                                <span class="badge px-3 py-1 rounded-pill" id="historyClientAddress" style="background: #f3f4f6; color: #374151; font-size: 0.9rem; border: 1px solid #d1d5db;">Address</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="h4 fw-bold mb-0" id="historyInvoiceCount" style="color: #1d4ed8;">0 Invoices</div>
-                            <small style="color: #6b7280;">Total invoices for this client</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Subtle Glass Search -->
-                <div class="p-4" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <div class="row">
-                        <div class="col-12 col-md-8">
-                            <div class="position-relative">
-                                <input type="text" id="modalSearch" 
-                                       class="form-control form-control-lg shadow-sm border-0 ps-5" 
-                                       placeholder="Search invoices..." 
-                                       style="background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border-radius: 16px; padding: 14px 20px; font-weight: 500; border: 1px solid #e2e8f0;">
-                                <i class="bi bi-search position-absolute text-gray-500 fs-5" style="left: 20px; top: 50%; transform: translateY(-50%);"></i>
-                                <button id="modalSearchClear" class="position-absolute btn-close opacity-50" style="right: 20px; top: 50%; transform: translateY(-50%);"></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Clean Scrollable Table -->
-                <div class="table-responsive" style="max-height: 65vh;">
-                    <table class="table table-hover modern-history-table mb-0">
-                        <thead class="table-header-light sticky-top shadow-sm" style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <tr>
-                                <th class="ps-4 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Invoice</th>
-                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Date</th>
-                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Due</th>
-                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase text-end tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Amount</th>
-                                <th class="px-3 py-4 fw-semibold text-gray-600 small text-uppercase tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Status</th>
-                                <th class="pe-4 py-4 fw-semibold text-gray-600 small text-uppercase text-center tracking-wider border-0" style="font-size: 0.8rem; color: #64748b;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <!-- Dynamic -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="modal-footer bg-gray-50 border-0 p-4" style="background: #f8fafc;">
-                <button class="btn btn-outline-gray rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="border: 1px solid #d1d5db; color: #64748b;">
-                    <i class="bi bi-x-lg me-1"></i>Close
-                </button>
-            </div>
-
+      <!-- HEADER -->
+      <div class="modal-header px-5 py-4 border-0"
+           style="background:#2563eb;color:#fff;">
+        <div>
+          <h4 class="fw-semibold mb-1 d-flex align-items-center">
+            <i class="bi bi-receipt me-3"></i>
+            Invoice History
+          </h4>
+          <div id="historyClientName" style="font-size:.9rem;opacity:.85;"></div>
         </div>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0">
+
+        <!-- CLIENT INFO -->
+        <div class="px-5 py-4 border-bottom" style="background:#f8fafc;">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 id="historyClientFullName" class="fw-semibold mb-1"
+                  style="font-size:1.25rem;color:#0f172a;">
+                Loading Client...
+              </h5>
+              <div style="font-size:.9rem;color:#64748b;">
+                <span id="historyClientEmail"></span> •
+                <span id="historyClientAddress"></span>
+              </div>
+            </div>
+            <div class="col-md-4 text-end">
+              <div id="historyInvoiceCount"
+                   class="fw-bold"
+                   style="font-size:1.3rem;color:#2563eb;">
+                0 Invoices
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="px-5 py-3 border-bottom">
+          <div class="position-relative">
+            <input id="modalSearch" type="text"
+                   class="form-control ps-5"
+                   placeholder="Search invoice number, date, status…"
+                   style="border-radius:14px;border:1px solid #e5e7eb;">
+            <i class="bi bi-search position-absolute"
+               style="left:16px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-responsive" style="max-height:65vh;">
+          <table class="table mb-0 align-middle">
+            <thead class="sticky-top" style="background:#f8fafc;">
+              <tr>
+                <th class="ps-5 py-3 small text-uppercase">Invoice</th>
+                <th class="py-3 small text-uppercase">Date</th>
+                <th class="py-3 small text-uppercase">Due</th>
+                <th class="py-3 small text-uppercase text-end">Amount</th>
+                <th class="py-3 small text-uppercase text-center">Status</th>
+                <th class="pe-5 py-3 small text-uppercase text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer px-5 py-3 border-0" style="background:#f8fafc;">
+        <button class="btn px-4 rounded-pill"
+                data-bs-dismiss="modal"
+                style="border:1px solid #cbd5e1;">
+          Close
+        </button>
+      </div>
+
     </div>
+  </div>
 </div>
 
 <!-- ================= VIEW MODAL ================= -->
@@ -1218,68 +1300,103 @@ function renderHistoryTable(data) {
     }
 
     tbody.innerHTML = '';
+
     data.forEach(inv => {
-        const rowClass = inv.status === 'Paid' ? 'table-success-light' : 'table-pending-light';
-        
-        const statusIcon = inv.status === 'Paid' ? 'check-circle-fill' : 
-                          (inv.status?.toLowerCase() === 'overdue' ? 'exclamation-triangle-fill' : 'clock-fill');
-        const statusColor = inv.status === 'Paid' ? '#059669' : 
-                           (inv.status?.toLowerCase() === 'overdue' ? '#dc2626' : '#d97706');
-        
-        tbody.insertAdjacentHTML('beforeend', `
-        <tr class="${rowClass}">
-            <td class="fw-bold fs-4 lh-sm text-primary">
-                <div>#${escapeHtml(inv.invoice_num)}</div>
-                <small class="text-muted">${escapeHtml(inv.reference_no || 'N/A')}</small>
-            </td>
-            <td class="text-muted">
-                <div class="fw-semibold">${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'}) : '-'}</div>
-                <small>${inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {weekday:'short'}) : ''}</small>
-            </td>
-            <td class="fw-semibold ${new Date(inv.due_date) < new Date() ? 'text-danger' : 'text-success'}">
-                ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'}) : '-'}
-            </td>
-            <td class="text-end">
-                <div class="h4 fw-bold text-gradient mb-1">₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</div>
-            </td>
-            <td class="text-center">
-                <span class="badge px-3 py-2 fs-6 fw-semibold status-badge rounded-pill" style="background: linear-gradient(135deg, ${statusColor}, ${statusColor}cc); color: white;">
-                    <i class="bi bi-${statusIcon} me-1"></i>
-                    ${inv.status || 'Pending'}
-                </span>
-            </td>
-            <td class="text-center">
-                <div class="action-buttons">
-                    <button class="btn-action btn-view shadow-lg me-1" 
-                            data-bs-toggle="modal" data-bs-target="#viewModal"
-                            data-id="${inv.id}"
-                            data-client="${escapeHtml(inv.client_name)}"
-                            data-email="${escapeHtml(inv.client_email)}"
-                            data-address="${escapeHtml(inv.client_address)}"
-                            data-invoice="${escapeHtml(inv.invoice_num)}"
-                            data-date="${inv.invoice_date}"
-                            data-due="${inv.due_date}"
-                            data-ref="${escapeHtml(inv.reference_no)}"
-                            data-total="${parseFloat(inv.total_amount)}"
-data-applicants='${JSON.stringify(JSON.parse(inv.applicants_data || '[]')).replace(/'/g, "&apos;")}'
-                            data-pdf="${escapeHtml(inv.pdf_filename)}"
-                            title="Preview">
-                        <i class="bi bi-eye-fill"></i>
-                    </button>
-                    ${inv.status !== 'Paid' ? `
-                    <button class="btn-action btn-resend shadow-lg me-1" data-id="${inv.id}" title="Resend Email">
-                        <i class="bi bi-send-fill"></i>
-                    </button>` : ''}
-                    <button class="btn-action btn-edit shadow-lg me-1" onclick="editInvoiceFromHistory(${inv.id})" title="Edit">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn-action btn-delete shadow-lg" onclick="softDeleteInvoice(${inv.id})" title="Delete">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </div>
-            </td>
+
+    const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
+    const statusText = inv.status || 'Pending';
+
+    const statusStyle =
+        statusText === 'Paid'
+        ? 'border:1px solid #2563eb;color:#2563eb;'
+        : 'border:1px solid #cbd5e1;color:#0f172a;';
+
+    tbody.insertAdjacentHTML('beforeend', `
+        <tr class="border-bottom"
+            style="transition:.15s;"
+            onmouseover="this.style.background='#f8fafc'"
+            onmouseout="this.style.background='transparent'">
+
+        <!-- INVOICE -->
+        <td class="ps-5">
+            <div class="fw-semibold" style="color:#2563eb;">
+            #${escapeHtml(inv.invoice_num)}
+            </div>
+            <div style="font-size:.85rem;color:#64748b;">
+            ${escapeHtml(inv.reference_no || 'N/A')}
+            </div>
+        </td>
+
+        <!-- DATE -->
+        <td>
+            <div>${inv.invoice_date
+            ? new Date(inv.invoice_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})
+            : '-'}</div>
+            <small style="color:#64748b;">
+            ${inv.invoice_date
+                ? new Date(inv.invoice_date).toLocaleDateString('en-PH',{weekday:'short'})
+                : ''}
+            </small>
+        </td>
+
+        <!-- DUE -->
+        <td style="font-weight:500;color:${isOverdue ? '#0f172a' : '#0f172a'};">
+            ${inv.due_date
+            ? new Date(inv.due_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})
+            : '-'}
+        </td>
+
+        <!-- AMOUNT -->
+        <td class="text-end fw-semibold">
+            ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH',{minimumFractionDigits:2})}
+        </td>
+
+        <!-- STATUS -->
+        <td class="text-center">
+            <span class="px-3 py-1 rounded-pill fw-semibold"
+                style="font-size:.8rem;${statusStyle}">
+            ${statusText}
+            </span>
+        </td>
+
+        <!-- ACTIONS -->
+        <td class="text-center pe-5">
+            <div class="d-inline-flex gap-2">
+
+            <button class="btn btn-sm"
+                    title="Preview"
+                    style="border:1px solid #e5e7eb;border-radius:10px;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#viewModal"
+                    data-id="${inv.id}">
+                <i class="bi bi-eye"></i>
+            </button>
+
+            ${inv.status !== 'Paid' ? `
+            <button class="btn btn-sm"
+                    title="Resend"
+                    style="border:1px solid #e5e7eb;border-radius:10px;">
+                <i class="bi bi-send"></i>
+            </button>` : ''}
+
+            <button class="btn btn-sm"
+                    title="Edit"
+                    onclick="editInvoiceFromHistory(${inv.id})"
+                    style="border:1px solid #e5e7eb;border-radius:10px;">
+                <i class="bi bi-pencil"></i>
+            </button>
+
+            <button class="btn btn-sm"
+                    title="Delete"
+                    onclick="softDeleteInvoice(${inv.id})"
+                    style="border:1px solid #e5e7eb;border-radius:10px;">
+                <i class="bi bi-trash"></i>
+            </button>
+
+            </div>
+        </td>
         </tr>
-        `);
+    `);
     });
     
     // Re-attach event listeners for dynamic view buttons
