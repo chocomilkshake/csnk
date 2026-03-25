@@ -115,16 +115,24 @@ if ($buId <= 0) {
     $buId = 0;
 }
 
+$employeeBranchId = ($isEmployee && strtolower((string) ($currentUser['agency'] ?? '')) === 'csnk')
+    ? (int) ($_SESSION['current_branch_id'] ?? 0)
+    : 0;
+
 
 $conn = $database->getConnection();
 
-/* Prepared count helper, scoped to BU */
-function csnk_count_bu(mysqli $conn, string $sql, int $buId): int
+/* Prepared count helper, scoped to BU and optionally branch */
+function csnk_count_bu(mysqli $conn, string $sql, int $buId, ?int $branchId = null): int
 {
     $stmt = $conn->prepare($sql);
     if (!$stmt)
         return 0;
-    $stmt->bind_param('i', $buId);
+    if ($branchId !== null && $branchId > 0) {
+        $stmt->bind_param('ii', $buId, $branchId);
+    } else {
+        $stmt->bind_param('i', $buId);
+    }
     $stmt->execute();
     $res = $stmt->get_result();
     $row = $res ? $res->fetch_row() : [0];
@@ -156,36 +164,43 @@ if ($canSeeCSNK && $conn instanceof mysqli) {
         SELECT 1 FROM blacklisted_applicants b
         WHERE b.applicant_id = applicants.id AND b.is_active = 1
     )";
+    $branchScopeSql = $employeeBranchId > 0 ? " AND branch_id=?" : "";
 
     $totalApplicants = csnk_count_bu(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND deleted_at IS NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
     $pendingCount = csnk_count_bu(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='pending' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND status='pending' AND deleted_at IS NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
     $onProcessCount = csnk_count_bu(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_process' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND status='on_process' AND deleted_at IS NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
     $approvedCount = csnk_count_bu(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='approved' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND status='approved' AND deleted_at IS NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
     $onHoldCount = csnk_count_bu( /* Restored from old */
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND status='on_hold' AND deleted_at IS NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND status='on_hold' AND deleted_at IS NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
     $deletedCount = csnk_count_bu(
         $conn,
-        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=? AND deleted_at IS NOT NULL{$notBlacklisted}",
-        $buId
+        "SELECT COUNT(*) FROM applicants WHERE business_unit_id=?{$branchScopeSql} AND deleted_at IS NOT NULL{$notBlacklisted}",
+        $buId,
+        $employeeBranchId
     );
 
     /* Active blacklisted applicants are tenant-scoped via JOIN (kept from new) */
@@ -195,8 +210,10 @@ if ($canSeeCSNK && $conn instanceof mysqli) {
            FROM blacklisted_applicants ba
            JOIN applicants a ON ba.applicant_id = a.id
           WHERE a.business_unit_id=? 
+            " . ($employeeBranchId > 0 ? "AND a.branch_id=? " : "") . "
             AND ba.is_active = 1",
-        $buId
+        $buId,
+        $employeeBranchId
     );
 }
 
@@ -216,12 +233,17 @@ if ($conn instanceof mysqli && $canSeeCSNK) {
           ON a.id = cb.applicant_id
          AND a.business_unit_id = cb.business_unit_id
         WHERE cb.business_unit_id = ?
+          " . ($employeeBranchId > 0 ? "AND a.branch_id = ?\n" : "") . "
           AND a.status = 'on_process'
         ORDER BY cb.created_at DESC
         LIMIT 5
     ";
     if ($stmt = $conn->prepare($sqlBookings)) {
-        $stmt->bind_param('i', $buId);
+        if ($employeeBranchId > 0) {
+            $stmt->bind_param('ii', $buId, $employeeBranchId);
+        } else {
+            $stmt->bind_param('i', $buId);
+        }
         $stmt->execute();
         $res = $stmt->get_result();
         $recentBookings = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
@@ -337,12 +359,17 @@ if ($canViewReports && $conn instanceof mysqli) {
             FROM applicant_reports ar
             INNER JOIN applicants a ON ar.applicant_id = a.id
             WHERE ar.business_unit_id = ? 
+              " . ($employeeBranchId > 0 ? "AND a.branch_id = ?\n" : "") . "
               AND a.deleted_at IS NULL
               AND (SELECT COUNT(*) FROM blacklisted_applicants ba WHERE ba.applicant_id = a.id AND ba.is_active = 1) = 0";
 
     $stmt = $conn->prepare($sql);
     if ($stmt) {
-        $stmt->bind_param('i', $buId);
+        if ($employeeBranchId > 0) {
+            $stmt->bind_param('ii', $buId, $employeeBranchId);
+        } else {
+            $stmt->bind_param('i', $buId);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result && $row = $result->fetch_row()) {
