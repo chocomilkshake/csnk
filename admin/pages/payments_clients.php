@@ -1300,6 +1300,31 @@ function renderAvatar($picture, $client_name)
             // Final delete after 10s
             deleteTimer = setTimeout(() => {
                 finalizeDelete(id);
+            }, 10000);
+        }
+
+        function showDeleteToast() {
+            const toast = document.getElementById('deleteToast');
+            toast.classList.remove('hidden');
+
+            document.getElementById('undoBtn').onclick = undoDelete;
+            document.getElementById('closeToast').onclick = closeToast;
+        }
+
+        function undoDelete() {
+            clearTimeout(deleteTimer);
+            clearInterval(countdownTimer);
+
+            // Restore row
+            const row = document.querySelector(
+                `button[onclick="softDeleteInvoice(${pendingDeleteId})"]`
+            ).closest('tr');
+            row.style.display = '';
+
+            pendingDeleteId = null;
+            closeToast();
+        }
+
         function closeToast() {
             clearInterval(countdownTimer);
             document.getElementById('deleteToast').classList.add('hidden');
