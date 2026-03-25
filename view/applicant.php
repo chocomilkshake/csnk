@@ -132,6 +132,52 @@ $page = 'applicants';
                   </div>
 
                 </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-semibold">Skilled</span>
+                  <a href="#" class="small" id="clearSpecs">Clear</a>
+                </div>
+
+                <div class="vstack gap-1">
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-elec">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Electrician"
+                        id="spec-elec">
+                      Electrician
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-plumb">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Plumber"
+                        id="spec-plumb">
+                      Plumber
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-weld">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Welder"
+                        id="spec-weld">
+                      Welder
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-auto">
+                      <input class="form-check-input" type="checkbox" name="specializations[]"
+                        value="Automotive technician" id="spec-auto">
+                      Automotive technician
+                    </label>
+                  </div>
+
+                  <div class="form-check">
+                    <label class="form-check-label" for="spec-carp">
+                      <input class="form-check-input" type="checkbox" name="specializations[]" value="Carpenter"
+                        id="spec-carp">
+                      Carpenter
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <!-- Availability -->
