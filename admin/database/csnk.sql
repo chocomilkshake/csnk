@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 23, 2026 at 06:03 AM
+-- Generation Time: Mar 25, 2026 at 01:21 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -131,7 +131,24 @@ INSERT INTO `activity_logs` (`id`, `admin_id`, `action`, `description`, `ip_addr
 (1058, 12, 'Start Replacement', 'Start replacement for Applicant ID 29; Reason: Other', '::1', '2026-03-23 01:03:24'),
 (1059, 12, 'Start Replacement', 'Start replacement for Applicant ID 29; Reason: Other', '::1', '2026-03-23 01:04:05'),
 (1060, 12, 'Assign Replacement (Turkey/SMC)', 'Assigned Applicant ID 30 as replacement for Original ID 29; original set to On Hold', '::1', '2026-03-23 01:05:07'),
-(1061, 12, 'Revert On Hold Applicant (SMC/TR)', 'Reverted applicant Charmaine Rose Dimapilis Jimenez (ID: 29) from On Hold to Pending. Reason: Personal Problems Solved', '::1', '2026-03-23 01:10:33');
+(1061, 12, 'Revert On Hold Applicant (SMC/TR)', 'Reverted applicant Charmaine Rose Dimapilis Jimenez (ID: 29) from On Hold to Pending. Reason: Personal Problems Solved', '::1', '2026-03-23 01:10:33'),
+(1062, 12, 'Login', 'User logged in successfully', '::1', '2026-03-24 00:46:13'),
+(1063, 12, 'Update Applicant Status (with report)', 'Updated status for Isabella Grace Mitchell → approved; Reason: Passed interview / assessment: passed with interview of client', '::1', '2026-03-24 00:48:20'),
+(1064, 12, 'Logout', 'User logged out', '::1', '2026-03-24 03:02:06'),
+(1065, 27, 'Login', 'User logged in successfully', '::1', '2026-03-24 03:02:16'),
+(1066, 27, 'Logout', 'User logged out', '::1', '2026-03-24 03:03:11'),
+(1067, 12, 'Login', 'User logged in successfully', '::1', '2026-03-24 03:03:17'),
+(1068, 12, 'Login', 'User logged in successfully', '::1', '2026-03-24 03:07:56'),
+(1069, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 19', '::1', '2026-03-24 06:57:56'),
+(1070, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 22', '::1', '2026-03-24 06:58:17'),
+(1071, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 18', '::1', '2026-03-24 06:58:45'),
+(1072, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 17', '::1', '2026-03-24 06:58:51'),
+(1073, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 23', '::1', '2026-03-24 06:59:37'),
+(1074, 12, 'Hard Delete Client Booking', 'Permanently deleted client booking ID 21', '::1', '2026-03-24 06:59:39'),
+(1075, 12, 'Update Applicant Status (with report)', 'Updated status for Hannah Louise Parker → pending; Reason: Documents incomplete / pending:', '::1', '2026-03-24 07:04:33'),
+(1076, 12, 'Update Applicant Status (with report)', 'Updated status for Johny Ocamps → pending; Reason: Client request / feedback: asdasdasd', '::1', '2026-03-24 07:04:43'),
+(1077, 12, 'Login', 'User logged in successfully', '::1', '2026-03-24 12:11:50'),
+(1078, 12, 'Login', 'User logged in successfully', '::1', '2026-03-25 00:20:29');
 
 -- --------------------------------------------------------
 
@@ -271,16 +288,16 @@ INSERT INTO `applicants` (`id`, `business_unit_id`, `country_id`, `first_name`, 
 (32, 2, 2, 'Denise Grace', 'Angeles', 'Mendiola', '', '09956873410', '09359872140', 'denisemendiola33@example.com', '1992-08-19', '5124 A. Bonifacio St., Brgy. Western Bicutan, Taguig City', '{\"elementary\":{\"school\":\"Western Bicutan Elementary School\",\"year\":\"1999\\u20132005\"},\"highschool\":{\"school\":\"Taguig National High School\",\"year\":\"2005\\u20132009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Taguig Home Services\",\"years\":\"2019\\u20132024\",\"role\":\"Housemaid\\/Caregiver\",\"location\":\"BGC\"},{\"company\":\"UrbanClean Agency\",\"years\":\"2016\\u20132019\",\"role\":\"Cleaner\",\"location\":\"Pasay\"}]', '[\"Taguig\",\"Pasay\",\"Makati\"]', '[\"Filipino\",\"English\"]', '[]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 8, 'applicants/698e9c75149ea_1770953845.jpg', 'video/698e9c751c0ff_1770953845.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', NULL, '2026-02-13 03:37:25', '2026-03-23 01:03:49', NULL),
 (33, 1, 1, 'Ava', 'Marie', 'Thompson', '', '09999999999', '09999999999', 'email@gmail.com', '1998-02-19', '1234 address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 3, 'applicants/698e8d360baa7_1770949942.jpg', 'video/698e8d3610907_1770949942.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:32:22', '2026-03-05 01:31:56', NULL),
 (34, 1, 1, 'Sophia', 'Claire', 'Ramirez', '', '09999999999', '09999999999', 'email@gmail.com', '1990-11-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Mandaluyong\",\"makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e8df92b357_1770950137.jpg', 'video/698e8df92cdd7_1770950137.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:35:37', '2026-03-02 01:46:55', NULL),
-(35, 1, 1, 'Isabella', 'Grace', 'Mitchell', '', '09999999999', '09999999999', 'email@gmail.com', '2000-08-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"IT\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"Mandaluyong\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Technical-Vocational / TESDA Graduate', 2, 'applicants/698e8e832247e_1770950275.jpg', 'video/698e8e83233c5_1770950275.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:37:55', '2026-03-02 01:46:55', NULL),
+(35, 1, 1, 'Isabella', 'Grace', 'Mitchell', '', '09999999999', '09999999999', 'email@gmail.com', '2000-08-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"IT\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"Mandaluyong\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Technical-Vocational / TESDA Graduate', 2, 'applicants/698e8e832247e_1770950275.jpg', 'video/698e8e83233c5_1770950275.mp4', 'file', 'file', '', NULL, NULL, 'approved', 5, '2026-02-13 02:37:55', '2026-03-24 00:48:20', NULL),
 (36, 1, 1, 'Emily', 'Rose', 'Johnson', '', '09999999999', '09999999999', 'email@gmail.com', '1960-02-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\",\"paranaque\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning &amp;amp; Housekeeping (General)\",\"Cooking &amp;amp; Food Service\",\"Pet &amp;amp; Outdoor Maintenance\"]', 'Full Time', NULL, 'Senior High School Graduate (K-12 Curriculum)', 2, 'applicants/698e8f3716c79_1770950455.jpg', 'video/698e8f231b3bd_1770950435.mp4', 'file', 'file', '', NULL, NULL, 'on_process', 5, '2026-02-13 02:40:35', '2026-03-17 00:43:00', NULL),
 (37, 1, 1, 'Mia', 'Elizabeth', 'Carter', '', '09999999999', '09999999999', 'email@gmail.com', '2001-11-02', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[]', '[\"Cleaning and Housekeeping (General)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e8fa38a07a_1770950563.jpg', 'video/698e8fa38af70_1770950563.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:42:43', '2026-03-02 01:46:55', NULL),
-(38, 1, 1, 'Olivia', 'Jane', 'Peterson', '', '09999999999', '09999999999', 'email@gmail.com', '1990-03-06', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e901853864_1770950680.jpg', 'video/698e9018547b8_1770950680.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:44:40', '2026-03-11 03:24:46', NULL),
+(38, 1, 1, 'Olivia', 'Jane', 'Peterson', '', '09999999999', '09999999999', 'email@gmail.com', '1990-03-06', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Graduate (Junior High School / Old Curriculum)', 2, 'applicants/698e901853864_1770950680.jpg', 'video/698e9018547b8_1770950680.mp4', 'file', 'file', '', NULL, NULL, 'on_process', 5, '2026-02-13 02:44:40', '2026-03-24 13:43:18', NULL),
 (39, 1, 1, 'Chloe', 'Ann', 'Sullivan', '', '09999999999', '09999999999', 'email@gmail.com', '1989-01-15', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Sta. Ana Manila\"}]', '[\"Taguig\",\"BGC\"]', '[\"English\",\"Filipino\"]', '[\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Secondary Level (Attended High School)', 2, 'applicants/698e90a11d029_1770950817.jpg', 'video/698e90a11f3d4_1770950817.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:46:57', '2026-03-02 01:46:55', NULL),
-(40, 1, 1, 'Hannah', 'Louise', 'Parker', '', '09999999999', '09999999999', 'email@gmail.com', '1999-08-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Elementary Graduate', 3, 'applicants/698e910d1e60e_1770950925.jpg', 'video/698e910d1fc78_1770950925.mp4', 'file', 'file', '', NULL, NULL, 'on_process', 5, '2026-02-13 02:48:45', '2026-03-23 00:37:21', NULL),
-(41, 1, 1, 'Abigail', 'Nicole', 'Sanders', '', '09999999999', '09999999999', 'email@gmail.com', '2000-11-08', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 2, 'applicants/698e918576116_1770951045.jpg', 'video/698e918577686_1770951045.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:50:45', '2026-03-02 01:46:55', NULL),
+(40, 1, 1, 'Hannah', 'Louise', 'Parker', '', '09999999999', '09999999999', 'email@gmail.com', '1999-08-12', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"Kasambahay\",\"location\":\"Manila\"}]', '[\"Manila\"]', '[\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\"]', 'Full Time', NULL, 'Elementary Graduate', 3, 'applicants/698e910d1e60e_1770950925.jpg', 'video/698e910d1fc78_1770950925.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:48:45', '2026-03-24 07:04:33', NULL),
+(41, 1, 1, 'Abigail', 'Nicole', 'Sanders', '', '09999999999', '09999999999', 'email@gmail.com', '2000-11-08', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"\",\"year\":\"2019\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2026 - 2028\",\"role\":\"Kasambahay\",\"location\":\"Ermita Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cleaning and Housekeeping (General)\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\"]', 'Full Time', NULL, 'Tertiary Graduate (Bachelor’s Degree)', 2, 'applicants/698e918576116_1770951045.jpg', 'video/698e918577686_1770951045.mp4', 'file', 'file', '', NULL, NULL, 'on_process', 5, '2026-02-13 02:50:45', '2026-03-24 07:00:57', NULL),
 (42, 1, 1, 'Natalie', 'Faith', 'Rogers', '', '09999999999', '09999999999', 'email@gmail.com', '1999-01-23', '123 Address', '{\"elementary\":{\"school\":\"Elementary School\",\"year\":\"2001\"},\"highschool\":{\"school\":\"High School\",\"year\":\"2009\"},\"senior_high\":{\"school\":\"Senior High School\",\"strand\":\"STEM\",\"year\":\"2010\"},\"college\":{\"school\":\"College school\",\"course\":\"BSIT\",\"year\":\"2026\"}}', '[{\"company\":\"CREMPCO\",\"years\":\"2011 - 2014\",\"role\":\"IT Programmer\",\"location\":\"Sta. Ana Manila\"}]', '[\"Manila\",\"Makati\"]', '[\"English\",\"Filipino\"]', '[\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', NULL, 'Tertiary Level (College Undergraduate)', 3, 'applicants/698e9220edd8f_1770951200.jpg', 'video/698e9220ee585_1770951200.mp4', 'file', 'file', '', NULL, NULL, 'pending', 5, '2026-02-13 02:53:20', '2026-03-02 01:46:55', NULL),
 (43, 1, 1, 'Ryzza Mae', 'B.', 'Diaz', '', '09123123718', '09817238712', 'renzdiaz.contact@gmail.com', '2026-02-25', '87412 ajllmdawudawdawdasdawds', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"Dr. Juan G. Nolasco High School\",\"year\":\"2016 - 2020\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"BrightClean Services\",\"years\":\"2026 - 2028\",\"role\":\"Housemaid\",\"location\":\"Ermita Manila\"},{\"company\":\"The Grill Makati\",\"years\":\"2026 - 2028\",\"role\":\"Service Crew\",\"location\":\"Makati\"}]', '[\"Makati City\",\"Mandaluyong CIty\"]', '[]', '[\"Cleaning & Housekeeping (General)\",\"Childcare & Maternity (Yaya)\",\"Elderly & Special Care (Caregiver)\"]', 'Full Time', 150.00, 'Secondary Graduate (Junior High School / Old Curriculum)', 4, 'applicants/6996b581e440f_1771484545.jpg', 'video/6996b581ecad4_1771484545.mp4', 'file', 'file', 'My Introduction', NULL, NULL, 'pending', 12, '2026-02-19 07:02:25', '2026-03-21 01:21:48', NULL),
-(44, 1, NULL, 'Johny', '', 'Ocamps', '', '09999999999', '09999999991', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2026 - 2028\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Manila\"]', '[\"English\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 1000.00, 'Elementary Graduate', 2, 'applicants/69aa7106cc2f4_1772777734.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'on_process', 5, '2026-03-06 06:15:34', '2026-03-23 00:37:06', NULL);
+(44, 1, NULL, 'Johny', '', 'Ocamps', '', '09999999999', '09999999991', '', '2000-12-12', '123131 snytgrfdehjghgfd', '{\"elementary\":{\"school\":\"Mendioland Elementary School\",\"year\":\"2010 - 2016\"},\"highschool\":{\"school\":\"\",\"year\":\"\"},\"senior_high\":{\"school\":\"\",\"strand\":\"\",\"year\":\"\"},\"college\":{\"school\":\"\",\"course\":\"\",\"year\":\"\"}}', '[{\"company\":\"Luxurias Bar\",\"years\":\"2026 - 2028\",\"role\":\"Kumekendeng\",\"location\":\"Ermita Manila\"}]', '[\"Manila\"]', '[\"English\"]', '[\"Cleaning and Housekeeping (General)\",\"Laundry and Clothing Care\",\"Cooking and Food Service\",\"Childcare and Maternity (Yaya)\",\"Elderly and Special Care (Caregiver)\",\"Pet and Outdoor Maintenance\"]', 'Full Time', 1000.00, 'Elementary Graduate', 2, 'applicants/69aa7106cc2f4_1772777734.jpg', NULL, NULL, 'iframe', NULL, NULL, NULL, 'pending', 5, '2026-03-06 06:15:34', '2026-03-24 07:04:43', NULL);
 
 --
 -- Triggers `applicants`
@@ -466,12 +483,12 @@ INSERT INTO `applicant_replacements` (`id`, `business_unit_id`, `original_applic
 (105, NULL, 32, 31, NULL, 'Other', 'asdasd', '[]', 'assigned', 12, '2026-03-11 05:39:18', '2026-03-11 05:39:20', '2026-03-11 13:39:20'),
 (106, NULL, 31, 30, NULL, 'Other', 'asdasd', '[]', 'assigned', 12, '2026-03-11 05:58:35', '2026-03-11 05:58:38', '2026-03-11 13:58:38'),
 (107, NULL, 32, 30, NULL, 'Other', 'asd', '[]', 'assigned', 12, '2026-03-22 05:24:45', '2026-03-22 05:24:51', '2026-03-22 13:24:51'),
-(108, NULL, 29, NULL, 0, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:00', '2026-03-23 01:01:00', NULL),
-(109, NULL, 29, NULL, 0, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:10', '2026-03-23 01:01:10', NULL),
-(110, NULL, 29, NULL, 0, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:20', '2026-03-23 01:01:20', NULL),
-(111, NULL, 29, NULL, 0, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:26', '2026-03-23 01:01:26', NULL),
-(112, NULL, 29, NULL, 0, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:03:24', '2026-03-23 01:03:24', NULL),
-(113, NULL, 29, 30, 0, 'Other', 'asdasd', '[]', 'assigned', 12, '2026-03-23 01:04:05', '2026-03-23 01:05:07', '2026-03-23 09:05:07');
+(108, NULL, 29, NULL, 22, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:00', '2026-03-24 06:57:10', NULL),
+(109, NULL, 29, NULL, 22, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:10', '2026-03-24 06:57:10', NULL),
+(110, NULL, 29, NULL, 22, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:20', '2026-03-24 06:57:10', NULL),
+(111, NULL, 29, NULL, 22, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:01:26', '2026-03-24 06:57:10', NULL),
+(112, NULL, 29, NULL, 22, 'Other', 'asddasdsaadsdasdas', '[]', 'selection', 12, '2026-03-23 01:03:24', '2026-03-24 06:57:10', NULL),
+(113, NULL, 29, 30, 22, 'Other', 'asdasd', '[]', 'assigned', 12, '2026-03-23 01:04:05', '2026-03-24 06:57:10', '2026-03-23 09:05:07');
 
 -- --------------------------------------------------------
 
@@ -695,7 +712,10 @@ INSERT INTO `applicant_status_reports` (`id`, `applicant_id`, `business_unit_id`
 (216, 30, 2, 'on_process', 'pending', 'Documents incomplete / pending: asdasd', 12, '2026-03-23 09:04:00'),
 (217, 30, 2, 'pending', 'on_process', 'Replacement assignment — moved from pending to on_process.', 12, '2026-03-23 09:05:07'),
 (218, 29, 2, 'approved', 'on_hold', 'Replaced by Applicant ID 30. Original moved to on_hold.', 12, '2026-03-23 09:05:07'),
-(219, 29, 2, 'on_hold', 'pending', 'Reverted from On Hold to Pending. Reason: Personal Problems Solved. Description: asdasd', 12, '2026-03-23 09:10:33');
+(219, 29, 2, 'on_hold', 'pending', 'Reverted from On Hold to Pending. Reason: Personal Problems Solved. Description: asdasd', 12, '2026-03-23 09:10:33'),
+(220, 35, 1, 'on_process', 'approved', 'Passed interview / assessment: passed with interview of client', 12, '2026-03-24 08:48:20'),
+(221, 40, 1, 'on_process', 'pending', 'Documents incomplete / pending:', 12, '2026-03-24 15:04:33'),
+(222, 44, 1, 'on_process', 'pending', 'Client request / feedback: asdasdasd', 12, '2026-03-24 15:04:43');
 
 -- --------------------------------------------------------
 
@@ -818,20 +838,17 @@ CREATE TABLE `client_bookings` (
   `client_address` varchar(255) NOT NULL,
   `status` enum('submitted','confirmed','cancelled') NOT NULL DEFAULT 'submitted',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `client_bookings`
 --
 
-INSERT INTO `client_bookings` (`id`, `applicant_id`, `business_unit_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`) VALUES
-(17, 44, 1, '[\"Pet & Outdoor Maintenance\",\"Cooking & Food Service\"]', 'Video Call', '2026-12-11', '00:12:00', 'John', 'Munlawin', 'Ocampo', '09999999999', 'ocasmcapcia@gmail.com', '123131 snytgrfdehjghgfd', 'submitted', '2026-03-07 01:36:33', '2026-03-07 01:36:33'),
-(18, 28, 1, '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\",\"Laundry & Clothing Care\"]', 'Audio Call', '2026-03-02', '00:12:00', 'John', 'Munlawin', 'Ocampo', '09999999999', 'ocasmcapcia@gmail.com', '123131 snytgrfdehjghgfd', 'submitted', '2026-03-07 01:41:16', '2026-03-07 01:41:16'),
-(19, 29, 2, '[\"Cleaning & Housekeeping (General)\",\"Elderly & Special Care (Caregiver)\",\"Childcare & Maternity (Yaya)\"]', 'Audio Call', '2026-12-12', '00:12:00', 'Trial', 'Munlawin', 'Trial', '09999999999', 'ocasmcapcia@gmail.com', '123131 snytgrfdehjghgfd', 'submitted', '2026-03-07 02:49:42', '2026-03-11 05:27:27'),
-(0, 36, 1, '[\"Laundry & Clothing Care\",\"Pet & Outdoor Maintenance\"]', 'Office Visit', '2026-03-24', '08:42:00', 'Andrei Jherico', 'B.', 'Javillio', '09270746258', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 'submitted', '2026-03-17 00:43:00', '2026-03-17 00:43:00'),
-(0, 40, 1, '[\"Elderly & Special Care (Caregiver)\"]', 'Office Visit', '2026-03-24', '08:47:00', 'Ralph Justine', 'I.', 'Gallentes', '09128371827', 'roannrenz19@gmail.com', '666 Paco Hellfire St. Paco Manila', 'submitted', '2026-03-17 00:48:15', '2026-03-17 00:48:15'),
-(0, 29, 2, '[\"Elderly & Special Care (Caregiver)\",\"Cleaning & Housekeeping (General)\"]', 'Video Call', '2026-03-20', '13:28:00', 'John Adrian', '', 'Cabrito', '09270746258', 'cabs@gmail.com', '214 Parola Tondo Manila', 'submitted', '2026-03-18 05:29:13', '2026-03-18 05:29:13');
+INSERT INTO `client_bookings` (`id`, `applicant_id`, `business_unit_id`, `services_json`, `appointment_type`, `appointment_date`, `appointment_time`, `client_first_name`, `client_middle_name`, `client_last_name`, `client_phone`, `client_email`, `client_address`, `status`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(24, 41, 1, '[\"Cleaning & Housekeeping (General)\"]', 'Office Visit', '2026-03-30', '11:03:00', 'John Adrian', '', 'Cabrito', '09270746258', 'renzfour19@gmail.com', '666 Paco Hellfire St. Paco Manila', 'submitted', '2026-03-24 07:00:57', '2026-03-24 07:00:57', NULL),
+(25, 38, 1, '[\"Cleaning & Housekeeping (General)\"]', 'Office Visit', '2026-03-26', '10:42:00', 'Ralph Justine', 'Icay', 'Gallentes', '09270746258', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 'submitted', '2026-03-24 13:43:18', '2026-03-24 13:43:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -994,6 +1011,7 @@ INSERT INTO `document_types` (`id`, `country_id`, `code`, `label`, `is_required`
 CREATE TABLE `invoice_history` (
   `id` int(10) UNSIGNED NOT NULL,
   `business_unit_id` int(10) UNSIGNED DEFAULT 1,
+  `client_booking_id` int(10) UNSIGNED DEFAULT NULL,
   `invoice_num` varchar(50) NOT NULL,
   `invoice_date` date NOT NULL,
   `due_date` date NOT NULL,
@@ -1007,17 +1025,21 @@ CREATE TABLE `invoice_history` (
   `pdf_filename` varchar(100) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `company_type` enum('CSNK','SMC') NOT NULL DEFAULT 'CSNK',
-  `status` enum('Pending','OverDue','Paid') NOT NULL DEFAULT 'Pending'
+  `status` enum('Pending','OverDue','Paid') NOT NULL DEFAULT 'Pending',
+  `payment_provider` varchar(50) DEFAULT 'XENDIT',
+  `xendit_invoice_id` varchar(100) DEFAULT NULL,
+  `payment_link` text DEFAULT NULL,
+  `payment_status` enum('Pending','Paid','Expired','Failed') DEFAULT 'Pending',
+  `paid_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `invoice_history`
 --
 
-INSERT INTO `invoice_history` (`id`, `business_unit_id`, `invoice_num`, `invoice_date`, `due_date`, `paid_date`, `reference_no`, `client_name`, `client_email`, `client_address`, `total_amount`, `applicants_data`, `pdf_filename`, `created_at`, `company_type`, `status`) VALUES
-(18, 1, 'CSNK-20260323-887', '2026-03-23', '2026-03-24', NULL, 'REF-20260323-107773', 'Andrei Jherico Javillio', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 20000.00, '[{\"name\":\"Emily Rose Johnson\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-29\",\"days\":28,\"amount\":20000}]', 'CSNK-20260323-887.pdf', '2026-03-23 02:43:29', 'CSNK', 'Pending'),
-(19, 2, 'SMC-20260323-976', '2026-03-23', '0000-00-00', NULL, 'REF-20260323-637234', 'Trial Trial', 'ocasmcapcia@gmail.com', '123131 snytgrfdehjghgfd', 21000.00, '[{\"name\":\"Johny Ocamps\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-31\",\"days\":30,\"amount\":21000}]', 'SMC-20260323-976.pdf', '2026-03-23 02:44:10', 'SMC', 'Pending'),
-(20, 1, 'CSNK-20260323-117', '2026-03-23', '2026-03-25', NULL, 'REF-20260323-148812', 'Andrei Jherico Javillio', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 31000.00, '[{\"name\":\"Emily Rose Johnson\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-31\",\"days\":30,\"amount\":31000}]', 'CSNK-20260323-117.pdf', '2026-03-23 03:14:07', 'CSNK', 'Pending');
+INSERT INTO `invoice_history` (`id`, `business_unit_id`, `client_booking_id`, `invoice_num`, `invoice_date`, `due_date`, `paid_date`, `reference_no`, `client_name`, `client_email`, `client_address`, `total_amount`, `applicants_data`, `pdf_filename`, `created_at`, `company_type`, `status`, `payment_provider`, `xendit_invoice_id`, `payment_link`, `payment_status`, `paid_at`) VALUES
+(35, 1, 24, 'CSNK-20260324-263', '2026-03-24', '2026-03-25', NULL, 'REF-20260324-956571', 'John Adrian Cabrito', 'renzfour19@gmail.com', '666 Paco Hellfire St. Paco Manila', 22000.00, '[{\"name\":\"Abigail Nicole Sanders\",\"start_date\":\"2026-03-02\",\"end_date\":\"2026-03-31\",\"days\":30,\"amount\":22000}]', 'CSNK-20260324-263.pdf', '2026-03-24 13:40:05', 'CSNK', 'Pending', 'XENDIT', '69c2942b7cba76796009afb2', 'https://checkout-staging.xendit.co/web/69c2942b7cba76796009afb2', 'Pending', NULL),
+(36, 1, 25, 'CSNK-20260324-491', '2026-03-24', '2026-03-25', NULL, 'REF-20260324-310944', 'Ralph Justine Gallentes', 'renzfour19@gmail.com', '2461 Princess Floresca St. Pandacan, Manila', 17000.00, '[{\"name\":\"Olivia Jane Peterson\",\"start_date\":\"2026-03-04\",\"end_date\":\"2026-03-20\",\"days\":17,\"amount\":17000}]', 'CSNK-20260324-491.pdf', '2026-03-24 13:43:50', 'CSNK', 'Pending', 'XENDIT', '69c2950beea2af3427acb790', 'https://checkout-staging.xendit.co/web/69c2950beea2af3427acb790', 'Pending', NULL);
 
 -- --------------------------------------------------------
 
@@ -1033,6 +1055,18 @@ CREATE TABLE `session_logs` (
   `login_time` datetime NOT NULL DEFAULT current_timestamp(),
   `logout_time` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `session_logs`
+--
+
+INSERT INTO `session_logs` (`id`, `admin_id`, `ip_address`, `user_agent`, `login_time`, `logout_time`) VALUES
+(258, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 08:46:13', '2026-03-24 11:02:06'),
+(259, 27, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 11:02:16', '2026-03-24 11:03:11'),
+(260, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 11:03:17', NULL),
+(261, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 11:07:56', NULL),
+(262, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 20:11:50', NULL),
+(263, 12, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 08:20:29', NULL);
 
 --
 -- Indexes for dumped tables
@@ -1152,6 +1186,13 @@ ALTER TABLE `business_unit_id_recycle`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `client_bookings`
+--
+ALTER TABLE `client_bookings`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_client_bookings_deleted_at` (`deleted_at`);
+
+--
 -- Indexes for table `content_categories`
 --
 ALTER TABLE `content_categories`
@@ -1189,7 +1230,8 @@ ALTER TABLE `invoice_history`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_invoice_num` (`invoice_num`),
   ADD KEY `idx_invoice_bu` (`business_unit_id`),
-  ADD KEY `idx_invoice_created` (`created_at`);
+  ADD KEY `idx_invoice_created` (`created_at`),
+  ADD KEY `idx_invoice_client_booking` (`client_booking_id`);
 
 --
 -- Indexes for table `session_logs`
@@ -1207,7 +1249,7 @@ ALTER TABLE `session_logs`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1062;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1079;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -1231,13 +1273,19 @@ ALTER TABLE `applicant_reports`
 -- AUTO_INCREMENT for table `applicant_status_reports`
 --
 ALTER TABLE `applicant_status_reports`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=220;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=223;
 
 --
 -- AUTO_INCREMENT for table `business_units`
 --
 ALTER TABLE `business_units`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `client_bookings`
+--
+ALTER TABLE `client_bookings`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `content_categories`
@@ -1267,13 +1315,13 @@ ALTER TABLE `csnk_branches`
 -- AUTO_INCREMENT for table `invoice_history`
 --
 ALTER TABLE `invoice_history`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `session_logs`
 --
 ALTER TABLE `session_logs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=258;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=264;
 
 --
 -- Constraints for dumped tables
