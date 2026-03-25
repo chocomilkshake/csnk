@@ -41,13 +41,15 @@ function createXenditInvoice(array $data)
     $url = XENDIT_API_URL . '/v2/invoices';
 
     $payload = json_encode([
-        'external_id'  => $data['reference_no'],
-        'amount'       => $data['amount'],
-        'payer_email'  => $data['email'],
-        'description'  => $data['description'],
-        'currency'     => 'PHP',
-        'success_redirect_url' => APP_URL . '../payments_success.php',
-        'failure_redirect_url' => APP_URL . '/payments_failed.php',
+        'external_id' => $data['reference_no'],
+        'amount' => $data['amount'],
+        'payer_email' => $data['email'],
+        'description' => $data['description'],
+        'currency' => 'PHP',
+
+        // ✅ APP_URL already contains /admin
+        'success_redirect_url' => APP_URL . '/pages/payments_success.php',
+        'failure_redirect_url' => APP_URL . '/pages/payments_failed.php',
     ]);
 
     $ch = curl_init($url);
@@ -81,6 +83,16 @@ function createXenditInvoice(array $data)
 
 // POST HANDLER BLOCK
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
+        session_start();
+
+    if (!empty($_SESSION['invoice_processing'])) {
+        setFlashMessage('warning', 'Invoice is already being processed.');
+        header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
+        exit;
+    }
+
+    $_SESSION['invoice_processing'] = true;
+    unset($_SESSION['invoice_processing']);
 
     // ================= BASIC INPUTS =================
     $client_name       = trim($_POST['client_name']);
@@ -226,6 +238,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
         $business_unit_id = (int) ($_POST['business_unit_id'] ?? 0);
 
+        $check = $conn->prepare("
+            SELECT id FROM invoice_history
+            WHERE reference_no = ?
+            LIMIT 1
+            ");
+            $check->bind_param("s", $reference_no);
+            $check->execute();
+            $check->store_result();
+
+            if ($check->num_rows > 0) {
+            setFlashMessage(
+                'warning',
+                'This invoice was already generated. Please refresh the page.'
+            );
+            header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
+            exit;
+            }
+
         $stmt = $conn->prepare("
             INSERT INTO invoice_history (
                 business_unit_id,
@@ -293,23 +323,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             );
         }
 
-        // ✅ send email AFTER DB insert
+        // ✅ EMAIL HANDLING (ASYNC-LIKE, NON-BLOCKING)
         if (filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
-            $emailSent = sendInvoiceEmail(
+
+            // Send email AFTER response is finished (prevents slow UI & double click panic)
+            register_shutdown_function(function () use (
                 $client_email,
                 $client_name,
                 $invoice_num,
                 $filepath,
                 $company_type,
-                $payment_link ?? null
+                $payment_link
+            ) {
+                try {
+                    sendInvoiceEmail(
+                        $client_email,
+                        $client_name,
+                        $invoice_num,
+                        $filepath,
+                        $company_type,
+                        $payment_link
+                    );
+                } catch (Throwable $e) {
+                    error_log('Invoice email failed: ' . $e->getMessage());
+                }
+            });
+
+            setFlashMessage(
+                'success',
+                '✅ Invoice generated and is being emailed to the client.'
             );
 
-            if ($emailSent) {
-                setFlashMessage(
-                    'success',
-                    '✅ Invoice generated, saved, and emailed to the client successfully.'
-                );
-            }
         } else {
             setFlashMessage(
                 'warning',
@@ -317,6 +361,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             );
         }
 
+        // ✅ RELEASE SESSION LOCK (if you added session protection)
+        unset($_SESSION['invoice_processing']);
+
+        // ✅ IMMEDIATE REDIRECT (FAST RESPONSE)
         header('Location: ' . APP_URL . '/pages/payment_invoice_gen.php');
         exit;
     }
@@ -756,8 +804,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                             <button type="button" class="btn btn-outline-primary" onclick="addApplicant()">
                                 <i class="bi bi-plus-circle me-2"></i>Add Applicant
                             </button>
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Generate Invoice PDF
+                                <button type="submit"
+                                        class="btn btn-success btn-lg"
+                                        id="generateBtn">
+                                <span class="btn-text">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>
+                                    Generate Invoice PDF
+                                </span>
+                                <span class="btn-loading d-none">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Generating…
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -1377,6 +1434,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             dueDate.setAttribute('min', today);
         }
     });
+
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const btn  = document.getElementById('generateBtn');
+
+        form.addEventListener('submit', () => {
+        btn.disabled = true;
+        btn.querySelector('.btn-text').classList.add('d-none');
+        btn.querySelector('.btn-loading').classList.remove('d-none');
+        });
+    });
+
+    const modal = new bootstrap.Modal(
+        document.getElementById('actionModal')
+        );
+    modal.show();
 </script>
 
 <?php include '../includes/footer.php'; ?>
