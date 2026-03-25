@@ -527,52 +527,6 @@ function renderAvatar($picture, $client_name)
         color: #fff
     }
 
-    .invoice-preview-paper {
-        background: #fff;
-        padding: 40px;
-        font-family: Arial, Helvetica, sans-serif
-    }
-
-    .inv-header {
-        display: flex;
-        justify-content: space-between;
-        border-bottom: 2px solid #ddd;
-        padding-bottom: 15px
-    }
-
-    .inv-title {
-        text-align: center;
-        font-size: 28px;
-        margin: 25px 0;
-        font-weight: 700
-    }
-
-    .inv-meta {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px
-    }
-
-    .inv-table {
-        width: 100%;
-        border-collapse: collapse
-    }
-
-    .inv-table th,
-    .inv-table td {
-        padding: 10px;
-        border-bottom: 1px solid #eee
-    }
-
-    .inv-table th {
-        background: #f5f5f5
-    }
-
-    .inv-declaration,
-    .inv-payment {
-        margin-top: 20px
-    }
-
     @keyframes slideUp {
         from {
             transform: translateY(20px);
@@ -656,6 +610,72 @@ function renderAvatar($picture, $client_name)
     .modal-l {
         max-width: 800px;
         /* change this value */
+    }
+
+    #logo-csnk {
+        height: 100px;
+        /* make bigger */
+    }
+
+    #badge-csnk {
+        height: 180px;
+        /* make bigger */
+    }
+
+    #logo-smc {
+        height: 100px;
+        /* make bigger */
+    }
+
+    #badge-smc {
+        height: 180px;
+        /* make bigger */
+    }
+
+    .invoice-preview-paper {
+        background: #fff;
+        padding: 40px;
+        font-family: Arial, Helvetica, sans-serif
+    }
+
+    .inv-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 15px
+    }
+
+    .inv-title {
+        text-align: center;
+        font-size: 28px;
+        margin: 25px 0;
+        font-weight: 700
+    }
+
+    .inv-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px
+    }
+
+    .inv-table {
+        width: 100%;
+        border-collapse: collapse
+    }
+
+    .inv-table th,
+    .inv-table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee
+    }
+
+    .inv-table th {
+        background: #f5f5f5
+    }
+
+    .inv-declaration,
+    .inv-payment {
+        margin-top: 20px
     }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -921,11 +941,10 @@ function renderAvatar($picture, $client_name)
                             <!-- LEFT SIDE: MAIN LOGO + INFO -->
                             <div>
                                 <!-- CSNK MAIN LOGO -->
-                                <img id="logo-csnk" src="../../resources/img/whychoose.png" height="65">
+                                <img id="logo-csnk" src="../../resources/img/whychoose.png">
 
                                 <!-- SMC MAIN LOGO -->
-                                <img id="logo-smc" src="../../resources/img/smcbrandname.png" height="90"
-                                    class="d-none">
+                                <img id="logo-smc" src="../../resources/img/smcbrandname.png" class="d-none">
 
                                 <div class="mt-1 small text-muted" id="company-address">
                                     Unit 1 Eden Townhomes<br>
