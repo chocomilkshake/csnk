@@ -150,9 +150,17 @@ class Auth
     {
         return isset($_SESSION['current_bu_id']) ? (int) $_SESSION['current_bu_id'] : null;
     }
+    public function getCurrentBranchId(): ?int
+    {
+        return isset($_SESSION['current_branch_id']) ? (int) $_SESSION['current_branch_id'] : null;
+    }
     public function setCurrentBuId(int $buId): void
     {
         $_SESSION['current_bu_id'] = $buId;
+    }
+    public function setCurrentBranchId(int $branchId): void
+    {
+        $_SESSION['current_branch_id'] = $branchId;
     }
 
     // [BU] Lightweight column detector (cached)
@@ -307,8 +315,21 @@ class Auth
         $_SESSION['session_fp'] = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 128));
         $_SESSION['last_activity'] = time();
 
-        // [BU] Establish BU context in session and allowed BU IDs
-        $this->setBuOnSession((int) $user['id'], isset($user['business_unit_id']) ? (int) $user['business_unit_id'] : null, (string) $user['role']);
+        $sessionBuId = isset($user['business_unit_id']) ? (int) $user['business_unit_id'] : null;
+        $sessionAgency = strtolower((string) ($user['agency'] ?? ''));
+        $sessionRole = strtolower((string) ($user['role'] ?? ''));
+
+        // CSNK employee accounts store their branch ID in admin_users.business_unit_id.
+        // Keep BU and branch isolated in session so applicant queries can enforce both.
+        if ($sessionAgency === 'csnk' && $sessionRole === 'employee') {
+            $_SESSION['current_branch_id'] = $sessionBuId > 0 ? $sessionBuId : 0;
+            $sessionBuId = $this->resolveBuId('CSNK-PH') ?? $sessionBuId;
+        } else {
+            unset($_SESSION['current_branch_id']);
+        }
+
+        // [BU] Establish BU context in session and allowed BU IDs + BRANCH for CSNK employees
+        $this->setBuOnSession((int) $user['id'], $sessionBuId, (string) $user['role']);
 
         // Log session + activity (with BU if column exists)
         $this->logSession((int) $user['id']);
