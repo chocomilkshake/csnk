@@ -1578,32 +1578,32 @@ function renderHistoryTable(data, bookingId) {
                             <div class="fw-semibold text-blue-600">#${escapeHtml(inv.invoice_num || 'N/A')}</div>
                             <div class="small text-muted">${escapeHtml(inv.reference_no || 'N/A')}</div>
                         </td>
-                        <td class="py-3">
-                            <div>
-                                ${inv.invoice_date
-                                    ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    })
-                                    : '-'}
-                            </div>
+                <td class="py-3">
+                    <div>
+                        ${inv.invoice_date
+                            ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                            })
+                            : '-'}
+                    </div>
 
-                            <small class="text-muted">
-                                ${inv.created_at
-                                    ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    })
-                                    : ''}
-                                ${inv.invoice_date
-                                    ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
-                                        weekday: 'short'
-                                    })
-                                    : ''}
-                            </small>
-                        </td>
+                    <small class="text-muted">
+                        ${inv.created_at
+                            ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            })
+                            : ''}
+                        ${inv.invoice_date
+                            ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                weekday: 'short'
+                            })
+                            : ''}
+                    </small>
+                </td>
                         <td class="py-3 fw-medium ${isOverdue ? 'text-red-700' : ''}">
                             ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', { 
                                 month: 'short', day: 'numeric', year: 'numeric' 
