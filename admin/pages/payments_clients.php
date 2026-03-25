@@ -1584,3 +1584,23 @@ function renderAvatar($picture, $client_name)
 
             </div>
         </td>
+        </tr>
+    `);
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger py-5">
+                    Failed to load invoice history
+                </td>
+            </tr>
+        `;
+                });
+        }
+
+    </script>
+
+
+
+    <?php include '../includes/footer.php'; ?>
