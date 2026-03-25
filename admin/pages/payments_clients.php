@@ -1569,6 +1569,37 @@ function renderHistoryTable(data, bookingId) {
                 const statusStyle = statusText === 'Paid'
                     ? 'border:1px solid #059669;color:#059669;background:#ecfdf5;'
                     : (isOverdue
+                        ? 'border:1px solid #dc2626;color:#dc2626;background:#fef2f2;'
+                        : 'border:1px solid #cbd5e1;color:#0f172a;background:#f8fafc;');
+
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-bottom hover:bg-gray-50 transition-colors">
+                        <td class="ps-5 py-3">
+                            <div class="fw-semibold text-blue-600">#${escapeHtml(inv.invoice_num || 'N/A')}</div>
+                            <div class="small text-muted">${escapeHtml(inv.reference_no || 'N/A')}</div>
+                        </td>
+                        <td class="py-3">
+                            <div>
+                                ${inv.invoice_date
+                                    ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })
+                                    : '-'}
+                            </div>
+
+                            <small class="text-muted">
+                                ${inv.created_at
+                                    ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                    })
+                                    : ''}
+                                ${inv.invoice_date
+                                    ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                        weekday: 'short'
                                     })
                                     : ''}
                             </small>
