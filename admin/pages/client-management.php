@@ -308,8 +308,8 @@ function safe(?string $s): string
     </div>
   <?php else: ?>
     <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead class="bg-gray-50">
+      <table class="w-full border border-gray-300">
+        <thead class="bg-gray-50 border border-gray-300">
           <tr>
             <th
               class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96 border-r border-gray-300">
