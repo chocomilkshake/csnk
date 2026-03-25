@@ -1363,12 +1363,20 @@ function renderHistoryTable(data) {
         <td class="text-center pe-5">
             <div class="d-inline-flex gap-2">
 
-            <button class="btn btn-sm"
+            <button class="btn btn-sm view-btn"
                     title="Preview"
-                    style="border:1px solid #e5e7eb;border-radius:10px;"
+                    data-id="${inv.id}"
+                    data-invoice="${escapeHtml(inv.invoice_num)}"
+                    data-date="${inv.invoice_date}"
+                    data-due="${inv.due_date}"
+                    data-total="${inv.total_amount}"
+                    data-ref="${escapeHtml(inv.reference_no)}"
+                    data-client="${escapeHtml(inv.client_name)}"
+                    data-email="${escapeHtml(inv.client_email)}"
+                    data-address="${escapeHtml(inv.client_address)}"
+                    data-pdf="${escapeHtml(inv.pdf_filename)}"
                     data-bs-toggle="modal"
-                    data-bs-target="#viewModal"
-                    data-id="${inv.id}">
+                    data-bs-target="#viewModal">
                 <i class="bi bi-eye"></i>
             </button>
 
@@ -1400,10 +1408,8 @@ function renderHistoryTable(data) {
     });
     
     // Re-attach event listeners for dynamic view buttons
-    tbody.querySelectorAll('.btn-action').forEach(btn => {
-        if (btn.matches('.btn-view')) {
-            btn.addEventListener('click', viewInvoiceHandler);
-        }
+    tbody.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', viewInvoiceHandler);
     });
     
     // Attach resend event listeners
