@@ -1419,7 +1419,34 @@ function renderAvatar($picture, $client_name)
                     document.getElementById('historyInvoiceCount').textContent =
                         currentHistoryData.length + ' Invoices';
                 } else {
-                    document.getElementById('historyClientFullName').textContent = 'No Invoices Foun
+                    document.getElementById('historyClientFullName').textContent = 'No Invoices Found';
+                    document.getElementById('historyClientAddress').textContent = 'N/A';
+                    document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+                const dateA = new Date(a.invoice_date || 0);
+                const dateB = new Date(b.invoice_date || 0);
+                return dateB - dateA;
+            });
+
+
+            data.forEach(inv => {
+
+                const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
+                const statusText = inv.status || 'Pending';
+
+                const statusStyle =
+                    statusText === 'Paid'
+                        ? 'border:1px solid #2563eb;color:#2563eb;'
+                        : 'border:1px solid #cbd5e1;color:#0f172a;';
+
+                tbody.insertAdjacentHTML('beforeend', `
+        <tr class="border-bottom"
+            style="transition:.15s;"
+            onmouseover="this.style.background='#f8fafc'"
+            onmouseout="this.style.background='transparent'">
+            <i class="bi bi-eye"></i>
+        </button>
+
+            ${inv.status !== 'Paid' ? `
             <button class="btn btn-sm"
                     title="Resend"
                     style="border:1px solid #e5e7eb;border-radius:10px;">
