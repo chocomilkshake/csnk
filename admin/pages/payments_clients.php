@@ -113,30 +113,71 @@ if (
     $tab = strtoupper(trim($_GET['tab']));
     $companyType = ($tab === 'SMC') ? 'SMC' : 'CSNK';
 
-    $stmt = $conn->prepare("
-        SELECT
-            id,
-            invoice_num,
-            invoice_date,
-            due_date,
-            total_amount,
-            CASE
-                WHEN payment_status = 'Paid' THEN 'Paid'
-                WHEN due_date < CURDATE() THEN 'OverDue'
-                ELSE 'Pending'
-            END AS status,
-            reference_no,
-            client_name,
-            client_email,
-            client_address,
-            applicants_data,
-            pdf_filename
+    // ✅ STEP 1: Check if there are ANY pending invoices
+    $check = $conn->prepare("
+        SELECT COUNT(*) AS pending_count
         FROM invoice_history
         WHERE client_booking_id = ?
           AND company_type = ?
-        ORDER BY invoice_date DESC
+          AND payment_status != 'Paid'
     ");
+    $check->bind_param('is', $booking_id, $companyType);
+    $check->execute();
+    $pendingCount = (int) $check->get_result()
+                                ->fetch_assoc()['pending_count'];
 
+    // ✅ STEP 2: Build query dynamically
+    if ($pendingCount > 0) {
+        // There is at least one Pending invoice
+        $sql = "
+            SELECT
+                id,
+                invoice_num,
+                invoice_date,
+                due_date,
+                total_amount,
+                payment_status,
+                reference_no,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                pdf_filename,
+                created_at
+            FROM invoice_history
+            WHERE client_booking_id = ?
+              AND company_type = ?
+            ORDER BY
+                CASE
+                    WHEN payment_status = 'Paid' THEN 1
+                    ELSE 0
+                END ASC,
+                created_at DESC
+        ";
+    } else {
+        $sql = "
+            SELECT
+                id,
+                invoice_num,
+                invoice_date,
+                due_date,
+                total_amount,
+                payment_status,
+                reference_no,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                pdf_filename,
+                created_at
+            FROM invoice_history
+            WHERE client_booking_id = ?
+              AND company_type = ?
+            ORDER BY created_at DESC
+        ";
+    }
+
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param('is', $booking_id, $companyType);
     $stmt->execute();
 
@@ -682,6 +723,23 @@ function renderAvatar($picture, $client_name)
 
 <div class="container-fluid py-4">
 
+<!-- DELETE TOAST - MISSING HTML -->
+<div id="deleteToast" class="delete-toast hidden">
+  <div class="toast-body">
+    <div class="toast-text">
+      <div class="fw-bold">Invoice moved to trash</div>
+      <div class="toast-sub" id="toastSubtitle">This will be permanently deleted in</div>
+    </div>
+    <div class="toast-actions">
+      <button id="undoDelete" class="toast-undo">Undo</button>
+      <button id="closeToast" class="toast-close">&times;</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+      <span id="toastCountdown">7</span>s
+    </div>
+  </div>
+</div>
+
 
     <div class="d-flex justify-content-between align-items-center mb-3">
 
@@ -789,9 +847,9 @@ function renderAvatar($picture, $client_name)
 
                                 <!-- ACTION -->
                                 <td class="px-6 py-4 text-center">
-                                    <button
+                                        <button
                                         class="inline-flex items-center gap-2 justify-center h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                                        onclick="openClientHistory(<?= (int) $inv['client_booking_id'] ?>, '<?= addslashes($activeTab) ?>')"
+                                        data-booking="<?= (int) $inv['client_booking_id'] ?>" data-tab="<?= addslashes($activeTab) ?>"
                                         title="View History">
                                         <i class="bi bi-clock-history text-sm"></i>
                                         <span class="text-sm">History</span>
@@ -801,6 +859,7 @@ function renderAvatar($picture, $client_name)
                             </tr>
 
                         <?php endforeach; endif; ?>
+                    </div>
                 </tbody>
             </table>
 
@@ -819,17 +878,20 @@ function renderAvatar($picture, $client_name)
                 </div>
 
                 <div class="modal-body text-center py-5">
-                    <div class="spinner-border text-primary mb-4" role="status"></div>
+                    <!-- ✅ REQUIRED -->
+                    <div id="actionModalIcon" class="mb-4"></div>
+
                     <div class="fw-semibold" id="actionModalTitle2">
                         Sending Invoice
                     </div>
+
                     <p class="text-muted mb-0" id="actionModalMessage">
                         Please wait a moment…
                     </p>
                 </div>
 
                 <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
-                    <button class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
+                    <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
                         OK
                     </button>
                 </div>
@@ -837,6 +899,39 @@ function renderAvatar($picture, $client_name)
             </div>
         </div>
     </div>
+
+        <!-- ================= CONFIRM RESEND MODAL ================= -->
+    <div class="modal fade" id="confirmResendModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+
+        <div class="modal-header">
+            <h5 class="modal-title">
+            <i class="bi bi-envelope-paper me-2"></i>
+            Resend Invoice
+            </h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body text-center">
+            <p class="mb-0">
+            Are you sure you want to resend the invoice email to the client?
+            </p>
+        </div>
+
+        <div class="modal-footer justify-content-center">
+            <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+            Cancel
+            </button>
+            <button class="btn btn-primary px-4" id="confirmResendBtn">
+            Yes, Resend
+            </button>
+        </div>
+
+        </div>
+    </div>
+    </div>
+
 
     <!-- ================= IMPROVED CLIENT INVOICE HISTORY MODAL ================= -->
     <div class="modal fade" id="historyModal" tabindex="-1">
@@ -879,16 +974,17 @@ function renderAvatar($picture, $client_name)
                         </div>
                     </div>
 
-                    <!-- SEARCH -->
-                    <div class="px-5 py-3 border-bottom">
-                        <div class="position-relative">
-                            <input id="modalSearch" type="text" class="form-control ps-5"
-                                placeholder="Search invoice number, date, status…"
-                                style="border-radius:14px;border:1px solid #e5e7eb;">
-                            <i class="bi bi-search position-absolute"
-                                style="left:16px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
-                        </div>
+                <!-- SEARCH -->
+                <div class="px-5 py-3 border-bottom">
+                    <div class="position-relative">
+                        <input id="modalSearch" type="text" class="form-control ps-5"
+                            placeholder="Search invoice number, date, status…"
+                            style="border-radius:14px;border:1px solid #e5e7eb;">
+                        <button id="modalSearchClear" class="position-absolute end-0 top-50 translate-middle-y me-3" style="border:none;background:none;color:#9ca3af;font-size:1.2rem;cursor:pointer;display:none;">×</button>
+                        <i class="bi bi-search position-absolute"
+                            style="left:16px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
                     </div>
+                </div>
 
                     <!-- TABLE -->
                     <div class="table-responsive" style="max-height:65vh;">
@@ -1023,7 +1119,6 @@ function renderAvatar($picture, $client_name)
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
     <script>
         let actionModal;
 
@@ -1079,12 +1174,6 @@ function renderAvatar($picture, $client_name)
             }
         }
 
-
-        // Client-side search (fuzzy, instant, typo-tolerant)
-        let allInvoices = <?= json_encode($invoices, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-        let filteredInvoices = [...allInvoices];
-        let fuse;
-
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('invoiceSearch') || document.querySelector('input[type="search"]');
             const tableBody = document.querySelector('tbody');
@@ -1092,6 +1181,10 @@ function renderAvatar($picture, $client_name)
             resultsCount.className = 'search-results';
             tableBody.parentNode.insertBefore(resultsCount, tableBody);
 
+   
+            const allInvoices = <?= json_encode($invoices, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+            
             // Fuse.js for fuzzy search
             fuse = new Fuse(allInvoices, {
                 keys: [
@@ -1292,77 +1385,68 @@ function renderAvatar($picture, $client_name)
         let currentInvoiceData = {};
 
 
-        let deleteTimer = null;
-        let countdownTimer = null;
-        let pendingDeleteId = null;
-        let countdownValue = 10;
+        let deleteTimer;
+        let countdownTimer;
+        let deleteInvoiceId;
+        let deletedRow;
 
-        function softDeleteInvoice(id) {
+        function softDeleteInvoice(id, row) {
+
             if (!confirm('Delete this invoice?')) return;
 
-            pendingDeleteId = id;
-            countdownValue = 10;
-
-            // Hide row immediately
-            const row = document.querySelector(
-                `button[onclick="softDeleteInvoice(${id})"]`
-            ).closest('tr');
+            deleteInvoiceId = id;
+            deletedRow = row;
             row.style.display = 'none';
 
             showDeleteToast();
 
-            // Countdown display
-            document.getElementById('toastCountdown').textContent = countdownValue;
+            let seconds = 7;
+            document.getElementById('toastCountdown').textContent = seconds;
 
             countdownTimer = setInterval(() => {
-                countdownValue--;
-                document.getElementById('toastCountdown').textContent = countdownValue;
-
-                if (countdownValue <= 0) {
-                    clearInterval(countdownTimer);
-                }
+                seconds--;
+                document.getElementById('toastCountdown').textContent = seconds;
+                if (seconds <= 0) clearInterval(countdownTimer);
             }, 1000);
 
-            // Final delete after 10s
-            deleteTimer = setTimeout(() => {
-                finalizeDelete(id);
-            }, 10000);
+            deleteTimer = setTimeout(finalizeDelete, 7000);
+
+            document.getElementById('undoDelete').onclick = undoDelete;
+            document.getElementById('closeToast').onclick = finalizeDelete;
         }
 
         function showDeleteToast() {
-            const toast = document.getElementById('deleteToast');
-            toast.classList.remove('hidden');
-
-            document.getElementById('undoBtn').onclick = undoDelete;
-            document.getElementById('closeToast').onclick = closeToast;
+            document.getElementById('deleteToast').classList.remove('hidden');
         }
 
         function undoDelete() {
             clearTimeout(deleteTimer);
             clearInterval(countdownTimer);
-
-            // Restore row
-            const row = document.querySelector(
-                `button[onclick="softDeleteInvoice(${pendingDeleteId})"]`
-            ).closest('tr');
-            row.style.display = '';
-
-            pendingDeleteId = null;
-            closeToast();
+            deletedRow.style.display = '';
+            hideDeleteToast();
         }
 
-        function closeToast() {
-            clearInterval(countdownTimer);
+        function hideDeleteToast() {
             document.getElementById('deleteToast').classList.add('hidden');
         }
 
-        function finalizeDelete(id) {
-            window.location.href = `payments_clients.php?action=delete&id=${id}`;
+        function finalizeDelete() {
+            window.location.href =
+                `payments_clients.php?action=delete&id=${deleteInvoiceId}`;
         }
 
         let currentHistoryData = [];
 
-        function openClientHistory(bookingId, tab) {
+function openClientHistory(bookingId, tab) {
+            // Defensive: Handle if button element passed
+            if (typeof bookingId === 'object' && bookingId.dataset) {
+                bookingId = bookingId.dataset.booking;
+                tab = bookingId.dataset.tab;
+            }
+            
+            bookingId = bookingId?.trim();
+            tab = tab?.trim();
+            
             console.log('Opening history for booking:', bookingId, 'tab:', tab);
 
             const historyModalEl = document.getElementById('historyModal');
@@ -1389,253 +1473,204 @@ function renderAvatar($picture, $client_name)
                 '&booking_id=' + encodeURIComponent(bookingId) +
                 '&tab=' + encodeURIComponent(tab)
             )
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        const first = data[0];
-                        document.getElementById('historyClientFullName').textContent = first.client_name;
-                        document.getElementById('historyClientEmail').textContent = first.client_email;
-                        document.getElementById('historyClientAddress').textContent = first.client_address;
-                        document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
-                    }
-                    renderHistoryTable(data);
-                });
-        }
-
-        const historyClientNameEl = document.getElementById('historyClientName');
-        if (historyClientNameEl) {
-            historyClientNameEl.textContent = clientEmail;
-        }
-
-        const tbody = document.getElementById('historyTableBody');
-        tbody.innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center py-5">
-                <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <div class="mt-3 h5 text-muted">Loading invoice history...</div>
-            </td>
-        </tr>
-    `;
-
-        fetch(
-            'payments_clients.php?get_client_history=1' +
-            '&booking_id=' + encodeURIComponent(bookingId) +
-            '&tab=' + encodeURIComponent(tab)
-        )
             .then(res => {
-                if (!res.ok) {
-                    throw new Error('Network error (' + res.status + ')');
-                }
+                if (!res.ok) throw new Error('Network response failed');
                 return res.json();
             })
             .then(data => {
-                currentHistoryData = Array.isArray(data) ? data : [];
-
-                // Populate client info
-                if (currentHistoryData.length > 0) {
-                    const firstInv = currentHistoryData[0];
-                    document.getElementById('historyClientFullName').textContent =
-                        firstInv.client_name || 'Unknown Client';
-                    document.getElementById('historyClientEmail').textContent =
-                        firstInv.client_email || clientEmail;
-                    document.getElementById('historyClientAddress').textContent =
-                        firstInv.client_address || 'N/A';
-                    document.getElementById('historyInvoiceCount').textContent =
-                        currentHistoryData.length + ' Invoices';
+                currentHistoryData = data;
+                if (data && data.length > 0) {
+                    const first = data[0];
+                    document.getElementById('historyClientFullName').textContent = first.client_name;
+                    document.getElementById('historyClientEmail').textContent = first.client_email;
+                    document.getElementById('historyClientAddress').textContent = first.client_address;
+                    document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
                 } else {
-                    document.getElementById('historyClientFullName').textContent = 'No Invoices Found';
-                    document.getElementById('historyClientAddress').textContent = 'N/A';
-                    document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+                    document.getElementById('historyInvoiceCount').textContent = 'No Invoices';
                 }
-
-                renderHistoryTable(currentHistoryData);
-
-                // Search inside modal
-                if (modalSearch) {
-                    modalSearch.oninput = function () {
-                        const q = this.value.toLowerCase().trim();
-                        const filtered = currentHistoryData.filter(inv =>
-                            inv.invoice_num?.toLowerCase().includes(q) ||
-                            inv.reference_no?.toLowerCase().includes(q) ||
-                            inv.status?.toLowerCase().includes(q) ||
-                            String(inv.total_amount).includes(q)
-                        );
-                        renderHistoryTable(filtered);
-                        if (modalSearchClear) {
-                            modalSearchClear.style.opacity = q ? '1' : '0';
-                        }
-                    };
-                }
-
-                if (modalSearchClear) {
-                    modalSearchClear.onclick = function () {
-                        if (modalSearch) modalSearch.value = '';
-                        modalSearchClear.style.opacity = '0';
-                        renderHistoryTable(currentHistoryData);
-                    };
-                }
+                renderHistoryTable(data || [], bookingId);
             })
             .catch(error => {
                 console.error('Error loading invoice history:', error);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>Error loading history</td></tr>`;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger py-5">
+                            <i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>
+                            <div class="fw-bold">Failed to load history</div>
+                            <div class="text-muted">Please refresh and try again</div>
+                        </td>
+                    </tr>
+                `;
             });
 
-        function renderHistoryTable(data) {
+            // Modal search handlers (re-attach always)
+            const modalSearch = document.getElementById('modalSearch');
+            const modalSearchClear = document.getElementById('modalSearchClear');
+            if (modalSearch && !modalSearch._handlerAttached) {
+                modalSearch._handlerAttached = true;
+                modalSearch.oninput = function () {
+                    const q = this.value.toLowerCase().trim();
+                    const filtered = currentHistoryData.filter(inv =>
+                        inv.invoice_num?.toLowerCase().includes(q) ||
+                        inv.reference_no?.toLowerCase().includes(q) ||
+                        inv.status?.toLowerCase().includes(q) ||
+                        inv.client_name?.toLowerCase().includes(q) ||
+                        String(inv.total_amount || '').includes(q)
+                    );
+                    renderHistoryTable(filtered, bookingId);
+                    modalSearchClear.style.display = q ? 'block' : 'none';
+                };
+            }
+            if (modalSearchClear) {
+                modalSearchClear.onclick = function () {
+                    modalSearch.value = '';
+                    this.style.display = 'none';
+                    renderHistoryTable(currentHistoryData, bookingId);
+                };
+            }
+        }
+
+function renderHistoryTable(data, bookingId) {
+            currentHistoryData = Array.isArray(data) ? data : [];
             const tbody = document.getElementById('historyTableBody');
 
-            if (!Array.isArray(data) || data.length === 0) {
+            if (currentHistoryData.length === 0) {
                 tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox fs-1 mb-3 opacity-50"></i>
-                    <div class="h5 fw-semibold mb-1">No invoices found</div>
-                    <div class="text-muted">No invoice history matches your search.</div>
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 mb-3 opacity-50"></i>
+                            <div class="h5 fw-semibold mb-1">No invoices found</div>
+                            <div class="text-muted">No invoice history matches your search.</div>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
+            // ✅ Check if there is any pending invoice
+            const hasPending = currentHistoryData.some(inv => inv.payment_status !== 'Paid');
+
+            const sortedData = [...currentHistoryData].sort((a, b) => {
+
+                // ✅ Case A: There is at least one Pending → Pending first
+                if (hasPending && a.payment_status !== b.payment_status) {
+                    return a.payment_status === 'Paid' ? 1 : -1;
+                }
+
+                // ✅ Always newest first
+                return b.id - a.id;
+            });
+
             tbody.innerHTML = '';
 
-
-            data.sort((a, b) => {
-                const dateA = new Date(a.invoice_date || 0);
-                const dateB = new Date(b.invoice_date || 0);
-                return dateB - dateA;
-            });
-
-
-            data.forEach(inv => {
-
+            sortedData.forEach(inv => {
                 const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
-                const statusText = inv.status || 'Pending';
-
-                const statusStyle =
-                    statusText === 'Paid'
-                        ? 'border:1px solid #2563eb;color:#2563eb;'
-                        : 'border:1px solid #cbd5e1;color:#0f172a;';
+                const statusText = inv.payment_status || 'Pending';
+                const statusStyle = statusText === 'Paid'
+                    ? 'border:1px solid #059669;color:#059669;background:#ecfdf5;'
+                    : (isOverdue
+                        ? 'border:1px solid #dc2626;color:#dc2626;background:#fef2f2;'
+                        : 'border:1px solid #cbd5e1;color:#0f172a;background:#f8fafc;');
 
                 tbody.insertAdjacentHTML('beforeend', `
-        <tr class="border-bottom"
-            style="transition:.15s;"
-            onmouseover="this.style.background='#f8fafc'"
-            onmouseout="this.style.background='transparent'">
+                    <tr class="border-bottom hover:bg-gray-50 transition-colors">
+                        <td class="ps-5 py-3">
+                            <div class="fw-semibold text-blue-600">#${escapeHtml(inv.invoice_num || 'N/A')}</div>
+                            <div class="small text-muted">${escapeHtml(inv.reference_no || 'N/A')}</div>
+                        </td>
+                        <td class="py-3">
+                            <div>
+                                ${inv.invoice_date
+                                    ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })
+                                    : '-'}
+                            </div>
 
-        <!-- INVOICE -->
-        <td class="ps-5">
-            <div class="fw-semibold" style="color:#2563eb;">
-            #${escapeHtml(inv.invoice_num)}
-            </div>
-            <div style="font-size:.85rem;color:#64748b;">
-            ${escapeHtml(inv.reference_no || 'N/A')}
-            </div>
-        </td>
-
-        <!-- DATE -->
-        <td>
-            <div>${inv.invoice_date
-                        ? new Date(inv.invoice_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-                        : '-'}</div>
-            <small style="color:#64748b;">
-            ${inv.invoice_date
-                        ? new Date(inv.invoice_date).toLocaleDateString('en-PH', { weekday: 'short' })
-                        : ''}
-            </small>
-        </td>
-
-        <!-- DUE -->
-        <td style="font-weight:500;color:${isOverdue ? '#0f172a' : '#0f172a'};">
-            ${inv.due_date
-                        ? new Date(inv.due_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-                        : '-'}
-        </td>
-
-        <!-- AMOUNT -->
-        <td class="text-end fw-semibold">
-            ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-        </td>
-
-        <!-- STATUS -->
-        <td class="text-center">
-            <span class="px-3 py-1 rounded-pill fw-semibold"
-                style="font-size:.8rem;${statusStyle}">
-            ${statusText}
-            </span>
-        </td>
-
-        <!-- ACTIONS -->
-        <td class="text-center pe-5">
-            <div class="d-inline-flex gap-2">
-
-        <button class="btn btn-sm view-btn"
-                title="Preview"
-                data-id="${inv.id}"
-                data-invoice="${escapeHtml(inv.invoice_num)}"
-                data-date="${inv.invoice_date}"
-                data-due="${inv.due_date}"
-                data-total="${inv.total_amount}"
-                data-ref="${escapeHtml(inv.reference_no)}"
-                data-client="${escapeHtml(inv.client_name)}"
-                data-email="${escapeHtml(inv.client_email)}"
-                data-address="${escapeHtml(inv.client_address)}"
-                data-pdf="${escapeHtml(inv.pdf_filename)}"
-                data-bs-toggle="modal"
-                data-bs-target="#viewModal">
-            <i class="bi bi-eye"></i>
-        </button>
-
-            ${inv.status !== 'Paid' ? `
-            <button class="btn btn-sm"
-                    title="Resend"
-                    style="border:1px solid #e5e7eb;border-radius:10px;">
-                <i class="bi bi-send"></i>
-            </button>` : ''}
-
-            <button class="btn btn-sm"
-                    title="Edit"
-                    onclick="editInvoiceFromHistory(${inv.id})"
-                    style="border:1px solid #e5e7eb;border-radius:10px;">
-                <i class="bi bi-pencil"></i>
-            </button>
-
-            <button class="btn btn-sm"
-                    title="Delete"
-                    onclick="softDeleteInvoice(${inv.id})"
-                    style="border:1px solid #e5e7eb;border-radius:10px;">
-                <i class="bi bi-trash"></i>
-            </button>
-
-            </div>
-        </td>
-        </tr>
-    `);
+                            <small class="text-muted">
+                                ${inv.created_at
+                                    ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                    })
+                                    : ''}
+                                ${inv.invoice_date
+                                    ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                                        weekday: 'short'
+                                    })
+                                    : ''}
+                            </small>
+                        </td>
+                        <td class="py-3 fw-medium ${isOverdue ? 'text-red-700' : ''}">
+                            ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', { 
+                                month: 'short', day: 'numeric', year: 'numeric' 
+                            }) : '-'}
+                        </td>
+                        <td class="py-3 text-end fw-semibold text-gray-900">
+                            ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td class="text-center py-3">
+                            <span class="px-3 py-1 rounded-pill fw-semibold small" style="${statusStyle}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="text-center pe-5 py-3">
+                            <div class="d-inline-flex gap-1">
+                                <button class="btn btn-sm view-btn border rounded p-1" title="Preview"
+                                    data-id="${inv.id}"
+                                    data-invoice="${escapeHtml(inv.invoice_num || '')}"
+                                    data-date="${inv.invoice_date || ''}"
+                                    data-due="${inv.due_date || ''}"
+                                    data-total="${inv.total_amount || 0}"
+                                    data-ref="${escapeHtml(inv.reference_no || '')}"
+                                    data-client="${escapeHtml(inv.client_name || '')}"
+                                    data-email="${escapeHtml(inv.client_email || '')}"
+                                    data-address="${escapeHtml(inv.client_address || '')}"
+                                    data-pdf="${escapeHtml(inv.pdf_filename || '')}"
+                                    data-bs-toggle="modal" data-bs-target="#viewModal">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                ${inv.status !== 'Paid' ? `
+                                <button class="btn btn-sm btn-resend border rounded p-1" title="Resend Email"
+                                    data-id="${inv.id}">
+                                    <i class="bi bi-send"></i>
+                                </button>` : ''}
+                                <a href="payment_invoice_gen.php?edit=${inv.id}&booking_id=${bookingId}" 
+                                   class="btn btn-sm border rounded p-1 text-primary text-decoration-none" title="Edit"
+                                   target="_blank">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-delete border rounded p-1" title="Delete"
+                                    data-id="${inv.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `);
             });
 
-            // Re-attach event listeners for dynamic view buttons
+            // Re-attach event listeners for new buttons
             tbody.querySelectorAll('.view-btn').forEach(btn => {
+                btn.removeEventListener('click', viewInvoiceHandler);
                 btn.addEventListener('click', viewInvoiceHandler);
             });
-
-            // Attach resend event listeners
-            document.addEventListener('click', function (e) {
-                if (e.target.closest('.btn-resend')) {
+        tbody.querySelectorAll('.btn-resend').forEach(btn => {
+                btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const btn = e.target.closest('.btn-resend');
-                    const id = parseInt(btn.dataset.id);
-                    resendInvoiceEmail(id);
-                }
+                    resendInvoiceEmail(this.dataset.id);
+                });
             });
-
-            // Global event delegation for view buttons (handles dynamic content)
-            document.addEventListener('click', function (e) {
-                if (e.target.closest('.btn-action.btn-view')) {
+            tbody.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.onclick = (e) => {
                     e.preventDefault();
-                    viewInvoiceHandler.call(e.target.closest('.btn-action'));
-                }
+                    e.stopPropagation();
+                    softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
+                };
             });
         }
 
@@ -1649,94 +1684,134 @@ function renderAvatar($picture, $client_name)
         }
 
 
+        // ================= RESEND TRIGGER =================
+        let pendingResendInvoiceId = null;
+
         function resendInvoiceEmail(invoiceId) {
-            // ✅ Show CONFIRMATION first
-            if (confirm('Resend invoice email to client? This will send the same invoice again.')) {
-                showActionModal(
-                    'Resending Invoice',
-                    'Sending invoice email to client... Please wait.',
-                    'loading'
-                );
 
-                fetch('payments_clients.php?resend_invoice_email=1&id=' + invoiceId)
-                    .then(res => {
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            showActionModal(
-                                '✅ Email Sent Successfully!',
-                                data.message || 'Invoice resent successfully to client.',
-                                'success'
-                            );
-                        } else {
-                            throw new Error(data.message || 'Failed to send email');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Resend error:', error);
-                        showActionModal(
-                            '❌ Failed to Send Email',
-                            error.message || 'Failed to send invoice email. Please try again.',
-                            'error'
-                        );
-                    });
-            }
-        }
+            if (!invoiceId) return;
 
-        function openClientHistory(bookingId, tab) {
-            console.log('Opening history for booking:', bookingId, 'tab:', tab);
+            pendingResendInvoiceId = invoiceId;
 
+            // ✅ AUTO-CLOSE INVOICE HISTORY MODAL IF OPEN
             const historyModalEl = document.getElementById('historyModal');
-            const modal = new bootstrap.Modal(historyModalEl);
-            modal.show();
+            const historyModalInstance = bootstrap.Modal.getInstance(historyModalEl);
 
-            document.getElementById('historyClientFullName').textContent = 'Loading Client...';
-            document.getElementById('historyClientEmail').textContent = '';
-            document.getElementById('historyClientAddress').textContent = '';
-            document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+            if (historyModalInstance) {
+                historyModalInstance.hide();
+            }
 
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
-                <div class="mt-3 text-muted">Loading invoice history...</div>
-            </td>
-        </tr>
-    `;
-
-            fetch(
-                'payments_clients.php?get_client_history=1' +
-                '&booking_id=' + encodeURIComponent(bookingId) +
-                '&tab=' + encodeURIComponent(tab)
-            )
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        const first = data[0];
-                        document.getElementById('historyClientFullName').textContent = first.client_name;
-                        document.getElementById('historyClientEmail').textContent = first.client_email;
-                        document.getElementById('historyClientAddress').textContent = first.client_address;
-                        document.getElementById('historyInvoiceCount').textContent = data.length + ' Invoices';
-                    }
-                    renderHistoryTable(data);
-                })
-                .catch(err => {
-                    console.error(err);
-                    tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-danger py-5">
-                    Failed to load invoice history
-                </td>
-            </tr>
-        `;
-                });
+            // ✅ SMALL DELAY TO AVOID MODAL STACKING
+            setTimeout(() => {
+                const confirmModal = new bootstrap.Modal(
+                    document.getElementById('confirmResendModal')
+                );
+                confirmModal.show();
+            }, 300);
         }
 
-    </script>
+        
+        const searchInput = document.getElementById('invoiceSearch');
+        let searchTimer;
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                const q = encodeURIComponent(this.value.trim());
+                window.location.href = 'payments_clients.php?q=' + q;
+            }, 500);
+        });
 
 
+    document.addEventListener('click', function (e) {
 
-    <?php include '../includes/footer.php'; ?>
+        /* History button */
+        const historyBtn = e.target.closest('[data-booking]');
+        if (historyBtn) {
+            openClientHistory(historyBtn.dataset.booking, historyBtn.dataset.tab);
+            return;
+        }
+
+        /* Edit invoice */
+        const editLink = e.target.closest('.edit-invoice-link');
+        if (editLink) {
+            window.location.href = `payment_invoice_gen.php?edit=${editLink.dataset.edit}&booking_id=${editLink.dataset.booking}`;
+            return;
+        }
+
+        /* ================= DELETE ================= */
+        const delBtn = e.target.closest('.btn-delete');
+        if (delBtn) {
+            softDeleteInvoice(delBtn.dataset.id, delBtn.closest('tr'));
+            return;
+        }
+
+        /* ================= RESEND ================= */
+        const resendBtn = e.target.closest('.btn-resend');
+        if (resendBtn) {
+            resendInvoiceEmail(resendBtn.dataset.id);
+            return;
+        }
+
+        /* ================= VIEW ================= */
+        const viewBtn = e.target.closest('.view-btn');
+        if (viewBtn) {
+            viewInvoiceHandler.call(viewBtn);
+            return;
+        }
+
+    });
+
+    // ================= CONFIRM RESEND HANDLER =================
+    document.getElementById('confirmResendBtn').addEventListener('click', function () {
+
+        if (!pendingResendInvoiceId) return;
+
+        // Close confirm modal
+        bootstrap.Modal.getInstance(
+            document.getElementById('confirmResendModal')
+        ).hide();
+
+        // Show processing modal
+        showActionModal(
+            'Resending Invoice',
+            'Sending invoice email to client... Please wait.',
+            'loading'
+        );
+
+        // ✅ FINAL FIX: NO &amp;
+        fetch(
+            'payments_clients.php?resend_invoice_email=1&id=' +
+            encodeURIComponent(pendingResendInvoiceId)
+        )
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showActionModal(
+                    '✅ Email Sent Successfully',
+                    data.message || 'Invoice email has been sent to the client.',
+                    'success'
+                );
+            } else {
+                throw new Error(data.message || 'Failed to send invoice');
+            }
+        })
+        .catch(err => {
+            showActionModal(
+                '❌ Failed to Send Email',
+                err.message,
+                'error'
+            );
+        })
+        .finally(() => {
+            pendingResendInvoiceId = null;
+        });
+    });
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+<?php include '../includes/footer.php'; ?>
