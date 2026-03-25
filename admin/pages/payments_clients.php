@@ -1556,7 +1556,31 @@ function renderHistoryTable(data, bookingId) {
                 if (hasPending && a.payment_status !== b.payment_status) {
                     return a.payment_status === 'Paid' ? 1 : -1;
                 }
-                            </ent to the client.',
+                            </div>
+                        </td>
+                    </tr>
+                    e.preventDefault();
+                    e.stopPropagation();
+                    softDeleteInvoice(btn.dataset.id,
+
+            'Sending invoice email to client... Please wait.',
+            'loading'
+        );
+
+        // ✅ FINAL FIX: NO &amp;
+        fetch(
+            'payments_clients.php?resend_invoice_email=1&id=' +
+            encodeURIComponent(pendingResendInvoiceId)
+        )
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showActionModal(
+                    '✅ Email Sent Successfully',
+                    data.message || 'Invoice email has been sent to the client.',
                     'success'
                 );
             } else {
