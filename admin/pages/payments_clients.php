@@ -1427,6 +1427,32 @@ function renderAvatar($picture, $client_name)
                 renderHistoryTable(currentHistoryData);
 
                 // Search inside modal
+                if (modalSearch) {
+                    modalSearch.oninput = function () {
+                        const q = this.value.toLowerCase().trim();
+                        const filtered = currentHistoryData.filter(inv =>
+                            inv.invoice_num?.toLowerCase().includes(q) ||
+                            inv.reference_no?.toLowerCase().includes(q) ||
+                            inv.status?.toLowerCase().includes(q) ||
+                            String(inv.total_amount).includes(q)
+                        );
+                        renderHistoryTable(filtered);
+                        if (modalSearchClear) {
+                            modalSearchClear.style.opacity = q ? '1' : '0';
+                        }
+                    };
+                }
+
+                if (modalSearchClear) {
+                    modalSearchClear.onclick = function () {
+                        if (modalSearch) modalSearch.value = '';
+                        modalSearchClear.style.opacity = '0';
+                        renderHistoryTable(currentHistoryData);
+                    };
+                }
+            })
+            .catch(error => {
+                console.error('Error loading invoice history:', error);
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>Error loading history</td></tr>`;
             });
 
