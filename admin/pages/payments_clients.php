@@ -1422,6 +1422,34 @@ function renderAvatar($picture, $client_name)
                     document.getElementById('historyClientFullName').textContent = 'No Invoices Found';
                     document.getElementById('historyClientAddress').textContent = 'N/A';
                     document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+                }
+
+                renderHistoryTable(currentHistoryData);
+
+                // Search inside modal
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i>Error loading history</td></tr>`;
+            });
+
+        function renderHistoryTable(data) {
+            const tbody = document.getElementById('historyTableBody');
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 mb-3 opacity-50"></i>
+                    <div class="h5 fw-semibold mb-1">No invoices found</div>
+                    <div class="text-muted">No invoice history matches your search.</div>
+                </td>
+            </tr>
+        `;
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+
+            data.sort((a, b) => {
                 const dateA = new Date(a.invoice_date || 0);
                 const dateB = new Date(b.invoice_date || 0);
                 return dateB - dateA;
