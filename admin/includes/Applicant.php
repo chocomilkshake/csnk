@@ -83,6 +83,58 @@ class Applicant
         return $result;
     }
 
+    /**
+     * Get single CSNK branch details by ID (for agency scope display)
+     */
+    public function getBranchDetails(int $branchId): ?array
+    {
+        if ($branchId <= 0) {
+            return null;
+        }
+        $sql = "SELECT id, code, name, is_default FROM csnk_branches WHERE id = ? AND status = 'ACTIVE' LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('getBranchDetails prepare failed: ' . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param("i", $branchId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+        return $row;
+    }
+
+    /**
+     * Get business unit details with country info by BU ID (for agency scope)
+     */
+    public function getBusinessUnitCountry(int $businessUnitId): ?array
+    {
+        if ($businessUnitId <= 0) {
+            return null;
+        }
+        $sql = "
+            SELECT 
+                bu.id, bu.code, bu.name AS bu_name,
+                c.id AS country_id, c.name AS country_name, c.iso2
+            FROM business_units bu
+            JOIN countries c ON c.id = bu.country_id
+            WHERE bu.id = ? AND bu.active = 1
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('getBusinessUnitCountry prepare failed: ' . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param("i", $businessUnitId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+        return $row;
+    }
+
     /* ============================================================
      * EXISTING METHODS (kept)
      * ============================================================ */
