@@ -1374,6 +1374,36 @@ function renderAvatar($picture, $client_name)
                     }
                     renderHistoryTable(data);
                 });
+        }
+
+        const historyClientNameEl = document.getElementById('historyClientName');
+        if (historyClientNameEl) {
+            historyClientNameEl.textContent = clientEmail;
+        }
+
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-3 h5 text-muted">Loading invoice history...</div>
+            </td>
+        </tr>
+    `;
+
+        fetch(
+            'payments_clients.php?get_client_history=1' +
+            '&booking_id=' + encodeURIComponent(bookingId) +
+            '&tab=' + encodeURIComponent(tab)
+        )
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network error (' + res.status + ')');
+                }
+                return res.json();
+            })
             .then(data => {
                 currentHistoryData = Array.isArray(data) ? data : [];
 
