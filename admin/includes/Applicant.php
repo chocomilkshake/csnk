@@ -135,24 +135,135 @@ class Applicant
         return $row;
     }
 
-    /* ============================================================
-     * EXISTING METHODS (kept)
-     * ============================================================ */
-
-    public function getAll($status = null, ?int $businessUnitId = null, ?string $agency = null): array
+    private function tableHasColumn(string $table, string $column): bool
     {
-        $where = [];
-        $types = '';
-        $params = [];
+        static $cache = [];
 
-        if ($agency !== null && in_array($agency, ['csnk', 'smc'], true)) {
+        $key = $table . '|' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $tableEsc = str_replace('`', '``', $table);
+        $columnEsc = $this->db->real_escape_string($column);
+        $sql = "SHOW COLUMNS FROM `{$tableEsc}` LIKE '{$columnEsc}'";
+
+        $exists = false;
+        try {
+            if ($res = $this->db->query($sql)) {
+                $exists = $res->num_rows > 0;
+                $res->close();
+            }
+        } catch (\Throwable $e) {
+            $exists = false;
+        }
+
+        $cache[$key] = $exists;
+        return $exists;
+    }
+
+    private function resolveBusinessUnitIdByCode(string $code): ?int
+    {
+        $sql = "SELECT id FROM business_units WHERE code = ? AND active = 1 LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            return null;
+        }
+
+        $stmt->bind_param('s', $code);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+
+        return isset($row['id']) ? (int) $row['id'] : null;
+    }
+
+    private function getSessionScope(): array
+    {
+        $role = strtolower((string) ($_SESSION['admin_role'] ?? $_SESSION['role'] ?? ''));
+        $agency = strtolower((string) ($_SESSION['agency'] ?? ''));
+        $currentBuId = (int) ($_SESSION['current_bu_id'] ?? 0);
+        $currentBranchId = (int) ($_SESSION['current_branch_id'] ?? 0);
+
+        $scope = [
+            'role' => $role,
+            'agency' => in_array($agency, ['csnk', 'smc'], true) ? $agency : null,
+            'is_employee' => $role === 'employee',
+            'business_unit_id' => $currentBuId > 0 ? $currentBuId : null,
+            'branch_id' => $currentBranchId > 0 ? $currentBranchId : null,
+        ];
+
+        if (!$scope['is_employee']) {
+            return $scope;
+        }
+
+        if ($scope['agency'] === self::CSNK_AGENCY_CODE) {
+            $csnkBusinessUnitId = $this->resolveBusinessUnitIdByCode('CSNK-PH');
+            if ($csnkBusinessUnitId !== null) {
+                $scope['business_unit_id'] = $csnkBusinessUnitId;
+            }
+
+            if (($scope['branch_id'] ?? 0) <= 0 && $currentBuId > 0 && $currentBuId !== (int) ($scope['business_unit_id'] ?? 0)) {
+                $scope['branch_id'] = $currentBuId;
+            }
+        }
+
+        return $scope;
+    }
+
+    private function applyAgencyBusinessUnitBranchScope(array &$where, string &$types, array &$params, ?int $businessUnitId = null, ?string $agency = null, ?int $branchId = null): void
+    {
+        $normalizedAgency = ($agency !== null && in_array($agency, ['csnk', 'smc'], true)) ? $agency : null;
+        $scope = $this->getSessionScope();
+        $hasBranchColumn = $this->tableHasColumn('applicants', 'branch_id');
+
+        if ($scope['is_employee']) {
+            if ($scope['agency'] !== null) {
+                $where[] = " EXISTS (
+                    SELECT 1 FROM business_units bu
+                    JOIN agencies a ON a.id = bu.agency_id
+                    WHERE bu.id = applicants.business_unit_id AND a.code = ?
+                ) ";
+                $types .= "s";
+                $params[] = $scope['agency'];
+            }
+
+            $scopeBuId = (int) ($scope['business_unit_id'] ?? 0);
+            if ($scopeBuId > 0) {
+                if ($businessUnitId !== null && $businessUnitId > 0 && $businessUnitId !== $scopeBuId) {
+                    $where[] = "1 = 0";
+                    return;
+                }
+
+                $where[] = "applicants.business_unit_id = ?";
+                $types .= "i";
+                $params[] = $scopeBuId;
+            }
+
+            $scopeBranchId = (int) ($scope['branch_id'] ?? 0);
+            if ($scope['agency'] === self::CSNK_AGENCY_CODE && $hasBranchColumn && $scopeBranchId > 0) {
+                if ($branchId !== null && $branchId > 0 && $branchId !== $scopeBranchId) {
+                    $where[] = "1 = 0";
+                    return;
+                }
+
+                $where[] = "applicants.branch_id = ?";
+                $types .= "i";
+                $params[] = $scopeBranchId;
+            }
+
+            return;
+        }
+
+        if ($normalizedAgency !== null) {
             $where[] = " EXISTS (
-                SELECT 1 FROM business_units bu 
-                JOIN agencies a ON a.id = bu.agency_id 
+                SELECT 1 FROM business_units bu
+                JOIN agencies a ON a.id = bu.agency_id
                 WHERE bu.id = applicants.business_unit_id AND a.code = ?
             ) ";
             $types .= "s";
-            $params[] = $agency;
+            $params[] = $normalizedAgency;
         }
 
         if ($businessUnitId !== null && $businessUnitId > 0) {
@@ -160,6 +271,42 @@ class Applicant
             $types .= "i";
             $params[] = $businessUnitId;
         }
+
+        if ($hasBranchColumn && $branchId !== null && $branchId > 0) {
+            $where[] = "applicants.branch_id = ?";
+            $types .= "i";
+            $params[] = $branchId;
+        }
+    }
+
+    private function getApplicantByIdRaw(int $id): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
+        if (!$stmt) {
+            error_log('getApplicantByIdRaw prepare failed: ' . $this->db->error);
+            return null;
+        }
+
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+
+        return $row ?: null;
+    }
+
+    /* ============================================================
+     * EXISTING METHODS (kept)
+     * ============================================================ */
+
+    public function getAll($status = null, ?int $businessUnitId = null, ?string $agency = null, ?int $branchId = null): array
+    {
+        $where = [];
+        $types = '';
+        $params = [];
+
+        $this->applyAgencyBusinessUnitBranchScope($where, $types, $params, $businessUnitId, $agency, $branchId);
 
         $where[] = "applicants.deleted_at IS NULL";
         $where[] = "NOT EXISTS (
@@ -210,30 +357,54 @@ class Applicant
         return $res->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function getDeleted()
+    public function getDeleted(?int $branchId = null, ?int $businessUnitId = null, ?string $agency = null)
     {
-        $sql = "
-            SELECT *
-            FROM applicants
-            WHERE deleted_at IS NOT NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM blacklisted_applicants b
-                WHERE b.applicant_id = applicants.id AND b.is_active = 1
-              )
-            ORDER BY deleted_at DESC
-        ";
+        $where = ["deleted_at IS NOT NULL"];
+        $params = [];
+        $types = '';
+
+        $this->applyAgencyBusinessUnitBranchScope($where, $types, $params, $businessUnitId, $agency, $branchId);
+
+        $where[] = "NOT EXISTS (
+            SELECT 1 FROM blacklisted_applicants b
+            WHERE b.applicant_id = applicants.id AND b.is_active = 1
+        )";
+
+        $sql = "SELECT * FROM applicants WHERE " . implode(" AND ", $where) . " ORDER BY deleted_at DESC";
+
+        if (!empty($params)) {
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log('getDeleted prepare failed: ' . $this->db->error);
+                return [];
+            }
+            $this->bindByRef($stmt, $types, $params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $rows = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+            $stmt->close();
+            return $rows;
+        }
+
         $result = $this->db->query($sql);
-        return $result->fetch_all(MYSQLI_ASSOC);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
 
     public function getById($id)
     {
-        $stmt = $this->db->prepare("SELECT * FROM applicants WHERE id = ? LIMIT 1");
+        $where = ["id = ?"];
+        $types = "i";
+        $params = [(int) $id];
+
+        $this->applyAgencyBusinessUnitBranchScope($where, $types, $params);
+
+        $stmt = $this->db->prepare("SELECT * FROM applicants WHERE " . implode(" AND ", $where) . " LIMIT 1");
         if (!$stmt) {
             error_log('getById prepare failed: ' . $this->db->error);
             return null;
         }
-        $stmt->bind_param("i", $id);
+
+        $this->bindByRef($stmt, $types, $params);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result ? $result->fetch_assoc() : null;
@@ -269,9 +440,23 @@ class Applicant
         $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
         $createdBy = isset($data['created_by']) ? (int) $data['created_by'] : 0;
 
+        $scope = $this->getSessionScope();
         $businessUnitId = isset($data['business_unit_id']) ? (int) $data['business_unit_id'] : null;
         $countryId = isset($data['country_id']) ? (int) $data['country_id'] : null;
         $branchId = isset($data['branch_id']) && $data['branch_id'] !== '' ? (int) $data['branch_id'] : null;
+
+        if ($scope['is_employee']) {
+            $scopeBuId = (int) ($scope['business_unit_id'] ?? 0);
+            if ($scopeBuId > 0) {
+                $businessUnitId = $scopeBuId;
+            }
+
+            if (($scope['agency'] ?? null) === self::CSNK_AGENCY_CODE) {
+                $branchId = (int) ($scope['branch_id'] ?? 0) ?: null;
+            } else {
+                $branchId = null;
+            }
+        }
 
         if ($dailyRate === null) {
             $sql = "INSERT INTO applicants (
@@ -365,34 +550,57 @@ class Applicant
 
     public function update($id, $data)
     {
+        $existing = $this->getById((int) $id);
+        if (!$existing) {
+            return false;
+        }
+
         $dailyRate = null;
         if (isset($data['daily_rate']) && $data['daily_rate'] !== '') {
             $dailyRate = round((float) $data['daily_rate'], 2);
+        } elseif (array_key_exists('daily_rate', $data)) {
+            $dailyRate = null;
+        } elseif ($existing['daily_rate'] !== null && $existing['daily_rate'] !== '') {
+            $dailyRate = round((float) $existing['daily_rate'], 2);
         }
 
-        $first = $data['first_name'] ?? null;
-        $middle = $data['middle_name'] ?? null;
-        $last = $data['last_name'] ?? null;
-        $suffix = $data['suffix'] ?? null;
-        $phone = $data['phone_number'] ?? null;
-        $alt = $data['alt_phone_number'] ?? null;
-        $email = $data['email'] ?? null;
-        $dob = $data['date_of_birth'] ?? null;
-        $addr = $data['address'] ?? null;
-        $educA = $data['educational_attainment'] ?? null;
-        $workH = $data['work_history'] ?? null;
-        $pref = $data['preferred_location'] ?? null;
-        $langs = $data['languages'] ?? null;
-        $skills = $data['specialization_skills'] ?? null;
-        $pic = $data['picture'] ?? null;
-        $status = $data['status'] ?? 'pending';
-        $empTy = $data['employment_type'] ?? null;
-        $eduLv = $data['education_level'] ?? null;
-        $years = isset($data['years_experience']) ? (int) $data['years_experience'] : 0;
+        $first = $data['first_name'] ?? $existing['first_name'] ?? null;
+        $middle = $data['middle_name'] ?? $existing['middle_name'] ?? null;
+        $last = $data['last_name'] ?? $existing['last_name'] ?? null;
+        $suffix = $data['suffix'] ?? $existing['suffix'] ?? null;
+        $phone = $data['phone_number'] ?? $existing['phone_number'] ?? null;
+        $alt = $data['alt_phone_number'] ?? $existing['alt_phone_number'] ?? null;
+        $email = $data['email'] ?? $existing['email'] ?? null;
+        $dob = $data['date_of_birth'] ?? $existing['date_of_birth'] ?? null;
+        $addr = $data['address'] ?? $existing['address'] ?? null;
+        $educA = $data['educational_attainment'] ?? $existing['educational_attainment'] ?? null;
+        $workH = $data['work_history'] ?? $existing['work_history'] ?? null;
+        $pref = $data['preferred_location'] ?? $existing['preferred_location'] ?? null;
+        $langs = $data['languages'] ?? $existing['languages'] ?? null;
+        $skills = $data['specialization_skills'] ?? $existing['specialization_skills'] ?? null;
+        $pic = array_key_exists('picture', $data) ? $data['picture'] : ($existing['picture'] ?? null);
+        $status = $data['status'] ?? $existing['status'] ?? 'pending';
+        $empTy = $data['employment_type'] ?? $existing['employment_type'] ?? null;
+        $eduLv = $data['education_level'] ?? $existing['education_level'] ?? null;
+        $years = isset($data['years_experience']) ? (int) $data['years_experience'] : (int) ($existing['years_experience'] ?? 0);
 
-        $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== '' ? (int) $data['business_unit_id'] : null;
-        $countryId = isset($data['country_id']) && $data['country_id'] !== '' ? (int) $data['country_id'] : null;
-        $branchId = isset($data['branch_id']) && $data['branch_id'] !== '' ? (int) $data['branch_id'] : null;
+        $businessUnitId = isset($data['business_unit_id']) && $data['business_unit_id'] !== '' ? (int) $data['business_unit_id'] : (isset($existing['business_unit_id']) ? (int) $existing['business_unit_id'] : null);
+        $countryId = isset($data['country_id']) && $data['country_id'] !== '' ? (int) $data['country_id'] : (isset($existing['country_id']) ? (int) $existing['country_id'] : null);
+        $branchId = isset($data['branch_id']) && $data['branch_id'] !== '' ? (int) $data['branch_id'] : (isset($existing['branch_id']) && $existing['branch_id'] !== null ? (int) $existing['branch_id'] : null);
+
+        $scope = $this->getSessionScope();
+        if ($scope['is_employee']) {
+            $scopeBuId = (int) ($scope['business_unit_id'] ?? 0);
+            if ($scopeBuId > 0) {
+                $businessUnitId = $scopeBuId;
+            }
+
+            if (($scope['agency'] ?? null) === self::CSNK_AGENCY_CODE) {
+                $branchId = (int) ($scope['branch_id'] ?? 0) ?: null;
+            } else {
+                $branchId = null;
+            }
+        }
 
         if ($dailyRate === null) {
             $sql = "UPDATE applicants SET
@@ -505,6 +713,10 @@ class Applicant
 
     public function softDelete($id)
     {
+        if (!$this->getById((int) $id)) {
+            return false;
+        }
+
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NOW(), status = 'deleted' WHERE id = ?");
         $stmt->bind_param("i", $id);
         $ok = $stmt->execute();
@@ -514,6 +726,10 @@ class Applicant
 
     public function restore($id)
     {
+        if (!$this->getApplicantByIdRaw((int) $id) || !$this->getById((int) $id)) {
+            return false;
+        }
+
         $stmt = $this->db->prepare("UPDATE applicants SET deleted_at = NULL, status = 'pending' WHERE id = ?");
         $stmt->bind_param("i", $id);
         $ok = $stmt->execute();
@@ -532,6 +748,10 @@ class Applicant
 
     public function updateStatus($id, $status)
     {
+        if (!$this->getById((int) $id)) {
+            return false;
+        }
+
         $stmt = $this->db->prepare("UPDATE applicants SET status = ? WHERE id = ?");
         $stmt->bind_param("si", $status, $id);
         $ok = $stmt->execute();
@@ -541,6 +761,10 @@ class Applicant
 
     public function markOnProcess(int $id): bool
     {
+        if (!$this->getById($id)) {
+            return false;
+        }
+
         $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL");
         $stmt->bind_param("i", $id);
         $ok = $stmt->execute();
@@ -590,14 +814,15 @@ class Applicant
         return $ok;
     }
 
-    public function getStatistics()
+    public function getStatistics(?int $branchId = null)
     {
         $stats = [];
+        $branchCond = $branchId > 0 ? "a.branch_id = $branchId AND " : '';
 
         $result = $this->db->query("
             SELECT COUNT(*) as total
             FROM applicants a
-            WHERE a.deleted_at IS NULL
+            WHERE {$branchCond} a.deleted_at IS NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
                 WHERE b.applicant_id = a.id AND b.is_active = 1
@@ -608,7 +833,7 @@ class Applicant
         $result = $this->db->query("
             SELECT COUNT(*) as pending
             FROM applicants a
-            WHERE a.status = 'pending'
+            WHERE {$branchCond} a.status = 'pending'
               AND a.deleted_at IS NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
@@ -620,7 +845,7 @@ class Applicant
         $result = $this->db->query("
             SELECT COUNT(*) as on_process
             FROM applicants a
-            WHERE a.status = 'on_process'
+            WHERE {$branchCond} a.status = 'on_process'
               AND a.deleted_at IS NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
@@ -632,7 +857,7 @@ class Applicant
         $result = $this->db->query("
             SELECT COUNT(*) as deleted
             FROM applicants a
-            WHERE a.deleted_at IS NOT NULL
+            WHERE {$branchCond} a.deleted_at IS NOT NULL
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
                 WHERE b.applicant_id = a.id AND b.is_active = 1
@@ -643,8 +868,10 @@ class Applicant
         return $stats;
     }
 
-    public function getOnProcessWithLatestBooking(): array
+    public function getOnProcessWithLatestBooking(?int $branchId = null): array
     {
+        $branchCond = $branchId > 0 ? "a.branch_id = $branchId AND " : '';
+
         $sql = "
             SELECT
                 a.*,
@@ -670,7 +897,7 @@ class Applicant
                     GROUP BY applicant_id
                 ) t ON t.applicant_id = c1.applicant_id AND t.max_created = c1.created_at
             ) cb ON cb.applicant_id = a.id
-            WHERE a.deleted_at IS NULL
+            WHERE {$branchCond} a.deleted_at IS NULL
               AND a.status = 'on_process'
               AND NOT EXISTS (
                 SELECT 1 FROM blacklisted_applicants b
@@ -1274,7 +1501,7 @@ class Applicant
      * COUNTRY FILTERING (for SMC international applicants)
      * ============================================================ */
 
-    public function getCountriesWithCounts(?int $businessUnitId = null): array
+    public function getCountriesWithCounts(?int $businessUnitId = null, ?int $branchId = null): array
     {
         $sql = "
             SELECT 
@@ -1294,13 +1521,14 @@ class Applicant
 
         $countries = $res->fetch_all(MYSQLI_ASSOC);
 
+        $branchCond = $branchId > 0 ? "a.branch_id = $branchId AND " : '';
         $countSql = "
             SELECT 
                 bu.country_id,
                 COUNT(a.id) AS applicant_count
             FROM applicants a
             JOIN business_units bu ON bu.id = a.business_unit_id
-            WHERE a.deleted_at IS NULL
+            WHERE {$branchCond} a.deleted_at IS NULL
               AND NOT EXISTS (
                   SELECT 1 FROM blacklisted_applicants b
                   WHERE b.applicant_id = a.id AND b.is_active = 1
