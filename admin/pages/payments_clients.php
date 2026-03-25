@@ -1590,6 +1590,36 @@ function renderAvatar($picture, $client_name)
 
             // Re-attach event listeners for dynamic view buttons
             tbody.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', viewInvoiceHandler);
+            });
+
+            // Attach resend event listeners
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.btn-resend')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const btn = e.target.closest('.btn-resend');
+                    const id = parseInt(btn.dataset.id);
+                    resendInvoiceEmail(id);
+                }
+            });
+
+            // Global event delegation for view buttons (handles dynamic content)
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.btn-action.btn-view')) {
+                    e.preventDefault();
+                    viewInvoiceHandler.call(e.target.closest('.btn-action'));
+                }
+            });
+        }
+
+        function viewInvoiceFromHistory(id) {
+            // reuse existing modal logic or redirect
+            window.location.href = 'payments_clients.php?view=' + id;
+        }
+
+        function editInvoiceFromHistory(id) {
+            window.location.href = 'payment_invoice_edit.php?id=' + id;
         }
 
 
