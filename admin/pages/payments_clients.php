@@ -1561,7 +1561,32 @@ function renderHistoryTable(data, bookingId) {
                     </tr>
                     e.preventDefault();
                     e.stopPropagation();
-                    softDeleteInvoice(btn.dataset.id,
+                    softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
+                };
+            }, 300);
+        }
+
+        
+        const searchInput = document.getElementById('invoiceSearch');
+        let searchTimer;
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                const q = encodeURIComponent(this.value.trim());
+                window.location.href = 'payments_clients.php?q=' + q;
+            }, 500);
+        });
+
+
+    document.addEventListener('click', function (e) {
+
+        /* History button */
+        const historyBtn = e.target.closest('[data-booking]');
+        if (historyBtn) {
+            openClientHistory(historyBtn.dataset.booking, historyBtn.dataset.tab);
+            return;
+        }
 
         /* Edit invoice */
         const editLink = e.target.closest('.edit-invoice-link');
