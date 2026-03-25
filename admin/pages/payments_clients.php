@@ -1586,6 +1586,35 @@ function renderAvatar($picture, $client_name)
         </td>
         </tr>
     `);
+            });
+
+            // Re-attach event listeners for dynamic view buttons
+            tbody.querySelectorAll('.view-btn').forEach(btn => {
+        }
+
+
+        function resendInvoiceEmail(invoiceId) {
+            // ✅ Show CONFIRMATION first
+            if (confirm('Resend invoice email to client? This will send the same invoice again.')) {
+                showActionModal(
+                    'Resending Invoice',
+                    'Sending invoice email to client... Please wait.',
+                    'loading'
+                );
+
+                fetch('payments_clients.php?resend_invoice_email=1&id=' + invoiceId)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showActionModal(
+                                '✅ Email Sent Successfully!',
+                                data.message || 'Invoice resent successfully to client.',
+                                'success'
+                            );
+                        } else {
                             throw new Error(data.message || 'Failed to send email');
                         }
                     })
