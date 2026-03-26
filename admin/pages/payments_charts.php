@@ -77,6 +77,26 @@ $daysToPaySql = "
     FROM invoice_history 
     WHERE payment_status = 'Paid' 
       AND paid_at IS NOT NULL AND created_at IS NOT NULL
+      AND company_type = ?
+";
+$stmt = $conn->prepare($daysToPaySql);
+        SUM(CASE WHEN payment_status = 'Paid' THEN total_amount ELSE 0 END) AS paid_amount,
+        SUM(CASE WHEN payment_status != 'Paid' THEN total_amount ELSE 0 END) AS pending_amount
+    FROM invoice_history 
+    WHERE invoice_date IS NOT NULL AND company_type = ?
+    GROUP BY DATE(invoice_date)
+    ORDER BY date ASC
+";
+$stmt = $conn->prepare($timelineSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$timelineRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// ================= EXISTING CHARTS (unchanged) =================
+
+// PAID VS PENDING COUNT
+$statusSql = "
+    SELECT
         SUM(payment_status = 'Paid') AS paid_count
     WHERE company_type = ?
 ";
