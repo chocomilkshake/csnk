@@ -60,72 +60,72 @@ $smcRecentApplicants = [];
 $smcAdminCount = 0;
 
 if ($currentAgencyView === 'smc' && $canSwitchAgency) {
-    $conn = $database->getConnection();
-    if ($conn instanceof mysqli) {
-        // Get SMC business unit IDs
-        $smcBuIds = [];
-        $sqlSmcBus = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1";
-        if ($res = $conn->query($sqlSmcBus)) {
-            while ($r = $res->fetch_assoc()) {
-                $smcBuIds[] = (int) $r['id'];
-            }
-        }
-        
-        if (!empty($smcBuIds)) {
-            $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
-            
-            // SMC Total
-            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
-                $stmt->execute();
-                $smcStats['total'] = (int) $stmt->get_result()->fetch_row()[0];
-                $stmt->close();
-            }
-            
-            // SMC Pending
-            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'pending' AND deleted_at IS NULL";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
-                $stmt->execute();
-                $smcStats['pending'] = (int) $stmt->get_result()->fetch_row()[0];
-                $stmt->close();
-            }
-            
-            // SMC On Process
-            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'on_process' AND deleted_at IS NULL";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
-                $stmt->execute();
-                $smcStats['on_process'] = (int) $stmt->get_result()->fetch_row()[0];
-                $stmt->close();
-            }
-            
-            // SMC Deleted
-            $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NOT NULL";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
-                $stmt->execute();
-                $smcStats['deleted'] = (int) $stmt->get_result()->fetch_row()[0];
-                $stmt->close();
-            }
-            
-            // SMC Recent Applicants
-            $sql = "SELECT * FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 5";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
-                $stmt->execute();
-                $smcRecentApplicants = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-                $stmt->close();
-            }
-        }
-        
-        // SMC Admin Count
-        $sql = "SELECT COUNT(*) FROM admin_users WHERE agency = 'smc' AND status = 'active'";
-        if ($res = $conn->query($sql)) {
-            $smcAdminCount = (int) $res->fetch_row()[0];
-        }
+  $conn = $database->getConnection();
+  if ($conn instanceof mysqli) {
+    // Get SMC business unit IDs
+    $smcBuIds = [];
+    $sqlSmcBus = "SELECT bu.id FROM business_units bu JOIN agencies ag ON ag.id = bu.agency_id WHERE ag.code = 'smc' AND bu.active = 1";
+    if ($res = $conn->query($sqlSmcBus)) {
+      while ($r = $res->fetch_assoc()) {
+        $smcBuIds[] = (int) $r['id'];
+      }
     }
+
+    if (!empty($smcBuIds)) {
+      $placeholders = implode(',', array_fill(0, count($smcBuIds), '?'));
+
+      // SMC Total
+      $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL";
+      if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $smcStats['total'] = (int) $stmt->get_result()->fetch_row()[0];
+        $stmt->close();
+      }
+
+      // SMC Pending
+      $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'pending' AND deleted_at IS NULL";
+      if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $smcStats['pending'] = (int) $stmt->get_result()->fetch_row()[0];
+        $stmt->close();
+      }
+
+      // SMC On Process
+      $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND status = 'on_process' AND deleted_at IS NULL";
+      if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $smcStats['on_process'] = (int) $stmt->get_result()->fetch_row()[0];
+        $stmt->close();
+      }
+
+      // SMC Deleted
+      $sql = "SELECT COUNT(*) FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NOT NULL";
+      if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $smcStats['deleted'] = (int) $stmt->get_result()->fetch_row()[0];
+        $stmt->close();
+      }
+
+      // SMC Recent Applicants
+      $sql = "SELECT * FROM applicants WHERE business_unit_id IN ($placeholders) AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 5";
+      if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param(str_repeat('i', count($smcBuIds)), ...$smcBuIds);
+        $stmt->execute();
+        $smcRecentApplicants = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+      }
+    }
+
+    // SMC Admin Count
+    $sql = "SELECT COUNT(*) FROM admin_users WHERE agency = 'smc' AND status = 'active'";
+    if ($res = $conn->query($sql)) {
+      $smcAdminCount = (int) $res->fetch_row()[0];
+    }
+  }
 }
 
 require_once '../includes/Applicant.php';
@@ -225,6 +225,9 @@ function safe(?string $s): string
 ?>
 <!-- Tailwind (via CDN) layered on top of Bootstrap) -->
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Monitoring Fonts -->
+<link rel="stylesheet" href="../css/monitoring-fonts.css">
 <script>
   tailwind.config = {
     theme: {
@@ -314,12 +317,12 @@ function safe(?string $s): string
 
   .agency-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .agency-btn.active {
     border-color: white;
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   }
 
   .agency-btn:not(.active) {
@@ -329,18 +332,20 @@ function safe(?string $s): string
 
 <!-- Agency Switcher for Super Admin / Admin -->
 <?php if ($canSwitchAgency): ?>
-<div class="agency-switcher">
-  <a href="./dashboard.php" class="agency-btn agency-btn-csnk <?php echo ($currentAgencyView === 'csnk') ? 'active' : ''; ?>">
-    <i class="bi bi-building"></i> CSNK Dashboard
-  </a>
-  <a href="./turkey_dashboard.php" class="agency-btn agency-btn-smc <?php echo ($currentAgencyView === 'smc') ? 'active' : ''; ?>">
-    <i class="bi bi-globe"></i> SMC Dashboard
-  </a>
-</div>
+  <div class="agency-switcher">
+    <a href="./dashboard.php"
+      class="agency-btn agency-btn-csnk <?php echo ($currentAgencyView === 'csnk') ? 'active' : ''; ?>">
+      <i class="bi bi-building"></i> CSNK Dashboard
+    </a>
+    <a href="./turkey_dashboard.php"
+      class="agency-btn agency-btn-smc <?php echo ($currentAgencyView === 'smc') ? 'active' : ''; ?>">
+      <i class="bi bi-globe"></i> SMC Dashboard
+    </a>
+  </div>
 <?php endif; ?>
 
 <!-- ======= STATS GRID (CSNK or SMC based on view) ======= -->
-<?php 
+<?php
 // Determine which data to display
 $displayStats = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcStats : $stats;
 $displayRecentApplicants = ($currentAgencyView === 'smc' && $canSwitchAgency) ? $smcRecentApplicants : $recentApplicants;
