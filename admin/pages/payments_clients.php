@@ -6,6 +6,29 @@
 
     if (!$conn) {
         echo json_encode([]);
+        echo json_encode([]);
+        exit;
+    }
+
+    $enriched_apps = [];
+
+    foreach ($decoded as $app) {
+        $item = [
+            'name' => $app['name'] ?? 'Unknown Applicant',
+            'start_date' => $app['start_date'] ?? '',
+            'end_date' => $app['end_date'] ?? '',
+            'days' => isset($app['days']) ? (int) $app['days'] : 0,
+            'amount' => isset($app['amount']) ? (float) $app['amount'] : 0
+        ];
+
+
+        // Optional: enrich name from applicants table
+        if (!empty($app['applicant_id'])) {
+            $app_stmt = $conn->prepare("
+                SELECT first_name, middle_name, last_name, suffix
+                FROM applicants
+                WHERE id = ?
+            ");
             $app_stmt->bind_param('i', $app['applicant_id']);
             $app_stmt->execute();
             $a = $app_stmt->get_result()->fetch_assoc();
