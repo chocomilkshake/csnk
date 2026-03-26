@@ -10,6 +10,36 @@ if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
     header('Content-Type: application/json');
             invoice_num,
             client_name,
+            client_email,
+            pdf_filename,
+            company_type,
+            payment_status,
+            payment_link
+        FROM invoice_history
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $inv = $stmt->get_result()->fetch_assoc();
+
+    if ($inv['payment_status'] === 'Paid') {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invoice already paid. Resending is disabled.'
+        ]);
+        exit;
+    }
+
+    if (!$inv || empty($inv['client_email'])) {
+        echo json_encode(['success' => false, 'message' => 'Invoice not found or email missing']);
+        exit;
+    }
+
+    $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $inv['pdf_filename'];
+
+    if (!file_exists($pdfPath)) {
+        echo json_encode(['success' => false, 'message' => 'Invoice PDF file not found']);
         exit;
     }
 
