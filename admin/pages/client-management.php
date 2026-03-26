@@ -210,6 +210,9 @@ function safe(?string $s): string
 <!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Monitoring Fonts -->
+<link rel="stylesheet" href="../css/monitoring-fonts.css">
+
 
 
 <!-- Header -->
