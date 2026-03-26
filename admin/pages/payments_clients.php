@@ -1,5 +1,33 @@
 
 
+    if ($row) {
+        $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $row['pdf_filename'];
+
+        // ✅ Delete PDF file if exists
+        if (!empty($row['pdf_filename']) && file_exists($pdfPath)) {
+            unlink($pdfPath);
+        }
+
+        // ✅ Delete invoice record
+        $del = $conn->prepare("DELETE FROM invoice_history WHERE id = ?");
+        $del->bind_param('i', $invoice_id);
+        $del->execute();
+    }
+
+    // ✅ Redirect back to invoice list
+    header('Location: payments_clients.php');
+    exit;
+}
+
+/* ======================================================
+   AJAX: Get Invoice Applicants (MUST BE FIRST)
+====================================================== */
+if (isset($_GET['get_invoice_applicants']) && isset($_GET['id'])) {
+    header('Content-Type: application/json');
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+    require_once '../includes/functions.php';
 
     $db = new Database();
     $conn = $db->getConnection();
