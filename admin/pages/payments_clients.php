@@ -6,6 +6,27 @@
 
     if (!$conn) {
         echo json_encode([]);
+        exit;
+    }
+
+    $invoice_id = (int) $_GET['id'];
+
+    $stmt = $conn->prepare("
+        SELECT applicants_data
+        FROM invoice_history
+        WHERE id = ?
+    ");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    if (!$row) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $decoded = json_decode($row['applicants_data'] ?? '[]', true);
+    if (!is_array($decoded)) {
         echo json_encode([]);
         exit;
     }
