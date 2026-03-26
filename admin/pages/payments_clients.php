@@ -4,6 +4,25 @@ require_once '../includes/invoice_mailer.php';
 
 
 }
+
+        FROM invoice_history
+        WHERE client_booking_id = ?
+          AND company_type = ?
+          AND payment_status != 'Paid'
+    ");
+    $check->bind_param('is', $booking_id, $companyType);
+    $check->execute();
+    $pendingCount = (int) $check->get_result()
+        ->fetch_assoc()['pending_count'];
+
+    // ✅ STEP 2: Build query dynamically
+    if ($pendingCount > 0) {
+        // There is at least one Pending invoice
+        $sql = "
+            SELECT
+                id,
+                invoice_num,
+                invoice_date,
                 due_date,
                 total_amount,
                 payment_status,
