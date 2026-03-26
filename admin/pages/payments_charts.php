@@ -167,6 +167,43 @@ $statusRow = $stmt->get_result()->fetch_assoc();
 
 // REVENUE TREND (PAID OVER TIME)
 $trendSql = "
+    SELECT
+        DATE(paid_at) AS date,
+        SUM(total_amount) AS amount
+    FROM invoice_history
+    WHERE payment_status = 'Paid'
+      AND paid_at IS NOT NULL
+      AND company_type = ?
+    GROUP BY DATE(paid_at)
+    ORDER BY DATE(paid_at) ASC
+";
+$stmt = $conn->prepare($trendSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$trendRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// PAYMENT METHOD BREAKDOWN
+$methodSql = "
+    SELECT
+        payment_provider,
+        SUM(total_amount) AS amount
+    FROM invoice_history
+    WHERE payment_status = 'Paid'
+      AND company_type = ?
+    GROUP BY payment_provider
+";
+$stmt = $conn->prepare($methodSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$methodRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// ================= ENHANCED JSON RESPONSE =================
+echo json_encode([
+    'summary' => [
+        'gross' => $gross,
+        'net' => $net,
+        'revenue' => $revenue,
+        'pending' => $pending,
     ],
     'kpis' => [
         'applicants_billed' => $applicantsBilled,
