@@ -1,0 +1,68 @@
+:root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --ring: rgba(37, 99, 235, .14);
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --ok: #16a34a;
+    --warn: #f59e0b;
+    --err: #ef4444;
+    --pri: #2563eb;
+    --pri-2: #60a5fa;
+}
+
+body {
+    background: linear-gradient(180deg, #f1f5f9, #f8fafc) fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+
+/* Core Typography */
+.page-title h4 {
+    font-weight: 800 !important;
+    letter-spacing: .3px;
+    color: #1e293b !important;
+}
+
+.page-title p {
+    color: #64748b !important;
+}
+
+.card-header .title {
+    font-weight: 700 !important;
+    color: #334155 !important;
+}
+
+table thead th {
+    font-weight: 700 !important;
+    letter-spacing: .2px;
+    color: #1e293b !important;
+}
+
+.form-label {
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
+.stats-chip .count {
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+
+/* Monospace for codes/IDs */
+.mono {
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+/* Badge Typography */
+.badge-soft, .badge-iso2, .badge-iso3, .badge-cur, .badge-ph {
+    font-weight: 700 !important;
+}
+
+/* Focus States */
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 .25rem var(--ring) !important;
+    border-color: #93c5fd !important;
+}
