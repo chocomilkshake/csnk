@@ -1,4 +1,30 @@
 
+        $sql = "
+            SELECT
+                id,
+                invoice_num,
+                invoice_date,
+                due_date,
+                total_amount,
+                payment_status,
+                reference_no,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                pdf_filename,
+                created_at
+            FROM invoice_history
+            WHERE client_booking_id = ?
+              AND company_type = ?
+            ORDER BY created_at DESC
+        ";
+    }
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('is', $booking_id, $companyType);
+    $stmt->execute();
+
     echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     exit;
 }
