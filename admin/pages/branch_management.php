@@ -263,6 +263,9 @@ $totalCount = count($branches);
 $activeCount = array_reduce($branches, fn($a, $c) => $a + ($c['status'] === 'ACTIVE' ? 1 : 0), 0);
 $inactiveCount = $totalCount - $activeCount;
 ?>
+<!-- Monitoring Fonts -->
+<link rel="stylesheet" href="../css/monitoring-fonts.css">
+
 <style>
   :root {
     --ink: #0f172a;

@@ -409,7 +409,7 @@ if ($canViewReports && $conn instanceof mysqli) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Flag Icons for country flags -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
-    
+
     <!-- Chart.js CDN for analytics charts - v4.4.3 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
@@ -994,7 +994,7 @@ if ($canViewReports && $conn instanceof mysqli) {
                         <i class="bi bi-journal-text"></i>
 
                         <span class="label">
-                            <span class="text fw-semibold">Reports & Analytics</span>
+                            <span class="text fw-semibold">Reports</span>
                         </span>
 
                         <span class="side-badge">
@@ -1119,7 +1119,7 @@ if ($canViewReports && $conn instanceof mysqli) {
                 if ($message !== '') {
                     ?>
                     <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show" role="alert">
-                    <?php echo $message; ?>
+                        <?php echo $message; ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                     <?php

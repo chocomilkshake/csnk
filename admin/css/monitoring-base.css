@@ -1,0 +1,57 @@
+:root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --ring: rgba(37, 99, 235, .14);
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --ok: #16a34a;
+    --warn: #f59e0b;
+    --err: #ef4444;
+    --pri: #2563eb;
+    --pri-2: #60a5fa;
+}
+
+/* Core monitoring fonts - preload critical CSS */
+@import url('./monitoring-fonts.css');
+
+/* Ensure monitoring styles override Tailwind resets */
+body.monitoring-page {
+    background: linear-gradient(180deg, #f1f5f9, #f8fafc) fixed !important;
+}
+
+/* Critical header styles - higher specificity */
+.monitoring-page .page-title h4,
+.monitoring-page h1,
+.monitoring-page .card-header .title {
+    font-weight: 800 !important;
+    letter-spacing: .3px !important;
+    color: #1e293b !important;
+}
+
+.monitoring-page .page-title p {
+    color: #64748b !important;
+}
+
+.monitoring-page table thead th {
+    font-weight: 700 !important;
+    letter-spacing: .2px !important;
+    color: #1e293b !important;
+}
+
+.monitoring-page .form-label {
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
+/* Card & table consistency */
+.monitoring-page .card {
+    border: 1px solid var(--line) !important;
+    border-radius: 1rem !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.monitoring-page table.table {
+    color: #334155 !important;
+}
