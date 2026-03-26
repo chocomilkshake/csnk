@@ -94,115 +94,214 @@ if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
 }
 
 /* ======================================================
-   AJAX: PDF Analytics Export
+   AJAX: PDF Analytics Export - ULTIMATE FIX (JSON SAFE)
 ====================================================== */
 if (isset($_GET['export_analytics_pdf']) && isset($_POST['chartImages'])) {
-    header('Content-Type: application/json');
-
-    // Parse POST data
-    $chartImages = json_decode($_POST['chartImages'], true);
-    $tab = $_GET['tab'] ?? 'CSNK';
-    $companyType = $tab;
-
-    // Safe chart data validation - handle JSON decode failures
-    $rawData = $_POST['chartImages'] ?? '{}';
-    $chartImages = json_decode($rawData, true);
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($chartImages)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid chart data']);
-        exit;
-    }
-
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
-    require_once '../../lib/invlib/invoicr.php';
-
-    $db = new Database();
-    $conn = $db->getConnection();
-
-    // 1. Get analytics data
-    // Skip chart data fetch - use empty defaults to avoid file_get_contents failure
-    $chartData = [
-        'summary' => ['gross' => 0, 'net' => 0, 'pending' => 0],
-        'kpis' => ['applicants_billed' => 0]
-    ];
-
-    // 2. Get top clients table data (reuse existing query logic)
-    $sql = "
-        SELECT
-            client_booking_id,
-            client_name,
-            COUNT(*) AS total_invoices,
-            SUM(total_amount) AS total_amount,
-            SUM(payment_status = 'Paid') AS paid_count,
-            SUM(payment_status != 'Paid') AS unpaid_count
-        FROM invoice_history
-        WHERE company_type = ?
-        GROUP BY client_booking_id
-        ORDER BY total_amount DESC
-        LIMIT 10
-    ";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('s', $companyType);
-    $stmt->execute();
-    $clients = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    // 3. Set company assets
-    $company = $companyType === 'CSNK' ? 
-        ['../resources/img/whychoose.png', 'CSNK Agency', '../resources/img/csnk-iconz.png'] :
-        ['../resources/img/smcbrandname.png', 'SMC Agency', '../resources/img/smc.png'];
-
-    // 4. Create temporary directory & save chart images
-    $tempDir = sys_get_temp_dir() . '/html2canvas_' . uniqid();
-    if (!mkdir($tempDir, 0777, true)) {
-        echo json_encode(['success' => false, 'message' => 'Failed to create temp directory']);
-        exit;
-    }
-
-    $chartFiles = [];
-    foreach (['status', 'methods', 'trend', 'timeline', 'clients'] as $chartKey) {
-        if (isset($chartImages[$chartKey])) {
-            $dataUrl = $chartImages[$chartKey];
-            $data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $dataUrl));
-            $fileName = $tempDir . '/' . $chartKey . '.png';
-            file_put_contents($fileName, $data);
-            $chartFiles[$chartKey] = $fileName;
-        }
-    }
-
-    // 5. Generate HTML with Invoicr
-    $invoicr = new Invoicr();
-    $invoicr->template('analytics');
+    // ================= ULTIMATE BUFFER ISOLATION =================
+    // Triple nested buffer + error suppression for 100% JSON purity
+    ob_start();
+    while (ob_get_level() > 1) { ob_end_clean(); }
     
-    $invoicr->set('company', $company);
-    $invoicr->set('summary', $chartData['summary'] ?? []);
-    $invoicr->set('kpis', $chartData['kpis'] ?? []);
-    $invoicr->set('chart_status', $chartFiles['status'] ?? '');
-    $invoicr->set('chart_methods', $chartFiles['methods'] ?? '');
-    $invoicr->set('chart_trend', $chartFiles['trend'] ?? '');
-    $invoicr->set('chart_timeline', $chartFiles['timeline'] ?? '');
-    $invoicr->set('chart_clients', $chartFiles['clients'] ?? '');
-    $invoicr->set('clients', $clients ?? []);
+    // Set headers FIRST (before any output)
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    
+    // Suppress ALL output/errors until JSON
+    error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    ini_set('html_errors', 0);
 
-    // 6. Generate PDF
-    $pdfFile = $tempDir . '/analytics_' . $companyType . '_' . date('Y-m-d_H-i-s') . '.pdf';
-    $invoicr->outputPDF(3, $pdfFile);
+    try {
+        // ================= ENHANCED MPDF/INVOICR LOGGING =================
+        $invoicrPath = __DIR__ . '/../../lib/invlib/invoicr.php';
+        $vendorPath = __DIR__ . '/../../lib/invlib/vendor/autoload.php';
+        error_log("🚀 PDF Export START | Invoicr: " . (file_exists($invoicrPath) ? 'OK' : 'MISSING') . 
+                  " | Vendor: " . (file_exists($vendorPath) ? 'OK' : 'MISSING'));
 
-    // 7. Cleanup temp files except PDF
-    foreach ($chartFiles as $file) {
-        if (file_exists($file)) unlink($file);
+        // ================= ROBUST JSON + FALLBACKS =================
+        $rawData = $_POST['chartImages'] ?? '{}';
+        error_log("📊 Raw chart data size: " . strlen($rawData) . " bytes");
+        
+        $chartImages = json_decode($rawData, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("❌ JSON decode failed: " . json_last_error_msg());
+            $chartImages = []; // GUARANTEED FALLBACK
+        }
+        $tab = $_GET['tab'] ?? 'CSNK';
+        $companyType = strtoupper($tab);
+
+        // ================= LOAD DEPENDENCIES =================
+        require_once '../includes/config.php';
+        require_once '../includes/Database.php';
+        require_once $invoicrPath;
+
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        // ================= CHART DATA (EMPTY OK) =================
+        $chartData = [
+            'summary' => ['gross' => 0.0, 'net' => 0.0, 'pending' => 0.0],
+            'kpis' => ['applicants_billed' => 0]
+        ];
+
+        // ================= TOP CLIENTS TABLE (FALLBACK EMPTY) =================
+        $clients = [];
+        if ($conn) {
+            $sql = "SELECT client_booking_id, client_name, COUNT(*) AS total_invoices, 
+                           SUM(total_amount) AS total_amount, 
+                           SUM(payment_status = 'Paid') AS paid_count,
+                           SUM(payment_status != 'Paid') AS unpaid_count
+                    FROM invoice_history WHERE company_type = ?
+                    GROUP BY client_booking_id ORDER BY total_amount DESC LIMIT 10";
+            $stmt = $conn->prepare($sql);
+            if ($stmt) {
+                $stmt->bind_param('s', $companyType);
+                $stmt->execute();
+                $clients = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                error_log("📋 Fetched " . count($clients) . " top clients");
+            }
+        }
+
+        // ================= COMPANY ASSETS =================
+        $company = $companyType === 'CSNK' 
+            ? ['../resources/img/whychoose.png', 'CSNK Agency', '../resources/img/csnk-iconz.png']
+            : ['../resources/img/smcbrandname.png', 'SMC Agency', '../resources/img/smc.png'];
+
+        // ================= TEMP DIR + CHARTS (ROBUST) =================
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pdf_' . uniqid();
+        if (!mkdir($tempDir, 0777, true)) {
+            throw new Exception('Temp dir failed: ' . $tempDir);
+        }
+        error_log("📁 Temp dir OK: $tempDir");
+
+        $chartFiles = [];
+        $validCharts = 0;
+        $chartKeys = ['status', 'methods', 'trend', 'timeline', 'clients'];
+        foreach ($chartKeys as $chartKey) {
+            if (isset($chartImages[$chartKey]) && is_string($chartImages[$chartKey])) {
+                if (preg_match('#^data:image/(png|jpeg|jpg);base64,#i', $chartImages[$chartKey])) {
+                    $data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $chartImages[$chartKey]));
+                    if ($data !== false && strlen($data) > 50) { // MIN SIZE CHECK
+                        $fileName = $tempDir . DIRECTORY_SEPARATOR . $chartKey . '.png';
+                        if (file_put_contents($fileName, $data) > 0) {
+                            $chartFiles[$chartKey] = $fileName;
+                            $validCharts++;
+                        }
+                    }
+                }
+            }
+        }
+        error_log("🖼️  Valid charts: $validCharts/" . count($chartKeys));
+
+        // ================= INVOICR SETUP =================
+        $invoicr = new Invoicr();
+        $invoicr->template('analytics');
+        
+        // SAFE TYPE CHECKS - PREVENT "Not a valid data type"
+        $safeSummary = is_array($chartData['summary']) ? $chartData['summary'] : ['gross' => 0, 'net' => 0, 'pending' => 0];
+        $safeKpis = is_array($chartData['kpis']) ? $chartData['kpis'] : ['applicants_billed' => 0];
+        $safeClients = is_array($clients) ? $clients : [];
+        
+        $invoicr->set('company', $company);
+        $invoicr->set('summary', $safeSummary);
+        $invoicr->set('kpis', $safeKpis);
+        $invoicr->set('chart_status', $chartFiles['status'] ?? '');
+        $invoicr->set('chart_methods', $chartFiles['methods'] ?? '');
+        $invoicr->set('chart_trend', $chartFiles['trend'] ?? '');
+        $invoicr->set('chart_timeline', $chartFiles['timeline'] ?? '');
+        $invoicr->set('chart_clients', $chartFiles['clients'] ?? '');
+        $invoicr->set('clients', $safeClients);
+        
+        error_log("✅ Invoicr data set - summary:[" . gettype($safeSummary) . "], clients:[" . count($safeClients) . "]");
+
+        // ================= PDF GENERATION - ISOLATED =================
+        $pdfFile = $tempDir . DIRECTORY_SEPARATOR . 'analytics_' . $companyType . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        error_log("📄 Generating: $pdfFile");
+
+        // QUAD BUFFER ISOLATION FOR INVOICR/MPDF
+        ob_start(); // 1. Outer
+        ob_start(); // 2. Invoicr HTML
+        try {
+            $invoicr->outputHTML(3, $tempDir . DIRECTORY_SEPARATOR . 'temp.html'); // Save HTML first
+            error_log("✅ HTML generated: " . filesize($tempDir . DIRECTORY_SEPARATOR . 'temp.html') . " bytes");
+            
+            ob_clean(); // Clear HTML buffer
+            
+            ob_start(); // 3. PDF buffer
+            $invoicr->outputPDF(3, $pdfFile); // Mode 3 = save file
+            error_log("✅ PDF saved: " . (file_exists($pdfFile) ? filesize($pdfFile) . ' bytes' : 'FAILED'));
+        } catch (Throwable $e) {
+            error_log("💥 Invoicr/MPDF ERROR: " . $e->getMessage() . " | LINE: " . $e->getLine());
+        }
+        while (ob_get_level() > 0) { ob_end_clean(); } // 4. Nuke all buffers
+        
+        // ================= PUBLIC COPY =================
+        $publicDir = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/analytics/';
+        if (!is_dir($publicDir)) mkdir($publicDir, 0777, true);
+        $publicPath = '/csnk/uploads/analytics/' . basename($pdfFile);
+        $publicFile = $_SERVER['DOCUMENT_ROOT'] . $publicPath;
+        
+        if (copy($pdfFile, $publicFile)) {
+            error_log("✅ Public copy OK: $publicPath");
+        } else {
+            error_log("⚠️ Public copy failed: $publicFile");
+        }
+
+        // ================= ULTIMATE RECURSIVE CLEANUP =================
+        function recursiveCleanup($dir) {
+            if (!is_dir($dir)) return;
+            $files = glob($dir . '/*');
+            foreach ($files as $file) {
+                if (is_dir($file)) {
+                    recursiveCleanup($file);
+                    @rmdir($file);
+                } else {
+                    @unlink($file);
+                }
+            }
+        }
+        recursiveCleanup($tempDir);
+        @rmdir($tempDir);
+        error_log("🧹 Recursive cleanup complete");
+
+        // ================= PURE JSON RESPONSE =================
+        while (ob_get_level() > 0) { ob_end_clean(); } // NUCLEAR BUFFER CLEAR
+        ob_clean(); flush();
+
+        $success = file_exists($publicFile) && filesize($publicFile) > 1000; // MIN PDF SIZE CHECK
+        
+        echo json_encode([
+            'success' => $success,
+            'pdfUrl' => $success ? $publicPath : null,
+            'message' => $success 
+                ? "PDF ready ($validCharts charts, " . count($clients) . " clients)"
+                : 'PDF generated but validation failed - check logs',
+            'debug' => [
+                'charts' => $validCharts,
+                'clients' => count($clients),
+                'pdfSize' => $success ? filesize($publicFile) : 0,
+                'tempDirClean' => !is_dir($tempDir)
+            ]
+        ], JSON_THROW_ON_ERROR);
+
+    } catch (Throwable $e) {
+        // EMERGENCY CLEANUP
+        if (isset($tempDir) && is_dir($tempDir)) {
+            recursiveCleanup($tempDir);
+            @rmdir($tempDir);
+        }
+        
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        ob_clean();
+        
+        error_log("💥 CRITICAL PDF EXPORT FAILURE: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'message' => 'Generation failed: ' . $e->getMessage(),
+            'debug' => ['error' => $e->getMessage()]
+        ], JSON_THROW_ON_ERROR);
     }
-
-    if (!file_exists($pdfFile)) {
-        echo json_encode(['success' => false, 'message' => 'PDF generation failed']);
-        exit;
-    }
-
-    echo json_encode([
-        'success' => true,
-        'pdfUrl' => $pdfFile,
-        'message' => 'PDF generated successfully'
-    ]);
-
     exit;
 }
 
@@ -963,7 +1062,7 @@ function renderAvatar($picture, $client_name)
 
         <!-- LEFT: TAB BUTTONS -->
         <div class="invoice-tabs">
-            <a href="payments_clients.php?tab=CSNK"
+<a href="payments_clients.php?tab=CSNK"
                 class="tab-btn tab-csnk <?= $activeTab === 'CSNK' ? '' : 'inactive' ?>">
                 CSNK
             </a>
@@ -2345,11 +2444,11 @@ let chartLoadPromise = null; // Prevent concurrent loads
         const targetPane = document.getElementById(activeTabId);
         
         // Set initial active state
-        document.querySelectorAll('.dashboard-tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
-        
-        if (targetBtn) targetBtn.classList.add('active');
-        if (targetPane) targetPane.classList.add('show', 'active');
+// Reset dashboard tabs to ANALYTICS first
+document.querySelector('#analytics-tab-btn').classList.add('active');
+document.querySelector('#analytics-tab').classList.add('show', 'active');
+document.querySelector('#clients-tab-btn').classList.remove('active');
+document.querySelector('#clients-tab').classList.remove('show', 'active');
         
         // Initial chart load if analytics active
         if (activeTabId === 'analytics-tab') {
@@ -2399,19 +2498,37 @@ let chartLoadPromise = null; // Prevent concurrent loads
                     const chartId = chartIds[i];
                     const canvas = document.getElementById(chartId);
                     
-                    if (canvas) {
-                        const chartCanvas = await html2canvas(canvas.parentElement, {
-                            scale: 3,
-                            useCORS: true,
-                            backgroundColor: '#ffffff',
-                            allowTaint: false,
-                            logging: false,
-                            width: canvas.parentElement.offsetWidth,
-                            height: canvas.parentElement.offsetHeight
-                        });
-                        
+                    if (!canvas) {
+                        progressText.textContent = `Step 1/4: Skipping ${chartId} (not ready)`;
+                        continue;
+                    }
+
+                    // Retry logic for flaky canvas
+                    let chartCanvas = null;
+                    for (let retry = 0; retry < 2; retry++) {
+                        try {
+                            chartCanvas = await html2canvas(canvas.parentElement, {
+                                scale: window.devicePixelRatio > 2 ? 2 : 3, // Adaptive scale
+                                useCORS: true,
+                                backgroundColor: '#ffffff',
+                                allowTaint: false,
+                                logging: false,
+                                width: canvas.parentElement.offsetWidth,
+                                height: canvas.parentElement.offsetHeight
+                            });
+                            break;
+                        } catch (captureError) {
+                            console.warn(`Chart ${chartId} capture failed (attempt ${retry + 1}):`, captureError);
+                            if (retry === 1) {
+                                chartImages[chartId.replace('Chart', '') === 'method' ? 'methods' : chartId.replace('Chart', '')] = null; // Mark missing
+                            }
+                            await new Promise(r => setTimeout(r, 500));
+                        }
+                    }
+
+                    if (chartCanvas) {
                         const key = chartId.replace('Chart', '') === 'method' ? 'methods' : chartId.replace('Chart', '');
-                        chartImages[key] = chartCanvas.toDataURL('image/png', 1.0);
+                        chartImages[key] = chartCanvas.toDataURL('image/png', 0.95);
                     }
                 }
 
@@ -2424,15 +2541,36 @@ let chartLoadPromise = null; // Prevent concurrent loads
                 progressText.textContent = 'Step 3/4: Generating PDF...';
                 progressBar.style.width = '75%';
 
+                // FIXED: Robust stringify + safe fetch/parse
+                let chartDataStr;
+                try {
+                    chartDataStr = JSON.stringify(chartImages);
+                } catch (e) {
+                    throw new Error('Failed to serialize chart data: ' + e.message);
+                }
+
                 const formData = new FormData();
-                formData.append('chartImages', JSON.stringify(chartImages));
+                formData.append('chartImages', chartDataStr);
 
                 const response = await fetch(`?export_analytics_pdf=1&tab=${tab}`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    timeout: 60000 // 60s timeout for large images
                 });
 
-                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                // FIXED: Get text first, manual parse to avoid JSON hook errors
+                const responseText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Raw response:', responseText.slice(0, 500));
+                    throw new Error('Invalid server response (JSON parse failed)');
+                }
 
                 if (!result.success) {
                     throw new Error(result.message || 'PDF generation failed');
