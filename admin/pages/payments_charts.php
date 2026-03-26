@@ -172,3 +172,17 @@ $trendSql = "
         'applicants_billed' => $applicantsBilled,
         'avg_invoice_value' => $avgInvoiceValue,
         'conversion_rate' => $conversionRate,
+        'avg_days_to_pay' => $avgDaysToPay,
+    ],
+    'status' => [
+        'paid' => (int)($statusRow['paid_count'] ?? 0),
+        'pending' => (int)($statusRow['pending_count'] ?? 0),
+    ],
+    'trend' => $trendRows,
+    'methods' => $methodRows,
+    'timeline' => $timelineRows,
+    'top_clients' => $topClients,
+], JSON_NUMERIC_CHECK);
+
+exit;
+?>
