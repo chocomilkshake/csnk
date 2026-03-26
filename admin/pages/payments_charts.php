@@ -29,6 +29,39 @@ if (!$conn) {
     echo json_encode([
         'error' => 'Database connection failed'
     ]);
+    exit;
+}
+
+// ================= GET COMPANY FILTER =================
+$company = $_GET['company'] ?? 'CSNK';
+if (!in_array($company, ['CSNK', 'SMC'])) {
+    $company = 'CSNK';
+}
+
+// ================= SUMMARY: GROSS / NET / REVENUE =================
+$summarySql = "
+    SELECT
+        COALESCE(SUM(total_amount), 0) AS gross_amount,
+        COALESCE(SUM(CASE WHEN payment_status = 'Paid' THEN total_amount ELSE 0 END), 0) AS net_amount,
+        COUNT(*) AS total_invoices
+    FROM invoice_history
+    WHERE company_type = ?
+";
+
+$stmt = $conn->prepare($summarySql);
+if (!$stmt) {
+    echo json_encode(['error' => 'Summary prepare failed: ' . $conn->error]);
+    exit;
+}
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$summaryRow = $stmt->get_result()->fetch_assoc();
+
+$gross = (float)($summaryRow['gross_amount'] ?? 0);
+$net = (float)($summaryRow['net_amount'] ?? 0);
+$pending = $gross - $net;
+$revenue = $net;
+
 // ================= NEW RECRUITMENT AGENCY ANALYTICS =================
 
 // 1. APPLICANTS BILLED (parse JSON_LENGTH)
