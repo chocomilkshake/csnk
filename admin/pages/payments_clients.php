@@ -546,7 +546,94 @@ function renderAvatar($picture, $client_name)
         color: #d4af37
     }
 
+    /* ✅ DASHBOARD TABS - GLASSMORPHISM */
+    .dashboard-tab-btn {
+        background: rgba(255,255,255,0.9) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-bottom: 3px solid transparent !important;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
+    .dashboard-tab-btn:hover {
+        background: rgba(255,255,255,1) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        border-color: rgba(37,99,235,0.3);
+    }
+
+    .dashboard-tab-btn.active {
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+        color: white !important;
+        border-bottom-color: #1d4ed8 !important;
+        box-shadow: 0 12px 40px rgba(37,99,235,0.4);
+        transform: translateY(-1px);
+    }
+
+    .dashboard-tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+        box-shadow: 0 2px 10px rgba(29,78,216,0.4);
+    }
+
+    /* Tab content transitions */
+    .tab-pane {
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        opacity: 1;
+    }
+    
+    .tab-pane.tab-fade-out {
+        opacity: 0 !important;
+        transform: translateX(20px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .tab-pane.tab-fade-in {
+        opacity: 0;
+        transform: translateX(-20px);
+        animation: fadeInSlide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    
+    @keyframes fadeInSlide {
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .tab-content {
+        animation: fadeInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Mobile tab improvements */
+    @media (max-width: 768px) {
+        .dashboard-tab-btn {
+            font-size: 0.95rem;
+            padding: 12px 16px;
+        }
+        
+        .dashboard-tab-btn span.d-none {
+            display: none !important;
+        }
+    }
 
     .btn-group .btn {
         border-radius: 8px;
@@ -756,115 +843,304 @@ function renderAvatar($picture, $client_name)
             </a>
         </div>
 
-        <!-- RIGHT: SEARCH + ADD BUTTONS -->
-        <div class="d-flex gap-2 align-items-center">
+<!-- RIGHT: SEARCH + ADD BUTTONS - VISIBLE ON CLIENTS TAB (CSNK/SMC) -->
+        <div class="d-flex gap-2 align-items-center search-section d-none" id="searchSection">
             <!-- Modern Search Bar -->
-            <div class="search-container position-relative">
+            <div class="search-container position-relative flex-grow-1" style="min-width: 320px;">
                 <input type="search" id="invoiceSearch" class="form-control search-input shadow-sm"
                     placeholder="🔍 Search clients, invoices..." value="<?= h($q) ?>" autocomplete="off">
-                <button class="btn btn-sm position-absolute end-0 top-0 bottom-0 search-clear"
+                <button class="btn btn-sm position-absolute end-0 top-0 bottom-0 search-clear me-2"
                     style="right: 10px; border-radius: 0 8px 8px 0;">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <a href="payment_invoice_gen.php" class="btn btn-primary px-3 position-relative">
-                <i class="bi bi-plus-circle"></i> Create Invoice
+            <a href="payment_invoice_gen.php?tab=<?= $activeTab ?>" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-md-inline">Create</span> Invoice
             </a>
         </div>
 
     </div>
 
-    <div class="bg-white rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
+    <!-- ✅ DASHBOARD TABS: Charts vs Clients Table -->
+    <ul class="nav nav-tabs nav-fill mb-4 shadow-sm bg-white rounded-top-lg border-0 overflow-hidden" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active dashboard-tab-btn px-5 py-3 fs-5 fw-semibold border-0 rounded-0 shadow-none text-slate-700 active:text-blue-600 active:border-b-2 active:border-blue-500 transition-all duration-300" 
+                    id="analytics-tab-btn" data-bs-toggle="tab" data-bs-target="#analytics-tab" type="button" role="tab">
+                📊
+                <span class="d-none d-md-inline">Analytics</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link dashboard-tab-btn px-5 py-3 fs-5 fw-semibold border-0 rounded-0 shadow-none text-slate-700 hover:text-blue-600 transition-all duration-300" 
+                    id="clients-tab-btn" data-bs-toggle="tab" data-bs-target="#clients-tab" type="button" role="tab">
+                📋
+                <span class="d-none d-md-inline">Clients</span>
+            </button>
+        </li>
+    </ul>
 
-
-            <table class="w-full border border-gray-300">
-
-                <thead class="bg-gray-50 border border-gray-300">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">
-                            Client</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                            Invoices</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
-                            Total Amount</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                            Paid</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                            Unpaid</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
-                            Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-gray-200">
-
-                    <?php if (!$invoices): ?>
-                        <tr class="hover:bg-gray-50">
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500 text-muted">
-                                No clients found
-                            </td>
-                        </tr>
-                    <?php else:
-                        foreach ($invoices as $inv): ?>
-
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 border-r border-gray-200"> <!-- CLIENT -->
-                                    <div class="flex items-center gap-3">
-                                        <?= renderAvatar(null, $inv['client_name']) ?>
-                                        <div>
-                                            <div class="font-semibold text-gray-900"><?= h($inv['client_name']) ?></div>
-                                            <div class="text-sm text-gray-500"><?= h($inv['client_email']) ?></div>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <!-- TOTAL INVOICES -->
-                                <td class="px-6 py-4 text-center font-semibold border-r border-gray-200">
-                                    <?= (int) $inv['total_invoices'] ?>
-                                </td>
-
-                                <!-- TOTAL AMOUNT -->
-                                <td class="px-6 py-4 text-center font-semibold text-gray-900 border-r border-gray-200">
-                                    ₱<?= number_format($inv['total_amount'], 2) ?>
-                                </td>
-
-                                <!-- PAID -->
-                                <td class="px-6 py-4 text-center border-r border-gray-200">
-                                    <span
-                                        class="inline-flex px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                                        <?= (int) $inv['paid_count'] ?>
-                                    </span>
-                                </td>
-
-                                <!-- UNPAID -->
-                                <td class="px-6 py-4 text-center border-r border-gray-200">
-                                    <span
-                                        class="inline-flex px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
-                                        <?= (int) $inv['unpaid_count'] ?>
-                                    </span>
-                                </td>
-
-                                <!-- ACTION -->
-                                <td class="px-6 py-4 text-center">
-                                        <button
-                                        class="inline-flex items-center gap-2 justify-center h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                                        data-booking="<?= (int) $inv['client_booking_id'] ?>" data-tab="<?= addslashes($activeTab) ?>"
-                                        title="View History">
-                                        <i class="bi bi-clock-history text-sm"></i>
-                                        <span class="text-sm">History</span>
-                                    </button>
-                                </td>
-
-                            </tr>
-
-                        <?php endforeach; endif; ?>
+    <div class="tab-content border border-top-0 border-gray-200 rounded-bottom-lg shadow-lg overflow-hidden bg-white" id="dashboardTabContent">
+        
+        <!-- 📊 ANALYTICS TAB - All 5 Charts -->
+        <div class="tab-pane fade show active p-4" id="analytics-tab" role="tabpanel">
+            <div class="row g-4 mb-4">
+                <!-- Modern Responsive Chart Containers - ROW 1 (3 Charts) - Mobile: 1-col, Desktop: 3-col -->
+                <div class="col-12 col-md-6 col-lg-6 col-xl-4">
+                    <div class="card border-0 perspective-card group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-slate-50 via-blue-50/80 to-indigo-50/50 backdrop-blur-xl border border-blue-200/50 p-8 rounded-3xl h-100 relative overflow-hidden" style="--tilt: 10deg; --scale: 1.05;">
+                        <!-- Shimmer overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000 shimmer"></div>
+                        <div class="relative z-10">
+                            <div class="d-flex align-items-center justify-content-between mb-5">
+                                <div>
+                                    <h5 class="fw-bold text-slate-900 mb-1 ls-tight">Payment Status</h5>
+                                    <div class="text-xs text-slate-500 font-medium tracking-wider uppercase">Live Analytics</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-emerald-500/20 to-green-500/20 backdrop-blur-sm border border-emerald-200/50 text-emerald-700 px-4 py-2 rounded-full text-xs font-semibold shadow-lg">● Live</div>
+                            </div>
+                            <div class="chart-container position-relative" style="height: 300px; width: 100%;">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
                     </div>
-                </tbody>
-            </table>
+                </div>
 
+                <div class="col-12 col-md-6 col-lg-6 col-xl-4">
+                    <div class="card border-0 perspective-card group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-slate-50 via-purple-50/80 to-violet-50/50 backdrop-blur-xl border border-purple-200/50 p-8 rounded-3xl h-100 relative overflow-hidden" style="--tilt: 10deg; --scale: 1.05;">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-700 shimmer"></div>
+                        <div class="relative z-10">
+                            <div class="d-flex align-items-center justify-content-between mb-5">
+                                <div>
+                                    <h5 class="fw-bold text-slate-900 mb-1 ls-tight">Payment Methods</h5>
+                                    <div class="text-xs text-slate-500 font-medium tracking-wider uppercase">Breakdown</div>
+                                </div>
+                                <div class="fs-4 text-purple-600 opacity-90 group-hover:scale-110 transition-transform"><i class="bi bi-bar-chart-fill"></i></div>
+                            </div>
+                            <div class="chart-container position-relative" style="height: 300px; width: 100%;">
+                                <canvas id="methodChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-12 col-lg-12 col-xl-4">
+                    <div class="card border-0 perspective-card group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-slate-50 via-emerald-50/80 to-teal-50/50 backdrop-blur-xl border border-emerald-200/50 p-8 rounded-3xl h-100 relative overflow-hidden" style="--tilt: 10deg; --scale: 1.05;">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000 shimmer"></div>
+                        <div class="relative z-10">
+                            <div class="d-flex align-items-center justify-content-between mb-5">
+                                <div>
+                                    <h5 class="fw-bold text-slate-900 mb-1 ls-tight">Revenue Trend</h5>
+                                    <div class="text-xs text-slate-500 font-medium tracking-wider uppercase">Growth Analytics</div>
+                                </div>
+                                <div class="fs-4 text-emerald-600 opacity-90 group-hover:scale-110 transition-transform"><i class="bi bi-graph-up-arrow"></i></div>
+                            </div>
+                            <div class="chart-container position-relative" style="height: 300px; width: 100%;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2: Recruitment Agency Charts - Mobile: 1-col, Desktop: 2-col -->
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card border-0 perspective-card group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-slate-50 via-orange-50/80 to-amber-50/50 backdrop-blur-xl border border-orange-200/50 p-8 rounded-3xl h-100 relative overflow-hidden" style="--tilt: 10deg; --scale: 1.05;">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000 shimmer"></div>
+                        <div class="relative z-10">
+                            <div class="d-flex align-items-center justify-content-between mb-5">
+                                <div>
+                                    <h5 class="fw-bold text-slate-900 mb-1 ls-tight">Invoice Timeline</h5>
+                                    <div class="text-xs text-slate-500 font-medium tracking-wider uppercase">Stacked Paid/Pending</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 backdrop-blur-sm border border-orange-200/50 text-orange-700 px-4 py-2 rounded-full text-xs font-semibold shadow-lg">● Live</div>
+                            </div>
+                            <div class="chart-container position-relative" style="height: 300px; width: 100%;">
+                                <canvas id="timelineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card border-0 perspective-card group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-slate-50 via-indigo-50/80 to-purple-50/50 backdrop-blur-xl border border-indigo-200/50 p-8 rounded-3xl h-100 relative overflow-hidden" style="--tilt: 10deg; --scale: 1.05;">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-700 shimmer"></div>
+                        <div class="relative z-10">
+                            <div class="d-flex align-items-center justify-content-between mb-5">
+                                <div>
+                                    <h5 class="fw-bold text-slate-900 mb-1 ls-tight">Top Clients</h5>
+                                    <div class="text-xs text-slate-500 font-medium tracking-wider uppercase">Revenue Distribution</div>
+                                </div>
+                                <div class="fs-4 text-indigo-600 opacity-90 group-hover:scale-110 transition-transform"><i class="bi bi-people-fill"></i></div>
+                            </div>
+                            <div class="chart-container position-relative" style="height: 300px; width: 100%;">
+                                <canvas id="clientsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- 📋 CLIENTS TAB - KPIs + Invoice Table -->
+        <div class="tab-pane fade p-4" id="clients-tab" role="tabpanel">
+            <!-- Modern Summary Cards - Recruitment Agency Edition (8 KPIs) -->
+            <div class="row g-3 mb-5">
+                <!-- ORIGINAL 4 -->
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-red-500/10 to-pink-500/10 backdrop-blur-sm border-red-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-cash-stack fs-2 text-red-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Gross Total</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="grossVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 backdrop-blur-sm border-blue-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-bank fs-2 text-blue-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Net Revenue</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="netVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 backdrop-blur-sm border-emerald-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Total Revenue</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="revenueVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-sm border-amber-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-exclamation-triangle fs-2 text-amber-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Pending</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="pendingVal">₱0</div>
+                    </div>
+                </div>
+                <!-- NEW 4 RECRUITMENT KPIs -->
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-500/10 to-purple-500/10 backdrop-blur-sm border-violet-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-people fs-2 text-violet-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Applicants Billed</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="applicantsVal">0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-indigo-500/10 to-sky-500/10 backdrop-blur-sm border-indigo-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-currency-exchange fs-2 text-indigo-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Avg Invoice</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="avgInvoiceVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-500/15 to-green-500/15 backdrop-blur-sm border-emerald-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-graph-up-arrow fs-2 text-emerald-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Conversion Rate</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="conversionVal">0<span class="text-success">%</span></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 backdrop-blur-sm border-amber-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-clock-history fs-2 text-amber-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Avg Days to Pay</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="daysToPayVal">0</div>
+                        <small class="text-slate-500">days</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Invoice Table -->
+             <div class="bg-white rounded-xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full border border-gray-300">
+                        <thead class="bg-gray-50 border border-gray-300">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">
+                                    Client</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                                    Invoices</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
+                                    Total Amount</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                                    Paid</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                                    Unpaid</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <?php if (!$invoices): ?>
+                                <tr class="hover:bg-gray-50">
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500 text-muted">
+                                        No clients found
+                                    </td>
+                                </tr>
+                            <?php else:
+                                foreach ($invoices as $inv): ?>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 border-r border-gray-200"> <!-- CLIENT -->
+                                            <div class="flex items-center gap-3">
+                                                <?= renderAvatar(null, $inv['client_name']) ?>
+                                                <div>
+                                                    <div class="font-semibold text-gray-900"><?= h($inv['client_name']) ?></div>
+                                                    <div class="text-sm text-gray-500"><?= h($inv['client_email']) ?></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- TOTAL INVOICES -->
+                                        <td class="px-6 py-4 text-center font-semibold border-r border-gray-200">
+                                            <?= (int) $inv['total_invoices'] ?>
+                                        </td>
+                                        <!-- TOTAL AMOUNT -->
+                                        <td class="px-6 py-4 text-center font-semibold text-gray-900 border-r border-gray-200">
+                                            ₱<?= number_format($inv['total_amount'], 2) ?>
+                                        </td>
+                                        <!-- PAID -->
+                                        <td class="px-6 py-4 text-center border-r border-gray-200">
+                                            <span class="inline-flex px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                                                <?= (int) $inv['paid_count'] ?>
+                                            </span>
+                                        </td>
+                                        <!-- UNPAID -->
+                                        <td class="px-6 py-4 text-center border-r border-gray-200">
+                                            <span class="inline-flex px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
+                                                <?= (int) $inv['unpaid_count'] ?>
+                                            </span>
+                                        </td>
+                                        <!-- ACTION -->
+                                        <td class="px-6 py-4 text-center">
+                                            <button class="inline-flex items-center gap-2 justify-center h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                                                    data-booking="<?= (int) $inv['client_booking_id'] ?>" data-tab="<?= addslashes($activeTab) ?>"
+                                                    title="View History">
+                                                <i class="bi bi-clock-history text-sm"></i>
+                                                <span class="text-sm">History</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+
     <!-- ================= GLOBAL ACTION MODAL ================= -->
     <div class="modal fade" id="actionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -1810,6 +2086,561 @@ function renderHistoryTable(data, bookingId) {
             pendingResendInvoiceId = null;
         });
     });
+
+    function peso(val) {
+        return Number(val).toLocaleString('en-PH', {
+            minimumFractionDigits: 2
+        });
+    }
+
+    
+    // Enhanced Tab Management with Persistence, Lazy Charts, Smooth Transitions
+    let chartInstances = {}; // Store chart instances for lazy destroy/create
+    let currentCompanyTab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
+    let isChartsLoaded = false;
+    
+    // Update URL with dashboard tab state
+    function updateDashboardTabURL(targetId) {
+        const url = new URL(window.location);
+        url.searchParams.set('dashboard_tab', targetId);
+        window.history.replaceState({}, '', url);
+    }
+    
+    // Robust tab persistence from localStorage + URL
+    function getActiveTab() {
+        const urlTab = new URLSearchParams(window.location.search).get('dashboard_tab');
+        const lsTab = localStorage.getItem('dashboardTab');
+        return urlTab || lsTab || 'analytics-tab';
+    }
+    
+    // Smooth tab transition utility
+    function switchTabSmooth(targetId, callback) {
+        const targetPane = document.getElementById(targetId);
+        const currentPane = document.querySelector('.tab-pane.show.active');
+        
+        if (currentPane) {
+            currentPane.classList.add('tab-fade-out');
+            setTimeout(() => {
+                currentPane.classList.remove('show', 'active', 'tab-fade-out');
+                if (targetPane) {
+                    targetPane.classList.add('show', 'active', 'tab-fade-in');
+                    setTimeout(() => {
+                        targetPane.classList.remove('tab-fade-in');
+                        if (callback) callback();
+                    }, 400);
+                }
+            }, 200);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const activeTabId = getActiveTab();
+        const targetBtn = document.querySelector(`[data-bs-target="#${activeTabId}"]`);
+        const targetPane = document.getElementById(activeTabId);
+        
+        // Set initial active state
+        document.querySelectorAll('.dashboard-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+        
+        if (targetBtn) targetBtn.classList.add('active');
+        if (targetPane) targetPane.classList.add('show', 'active');
+        
+        // Initial chart load if analytics active
+        if (activeTabId === 'analytics-tab') {
+            loadAndRenderCharts();
+        }
+        
+        // Toggle search visibility
+        toggleSearchSection(activeTabId === 'clients-tab');
+    });
+
+    // Enhanced tab switch event with smooth transitions
+    document.addEventListener('shown.bs.tab', function (e) {
+        const targetId = e.target.getAttribute('data-bs-target').substring(1);
+        
+        // Persistence
+        localStorage.setItem('dashboardTab', targetId);
+        updateDashboardTabURL(targetId);
+        
+        // Smooth transition
+        switchTabSmooth(targetId, () => {
+            if (targetId === 'analytics-tab') {
+                loadAndRenderCharts();
+                toggleSearchSection(false);
+            } else {
+                destroyAllCharts(); // Lazy: destroy when hidden
+                toggleSearchSection(true);
+            }
+        });
+    });
+
+    function toggleSearchSection(show) {
+        const searchSection = document.getElementById('searchSection');
+        if (show) {
+            searchSection.classList.remove('d-none');
+        } else {
+            searchSection.classList.add('d-none');
+        }
+    }
+    
+    // Lazy chart loading with destroy/create
+    function loadAndRenderCharts() {
+        if (isChartsLoaded) return; // Prevent duplicate loads
+        
+        // Always get fresh tab value from URL (handles CSNK/SMC switches)
+        const tab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
+        console.log('Loading charts for company:', tab); // DEBUG
+        
+        fetch(`payments_charts.php?company=${tab}`)
+        fetch(`payments_charts.php?company=${tab}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (!data || Object.keys(data).length === 0 || data.error) {
+                    showNoDataCharts();
+                    return;
+                }
+                renderCharts(data);
+                isChartsLoaded = true;
+            })
+            .catch(err => {
+                console.error('Chart load error:', err);
+                showNoDataCharts();
+            });
+    }
+    
+    function destroyAllCharts() {
+        Object.values(chartInstances).forEach(chart => {
+            if (chart && chart.destroy) chart.destroy();
+        });
+        chartInstances = {};
+        isChartsLoaded = false;
+    }
+
+function renderCharts(data) {
+    // Populate summary cards first (safe even with empty data)
+    try {
+        document.getElementById('grossVal').textContent = peso(data.summary?.gross || 0);
+        document.getElementById('netVal').textContent = peso(data.summary?.net || 0);
+        document.getElementById('revenueVal').textContent = peso(data.summary?.revenue || 0);
+        document.getElementById('pendingVal').textContent = peso(data.summary?.pending || 0);
+        
+        document.getElementById('applicantsVal').textContent = data.kpis?.applicants_billed || 0;
+        document.getElementById('avgInvoiceVal').textContent = peso(data.kpis?.avg_invoice_value || 0);
+        document.getElementById('conversionVal').innerHTML = (data.kpis?.conversion_rate || 0) + '<span class="text-success">%</span>';
+        document.getElementById('daysToPayVal').textContent = data.kpis?.avg_days_to_pay || 0;
+    } catch(e) {
+        console.warn('Summary cards update failed:', e);
+    }
+
+        // Modern responsive charts with perfect screen fit
+        // Ultra-professional chart config
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: (ctx) => ctx.chart.width > 768 ? 'right' : 'bottom',
+                    align: 'center',
+                    labels: {
+                        padding: 25,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        font: { 
+                            size: 13, 
+                            family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                            weight: '500'
+                        },
+                        color: '#64748b'
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f1f5f9',
+                    borderColor: '#1e293b',
+                    borderWidth: 1.5,
+                    cornerRadius: 16,
+                    displayColors: true,
+                    padding: 20,
+                    titleFont: { family: 'Inter', size: 14, weight: '600' },
+                    bodyFont: { family: 'Inter', size: 13 },
+                    footerFont: { family: 'Inter', size: 12 },
+                    callbacks: {
+                        title: (ctx) => ctx[0].label.replace(/\\n/g, ' '),
+                        label: (ctx) => `₱${ctx.parsed.y?.toLocaleString('en-PH', {minimumFractionDigits: 0, maximumFractionDigits: 2})}`,
+                        afterLabel: (ctx) => {
+                            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                            const pct = ((ctx.parsed.y/total)*100).toFixed(1);
+                            return `${pct}% of total`;
+                        }
+                    },
+                    filter: (tooltipItem) => tooltipItem.parsed.y > 0
+                },
+                datalabels: {
+                    display: function(context) {
+                        return context.dataset.data[context.dataIndex] > 0;
+                    },
+                    font: { 
+                        weight: '700',
+                        family: 'Inter, sans-serif',
+                        size: 12
+                    },
+                    color: '#1e293b',
+                    formatter: (value, ctx) => {
+                        if (ctx.chart.type === 'doughnut') {
+                            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                            return `${((value/total)*100).toFixed(0)}%`;
+                        }
+                        return `₱${value.toLocaleString()}`;
+                    },
+                    anchor: 'end',
+                    align: 'start',
+                    offset: 4
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutElastic',
+                delay: (ctx) => ctx.dataIndex * 100
+            },
+            scales: {
+                x: {
+                    grid: { 
+                        color: ctx => ctx.tick.value === ctx.chart.scales.x.max ? '#e2e8f0' : 'transparent',
+                        drawBorder: false
+                    },
+                    ticks: { 
+                        color: '#94a3b8',
+                        font: { family: 'Inter, sans-serif', size: 12 },
+                        maxRotation: 0,
+                        padding: 12
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    grid: { 
+                        color: '#f1f5f9',
+                        drawBorder: false
+                    },
+                    ticks: { 
+                        color: '#94a3b8',
+                        font: { family: 'Inter, sans-serif', size: 12 },
+                        callback: (value) => `₱${value.toLocaleString('en-PH')}`,
+                        padding: 12
+                    },
+                    border: { display: false }
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8,
+                    hoverBorderWidth: 3
+                },
+                bar: {
+                    borderRadius: 12,
+                    borderSkipped: false
+                },
+                line: {
+                    borderWidth: 4,
+                    tension: 0.45
+                }
+            }
+        };
+
+    const statusCtx = document.getElementById('statusChart')?.getContext('2d');
+    if (statusCtx && data.status) {
+        const paid = Math.max(data.status.paid || 0, 0);
+        const pending = Math.max(data.status.pending || 0, 0);
+        const total = paid + pending;
+        
+        if (total === 0) {
+            // Show placeholder chart for empty data
+            const emptyGradient = statusCtx.createLinearGradient(0, 0, 0, 300);
+            emptyGradient.addColorStop(0, '#6b7280');
+            emptyGradient.addColorStop(1, '#9ca3af');
+            
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['No Data'],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: [emptyGradient],
+                        borderWidth: 0,
+                        cutout: '65%'
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+            return;
+        }
+        
+        const gradient1 = statusCtx.createLinearGradient(0, 0, 0, 300);
+        gradient1.addColorStop(0, '#10b981');
+        gradient1.addColorStop(1, '#047857');
+        
+        const gradient2 = statusCtx.createLinearGradient(0, 0, 0, 300);
+        gradient2.addColorStop(0, '#f59e0b');
+        gradient2.addColorStop(1, '#d97706');
+        
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid ✅', 'Pending ⏳'],
+                datasets: [{
+                    data: [paid, pending],
+                    backgroundColor: [gradient1, gradient2],
+                    borderWidth: 0,
+                    cutout: '65%',
+                    hoverOffset: 8
+                }]
+            },
+            options: commonOptions
+        });
+    }
+
+        // Payment Methods - Stacked gradient bars
+    const methodCtx = document.getElementById('methodChart')?.getContext('2d');
+    if (methodCtx) {
+        const methodData = data.methods || [];
+        if (methodData.length === 0) {
+            // Empty state
+            new Chart(methodCtx, {
+                type: 'bar',
+                data: { labels: ['No Payments'], datasets: [{ data: [1], backgroundColor: ['#6b7280'] }] },
+                options: {
+                    ...commonOptions,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { y: { display: false } }
+                }
+            });
+            return;
+        }
+        new Chart(methodCtx, {
+            type: 'bar',
+            data: {
+                labels: methodData.map(m => m.payment_provider || 'Unknown'),
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: methodData.map(m => parseFloat(m.amount || 0)),
+                    backgroundColor: methodData.map((_, i) => 
+                        `hsl(${220 + (i * 40) % 360}, 70%, 55%)`
+                    ),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barThickness: 36
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: { ...commonOptions.plugins, legend: { display: false } },
+                scales: {
+                    ...commonOptions.scales,
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+        // Revenue Trend - Smooth area fill with gradient
+        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+        if (trendCtx) {
+            const gradientFill = trendCtx.createLinearGradient(0, 0, 0, 300);
+            gradientFill.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+            gradientFill.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: data.trend.map(t => new Date(t.date).toLocaleDateString('short')),
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: data.trend.map(t => parseFloat(t.amount || 0)),
+                        borderColor: '#10b981',
+                        backgroundColor: gradientFill,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 3,
+                        pointHoverRadius: 8,
+                        pointHoverBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: { ...commonOptions.plugins, legend: { display: false } },
+                    scales: {
+                        ...commonOptions.scales,
+                        x: { ...commonOptions.scales.x, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // NEW CHARTS: Invoice Timeline (stacked bar)
+        const timelineCtx = document.getElementById('timelineChart')?.getContext('2d');
+        if (timelineCtx) {
+            const paidGradient = timelineCtx.createLinearGradient(0, 0, 0, 300);
+            paidGradient.addColorStop(0, '#10b981');
+            paidGradient.addColorStop(1, '#047857');
+            
+            const pendingGradient = timelineCtx.createLinearGradient(0, 0, 0, 300);
+            pendingGradient.addColorStop(0, '#f59e0b');
+            pendingGradient.addColorStop(1, '#d97706');
+            
+            new Chart(timelineCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.timeline.map(t => new Date(t.date).toLocaleDateString('short')),
+                    datasets: [
+                        {
+                            label: 'Paid',
+                            data: data.timeline.map(t => parseFloat(t.paid_amount || 0)),
+                            backgroundColor: paidGradient,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            stack: 'stack1'
+                        },
+                        {
+                            label: 'Pending',
+                            data: data.timeline.map(t => parseFloat(t.pending_amount || 0)),
+                            backgroundColor: pendingGradient,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            stack: 'stack1'
+                        }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: {
+                            position: 'top',
+                            align: 'center'
+                        }
+                    },
+                    scales: {
+                        ...commonOptions.scales,
+                        x: commonOptions.scales.x,
+                        y: {
+                            ...commonOptions.scales.y,
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // NEW CHARTS: Top Clients (doughnut with revenue %)
+        const clientsCtx = document.getElementById('clientsChart')?.getContext('2d');
+        if (clientsCtx) {
+            new Chart(clientsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.top_clients.map(c => c.client_name?.slice(0, 20) || 'Unknown'),
+                    datasets: [{
+                        data: data.top_clients.map(c => parseFloat(c.revenue || 0)),
+                        backgroundColor: [
+                            '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#3b82f6'
+                        ],
+                        borderWidth: 0,
+                        cutout: '70%',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: { 
+                            position: 'right',
+                            labels: {
+                                ...commonOptions.plugins.legend.labels,
+                                generateLabels: (chart) => {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
+                                            const pct = ((value/total)*100).toFixed(1);
+                                            return {
+                                                text: `${label} (${pct}%)`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].borderColor ? data.datasets[0].borderColor[i] : data.datasets[0].backgroundColor[i],
+                                                lineWidth: data.datasets[0].borderWidth,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+// Enhanced empty state function
+function showNoDataCharts() {
+    const charts = ['statusChart', 'methodChart', 'trendChart', 'timelineChart', 'clientsChart'];
+    charts.forEach(chartId => {
+        const ctx = document.getElementById(chartId)?.getContext('2d');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['No Data'],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: ['#e2e8f0'],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Resize observer for responsive charts
+const resizeObserver = new ResizeObserver(() => {
+    window.dispatchEvent(new Event('chart-resize'));
+});
+document.querySelectorAll('.chart-container').forEach(container => {
+    resizeObserver.observe(container);
+});
+    }
+
 
 </script>
 
