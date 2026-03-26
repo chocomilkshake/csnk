@@ -71,6 +71,36 @@ $applicantsSql = "
     FROM invoice_history 
     WHERE company_type = ?
 ";
+$stmt = $conn->prepare($applicantsSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$applicantsRow = $stmt->get_result()->fetch_assoc();
+$applicantsBilled = (int)($applicantsRow['applicants_billed'] ?? 0);
+
+// 2. AVG INVOICE VALUE
+$avgInvoiceSql = "SELECT AVG(total_amount) AS avg_invoice_value FROM invoice_history WHERE company_type = ?";
+$stmt = $conn->prepare($avgInvoiceSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$avgRow = $stmt->get_result()->fetch_assoc();
+$avgInvoiceValue = round((float)($avgRow['avg_invoice_value'] ?? 0), 2);
+
+// 3. CONVERSION RATE %
+$conversionSql = "
+    SELECT 
+        COUNT(*) AS total_invoices,
+        SUM(payment_status = 'Paid') AS paid_count
+    FROM invoice_history 
+    WHERE company_type = ?
+";
+$stmt = $conn->prepare($conversionSql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$convRow = $stmt->get_result()->fetch_assoc();
+$totalInvoices = (int)($convRow['total_invoices'] ?? 0);
+$paidCount = (int)($convRow['paid_count'] ?? 0);
+$conversionRate = $totalInvoices > 0 ? round(($paidCount / $totalInvoices) * 100, 1) : 0;
+
 // 4. AVG DAYS TO PAY
 $daysToPaySql = "
     SELECT AVG(DATEDIFF(paid_at, created_at)) AS avg_days_to_pay
