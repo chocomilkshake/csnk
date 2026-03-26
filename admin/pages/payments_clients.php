@@ -2704,7 +2704,6 @@ function showNoDataCharts() {
         const ctx = document.getElementById(chartId)?.getContext('2d');
         if (ctx) {
 Chart(ctx, {
-    plugins: [ChartDatalabels],
                 type: 'doughnut',
                 data: {
                     labels: ['No Data'],
