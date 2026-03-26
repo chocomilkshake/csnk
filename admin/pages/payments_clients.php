@@ -1,4 +1,30 @@
+<?php
+session_start();
+require_once '../includes/invoice_mailer.php';
 
+
+}
+                due_date,
+                total_amount,
+                payment_status,
+                reference_no,
+                client_name,
+                client_email,
+                client_address,
+                applicants_data,
+                pdf_filename,
+                created_at
+            FROM invoice_history
+            WHERE client_booking_id = ?
+              AND company_type = ?
+            ORDER BY
+                CASE
+                    WHEN payment_status = 'Paid' THEN 1
+                    ELSE 0
+                END ASC,
+                created_at DESC
+        ";
+    } else {
         $sql = "
             SELECT
                 id,
