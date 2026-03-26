@@ -5,6 +5,29 @@ require_once '../includes/invoice_mailer.php';
 
 }
 
+/* ======================================================
+   AJAX: Get Client Invoice History
+====================================================== */
+if (
+    isset($_GET['get_client_history']) &&
+    isset($_GET['booking_id']) &&
+    isset($_GET['tab'])
+) {
+    header('Content-Type: application/json');
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    $booking_id = (int) $_GET['booking_id'];
+    $tab = strtoupper(trim($_GET['tab']));
+    $companyType = ($tab === 'SMC') ? 'SMC' : 'CSNK';
+
+    // ✅ STEP 1: Check if there are ANY pending invoices
+    $check = $conn->prepare("
+        SELECT COUNT(*) AS pending_count
         FROM invoice_history
         WHERE client_booking_id = ?
           AND company_type = ?
