@@ -491,12 +491,21 @@ function scopeUrl($path, $agency, $bu)
 }
 ?>
 
-<!-- Tailwind (CDN) -->
+<!-- Monitoring Base (includes fonts) -->
+<link rel="stylesheet" href="../css/monitoring-base.css">
+
+<script>
+  // Apply monitoring-page class
+  document.documentElement.className += ' monitoring-page';
+</script>
+
+<!-- Tailwind (CDN) AFTER base -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Monitoring Fonts -->
-<link rel="stylesheet" href="../css/monitoring-fonts.css">
 <script>
+  // Apply monitoring styles
+  document.documentElement.className += ' monitoring-page';
+
   tailwind.config = {
     theme: {
       extend: {
@@ -512,7 +521,7 @@ function scopeUrl($path, $agency, $bu)
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h4 class="mb-0 fw-semibold">Content Management</h4>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Content Management</h1>
     <?php if (!$showNoBUMessage && isset($businessUnits[$activeBUId])): ?>
       <small class="text-muted">
         Agency: <strong><?= strtoupper($activeAgencyCode) ?></strong> |
@@ -565,25 +574,25 @@ function scopeUrl($path, $agency, $bu)
       // Business Units data by agency (PHP-generated JavaScript)
       const businessUnitsByAgency = {
         <?php foreach ($agencies as $agencyId => $a): ?>
-      <?php
-      // Get BUs for this agency
-      $buStmt = $conn->prepare("
+              <?php
+              // Get BUs for this agency
+              $buStmt = $conn->prepare("
         SELECT bu.id, bu.code, bu.name, bu.country_id, c.name as country_name
         FROM business_units bu
         LEFT JOIN countries c ON c.id = bu.country_id
         WHERE bu.agency_id = ? AND bu.active = 1
         ORDER BY c.name, bu.name
       ");
-      $buStmt->bind_param("i", $agencyId);
-      $buStmt->execute();
-      $buRes = $buStmt->get_result();
-      $buData = [];
-      while ($buRow = $buRes->fetch_assoc()) {
-        $buData[] = $buRow;
-      }
-      $buStmt->close();
-      ?>
-      <?= (int) $agencyId ?>: <?= json_encode(array_values($buData)) ?>,
+              $buStmt->bind_param("i", $agencyId);
+              $buStmt->execute();
+              $buRes = $buStmt->get_result();
+              $buData = [];
+              while ($buRow = $buRes->fetch_assoc()) {
+                $buData[] = $buRow;
+              }
+              $buStmt->close();
+              ?>
+              <?= (int) $agencyId ?>: <?= json_encode(array_values($buData)) ?>,
         <?php endforeach; ?>
       };
 
