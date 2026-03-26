@@ -719,10 +719,21 @@ function renderAvatar($picture, $client_name)
         margin-top: 20px
     }
 </style>
+<!-- Monitoring Base (includes fonts) -->
+<link rel="stylesheet" href="../css/monitoring-base.css">
+
+<script>
+    // Ensure monitoring-page class
+    document.documentElement.className += ' monitoring-page';
+</script>
+
+<!-- Tailwind CDN (AFTER base to preserve fonts) -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Monitoring Fonts -->
-<link rel="stylesheet" href="../css/monitoring-fonts.css">
+<script>
+    // Ensure monitoring-page class
+    document.documentElement.className += ' monitoring-page';
+</script>
 
 <div class="container-fluid py-4">
 
@@ -743,8 +754,12 @@ function renderAvatar($picture, $client_name)
         </div>
     </div>
 
-
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Client Invoice</h1>
+        <p class="text-gray-600">Manage all client invoices</p>
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-3">
+
 
         <!-- LEFT: TAB BUTTONS -->
         <div class="invoice-tabs">
