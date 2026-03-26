@@ -208,10 +208,21 @@ function safe(?string $s): string
 }
 ?>
 <!-- Tailwind CDN -->
+<!-- Monitoring Base (includes fonts) -->
+<link rel="stylesheet" href="../css/monitoring-base.css">
+
+<script>
+  // Apply monitoring-page class for higher specificity
+  document.documentElement.className += ' monitoring-page';
+</script>
+
+<!-- Tailwind CDN (AFTER monitoring-base to preserve fonts) -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Monitoring Fonts -->
-<link rel="stylesheet" href="../css/monitoring-fonts.css">
+<script>
+  // Add monitoring-page class for higher specificity
+  document.documentElement.className += ' monitoring-page';
+</script>
 
 
 
