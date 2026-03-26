@@ -2703,6 +2703,8 @@ function showNoDataCharts() {
     charts.forEach(chartId => {
         const ctx = document.getElementById(chartId)?.getContext('2d');
         if (ctx) {
+Chart(ctx, {
+    plugins: [ChartDatalabels],
                 type: 'doughnut',
                 data: {
                     labels: ['No Data'],
