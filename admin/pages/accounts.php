@@ -533,8 +533,12 @@ $superAccounts = applyAccountFilters($rawSupers, $filterBranch, $filterCountry, 
   }
 
   /* ===== Layout ===== */
-  < !-- Monitoring Fonts --><link rel="stylesheet" href="../css/monitoring-fonts.css">.modern-accounts {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif
+  < !-- Monitoring Base (includes fonts) --><link rel="stylesheet" href="../css/monitoring-base.css"><script> // Apply monitoring-page class
+  document.documentElement.className+=' monitoring-page';
+  </script>font-family: 'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif
   }
 
   .hero-section {
