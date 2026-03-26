@@ -8,6 +8,37 @@ require_once '../includes/invoice_mailer.php';
 ====================================================== */
 if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
     header('Content-Type: application/json');
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+    require_once '../includes/functions.php';
+
+    // ✅ load PHPMailer
+    $composerAutoload = __DIR__ . '/../../vendor/autoload.php';
+    if (is_readable($composerAutoload)) {
+        require_once $composerAutoload;
+    } else {
+        require_once __DIR__ . '/../../lib/phpmailer/src/Exception.php';
+        require_once __DIR__ . '/../../lib/phpmailer/src/PHPMailer.php';
+        require_once __DIR__ . '/../../lib/phpmailer/src/SMTP.php';
+    }
+
+    require_once __DIR__ . '/payment_invoice_gen.php';
+    // ✅ this allows reuse of sendInvoiceEmail()
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    if (!$conn) {
+        echo json_encode(['success' => false, 'message' => 'DB connection failed']);
+        exit;
+    }
+
+    $invoice_id = (int) $_GET['id'];
+
+    // ✅ Fetch invoice
+    $stmt = $conn->prepare("
+        SELECT
             invoice_num,
             client_name,
             client_email,
