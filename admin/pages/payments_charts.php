@@ -97,7 +97,9 @@ $timelineRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 // PAID VS PENDING COUNT
 $statusSql = "
     SELECT
-        SUM(payment_status = 'Paid') AS paid_count
+        SUM(payment_status = 'Paid') AS paid_count,
+        SUM(payment_status != 'Paid') AS pending_count
+    FROM invoice_history
     WHERE company_type = ?
 ";
 $stmt = $conn->prepare($statusSql);
