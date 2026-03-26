@@ -124,7 +124,7 @@ if (
     $check->bind_param('is', $booking_id, $companyType);
     $check->execute();
     $pendingCount = (int) $check->get_result()
-                                ->fetch_assoc()['pending_count'];
+        ->fetch_assoc()['pending_count'];
 
     // ✅ STEP 2: Build query dynamically
     if ($pendingCount > 0) {
@@ -721,24 +721,27 @@ function renderAvatar($picture, $client_name)
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Monitoring Fonts -->
+<link rel="stylesheet" href="../css/monitoring-fonts.css">
+
 <div class="container-fluid py-4">
 
-<!-- DELETE TOAST - MISSING HTML -->
-<div id="deleteToast" class="delete-toast hidden">
-  <div class="toast-body">
-    <div class="toast-text">
-      <div class="fw-bold">Invoice moved to trash</div>
-      <div class="toast-sub" id="toastSubtitle">This will be permanently deleted in</div>
+    <!-- DELETE TOAST - MISSING HTML -->
+    <div id="deleteToast" class="delete-toast hidden">
+        <div class="toast-body">
+            <div class="toast-text">
+                <div class="fw-bold">Invoice moved to trash</div>
+                <div class="toast-sub" id="toastSubtitle">This will be permanently deleted in</div>
+            </div>
+            <div class="toast-actions">
+                <button id="undoDelete" class="toast-undo">Undo</button>
+                <button id="closeToast" class="toast-close">&times;</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+                <span id="toastCountdown">7</span>s
+            </div>
+        </div>
     </div>
-    <div class="toast-actions">
-      <button id="undoDelete" class="toast-undo">Undo</button>
-      <button id="closeToast" class="toast-close">&times;</button>
-    </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px;">
-      <span id="toastCountdown">7</span>s
-    </div>
-  </div>
-</div>
 
 
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -847,10 +850,10 @@ function renderAvatar($picture, $client_name)
 
                                 <!-- ACTION -->
                                 <td class="px-6 py-4 text-center">
-                                        <button
+                                    <button
                                         class="inline-flex items-center gap-2 justify-center h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                                        data-booking="<?= (int) $inv['client_booking_id'] ?>" data-tab="<?= addslashes($activeTab) ?>"
-                                        title="View History">
+                                        data-booking="<?= (int) $inv['client_booking_id'] ?>"
+                                        data-tab="<?= addslashes($activeTab) ?>" title="View History">
                                         <i class="bi bi-clock-history text-sm"></i>
                                         <span class="text-sm">History</span>
                                     </button>
@@ -859,120 +862,120 @@ function renderAvatar($picture, $client_name)
                             </tr>
 
                         <?php endforeach; endif; ?>
-                    </div>
-                </tbody>
-            </table>
-
         </div>
+        </tbody>
+        </table>
+
     </div>
-    <!-- ================= GLOBAL ACTION MODAL ================= -->
-    <div class="modal fade" id="actionModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content action-modal">
+</div>
+<!-- ================= GLOBAL ACTION MODAL ================= -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content action-modal">
 
-                <div class="modal-header">
-                    <h6 class="modal-title fw-semibold" id="actionModalTitle">
-                        Processing
-                    </h6>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body text-center py-5">
-                    <!-- ✅ REQUIRED -->
-                    <div id="actionModalIcon" class="mb-4"></div>
-
-                    <div class="fw-semibold" id="actionModalTitle2">
-                        Sending Invoice
-                    </div>
-
-                    <p class="text-muted mb-0" id="actionModalMessage">
-                        Please wait a moment…
-                    </p>
-                </div>
-
-                <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
-                    <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
-                        OK
-                    </button>
-                </div>
-
+            <div class="modal-header">
+                <h6 class="modal-title fw-semibold" id="actionModalTitle">
+                    Processing
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+
+            <div class="modal-body text-center py-5">
+                <!-- ✅ REQUIRED -->
+                <div id="actionModalIcon" class="mb-4"></div>
+
+                <div class="fw-semibold" id="actionModalTitle2">
+                    Sending Invoice
+                </div>
+
+                <p class="text-muted mb-0" id="actionModalMessage">
+                    Please wait a moment…
+                </p>
+            </div>
+
+            <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
+                <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
+                    OK
+                </button>
+            </div>
+
         </div>
     </div>
+</div>
 
-        <!-- ================= CONFIRM RESEND MODAL ================= -->
-    <div class="modal fade" id="confirmResendModal" tabindex="-1">
+<!-- ================= CONFIRM RESEND MODAL ================= -->
+<div class="modal fade" id="confirmResendModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4">
 
-        <div class="modal-header">
-            <h5 class="modal-title">
-            <i class="bi bi-envelope-paper me-2"></i>
-            Resend Invoice
-            </h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-envelope-paper me-2"></i>
+                    Resend Invoice
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
-        <div class="modal-body text-center">
-            <p class="mb-0">
-            Are you sure you want to resend the invoice email to the client?
-            </p>
-        </div>
+            <div class="modal-body text-center">
+                <p class="mb-0">
+                    Are you sure you want to resend the invoice email to the client?
+                </p>
+            </div>
 
-        <div class="modal-footer justify-content-center">
-            <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
-            Cancel
-            </button>
-            <button class="btn btn-primary px-4" id="confirmResendBtn">
-            Yes, Resend
-            </button>
-        </div>
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button class="btn btn-primary px-4" id="confirmResendBtn">
+                    Yes, Resend
+                </button>
+            </div>
 
         </div>
     </div>
-    </div>
+</div>
 
 
-    <!-- ================= IMPROVED CLIENT INVOICE HISTORY MODAL ================= -->
-    <div class="modal fade" id="historyModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
-            <div class="modal-content border-0 shadow-lg overflow-hidden"
-                style="background:#fff;border-radius:20px;font-family:Inter,system-ui,-apple-system,sans-serif;">
+<!-- ================= IMPROVED CLIENT INVOICE HISTORY MODAL ================= -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content border-0 shadow-lg overflow-hidden"
+            style="background:#fff;border-radius:20px;font-family:Inter,system-ui,-apple-system,sans-serif;">
 
-                <!-- HEADER -->
-                <div class="modal-header px-5 py-4 border-0" style="background:#2563eb;color:#fff;">
-                    <div>
-                        <h4 class="fw-semibold mb-1 d-flex align-items-center">
-                            <i class="bi bi-receipt me-3"></i>
-                            Invoice History
-                        </h4>
-                        <div id="historyClientName" style="font-size:.9rem;opacity:.85;"></div>
-                    </div>
-                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <!-- HEADER -->
+            <div class="modal-header px-5 py-4 border-0" style="background:#2563eb;color:#fff;">
+                <div>
+                    <h4 class="fw-semibold mb-1 d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
+                        Invoice History
+                    </h4>
+                    <div id="historyClientName" style="font-size:.9rem;opacity:.85;"></div>
                 </div>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
 
-                <div class="modal-body p-0">
+            <div class="modal-body p-0">
 
-                    <!-- CLIENT INFO -->
-                    <div class="px-5 py-4 border-bottom" style="background:#f8fafc;">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h5 id="historyClientFullName" class="fw-semibold mb-1"
-                                    style="font-size:1.25rem;color:#0f172a;">
-                                    Loading Client...
-                                </h5>
-                                <div style="font-size:.9rem;color:#64748b;">
-                                    <span id="historyClientEmail"></span> •
-                                    <span id="historyClientAddress"></span>
-                                </div>
+                <!-- CLIENT INFO -->
+                <div class="px-5 py-4 border-bottom" style="background:#f8fafc;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 id="historyClientFullName" class="fw-semibold mb-1"
+                                style="font-size:1.25rem;color:#0f172a;">
+                                Loading Client...
+                            </h5>
+                            <div style="font-size:.9rem;color:#64748b;">
+                                <span id="historyClientEmail"></span> •
+                                <span id="historyClientAddress"></span>
                             </div>
-                            <div class="col-md-4 text-end">
-                                <div id="historyInvoiceCount" class="fw-bold" style="font-size:1.3rem;color:#2563eb;">
-                                    0 Invoices
-                                </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div id="historyInvoiceCount" class="fw-bold" style="font-size:1.3rem;color:#2563eb;">
+                                0 Invoices
                             </div>
                         </div>
                     </div>
+                </div>
 
                 <!-- SEARCH -->
                 <div class="px-5 py-3 border-bottom">
@@ -980,278 +983,279 @@ function renderAvatar($picture, $client_name)
                         <input id="modalSearch" type="text" class="form-control ps-5"
                             placeholder="Search invoice number, date, status…"
                             style="border-radius:14px;border:1px solid #e5e7eb;">
-                        <button id="modalSearchClear" class="position-absolute end-0 top-50 translate-middle-y me-3" style="border:none;background:none;color:#9ca3af;font-size:1.2rem;cursor:pointer;display:none;">×</button>
+                        <button id="modalSearchClear" class="position-absolute end-0 top-50 translate-middle-y me-3"
+                            style="border:none;background:none;color:#9ca3af;font-size:1.2rem;cursor:pointer;display:none;">×</button>
                         <i class="bi bi-search position-absolute"
                             style="left:16px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
                     </div>
                 </div>
 
-                    <!-- TABLE -->
-                    <div class="table-responsive" style="max-height:65vh;">
-                        <table class="table mb-0 align-middle">
-                            <thead class="sticky-top" style="background:#f8fafc;">
-                                <tr>
-                                    <th class="ps-5 py-3 small text-uppercase">Invoice</th>
-                                    <th class="py-3 small text-uppercase">Date</th>
-                                    <th class="py-3 small text-uppercase">Due</th>
-                                    <th class="py-3 small text-uppercase text-end">Amount</th>
-                                    <th class="py-3 small text-uppercase text-center">Status</th>
-                                    <th class="pe-5 py-3 small text-uppercase text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTableBody"></tbody>
-                        </table>
-                    </div>
+                <!-- TABLE -->
+                <div class="table-responsive" style="max-height:65vh;">
+                    <table class="table mb-0 align-middle">
+                        <thead class="sticky-top" style="background:#f8fafc;">
+                            <tr>
+                                <th class="ps-5 py-3 small text-uppercase">Invoice</th>
+                                <th class="py-3 small text-uppercase">Date</th>
+                                <th class="py-3 small text-uppercase">Due</th>
+                                <th class="py-3 small text-uppercase text-end">Amount</th>
+                                <th class="py-3 small text-uppercase text-center">Status</th>
+                                <th class="pe-5 py-3 small text-uppercase text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
                 </div>
-
-                <!-- FOOTER -->
-                <div class="modal-footer px-5 py-3 border-0" style="background:#f8fafc;">
-                    <button class="btn px-4 rounded-pill" data-bs-dismiss="modal" style="border:1px solid #cbd5e1;">
-                        Close
-                    </button>
-                </div>
-
             </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer px-5 py-3 border-0" style="background:#f8fafc;">
+                <button class="btn px-4 rounded-pill" data-bs-dismiss="modal" style="border:1px solid #cbd5e1;">
+                    Close
+                </button>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <!-- ================= VIEW MODAL ================= -->
-    <div class="modal fade" id="viewModal" tabindex="-1">
+<!-- ================= VIEW MODAL ================= -->
+<div class="modal fade" id="viewModal" tabindex="-1">
 
-        <div class="modal-dialog modal-l modal-dialog-centered">
-            <div class="modal-content">
+    <div class="modal-dialog modal-l modal-dialog-centered">
+        <div class="modal-content">
 
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        📄 <span id="modal-company">CSNK</span> Invoice Preview
-                    </h5>
-                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    📄 <span id="modal-company">CSNK</span> Invoice Preview
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
 
-                <div class="modal-body">
-                    <div class="invoice-preview-paper">
+            <div class="modal-body">
+                <div class="invoice-preview-paper">
 
-                        <!-- HEADER -->
-                        <div class="inv-header d-flex justify-content-between align-items-center">
+                    <!-- HEADER -->
+                    <div class="inv-header d-flex justify-content-between align-items-center">
 
-                            <!-- LEFT SIDE: MAIN LOGO + INFO -->
-                            <div>
-                                <!-- CSNK MAIN LOGO -->
-                                <img id="logo-csnk" src="../../resources/img/whychoose.png">
+                        <!-- LEFT SIDE: MAIN LOGO + INFO -->
+                        <div>
+                            <!-- CSNK MAIN LOGO -->
+                            <img id="logo-csnk" src="../../resources/img/whychoose.png">
 
-                                <!-- SMC MAIN LOGO -->
-                                <img id="logo-smc" src="../../resources/img/smcbrandname.png" class="d-none">
+                            <!-- SMC MAIN LOGO -->
+                            <img id="logo-smc" src="../../resources/img/smcbrandname.png" class="d-none">
 
-                                <div class="mt-1 small text-muted" id="company-address">
-                                    Unit 1 Eden Townhomes<br>
-                                    Pedro Gil Street, Manila
-                                </div>
-                            </div>
-
-                            <!-- RIGHT SIDE: BADGE LOGO -->
-                            <div>
-                                <!-- CSNK BADGE -->
-                                <img id="badge-csnk" src="../../resources/img/csnk-iconz.png" height="95">
-
-                                <!-- SMC BADGE -->
-                                <img id="badge-smc" src="../../resources/img/smc.png" height="90" class="d-none">
-                            </div>
-
-                        </div>
-
-                        <!-- TITLE -->
-                        <div class="inv-title">INVOICE</div>
-
-                        <div class="inv-meta">
-                            <div>
-                                <strong>Billed To:</strong><br>
-                                <span id="pv-client-name"></span><br>
-                                <span id="pv-client-email"></span><br>
-                                <span id="pv-client-address"></span>
-                            </div>
-                            <div class="text-end">
-                                <div><strong>Invoice #:</strong> <span id="pv-invoice-num"></span></div>
-                                <div><strong>Date:</strong> <span id="pv-invoice-date"></span></div>
-                                <div><strong>Due:</strong> <span id="pv-due-date"></span></div>
-                                <div><strong>Ref:</strong> <span id="pv-ref-no"></span></div>
+                            <div class="mt-1 small text-muted" id="company-address">
+                                Unit 1 Eden Townhomes<br>
+                                Pedro Gil Street, Manila
                             </div>
                         </div>
 
-                        <table class="inv-table">
-                            <thead>
-                                <tr>
-                                    <th>Applicant</th>
-                                    <th>Period</th>
-                                    <th class="text-center">Days</th>
-                                    <th class="text-end">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pv-items"></tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold">TOTAL:</td>
-                                    <td class="text-end fw-bold text-success">
-                                        ₱<span id="pv-total">0.00</span>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                        <!-- RIGHT SIDE: BADGE LOGO -->
+                        <div>
+                            <!-- CSNK BADGE -->
+                            <img id="badge-csnk" src="../../resources/img/csnk-iconz.png" height="95">
 
-                        <div class="inv-declaration">
-                            I declare that all information contained in this invoice are certified true and correct.
-                        </div>
-
-                        <div class="inv-payment">
-                            <strong>Issued By:</strong> <span id="issued-by">CSNK Agency</span>
+                            <!-- SMC BADGE -->
+                            <img id="badge-smc" src="../../resources/img/smc.png" height="90" class="d-none">
                         </div>
 
                     </div>
-                </div>
 
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button class="btn btn-primary" id="downloadPdfBtn">
-                        <i class="bi bi-download me-2"></i>Download PDF
-                    </button>
-                </div>
+                    <!-- TITLE -->
+                    <div class="inv-title">INVOICE</div>
 
+                    <div class="inv-meta">
+                        <div>
+                            <strong>Billed To:</strong><br>
+                            <span id="pv-client-name"></span><br>
+                            <span id="pv-client-email"></span><br>
+                            <span id="pv-client-address"></span>
+                        </div>
+                        <div class="text-end">
+                            <div><strong>Invoice #:</strong> <span id="pv-invoice-num"></span></div>
+                            <div><strong>Date:</strong> <span id="pv-invoice-date"></span></div>
+                            <div><strong>Due:</strong> <span id="pv-due-date"></span></div>
+                            <div><strong>Ref:</strong> <span id="pv-ref-no"></span></div>
+                        </div>
+                    </div>
+
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Period</th>
+                                <th class="text-center">Days</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pv-items"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">TOTAL:</td>
+                                <td class="text-end fw-bold text-success">
+                                    ₱<span id="pv-total">0.00</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="inv-declaration">
+                        I declare that all information contained in this invoice are certified true and correct.
+                    </div>
+
+                    <div class="inv-payment">
+                        <strong>Issued By:</strong> <span id="issued-by">CSNK Agency</span>
+                    </div>
+
+                </div>
             </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="downloadPdfBtn">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <script>
-        let actionModal;
+<script>
+    let actionModal;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            actionModal = new bootstrap.Modal(
-                document.getElementById('actionModal')
-            );
-        });
+    document.addEventListener('DOMContentLoaded', () => {
+        actionModal = new bootstrap.Modal(
+            document.getElementById('actionModal')
+        );
+    });
 
-        function showActionModal(title, message, type = 'loading') {
-            const modalTitle = document.getElementById('actionModalTitle');
-            const modalTitle2 = document.getElementById('actionModalTitle2');
-            const modalMessage = document.getElementById('actionModalMessage');
-            const icon = document.getElementById('actionModalIcon');
-            const footer = document.getElementById('actionModalFooter');
-            const okBtn = document.getElementById('actionModalOK');
+    function showActionModal(title, message, type = 'loading') {
+        const modalTitle = document.getElementById('actionModalTitle');
+        const modalTitle2 = document.getElementById('actionModalTitle2');
+        const modalMessage = document.getElementById('actionModalMessage');
+        const icon = document.getElementById('actionModalIcon');
+        const footer = document.getElementById('actionModalFooter');
+        const okBtn = document.getElementById('actionModalOK');
 
-            modalTitle.textContent = title;
-            modalTitle2.textContent = title;
-            modalMessage.textContent = message;
+        modalTitle.textContent = title;
+        modalTitle2.textContent = title;
+        modalMessage.textContent = message;
 
-            footer.classList.add('d-none');
+        footer.classList.add('d-none');
 
-            if (type === 'loading') {
-                icon.innerHTML = `
+        if (type === 'loading') {
+            icon.innerHTML = `
             <div class="spinner-border spinner-border-sm text-primary shadow-sm mb-2" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         `;
-            } else if (type === 'success') {
-                icon.innerHTML = `
+        } else if (type === 'success') {
+            icon.innerHTML = `
             <i class="bi bi-check-circle-fill text-success fs-1 mb-3" style="font-size: 4rem;"></i>
         `;
-                okBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Done!';
-                okBtn.className = 'btn btn-lg btn-success px-5 shadow-lg';
-                footer.classList.remove('d-none');
-            } else if (type === 'error') {
-                icon.innerHTML = `
+            okBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Done!';
+            okBtn.className = 'btn btn-lg btn-success px-5 shadow-lg';
+            footer.classList.remove('d-none');
+        } else if (type === 'error') {
+            icon.innerHTML = `
             <i class="bi bi-x-circle-fill text-danger fs-1 mb-3" style="font-size: 4rem;"></i>
         `;
-                okBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>OK';
-                okBtn.className = 'btn btn-lg btn-outline-danger px-5 shadow-lg';
-                footer.classList.remove('d-none');
-            }
-
-            actionModal.show();
-
-            // ✅ Auto-close success after 3 seconds
-            if (type === 'success') {
-                setTimeout(() => {
-                    actionModal.hide();
-                }, 3000);
-            }
+            okBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>OK';
+            okBtn.className = 'btn btn-lg btn-outline-danger px-5 shadow-lg';
+            footer.classList.remove('d-none');
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('invoiceSearch') || document.querySelector('input[type="search"]');
-            const tableBody = document.querySelector('tbody');
-            const resultsCount = document.createElement('div');
-            resultsCount.className = 'search-results';
-            tableBody.parentNode.insertBefore(resultsCount, tableBody);
+        actionModal.show();
 
-   
-            const allInvoices = <?= json_encode($invoices, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        // ✅ Auto-close success after 3 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                actionModal.hide();
+            }, 3000);
+        }
+    }
 
-            
-            // Fuse.js for fuzzy search
-            fuse = new Fuse(allInvoices, {
-                keys: [
-                    { name: 'client_name', weight: 0.5 },
-                    { name: 'client_email', weight: 0.3 },
-                    { name: 'invoice_num', weight: 0.2 }
-                ],
-                threshold: 0.4,        // MORE typo tolerance
-                distance: 200,
-                ignoreLocation: true,
-                minMatchCharLength: 2
-            });
-
-            // searchInput.addEventListener('input', function(e) {
-            //     const query = e.target.value.trim();
-
-            //     if (query.length === 0) {
-            //         filteredInvoices = [...allInvoices];
-            //     } else {
-            //     const results = fuse.search(query);
-            //     filteredInvoices = results.length ? results.map(r => r.item) : [];
-            //     }
-
-            //     renderInvoices(filteredInvoices);
-            //     updateResultsCount(filteredInvoices.length);
-
-            //     // Show/hide clear button
-            //     document.querySelector('.search-clear').style.display = query ? 'block' : 'none';
-            // });
-
-            // Clear search
-            document.querySelector('.search-clear').addEventListener('click', function () {
-                searchInput.value = '';
-                filteredInvoices = [...allInvoices];
-                renderInvoices(filteredInvoices);
-                updateResultsCount(allInvoices.length);
-                this.style.display = 'none';
-            });
-
-            // ✅ Client list is rendered by PHP now
-            // renderInvoices(allInvoices);
-            // updateResultsCount(allInvoices.length);
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('invoiceSearch') || document.querySelector('input[type="search"]');
+        const tableBody = document.querySelector('tbody');
+        const resultsCount = document.createElement('div');
+        resultsCount.className = 'search-results';
+        tableBody.parentNode.insertBefore(resultsCount, tableBody);
 
 
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', viewInvoiceHandler);
-            });
+        const allInvoices = <?= json_encode($invoices, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
-            function updateResultsCount(count) {
-                resultsCount.innerHTML = count === 1 ?
-                    '<i class="bi bi-check-circle-fill text-success me-1"></i>1 result' :
-                    `<i class="bi bi-check-circle-fill text-success me-1"></i>${count} results`;
-            }
 
+        // Fuse.js for fuzzy search
+        fuse = new Fuse(allInvoices, {
+            keys: [
+                { name: 'client_name', weight: 0.5 },
+                { name: 'client_email', weight: 0.3 },
+                { name: 'invoice_num', weight: 0.2 }
+            ],
+            threshold: 0.4,        // MORE typo tolerance
+            distance: 200,
+            ignoreLocation: true,
+            minMatchCharLength: 2
         });
 
-        // Make escapeHtml global so openClientHistory can reuse it
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
+        // searchInput.addEventListener('input', function(e) {
+        //     const query = e.target.value.trim();
+
+        //     if (query.length === 0) {
+        //         filteredInvoices = [...allInvoices];
+        //     } else {
+        //     const results = fuse.search(query);
+        //     filteredInvoices = results.length ? results.map(r => r.item) : [];
+        //     }
+
+        //     renderInvoices(filteredInvoices);
+        //     updateResultsCount(filteredInvoices.length);
+
+        //     // Show/hide clear button
+        //     document.querySelector('.search-clear').style.display = query ? 'block' : 'none';
+        // });
+
+        // Clear search
+        document.querySelector('.search-clear').addEventListener('click', function () {
+            searchInput.value = '';
+            filteredInvoices = [...allInvoices];
+            renderInvoices(filteredInvoices);
+            updateResultsCount(allInvoices.length);
+            this.style.display = 'none';
+        });
+
+        // ✅ Client list is rendered by PHP now
+        // renderInvoices(allInvoices);
+        // updateResultsCount(allInvoices.length);
+
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', viewInvoiceHandler);
+        });
+
+        function updateResultsCount(count) {
+            resultsCount.innerHTML = count === 1 ?
+                '<i class="bi bi-check-circle-fill text-success me-1"></i>1 result' :
+                `<i class="bi bi-check-circle-fill text-success me-1"></i>${count} results`;
         }
 
-        function renderAvatar(picture, name) {
-            // If image exists
-            if (picture && picture !== '') {
-                return `
+    });
+
+    // Make escapeHtml global so openClientHistory can reuse it
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function renderAvatar(picture, name) {
+        // If image exists
+        if (picture && picture !== '') {
+            return `
                 <img 
                     src="../../uploads/${picture}" 
                     class="rounded-circle shadow-sm"
@@ -1260,12 +1264,12 @@ function renderAvatar($picture, $client_name)
                     alt="Avatar"
                 >
             `;
-            }
+        }
 
-            // Fallback: first letter avatar
-            const letter = name ? name.charAt(0).toUpperCase() : '?';
+        // Fallback: first letter avatar
+        const letter = name ? name.charAt(0).toUpperCase() : '?';
 
-            return `
+        return `
             <div 
                 class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm"
                 style="width:48px;height:48px;background:#0d6efd;"
@@ -1273,60 +1277,60 @@ function renderAvatar($picture, $client_name)
                 ${letter}
             </div>
         `;
-        }
+    }
 
-        function formatCurrency(amount) {
-            return '₱' + parseFloat(amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-        }
+    function formatCurrency(amount) {
+        return '₱' + parseFloat(amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    }
 
-        // View modal handler
-        function viewInvoiceHandler() {
-            const d = this.dataset;
+    // View modal handler
+    function viewInvoiceHandler() {
+        const d = this.dataset;
 
-            // ✅ Store PDF info
-            currentInvoiceData = {
-                pdf: d.pdf,
-                total: parseFloat(d.total)
-            };
+        // ✅ Store PDF info
+        currentInvoiceData = {
+            pdf: d.pdf,
+            total: parseFloat(d.total)
+        };
 
-            // ✅ Detect company
-            const isSMC = d.invoice && d.invoice.startsWith('SMC-');
+        // ✅ Detect company
+        const isSMC = d.invoice && d.invoice.startsWith('SMC-');
 
-            // ✅ Toggle LEFT logos
-            document.getElementById('logo-csnk').classList.toggle('d-none', isSMC);
-            document.getElementById('logo-smc').classList.toggle('d-none', !isSMC);
+        // ✅ Toggle LEFT logos
+        document.getElementById('logo-csnk').classList.toggle('d-none', isSMC);
+        document.getElementById('logo-smc').classList.toggle('d-none', !isSMC);
 
-            // ✅ Toggle RIGHT badge logos
-            document.getElementById('badge-csnk').classList.toggle('d-none', isSMC);
-            document.getElementById('badge-smc').classList.toggle('d-none', !isSMC);
+        // ✅ Toggle RIGHT badge logos
+        document.getElementById('badge-csnk').classList.toggle('d-none', isSMC);
+        document.getElementById('badge-smc').classList.toggle('d-none', !isSMC);
 
-            // ✅ Modal title
-            document.getElementById('modal-company').textContent = isSMC ? 'SMC' : 'CSNK';
+        // ✅ Modal title
+        document.getElementById('modal-company').textContent = isSMC ? 'SMC' : 'CSNK';
 
-            // ✅ Issued by
-            document.getElementById('issued-by').textContent =
-                isSMC ? 'SMC Agency' : 'CSNK Agency';
+        // ✅ Issued by
+        document.getElementById('issued-by').textContent =
+            isSMC ? 'SMC Agency' : 'CSNK Agency';
 
-            // ✅ Client info
-            document.getElementById('pv-client-name').textContent = d.client || '';
-            document.getElementById('pv-client-email').textContent = d.email || '';
-            document.getElementById('pv-client-address').textContent = d.address || '';
-            document.getElementById('pv-invoice-num').textContent = d.invoice || '';
-            document.getElementById('pv-invoice-date').textContent =
-                new Date(d.date).toLocaleDateString('en-PH');
-            document.getElementById('pv-due-date').textContent =
-                new Date(d.due).toLocaleDateString('en-PH');
-            document.getElementById('pv-ref-no').textContent = d.ref || '';
+        // ✅ Client info
+        document.getElementById('pv-client-name').textContent = d.client || '';
+        document.getElementById('pv-client-email').textContent = d.email || '';
+        document.getElementById('pv-client-address').textContent = d.address || '';
+        document.getElementById('pv-invoice-num').textContent = d.invoice || '';
+        document.getElementById('pv-invoice-date').textContent =
+            new Date(d.date).toLocaleDateString('en-PH');
+        document.getElementById('pv-due-date').textContent =
+            new Date(d.due).toLocaleDateString('en-PH');
+        document.getElementById('pv-ref-no').textContent = d.ref || '';
 
-            // ✅ Total
-            document.getElementById('pv-total').textContent =
-                parseFloat(d.total || 0).toLocaleString('en-PH', {
-                    minimumFractionDigits: 2
-                });
+        // ✅ Total
+        document.getElementById('pv-total').textContent =
+            parseFloat(d.total || 0).toLocaleString('en-PH', {
+                minimumFractionDigits: 2
+            });
 
-            // ✅ Applicants
-            const tbody = document.getElementById('pv-items');
-            tbody.innerHTML = `
+        // ✅ Applicants
+        const tbody = document.getElementById('pv-items');
+        tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center">
                     <div class="spinner-border spinner-border-sm"></div> Loading...
@@ -1334,132 +1338,132 @@ function renderAvatar($picture, $client_name)
             </tr>
         `;
 
-            fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
-                .then(res => res.json())
-                .then(apps => {
-                    tbody.innerHTML = '';
+        fetch('payments_clients.php?get_invoice_applicants=1&id=' + d.id)
+            .then(res => res.json())
+            .then(apps => {
+                tbody.innerHTML = '';
 
-                    if (!apps || apps.length === 0) {
-                        tbody.innerHTML = `
+                if (!apps || apps.length === 0) {
+                    tbody.innerHTML = `
                         <tr>
                             <td colspan="4" class="text-center text-muted">
                                 No applicants assigned
                             </td>
                         </tr>
                     `;
-                        return;
-                    }
+                    return;
+                }
 
-                    apps.forEach(app => {
-                        tbody.insertAdjacentHTML('beforeend', `
+                apps.forEach(app => {
+                    tbody.insertAdjacentHTML('beforeend', `
                         <tr>
                             <td>${app.name}</td>
                             <td>${app.start_date} - ${app.end_date}</td>
                             <td class="text-center">${app.days}</td>
                             <td class="text-end fw-semibold">
                                 ₱${parseFloat(app.amount).toLocaleString('en-PH', {
-                            minimumFractionDigits: 2
-                        })}
+                        minimumFractionDigits: 2
+                    })}
                             </td>
                         </tr>
                     `);
-                    });
                 });
+            });
 
-            // ✅ Download PDF
-            document.getElementById('downloadPdfBtn').onclick = () => {
-                if (!currentInvoiceData.pdf) {
-                    alert('PDF file not found.');
-                    return;
-                }
-
-                const link = document.createElement('a');
-                link.href = '../../uploads/invoices/' + currentInvoiceData.pdf;
-                link.download = currentInvoiceData.pdf;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-        }
-
-        let currentInvoiceData = {};
-
-
-        let deleteTimer;
-        let countdownTimer;
-        let deleteInvoiceId;
-        let deletedRow;
-
-        function softDeleteInvoice(id, row) {
-
-            if (!confirm('Delete this invoice?')) return;
-
-            deleteInvoiceId = id;
-            deletedRow = row;
-            row.style.display = 'none';
-
-            showDeleteToast();
-
-            let seconds = 7;
-            document.getElementById('toastCountdown').textContent = seconds;
-
-            countdownTimer = setInterval(() => {
-                seconds--;
-                document.getElementById('toastCountdown').textContent = seconds;
-                if (seconds <= 0) clearInterval(countdownTimer);
-            }, 1000);
-
-            deleteTimer = setTimeout(finalizeDelete, 7000);
-
-            document.getElementById('undoDelete').onclick = undoDelete;
-            document.getElementById('closeToast').onclick = finalizeDelete;
-        }
-
-        function showDeleteToast() {
-            document.getElementById('deleteToast').classList.remove('hidden');
-        }
-
-        function undoDelete() {
-            clearTimeout(deleteTimer);
-            clearInterval(countdownTimer);
-            deletedRow.style.display = '';
-            hideDeleteToast();
-        }
-
-        function hideDeleteToast() {
-            document.getElementById('deleteToast').classList.add('hidden');
-        }
-
-        function finalizeDelete() {
-            window.location.href =
-                `payments_clients.php?action=delete&id=${deleteInvoiceId}`;
-        }
-
-        let currentHistoryData = [];
-
-function openClientHistory(bookingId, tab) {
-            // Defensive: Handle if button element passed
-            if (typeof bookingId === 'object' && bookingId.dataset) {
-                bookingId = bookingId.dataset.booking;
-                tab = bookingId.dataset.tab;
+        // ✅ Download PDF
+        document.getElementById('downloadPdfBtn').onclick = () => {
+            if (!currentInvoiceData.pdf) {
+                alert('PDF file not found.');
+                return;
             }
-            
-            bookingId = bookingId?.trim();
-            tab = tab?.trim();
-            
-            console.log('Opening history for booking:', bookingId, 'tab:', tab);
 
-            const historyModalEl = document.getElementById('historyModal');
-            const modal = new bootstrap.Modal(historyModalEl);
-            modal.show();
+            const link = document.createElement('a');
+            link.href = '../../uploads/invoices/' + currentInvoiceData.pdf;
+            link.download = currentInvoiceData.pdf;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    }
 
-            document.getElementById('historyClientFullName').textContent = 'Loading Client...';
-            document.getElementById('historyClientEmail').textContent = '';
-            document.getElementById('historyClientAddress').textContent = '';
-            document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+    let currentInvoiceData = {};
 
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = `
+
+    let deleteTimer;
+    let countdownTimer;
+    let deleteInvoiceId;
+    let deletedRow;
+
+    function softDeleteInvoice(id, row) {
+
+        if (!confirm('Delete this invoice?')) return;
+
+        deleteInvoiceId = id;
+        deletedRow = row;
+        row.style.display = 'none';
+
+        showDeleteToast();
+
+        let seconds = 7;
+        document.getElementById('toastCountdown').textContent = seconds;
+
+        countdownTimer = setInterval(() => {
+            seconds--;
+            document.getElementById('toastCountdown').textContent = seconds;
+            if (seconds <= 0) clearInterval(countdownTimer);
+        }, 1000);
+
+        deleteTimer = setTimeout(finalizeDelete, 7000);
+
+        document.getElementById('undoDelete').onclick = undoDelete;
+        document.getElementById('closeToast').onclick = finalizeDelete;
+    }
+
+    function showDeleteToast() {
+        document.getElementById('deleteToast').classList.remove('hidden');
+    }
+
+    function undoDelete() {
+        clearTimeout(deleteTimer);
+        clearInterval(countdownTimer);
+        deletedRow.style.display = '';
+        hideDeleteToast();
+    }
+
+    function hideDeleteToast() {
+        document.getElementById('deleteToast').classList.add('hidden');
+    }
+
+    function finalizeDelete() {
+        window.location.href =
+            `payments_clients.php?action=delete&id=${deleteInvoiceId}`;
+    }
+
+    let currentHistoryData = [];
+
+    function openClientHistory(bookingId, tab) {
+        // Defensive: Handle if button element passed
+        if (typeof bookingId === 'object' && bookingId.dataset) {
+            bookingId = bookingId.dataset.booking;
+            tab = bookingId.dataset.tab;
+        }
+
+        bookingId = bookingId?.trim();
+        tab = tab?.trim();
+
+        console.log('Opening history for booking:', bookingId, 'tab:', tab);
+
+        const historyModalEl = document.getElementById('historyModal');
+        const modal = new bootstrap.Modal(historyModalEl);
+        modal.show();
+
+        document.getElementById('historyClientFullName').textContent = 'Loading Client...';
+        document.getElementById('historyClientEmail').textContent = '';
+        document.getElementById('historyClientAddress').textContent = '';
+        document.getElementById('historyInvoiceCount').textContent = '0 Invoices';
+
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = `
         <tr>
             <td colspan="6" class="text-center py-5">
                 <div class="spinner-border text-primary"></div>
@@ -1468,11 +1472,11 @@ function openClientHistory(bookingId, tab) {
         </tr>
     `;
 
-            fetch(
-                'payments_clients.php?get_client_history=1' +
-                '&booking_id=' + encodeURIComponent(bookingId) +
-                '&tab=' + encodeURIComponent(tab)
-            )
+        fetch(
+            'payments_clients.php?get_client_history=1' +
+            '&booking_id=' + encodeURIComponent(bookingId) +
+            '&tab=' + encodeURIComponent(tab)
+        )
             .then(res => {
                 if (!res.ok) throw new Error('Network response failed');
                 return res.json();
@@ -1503,39 +1507,39 @@ function openClientHistory(bookingId, tab) {
                 `;
             });
 
-            // Modal search handlers (re-attach always)
-            const modalSearch = document.getElementById('modalSearch');
-            const modalSearchClear = document.getElementById('modalSearchClear');
-            if (modalSearch && !modalSearch._handlerAttached) {
-                modalSearch._handlerAttached = true;
-                modalSearch.oninput = function () {
-                    const q = this.value.toLowerCase().trim();
-                    const filtered = currentHistoryData.filter(inv =>
-                        inv.invoice_num?.toLowerCase().includes(q) ||
-                        inv.reference_no?.toLowerCase().includes(q) ||
-                        inv.status?.toLowerCase().includes(q) ||
-                        inv.client_name?.toLowerCase().includes(q) ||
-                        String(inv.total_amount || '').includes(q)
-                    );
-                    renderHistoryTable(filtered, bookingId);
-                    modalSearchClear.style.display = q ? 'block' : 'none';
-                };
-            }
-            if (modalSearchClear) {
-                modalSearchClear.onclick = function () {
-                    modalSearch.value = '';
-                    this.style.display = 'none';
-                    renderHistoryTable(currentHistoryData, bookingId);
-                };
-            }
+        // Modal search handlers (re-attach always)
+        const modalSearch = document.getElementById('modalSearch');
+        const modalSearchClear = document.getElementById('modalSearchClear');
+        if (modalSearch && !modalSearch._handlerAttached) {
+            modalSearch._handlerAttached = true;
+            modalSearch.oninput = function () {
+                const q = this.value.toLowerCase().trim();
+                const filtered = currentHistoryData.filter(inv =>
+                    inv.invoice_num?.toLowerCase().includes(q) ||
+                    inv.reference_no?.toLowerCase().includes(q) ||
+                    inv.status?.toLowerCase().includes(q) ||
+                    inv.client_name?.toLowerCase().includes(q) ||
+                    String(inv.total_amount || '').includes(q)
+                );
+                renderHistoryTable(filtered, bookingId);
+                modalSearchClear.style.display = q ? 'block' : 'none';
+            };
         }
+        if (modalSearchClear) {
+            modalSearchClear.onclick = function () {
+                modalSearch.value = '';
+                this.style.display = 'none';
+                renderHistoryTable(currentHistoryData, bookingId);
+            };
+        }
+    }
 
-function renderHistoryTable(data, bookingId) {
-            currentHistoryData = Array.isArray(data) ? data : [];
-            const tbody = document.getElementById('historyTableBody');
+    function renderHistoryTable(data, bookingId) {
+        currentHistoryData = Array.isArray(data) ? data : [];
+        const tbody = document.getElementById('historyTableBody');
 
-            if (currentHistoryData.length === 0) {
-                tbody.innerHTML = `
+        if (currentHistoryData.length === 0) {
+            tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1 mb-3 opacity-50"></i>
@@ -1544,35 +1548,35 @@ function renderHistoryTable(data, bookingId) {
                         </td>
                     </tr>
                 `;
-                return;
+            return;
+        }
+
+        // ✅ Check if there is any pending invoice
+        const hasPending = currentHistoryData.some(inv => inv.payment_status !== 'Paid');
+
+        const sortedData = [...currentHistoryData].sort((a, b) => {
+
+            // ✅ Case A: There is at least one Pending → Pending first
+            if (hasPending && a.payment_status !== b.payment_status) {
+                return a.payment_status === 'Paid' ? 1 : -1;
             }
 
-            // ✅ Check if there is any pending invoice
-            const hasPending = currentHistoryData.some(inv => inv.payment_status !== 'Paid');
+            // ✅ Always newest first
+            return b.id - a.id;
+        });
 
-            const sortedData = [...currentHistoryData].sort((a, b) => {
+        tbody.innerHTML = '';
 
-                // ✅ Case A: There is at least one Pending → Pending first
-                if (hasPending && a.payment_status !== b.payment_status) {
-                    return a.payment_status === 'Paid' ? 1 : -1;
-                }
+        sortedData.forEach(inv => {
+            const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
+            const statusText = inv.payment_status || 'Pending';
+            const statusStyle = statusText === 'Paid'
+                ? 'border:1px solid #059669;color:#059669;background:#ecfdf5;'
+                : (isOverdue
+                    ? 'border:1px solid #dc2626;color:#dc2626;background:#fef2f2;'
+                    : 'border:1px solid #cbd5e1;color:#0f172a;background:#f8fafc;');
 
-                // ✅ Always newest first
-                return b.id - a.id;
-            });
-
-            tbody.innerHTML = '';
-
-            sortedData.forEach(inv => {
-                const isOverdue = inv.due_date && new Date(inv.due_date) < new Date();
-                const statusText = inv.payment_status || 'Pending';
-                const statusStyle = statusText === 'Paid'
-                    ? 'border:1px solid #059669;color:#059669;background:#ecfdf5;'
-                    : (isOverdue
-                        ? 'border:1px solid #dc2626;color:#dc2626;background:#fef2f2;'
-                        : 'border:1px solid #cbd5e1;color:#0f172a;background:#f8fafc;');
-
-                tbody.insertAdjacentHTML('beforeend', `
+            tbody.insertAdjacentHTML('beforeend', `
                     <tr class="border-bottom hover:bg-gray-50 transition-colors">
                         <td class="ps-5 py-3">
                             <div class="fw-semibold text-blue-600">#${escapeHtml(inv.invoice_num || 'N/A')}</div>
@@ -1581,33 +1585,33 @@ function renderHistoryTable(data, bookingId) {
                         <td class="py-3">
                             <div>
                                 ${inv.invoice_date
-                                    ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    })
-                                    : '-'}
+                    ? new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    })
+                    : '-'}
                             </div>
 
                             <small class="text-muted">
                                 ${inv.created_at
-                                    ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    })
-                                    : ''}
+                    ? new Date(inv.created_at).toLocaleTimeString('en-PH', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    })
+                    : ''}
                                 ${inv.invoice_date
-                                    ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
-                                        weekday: 'short'
-                                    })
-                                    : ''}
+                    ? ' • ' + new Date(inv.invoice_date).toLocaleDateString('en-PH', {
+                        weekday: 'short'
+                    })
+                    : ''}
                             </small>
                         </td>
                         <td class="py-3 fw-medium ${isOverdue ? 'text-red-700' : ''}">
-                            ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', { 
-                                month: 'short', day: 'numeric', year: 'numeric' 
-                            }) : '-'}
+                            ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-PH', {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                    }) : '-'}
                         </td>
                         <td class="py-3 text-end fw-semibold text-gray-900">
                             ₱${parseFloat(inv.total_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
@@ -1651,76 +1655,76 @@ function renderHistoryTable(data, bookingId) {
                         </td>
                     </tr>
                 `);
-            });
-
-            // Re-attach event listeners for new buttons
-            tbody.querySelectorAll('.view-btn').forEach(btn => {
-                btn.removeEventListener('click', viewInvoiceHandler);
-                btn.addEventListener('click', viewInvoiceHandler);
-            });
-        tbody.querySelectorAll('.btn-resend').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    resendInvoiceEmail(this.dataset.id);
-                });
-            });
-            tbody.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
-                };
-            });
-        }
-
-        function viewInvoiceFromHistory(id) {
-            // reuse existing modal logic or redirect
-            window.location.href = 'payments_clients.php?view=' + id;
-        }
-
-        function editInvoiceFromHistory(id) {
-            window.location.href = 'payment_invoice_edit.php?id=' + id;
-        }
-
-
-        // ================= RESEND TRIGGER =================
-        let pendingResendInvoiceId = null;
-
-        function resendInvoiceEmail(invoiceId) {
-
-            if (!invoiceId) return;
-
-            pendingResendInvoiceId = invoiceId;
-
-            // ✅ AUTO-CLOSE INVOICE HISTORY MODAL IF OPEN
-            const historyModalEl = document.getElementById('historyModal');
-            const historyModalInstance = bootstrap.Modal.getInstance(historyModalEl);
-
-            if (historyModalInstance) {
-                historyModalInstance.hide();
-            }
-
-            // ✅ SMALL DELAY TO AVOID MODAL STACKING
-            setTimeout(() => {
-                const confirmModal = new bootstrap.Modal(
-                    document.getElementById('confirmResendModal')
-                );
-                confirmModal.show();
-            }, 300);
-        }
-
-        
-        const searchInput = document.getElementById('invoiceSearch');
-        let searchTimer;
-
-        searchInput.addEventListener('input', function () {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                const q = encodeURIComponent(this.value.trim());
-                window.location.href = 'payments_clients.php?q=' + q;
-            }, 500);
         });
+
+        // Re-attach event listeners for new buttons
+        tbody.querySelectorAll('.view-btn').forEach(btn => {
+            btn.removeEventListener('click', viewInvoiceHandler);
+            btn.addEventListener('click', viewInvoiceHandler);
+        });
+        tbody.querySelectorAll('.btn-resend').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                resendInvoiceEmail(this.dataset.id);
+            });
+        });
+        tbody.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                softDeleteInvoice(btn.dataset.id, btn.closest('tr'));
+            };
+        });
+    }
+
+    function viewInvoiceFromHistory(id) {
+        // reuse existing modal logic or redirect
+        window.location.href = 'payments_clients.php?view=' + id;
+    }
+
+    function editInvoiceFromHistory(id) {
+        window.location.href = 'payment_invoice_edit.php?id=' + id;
+    }
+
+
+    // ================= RESEND TRIGGER =================
+    let pendingResendInvoiceId = null;
+
+    function resendInvoiceEmail(invoiceId) {
+
+        if (!invoiceId) return;
+
+        pendingResendInvoiceId = invoiceId;
+
+        // ✅ AUTO-CLOSE INVOICE HISTORY MODAL IF OPEN
+        const historyModalEl = document.getElementById('historyModal');
+        const historyModalInstance = bootstrap.Modal.getInstance(historyModalEl);
+
+        if (historyModalInstance) {
+            historyModalInstance.hide();
+        }
+
+        // ✅ SMALL DELAY TO AVOID MODAL STACKING
+        setTimeout(() => {
+            const confirmModal = new bootstrap.Modal(
+                document.getElementById('confirmResendModal')
+            );
+            confirmModal.show();
+        }, 300);
+    }
+
+
+    const searchInput = document.getElementById('invoiceSearch');
+    let searchTimer;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            const q = encodeURIComponent(this.value.trim());
+            window.location.href = 'payments_clients.php?q=' + q;
+        }, 500);
+    });
 
 
     document.addEventListener('click', function (e) {
@@ -1784,31 +1788,31 @@ function renderHistoryTable(data, bookingId) {
             'payments_clients.php?resend_invoice_email=1&id=' +
             encodeURIComponent(pendingResendInvoiceId)
         )
-        .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        })
-        .then(data => {
-            if (data.success) {
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showActionModal(
+                        '✅ Email Sent Successfully',
+                        data.message || 'Invoice email has been sent to the client.',
+                        'success'
+                    );
+                } else {
+                    throw new Error(data.message || 'Failed to send invoice');
+                }
+            })
+            .catch(err => {
                 showActionModal(
-                    '✅ Email Sent Successfully',
-                    data.message || 'Invoice email has been sent to the client.',
-                    'success'
+                    '❌ Failed to Send Email',
+                    err.message,
+                    'error'
                 );
-            } else {
-                throw new Error(data.message || 'Failed to send invoice');
-            }
-        })
-        .catch(err => {
-            showActionModal(
-                '❌ Failed to Send Email',
-                err.message,
-                'error'
-            );
-        })
-        .finally(() => {
-            pendingResendInvoiceId = null;
-        });
+            })
+            .finally(() => {
+                pendingResendInvoiceId = null;
+            });
     });
 
 </script>
