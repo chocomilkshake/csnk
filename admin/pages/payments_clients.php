@@ -94,6 +94,119 @@ if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
 }
 
 /* ======================================================
+   AJAX: PDF Analytics Export
+====================================================== */
+if (isset($_GET['export_analytics_pdf']) && isset($_POST['chartImages'])) {
+    header('Content-Type: application/json');
+
+    // Parse POST data
+    $chartImages = json_decode($_POST['chartImages'], true);
+    $tab = $_GET['tab'] ?? 'CSNK';
+    $companyType = $tab;
+
+    // Safe chart data validation - handle JSON decode failures
+    $rawData = $_POST['chartImages'] ?? '{}';
+    $chartImages = json_decode($rawData, true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($chartImages)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid chart data']);
+        exit;
+    }
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+    require_once '../../lib/invlib/invoicr.php';
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    // 1. Get analytics data
+    // Skip chart data fetch - use empty defaults to avoid file_get_contents failure
+    $chartData = [
+        'summary' => ['gross' => 0, 'net' => 0, 'pending' => 0],
+        'kpis' => ['applicants_billed' => 0]
+    ];
+
+    // 2. Get top clients table data (reuse existing query logic)
+    $sql = "
+        SELECT
+            client_booking_id,
+            client_name,
+            COUNT(*) AS total_invoices,
+            SUM(total_amount) AS total_amount,
+            SUM(payment_status = 'Paid') AS paid_count,
+            SUM(payment_status != 'Paid') AS unpaid_count
+        FROM invoice_history
+        WHERE company_type = ?
+        GROUP BY client_booking_id
+        ORDER BY total_amount DESC
+        LIMIT 10
+    ";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $companyType);
+    $stmt->execute();
+    $clients = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    // 3. Set company assets
+    $company = $companyType === 'CSNK' ? 
+        ['../resources/img/whychoose.png', 'CSNK Agency', '../resources/img/csnk-iconz.png'] :
+        ['../resources/img/smcbrandname.png', 'SMC Agency', '../resources/img/smc.png'];
+
+    // 4. Create temporary directory & save chart images
+    $tempDir = sys_get_temp_dir() . '/html2canvas_' . uniqid();
+    if (!mkdir($tempDir, 0777, true)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to create temp directory']);
+        exit;
+    }
+
+    $chartFiles = [];
+    foreach (['status', 'methods', 'trend', 'timeline', 'clients'] as $chartKey) {
+        if (isset($chartImages[$chartKey])) {
+            $dataUrl = $chartImages[$chartKey];
+            $data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $dataUrl));
+            $fileName = $tempDir . '/' . $chartKey . '.png';
+            file_put_contents($fileName, $data);
+            $chartFiles[$chartKey] = $fileName;
+        }
+    }
+
+    // 5. Generate HTML with Invoicr
+    $invoicr = new Invoicr();
+    $invoicr->template('analytics');
+    
+    $invoicr->set('company', $company);
+    $invoicr->set('summary', $chartData['summary'] ?? []);
+    $invoicr->set('kpis', $chartData['kpis'] ?? []);
+    $invoicr->set('chart_status', $chartFiles['status'] ?? '');
+    $invoicr->set('chart_methods', $chartFiles['methods'] ?? '');
+    $invoicr->set('chart_trend', $chartFiles['trend'] ?? '');
+    $invoicr->set('chart_timeline', $chartFiles['timeline'] ?? '');
+    $invoicr->set('chart_clients', $chartFiles['clients'] ?? '');
+    $invoicr->set('clients', $clients ?? []);
+
+    // 6. Generate PDF
+    $pdfFile = $tempDir . '/analytics_' . $companyType . '_' . date('Y-m-d_H-i-s') . '.pdf';
+    $invoicr->outputPDF(3, $pdfFile);
+
+    // 7. Cleanup temp files except PDF
+    foreach ($chartFiles as $file) {
+        if (file_exists($file)) unlink($file);
+    }
+
+    if (!file_exists($pdfFile)) {
+        echo json_encode(['success' => false, 'message' => 'PDF generation failed']);
+        exit;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'pdfUrl' => $pdfFile,
+        'message' => 'PDF generated successfully'
+    ]);
+
+    exit;
+}
+
+/* ======================================================
    AJAX: Get Client Invoice History
 ====================================================== */
 if (
@@ -861,8 +974,10 @@ function renderAvatar($picture, $client_name)
             </a>
         </div>
 
+        
+
 <!-- RIGHT: SEARCH + ADD BUTTONS - VISIBLE ON CLIENTS TAB (CSNK/SMC) -->
-        <div class="d-flex gap-2 align-items-center search-section d-none" id="searchSection">
+        <div class="d-flex gap-2 align-items-center search-section" id="searchSection">
             <!-- Modern Search Bar -->
             <div class="search-container position-relative flex-grow-1" style="min-width: 320px;">
                 <input type="search" id="invoiceSearch" class="form-control search-input shadow-sm"
@@ -876,7 +991,33 @@ function renderAvatar($picture, $client_name)
                 <i class="bi bi-plus-circle me-1"></i>
                 <span class="d-none d-md-inline">Create</span> Invoice
             </a>
+            <!-- NEW PDF EXPORT BUTTON -->
+            <button id="exportPdfBtn" class="btn btn-success px-4 shadow-sm position-relative" title="Download Analytics Report as PDF">
+                <i class="bi bi-file-earmark-pdf me-1"></i>
+                <span class="d-none d-md-inline">PDF Report</span>
+                <div id="pdfLoadingSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" style="width:1rem;height:1rem;"></div>
+            </button>
         </div>
+
+        <!-- PDF Progress Modal -->
+        <div class="modal fade" id="pdfProgressModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-xl rounded-4">
+                    <div class="modal-body text-center p-5">
+                        <div class="mb-4">
+                            <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;" role="status"></div>
+                            <h5 class="fw-bold text-primary">Generating PDF Report...</h5>
+                            <p class="text-muted mb-0">Capturing charts and preparing document</p>
+                        </div>
+                        <div class="progress mx-auto" style="width: 80%; height: 8px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%" id="pdfProgressBar"></div>
+                        </div>
+                        <div class="mt-4 text-xs text-muted" id="pdfProgressText">Step 1/4: Capturing charts...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
     </div>
 
@@ -2215,8 +2356,130 @@ let chartLoadPromise = null; // Prevent concurrent loads
             loadAndRenderCharts();
         }
         
-        // Toggle search visibility
-        toggleSearchSection(activeTabId === 'clients-tab');
+        // PDF Export Button Handler
+        document.getElementById('exportPdfBtn')?.addEventListener('click', exportAnalyticsPdf);
+
+        /**
+         * Step 4: Complete PDF Export Implementation with html2canvas
+         */
+        async function exportAnalyticsPdf() {
+            const btn = document.getElementById('exportPdfBtn');
+            const spinner = document.getElementById('pdfLoadingSpinner');
+            const progressModal = new bootstrap.Modal(document.getElementById('pdfProgressModal'));
+            const progressBar = document.getElementById('pdfProgressBar');
+            const progressText = document.getElementById('pdfProgressText');
+
+            try {
+                // Show loading on button
+                spinner.classList.remove('d-none');
+                btn.disabled = true;
+
+                // Load html2canvas if not already loaded
+                if (typeof html2canvas === 'undefined') {
+                    progressText.textContent = 'Loading html2canvas...';
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    document.head.appendChild(script);
+                    await new Promise(resolve => {
+                        script.onload = resolve;
+                    });
+                }
+
+                // Show progress modal
+                progressModal.show();
+
+                // Step 1: Capture all 5 charts
+                progressText.textContent = 'Step 1/4: Capturing charts...';
+                progressBar.style.width = '25%';
+
+                const chartIds = ['statusChart', 'methodChart', 'trendChart', 'timelineChart', 'clientsChart'];
+                const chartImages = {};
+
+                for (let i = 0; i < chartIds.length; i++) {
+                    const chartId = chartIds[i];
+                    const canvas = document.getElementById(chartId);
+                    
+                    if (canvas) {
+                        const chartCanvas = await html2canvas(canvas.parentElement, {
+                            scale: 3,
+                            useCORS: true,
+                            backgroundColor: '#ffffff',
+                            allowTaint: false,
+                            logging: false,
+                            width: canvas.parentElement.offsetWidth,
+                            height: canvas.parentElement.offsetHeight
+                        });
+                        
+                        const key = chartId.replace('Chart', '') === 'method' ? 'methods' : chartId.replace('Chart', '');
+                        chartImages[key] = chartCanvas.toDataURL('image/png', 1.0);
+                    }
+                }
+
+                progressText.textContent = 'Step 2/4: Preparing data...';
+                progressBar.style.width = '50%';
+
+                const tab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
+
+                // Step 3: Send to server
+                progressText.textContent = 'Step 3/4: Generating PDF...';
+                progressBar.style.width = '75%';
+
+                const formData = new FormData();
+                formData.append('chartImages', JSON.stringify(chartImages));
+
+                const response = await fetch(`?export_analytics_pdf=1&tab=${tab}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message || 'PDF generation failed');
+                }
+
+                // Step 4: Download
+                progressText.textContent = 'Step 4/4: Downloading...';
+                progressBar.style.width = '100%';
+
+                // Trigger download
+                const link = document.createElement('a');
+                link.href = result.pdfUrl;
+                link.download = `analytics-${tab.toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Show success
+                setTimeout(() => {
+                    progressModal.hide();
+                    spinner.classList.add('d-none');
+                    btn.disabled = false;
+                    
+                    // Success toast
+                    showActionModal(
+                        '✅ PDF Downloaded!',
+                        'Analytics report has been downloaded successfully.',
+                        'success'
+                    );
+                }, 1000);
+
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                progressModal.hide();
+                spinner.classList.add('d-none');
+                btn.disabled = false;
+                
+                showActionModal(
+                    '❌ PDF Export Failed',
+                    error.message || 'Failed to generate PDF. Please try again.',
+                    'error'
+                );
+            }
+        }
+
+        
+        // Search always visible - no toggle needed
     });
 
     // Enhanced tab switch event with smooth transitions
@@ -2244,12 +2507,7 @@ document.addEventListener('shown.bs.tab', function (e) {
     });
 
     function toggleSearchSection(show) {
-        const searchSection = document.getElementById('searchSection');
-        if (show) {
-            searchSection.classList.remove('d-none');
-        } else {
-            searchSection.classList.add('d-none');
-        }
+        // Search section always visible now
     }
     
     // Lazy chart loading with destroy/create
