@@ -4,6 +4,8 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/functions.php';
 
+
+
 $database = new Database();
 $auth = new Auth($database);
 $auth->requireLogin();
@@ -665,6 +667,7 @@ if ($canViewReports && $conn instanceof mysqli) {
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
