@@ -1,291 +1,11 @@
-<?php
-session_start();
-require_once '../includes/invoice_mailer.php';
 
 
-/* ======================================================
-   AJAX: RESEND INVOICE EMAIL
-====================================================== */
-if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
-    header('Content-Type: application/json');
-
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
-    require_once '../includes/functions.php';
-
-    // ✅ load PHPMailer
-    $composerAutoload = __DIR__ . '/../../vendor/autoload.php';
-    if (is_readable($composerAutoload)) {
-        require_once $composerAutoload;
-    } else {
-        require_once __DIR__ . '/../../lib/phpmailer/src/Exception.php';
-        require_once __DIR__ . '/../../lib/phpmailer/src/PHPMailer.php';
-        require_once __DIR__ . '/../../lib/phpmailer/src/SMTP.php';
-    }
-
-    require_once __DIR__ . '/payment_invoice_gen.php';
-    // ✅ this allows reuse of sendInvoiceEmail()
-
-    $db = new Database();
-    $conn = $db->getConnection();
-
-    if (!$conn) {
-        echo json_encode(['success' => false, 'message' => 'DB connection failed']);
-        exit;
-    }
-
-    $invoice_id = (int) $_GET['id'];
-
-    // ✅ Fetch invoice
-    $stmt = $conn->prepare("
-        SELECT
-            invoice_num,
-            client_name,
-            client_email,
-            pdf_filename,
-            company_type,
-            payment_status,
-            payment_link
-        FROM invoice_history
-        WHERE id = ?
-        LIMIT 1
-    ");
-    $stmt->bind_param('i', $invoice_id);
-    $stmt->execute();
-    $inv = $stmt->get_result()->fetch_assoc();
-
-    if ($inv['payment_status'] === 'Paid') {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Invoice already paid. Resending is disabled.'
-        ]);
-        exit;
-    }
-
-    if (!$inv || empty($inv['client_email'])) {
-        echo json_encode(['success' => false, 'message' => 'Invoice not found or email missing']);
-        exit;
-    }
-
-    $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $inv['pdf_filename'];
-
-    if (!file_exists($pdfPath)) {
-        echo json_encode(['success' => false, 'message' => 'Invoice PDF file not found']);
-        exit;
-    }
-
-    // ✅ Send email
-    $sent = sendInvoiceEmail(
-        $inv['client_email'],
-        $inv['client_name'],
-        $inv['invoice_num'],
-        $pdfPath,
-        $inv['company_type'],
-        $inv['payment_link'] // ✅ SAME XENDIT LINK
-    );
-
-    if ($sent) {
-        echo json_encode(['success' => true, 'message' => 'Invoice email sent successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to send invoice email']);
-    }
-
-    exit;
-}
-
-/* ======================================================
-   AJAX: Get Client Invoice History
-====================================================== */
-if (
-    isset($_GET['get_client_history']) &&
-    isset($_GET['booking_id']) &&
-    isset($_GET['tab'])
-) {
-    header('Content-Type: application/json');
-
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
-
-    $db = new Database();
-    $conn = $db->getConnection();
-
-    $booking_id = (int) $_GET['booking_id'];
-    $tab = strtoupper(trim($_GET['tab']));
-    $companyType = ($tab === 'SMC') ? 'SMC' : 'CSNK';
-
-    // ✅ STEP 1: Check if there are ANY pending invoices
-    $check = $conn->prepare("
-        SELECT COUNT(*) AS pending_count
-        FROM invoice_history
-        WHERE client_booking_id = ?
-          AND company_type = ?
-          AND payment_status != 'Paid'
-    ");
-    $check->bind_param('is', $booking_id, $companyType);
-    $check->execute();
-    $pendingCount = (int) $check->get_result()
-        ->fetch_assoc()['pending_count'];
-
-    // ✅ STEP 2: Build query dynamically
-    if ($pendingCount > 0) {
-        // There is at least one Pending invoice
-        $sql = "
-            SELECT
-                id,
-                invoice_num,
-                invoice_date,
-                due_date,
-                total_amount,
-                payment_status,
-                reference_no,
-                client_name,
-                client_email,
-                client_address,
-                applicants_data,
-                pdf_filename,
-                created_at
-            FROM invoice_history
-            WHERE client_booking_id = ?
-              AND company_type = ?
-            ORDER BY
-                CASE
-                    WHEN payment_status = 'Paid' THEN 1
-                    ELSE 0
-                END ASC,
-                created_at DESC
-        ";
-    } else {
-        $sql = "
-            SELECT
-                id,
-                invoice_num,
-                invoice_date,
-                due_date,
-                total_amount,
-                payment_status,
-                reference_no,
-                client_name,
-                client_email,
-                client_address,
-                applicants_data,
-                pdf_filename,
-                created_at
-            FROM invoice_history
-            WHERE client_booking_id = ?
-              AND company_type = ?
-            ORDER BY created_at DESC
-        ";
-    }
-
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('is', $booking_id, $companyType);
-    $stmt->execute();
-
-    echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
-    exit;
-}
-
-/* ======================================================
-   DELETE INVOICE
-====================================================== */
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
-
-    $db = new Database();
-    $conn = $db->getConnection();
-
-    if (!$conn) {
-        die('Database connection failed.');
-    }
-
-    $invoice_id = (int) $_GET['id'];
-
-    // ✅ Get PDF filename first (to delete file)
-    $stmt = $conn->prepare("SELECT pdf_filename FROM invoice_history WHERE id = ?");
-    $stmt->bind_param('i', $invoice_id);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-
-    if ($row) {
-        $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $row['pdf_filename'];
-
-        // ✅ Delete PDF file if exists
-        if (!empty($row['pdf_filename']) && file_exists($pdfPath)) {
-            unlink($pdfPath);
-        }
-
-        // ✅ Delete invoice record
-        $del = $conn->prepare("DELETE FROM invoice_history WHERE id = ?");
-        $del->bind_param('i', $invoice_id);
-        $del->execute();
-    }
-
-    // ✅ Redirect back to invoice list
-    header('Location: payments_clients.php');
-    exit;
-}
-
-/* ======================================================
-   AJAX: Get Invoice Applicants (MUST BE FIRST)
-====================================================== */
-if (isset($_GET['get_invoice_applicants']) && isset($_GET['id'])) {
-    header('Content-Type: application/json');
-
-    require_once '../includes/config.php';
-    require_once '../includes/Database.php';
-    require_once '../includes/functions.php';
 
     $db = new Database();
     $conn = $db->getConnection();
 
     if (!$conn) {
         echo json_encode([]);
-        exit;
-    }
-
-    $invoice_id = (int) $_GET['id'];
-
-    $stmt = $conn->prepare("
-        SELECT applicants_data
-        FROM invoice_history
-        WHERE id = ?
-    ");
-    $stmt->bind_param('i', $invoice_id);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-
-    if (!$row) {
-        echo json_encode([]);
-        exit;
-    }
-
-    $decoded = json_decode($row['applicants_data'] ?? '[]', true);
-    if (!is_array($decoded)) {
-        echo json_encode([]);
-        exit;
-    }
-
-    $enriched_apps = [];
-
-    foreach ($decoded as $app) {
-        $item = [
-            'name' => $app['name'] ?? 'Unknown Applicant',
-            'start_date' => $app['start_date'] ?? '',
-            'end_date' => $app['end_date'] ?? '',
-            'days' => isset($app['days']) ? (int) $app['days'] : 0,
-            'amount' => isset($app['amount']) ? (float) $app['amount'] : 0
-        ];
-
-
-        // Optional: enrich name from applicants table
-        if (!empty($app['applicant_id'])) {
-            $app_stmt = $conn->prepare("
-                SELECT first_name, middle_name, last_name, suffix
-                FROM applicants
-                WHERE id = ?
-            ");
             $app_stmt->bind_param('i', $app['applicant_id']);
             $app_stmt->execute();
             $a = $app_stmt->get_result()->fetch_assoc();
@@ -898,7 +618,6 @@ function renderAvatar($picture, $client_name)
         </li>
     </ul>
 
-<<<<<<< HEAD
     <div class="tab-content border border-top-0 border-gray-200 rounded-bottom-lg shadow-lg overflow-hidden bg-white" id="dashboardTabContent">
         
         <!-- 📊 ANALYTICS TAB - All 5 Charts -->
@@ -1080,91 +799,14 @@ function renderAvatar($picture, $client_name)
                     </div>
                 </div>
             </div>
-            
-            <!-- Invoice Table -->
-             <div class="bg-white rounded-xl overflow-hidden shadow-xl">
-                <div class="overflow-x-auto">
-                    <table class="w-full border border-gray-300">
-                        <thead class="bg-gray-50 border border-gray-300">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">
-                                    Client</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                                    Invoices</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
-                                    Total Amount</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                                    Paid</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
-                                    Unpaid</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
-                                    Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <?php if (!$invoices): ?>
-                                <tr class="hover:bg-gray-50">
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500 text-muted">
-                                        No clients found
-                                    </td>
-                                </tr>
-                            <?php else:
-                                foreach ($invoices as $inv): ?>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 border-r border-gray-200"> <!-- CLIENT -->
-                                            <div class="flex items-center gap-3">
-                                                <?= renderAvatar(null, $inv['client_name']) ?>
-                                                <div>
-                                                    <div class="font-semibold text-gray-900"><?= h($inv['client_name']) ?></div>
-                                                    <div class="text-sm text-gray-500"><?= h($inv['client_email']) ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <!-- TOTAL INVOICES -->
-                                        <td class="px-6 py-4 text-center font-semibold border-r border-gray-200">
-                                            <?= (int) $inv['total_invoices'] ?>
-                                        </td>
-                                        <!-- TOTAL AMOUNT -->
-                                        <td class="px-6 py-4 text-center font-semibold text-gray-900 border-r border-gray-200">
-                                            ₱<?= number_format($inv['total_amount'], 2) ?>
-                                        </td>
-                                        <!-- PAID -->
-                                        <td class="px-6 py-4 text-center border-r border-gray-200">
-                                            <span class="inline-flex px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                                                <?= (int) $inv['paid_count'] ?>
-                                            </span>
-                                        </td>
-                                        <!-- UNPAID -->
-                                        <td class="px-6 py-4 text-center border-r border-gray-200">
-                                            <span class="inline-flex px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
-                                                <?= (int) $inv['unpaid_count'] ?>
-                                            </span>
-                                        </td>
-                                        <!-- ACTION -->
-                                        <td class="px-6 py-4 text-center">
-                                            <button class="inline-flex items-center gap-2 justify-center h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                                                    data-booking="<?= (int) $inv['client_booking_id'] ?>" data-tab="<?= addslashes($activeTab) ?>"
-                                                    title="View History">
-                                                <i class="bi bi-clock-history text-sm"></i>
-                                                <span class="text-sm">History</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
     </div>
-
 
     <!-- ================= GLOBAL ACTION MODAL ================= -->
     <div class="modal fade" id="actionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content action-modal">
-
                 <div class="modal-header">
                     <h6 class="modal-title fw-semibold" id="actionModalTitle">
                         Processing
@@ -1190,7 +832,9 @@ function renderAvatar($picture, $client_name)
                         OK
                     </button>
                 </div>
-=======
+            </div>
+        </div>
+    </div>
 
             <table class="w-full border border-gray-300">
 
@@ -1534,7 +1178,8 @@ function renderAvatar($picture, $client_name)
         </div>
     </div>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
     let actionModal;
 
@@ -2195,11 +1840,10 @@ function renderAvatar($picture, $client_name)
             'loading'
         );
 
-        // ✅ FINAL FIX: NO &amp;
-        fetch(
+            fetch(
             'payments_clients.php?resend_invoice_email=1&id=' +
             encodeURIComponent(pendingResendInvoiceId)
-        )
+            )
             .then(res => {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
@@ -2237,7 +1881,8 @@ function renderAvatar($picture, $client_name)
     // Enhanced Tab Management with Persistence, Lazy Charts, Smooth Transitions
     let chartInstances = {}; // Store chart instances for lazy destroy/create
     let currentCompanyTab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
-    let isChartsLoaded = false;
+let isChartsLoaded = false;
+let chartLoadPromise = null; // Prevent concurrent loads
     
     // Update URL with dashboard tab state
     function updateDashboardTabURL(targetId) {
@@ -2295,7 +1940,7 @@ function renderAvatar($picture, $client_name)
     });
 
     // Enhanced tab switch event with smooth transitions
-    document.addEventListener('shown.bs.tab', function (e) {
+document.addEventListener('shown.bs.tab', function (e) {
         const targetId = e.target.getAttribute('data-bs-target').substring(1);
         
         // Persistence
@@ -2305,10 +1950,14 @@ function renderAvatar($picture, $client_name)
         // Smooth transition
         switchTabSmooth(targetId, () => {
             if (targetId === 'analytics-tab') {
-                loadAndRenderCharts();
+                if (!chartLoadPromise) {
+                    chartLoadPromise = loadAndRenderCharts().finally(() => {
+                        chartLoadPromise = null;
+                    });
+                }
                 toggleSearchSection(false);
             } else {
-                destroyAllCharts(); // Lazy: destroy when hidden
+                destroyAllCharts();
                 toggleSearchSection(true);
             }
         });
@@ -2325,41 +1974,42 @@ function renderAvatar($picture, $client_name)
     
     // Lazy chart loading with destroy/create
     function loadAndRenderCharts() {
-        if (isChartsLoaded) return; // Prevent duplicate loads
-        
-        // Always get fresh tab value from URL (handles CSNK/SMC switches)
         const tab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
-        console.log('Loading charts for company:', tab); // DEBUG
-        
-        fetch(`payments_charts.php?company=${tab}`)
-        fetch(`payments_charts.php?company=${tab}`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then(data => {
-                if (!data || Object.keys(data).length === 0 || data.error) {
-                    showNoDataCharts();
-                    return;
-                }
-                renderCharts(data);
-                isChartsLoaded = true;
-            })
-            .catch(err => {
-                console.error('Chart load error:', err);
+        const cacheBust = Date.now();
+
+        return fetch(`payments_charts.php?company=${tab}&cb=${cacheBust}`, {
+            cache: 'no-cache'
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            if (!data || Object.keys(data).length === 0 || data.error) {
                 showNoDataCharts();
-            });
+                return;
+            }
+            renderCharts(data);
+        })
+        .catch(err => {
+            console.error('Chart load error:', err);
+            showNoDataCharts();
+        });
     }
+
     
     function destroyAllCharts() {
         Object.values(chartInstances).forEach(chart => {
             if (chart && chart.destroy) chart.destroy();
         });
         chartInstances = {};
-        isChartsLoaded = false;
     }
 
 function renderCharts(data) {
+
+    destroyAllCharts(); // ✅ CLEAR OLD CHARTS FIRST
+    chartInstances = {}; // ✅ RESET STORAGE
+    
     // Populate summary cards first (safe even with empty data)
     try {
         document.getElementById('grossVal').textContent = peso(data.summary?.gross || 0);
@@ -2529,7 +2179,6 @@ function renderCharts(data) {
                     }
                 }
             });
-            return;
         }
         
         const gradient1 = statusCtx.createLinearGradient(0, 0, 0, 300);
@@ -2599,41 +2248,59 @@ function renderCharts(data) {
         });
     }
 
-        // Revenue Trend - Smooth area fill with gradient
-        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
-        if (trendCtx) {
+    // ✅ Revenue Trend - Smooth area fill with gradient (FIXED)
+    const trendCanvas = document.getElementById('trendChart');
+
+        if (trendCanvas && data?.trend && Array.isArray(data.trend) && data.trend.length > 0) {
+            const trendCtx = trendCanvas.getContext('2d');
+
             const gradientFill = trendCtx.createLinearGradient(0, 0, 0, 300);
             gradientFill.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
             gradientFill.addColorStop(1, 'rgba(16, 185, 129, 0)');
-            
+
             new Chart(trendCtx, {
                 type: 'line',
                 data: {
-                    labels: data.trend.map(t => new Date(t.date).toLocaleDateString('short')),
+                    labels: data.trend.map(t =>
+                        t.date
+                            ? new Date(t.date).toLocaleDateString('en-PH', {
+                                month: 'short',
+                                day: 'numeric'
+                            })
+                            : ''
+                    ),
                     datasets: [{
                         label: 'Daily Revenue',
-                        data: data.trend.map(t => parseFloat(t.amount || 0)),
+                        data: data.trend.map(t => Number(t.amount) || 0),
                         borderColor: '#10b981',
                         backgroundColor: gradientFill,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#fff',
+                        pointBackgroundColor: '#ffffff',
                         pointBorderColor: '#10b981',
                         pointBorderWidth: 3,
+                        pointRadius: 6,
                         pointHoverRadius: 8,
-                        pointHoverBorderWidth: 2,
-                        pointRadius: 6
+                        pointHoverBorderWidth: 2
                     }]
                 },
                 options: {
                     ...commonOptions,
-                    plugins: { ...commonOptions.plugins, legend: { display: false } },
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: { display: false }
+                    },
                     scales: {
                         ...commonOptions.scales,
-                        x: { ...commonOptions.scales.x, grid: { display: false } }
+                        x: {
+                            ...commonOptions.scales.x,
+                            grid: { display: false }
+                        }
                     }
                 }
             });
+        } else {
+            console.warn('Trend chart skipped — no trend data available');
         }
 
         // NEW CHARTS: Invoice Timeline (stacked bar)
@@ -2650,7 +2317,14 @@ function renderCharts(data) {
             new Chart(timelineCtx, {
                 type: 'bar',
                 data: {
-                    labels: data.timeline.map(t => new Date(t.date).toLocaleDateString('short')),
+                    labels: data.timeline.map(t =>
+                        t.date
+                            ? new Date(t.date).toLocaleDateString('en-PH', {
+                                month: 'short',
+                                day: 'numeric'
+                            })
+                            : ''
+                    ),
                     datasets: [
                         {
                             label: 'Paid',
@@ -2749,7 +2423,8 @@ function showNoDataCharts() {
     charts.forEach(chartId => {
         const ctx = document.getElementById(chartId)?.getContext('2d');
         if (ctx) {
-            new Chart(ctx, {
+Chart(ctx, {
+    plugins: [ChartDatalabels],
                 type: 'doughnut',
                 data: {
                     labels: ['No Data'],
@@ -2772,17 +2447,16 @@ function showNoDataCharts() {
     });
 }
 
-// Resize observer for responsive charts
-const resizeObserver = new ResizeObserver(() => {
-    window.dispatchEvent(new Event('chart-resize'));
-});
-document.querySelectorAll('.chart-container').forEach(container => {
-    resizeObserver.observe(container);
-});
-    }
+    // Resize observer for responsive charts
+    const resizeObserver = new ResizeObserver(() => {
+        window.dispatchEvent(new Event('chart-resize'));
+    });
+    document.querySelectorAll('.chart-container').forEach(container => {
+        resizeObserver.observe(container);
+    });
+        }
 
 
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 <?php include '../includes/footer.php'; ?>
