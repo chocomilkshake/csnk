@@ -130,13 +130,18 @@ function initials(string $full = null, string $user = null): string
   return $a ?: 'U';
 }
 ?>
-<!-- Monitoring Fonts -->
-<link rel="stylesheet" href="../css/monitoring-fonts.css">
+<!-- Monitoring Base (includes fonts) -->
+<link rel="stylesheet" href="../css/monitoring-base.css">
+
+<script>
+  // Apply monitoring-page class for higher specificity
+  document.documentElement.className += ' monitoring-page';
+</script>
 
 <!-- Header -->
 <div class="flex items-center justify-between mb-4">
   <div>
-    <h4 class="mb-0 fw-semibold">Activity Logs</h4>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Activity Logs</h1>
     <p class="text-muted mb-0 text-sm">Click a row to view full details.</p>
   </div>
   <span class="badge bg-light text-dark">Showing <?= count($logs) ?> entries</span>
@@ -152,7 +157,8 @@ function initials(string $full = null, string $user = null): string
           <option value="">All users</option>
           <?php foreach ($adminUsers as $u): ?>
             <option value="<?= $u['id'] ?>">
-              <?= htmlspecialchars(($u['full_name'] ?: $u['username']) . ' (' . $u['role'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
+              <?= htmlspecialchars(($u['full_name'] ?: $u['username']) . ' (' . $u['role'] . ')', ENT_QUOTES, 'UTF-8') ?>
+            </option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -228,7 +234,8 @@ function initials(string $full = null, string $user = null): string
                   </div>
                   <div class="leading-tight">
                     <div class="fw-semibold"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></div>
-                    <div class="text-muted small">@<?= htmlspecialchars($log['username'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="text-muted small">@<?= htmlspecialchars($log['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -239,7 +246,8 @@ function initials(string $full = null, string $user = null): string
                   class="badge bg-primary-subtle text-primary"><?= htmlspecialchars($log['action'], ENT_QUOTES, 'UTF-8') ?></span>
               </td>
               <td class="text-truncate" style="max-width:560px" title="<?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?>">
-                <?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></td>
+                <?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?>
+              </td>
               <td><?= htmlspecialchars($whenPretty, ENT_QUOTES, 'UTF-8') ?></td>
             </tr>
           <?php endforeach; endif; ?>
@@ -329,7 +337,7 @@ function initials(string $full = null, string $user = null): string
     };
     function apply() {
       const uid = fUser?.value || '', q = (fSearch?.value || '').toLowerCase().trim(),
-      r = document.querySelector('[data-range].active')?.dataset.range || 'all';
+        r = document.querySelector('[data-range].active')?.dataset.range || 'all';
       tbody.querySelectorAll('tr').forEach(tr => {
         const okUser = !uid || uid === tr.dataset.userId;
         const okText = !q || tr.textContent.toLowerCase().includes(q);
