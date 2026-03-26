@@ -1,4 +1,30 @@
 
+    echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+    exit;
+}
+
+/* ======================================================
+   DELETE INVOICE
+====================================================== */
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+
+    require_once '../includes/config.php';
+    require_once '../includes/Database.php';
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    if (!$conn) {
+        die('Database connection failed.');
+    }
+
+    $invoice_id = (int) $_GET['id'];
+
+    // ✅ Get PDF filename first (to delete file)
+    $stmt = $conn->prepare("SELECT pdf_filename FROM invoice_history WHERE id = ?");
+    $stmt->bind_param('i', $invoice_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
 
     if ($row) {
         $pdfPath = $_SERVER['DOCUMENT_ROOT'] . '/csnk/uploads/invoices/' . $row['pdf_filename'];
