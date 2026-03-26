@@ -80,6 +80,34 @@ $daysToPaySql = "
       AND company_type = ?
 ";
 $stmt = $conn->prepare($daysToPaySql);
+$stmt->bind_param('s', $company);
+$stmt->execute();
+$daysRow = $stmt->get_result()->fetch_assoc();
+$avgDaysToPay = $daysRow['avg_days_to_pay'] !== null ? round((float)$daysRow['avg_days_to_pay'], 1) : 0;
+
+// 5. TOP 5 CLIENTS DISTRIBUTION
+$topClientsSql = "
+    SELECT 
+        client_name,
+        SUM(total_amount) AS revenue,
+        COUNT(*) AS invoice_count,
+        ROUND((SUM(total_amount) / ?) * 100, 1) AS revenue_pct
+    FROM invoice_history 
+    WHERE company_type = ?
+    GROUP BY client_name 
+    ORDER BY revenue DESC 
+    LIMIT 5
+";
+$totalRevenue = $gross; // For pct calculation
+$stmt = $conn->prepare($topClientsSql);
+$stmt->bind_param('ds', $totalRevenue, $company);
+$stmt->execute();
+$topClients = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// 6. INVOICE TIMELINE (Stacked: Paid/Pending by date)
+$timelineSql = "
+    SELECT 
+        DATE(invoice_date) AS date,
         SUM(CASE WHEN payment_status = 'Paid' THEN total_amount ELSE 0 END) AS paid_amount,
         SUM(CASE WHEN payment_status != 'Paid' THEN total_amount ELSE 0 END) AS pending_amount
     FROM invoice_history 
