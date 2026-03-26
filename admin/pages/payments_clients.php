@@ -3,6 +3,33 @@ session_start();
 require_once '../includes/invoice_mailer.php';
 
 
+/* ======================================================
+   AJAX: RESEND INVOICE EMAIL
+====================================================== */
+if (isset($_GET['resend_invoice_email']) && isset($_GET['id'])) {
+    header('Content-Type: application/json');
+            invoice_num,
+            client_name,
+        exit;
+    }
+
+    // ✅ Send email
+    $sent = sendInvoiceEmail(
+        $inv['client_email'],
+        $inv['client_name'],
+        $inv['invoice_num'],
+        $pdfPath,
+        $inv['company_type'],
+        $inv['payment_link'] // ✅ SAME XENDIT LINK
+    );
+
+    if ($sent) {
+        echo json_encode(['success' => true, 'message' => 'Invoice email sent successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to send invoice email']);
+    }
+
+    exit;
 }
 
 /* ======================================================
