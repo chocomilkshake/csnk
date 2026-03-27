@@ -68,7 +68,7 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 // Get selected BU or default to first
-$activeBUId = isset($_GET['bu']) && isset($_GET['bu']) ? (int) $_GET['bu'] : 0;
+$activeBUId = isset($_GET['bu']) ? (int) $_GET['bu'] : 0;
 if ($activeBUId <= 0 || !isset($businessUnits[$activeBUId])) {
   $firstBU = reset($businessUnits);
   $activeBUId = $firstBU ? (int) $firstBU['id'] : 0;
@@ -373,8 +373,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$showNoBUMessage) {
               deleteFile($oldItem['image_path']);
             }
             $newImagePath = $uploaded;
-            $params = array_merge([$newImagePath], $params);
-            $types = "s" . $types;
+            $params = [$title, $description, $newImagePath, $id, $activeBUId];
+            $types = "sssii";
           }
         }
 
@@ -569,8 +569,6 @@ function scopeUrl($path, $agency, $bu)
     (function () {
       const agencySelect = document.getElementById('agencySelect');
       const buSelect = document.getElementById('buSelect');
-      const selectorForm = document.getElementById('selectorForm');
-
       // Business Units data by agency (PHP-generated JavaScript)
       const businessUnitsByAgency = {
         <?php foreach ($agencies as $agencyId => $a): ?>
@@ -597,30 +595,32 @@ function scopeUrl($path, $agency, $bu)
       };
 
       // When agency changes, update the BU dropdown (user must click Filter manually)
-      agencySelect?.addEventListener('change', function () {
-        const agencyId = this.value;
-        const bus = businessUnitsByAgency[agencyId] || [];
+      if (agencySelect && buSelect) {
+        agencySelect.addEventListener('change', function () {
+          const agencyId = this.value;
+          const bus = businessUnitsByAgency[agencyId] || [];
 
-        // Clear existing options
-        buSelect.innerHTML = '';
+          // Clear existing options
+          buSelect.innerHTML = '';
 
-        if (bus.length > 0) {
-          // Add new options
-          bus.forEach(function (bu) {
+          if (bus.length > 0) {
+            // Add new options
+            bus.forEach(function (bu) {
+              const option = document.createElement('option');
+              option.value = bu.id;
+              option.textContent = (bu.country_name || '') + ' - ' + bu.name;
+              buSelect.appendChild(option);
+            });
+            // Note: Don't auto-submit - let user select BU first, then click Filter
+          } else {
+            // No BUs for this agency
             const option = document.createElement('option');
-            option.value = bu.id;
-            option.textContent = (bu.country_name || '') + ' - ' + bu.name;
+            option.value = '';
+            option.textContent = 'No Business Units available';
             buSelect.appendChild(option);
-          });
-          // Note: Don't auto-submit - let user select BU first, then click Filter
-        } else {
-          // No BUs for this agency
-          const option = document.createElement('option');
-          option.value = '';
-          option.textContent = 'No Business Units available';
-          buSelect.appendChild(option);
-        }
-      });
+          }
+        });
+      }
     })();
 </script>
 
