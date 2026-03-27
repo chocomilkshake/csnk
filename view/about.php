@@ -8,6 +8,22 @@
 
     @media (min-width: 992px) {
       .hero-section .display-4 {
+      background: #fff;
+    }
+
+    #heroPills .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
+    .hero-section .btn-light.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .hero-visual {
+      display: flex;
       justify-content: center;
       position: relative;
     }
