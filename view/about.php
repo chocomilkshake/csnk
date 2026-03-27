@@ -9,6 +9,22 @@
       bottom: 15%;
       left: -5%;
       opacity: 0.6;
+      animation: floatPulse 5s ease-in-out infinite 0.5s;
+    }
+
+    .hero-float-shape-3 {
+      width: 25px;
+      height: 25px;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      top: 30%;
+      right: -8%;
+      opacity: 0.8;
+      animation: floatPulse 6s ease-in-out infinite 1s;
+    }
+
+    @keyframes floatPulse {
+
+      0%,
       100% {
         transform: translateY(0) scale(1);
       }
