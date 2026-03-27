@@ -1,0 +1,8 @@
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 3px solid #2563eb;
+  margin-bottom: 40px;
+  padding-bottom: 25px;
