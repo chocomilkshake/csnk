@@ -1275,7 +1275,21 @@ function renderAvatar($picture, $client_name)
                     </div>
                 </div>
                 <div class="col-lg-3 col-xl-1.5">
-="modal"></button>
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-sm border-amber-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-exclamation-triangle fs-2 text-amber-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Pending</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="pendingVal">₱
+                </div>oter">
+            <div class="modal-body text-center">
+                <p class="mb-0">
+                    Are you sure you want to resend the invoice email to
+                        Invoice History
+                    </h4>
+                    <div id="historyClientName" style="font-size:.9rem;opacity:.85;"></div>
+                </div>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body p-0">
