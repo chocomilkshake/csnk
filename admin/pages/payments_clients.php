@@ -1286,7 +1286,23 @@ function renderAvatar($picture, $client_name)
                 <p class="mb-0">
                     Are you sure you want to resend the invoice email to the client?
                 </p>
-            </div> -->
+            </div>
+
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button class="btn btn-primary px-4" id="confirmResendBtn">
+                    Yes, Resend
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ================= IMPROVED CLIENT INVOICE HISTORY MODAL ================= -->
 <div class="modal fade" id="historyModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content border-0 shadow-lg overflow-hidden"
