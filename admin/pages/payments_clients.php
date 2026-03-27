@@ -1270,6 +1270,31 @@ function renderAvatar($picture, $client_name)
                         <div class="mb-2">
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
 vh;">
+                    <table class="table mb-0 align-middle">onz.png" height="95">
+
+                            <!-- SMC BADGE -->
+                            <img id="badge-smc" src="../../resources/img/smc.png" height="90" class="d-none">
+                        </div>
+
+                    </div>
+
+                    <!-- TITLE -->
+                    <div class="inv-title">INVOICE</div>
+
+                    <div class="inv-meta">
+                        <div>
+                            <strong>Billed To:</strong><br>
+                            <span id="pv-client-name"></span><br>
+                            <span id="pv-client-email"></span><br>
+                            <span id="pv-client-address"></span>
+                        </div>
+                        <div class="text-end">
+                            <div><strong>Invoice #:</strong> <span id="pv-invoice-num"></span></div>
+                            <div><strong>Date:</strong> <span id="pv-invoice-date"></span></div>
+                            <div><strong>Due:</strong> <span id="pv-due-date"></span></div>
+                            <div><strong>Ref:</strong> <span id="pv-ref-no"></span></div>
+                        </div>
+                    </div>
 
                     <table class="inv-table">
                         <thead>
