@@ -1288,6 +1288,24 @@ function renderAvatar($picture, $client_name)
                     <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-500/10 to-purple-500/10 backdrop-blur-sm border-violet-200/50 p-5 rounded-3xl text-center h-100">
                         <div class="mb-2">
                                     History
+                                </button>
+                            </td>
+                        </tr>
+
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <!-- ================= GLOBAL ACTION MODAL ================= -->
+    <div class="modal fade" id="actionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content action-modal">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-semibold" id="actionModalTitle">
+                        Processing
                     </h6>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
