@@ -1270,7 +1270,30 @@ function renderAvatar($picture, $client_name)
                         <div class="mb-2">
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
 vh;">
-                    <table class="table mb-0 align-middle">onz.png" height="95">
+                    <table class="table mb-0 align-middle">
+                <div class="invoice-preview-paper">
+
+                    <!-- HEADER -->
+                    <div class="inv-header d-flex justify-content-between align-items-center">
+
+                        <!-- LEFT SIDE: MAIN LOGO + INFO -->
+                        <div>
+                            <!-- CSNK MAIN LOGO -->
+                            <img id="logo-csnk" src="../../resources/img/whychoose.png">
+
+                            <!-- SMC MAIN LOGO -->
+                            <img id="logo-smc" src="../../resources/img/smcbrandname.png" class="d-none">
+
+                            <div class="mt-1 small text-muted" id="company-address">
+                                Unit 1 Eden Townhomes<br>
+                                Pedro Gil Street, Manila
+                            </div>
+                        </div>
+
+                        <!-- RIGHT SIDE: BADGE LOGO -->
+                        <div>
+                            <!-- CSNK BADGE -->
+                            <img id="badge-csnk" src="../../resources/img/csnk-iconz.png" height="95">
 
                             <!-- SMC BADGE -->
                             <img id="badge-smc" src="../../resources/img/smc.png" height="90" class="d-none">
