@@ -5,7 +5,26 @@
       position: relative;
       z-index: 1;
     }
-#4ecdc4 0%, #44a08d 100%);
+
+    @media (min-width: 992px) {
+      .hero-section .display-4 {
+      justify-content: center;
+      position: relative;
+    }
+    .hero-float-shape-1 {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+      top: -10px;
+      right: 5%;
+      opacity: 0.7;
+      animation: floatPulse 4s ease-in-out infinite;
+    }
+
+    .hero-float-shape-2 {
+      width: 35px;
+      height: 35px;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
       bottom: 15%;
       left: -5%;
       opacity: 0.6;
