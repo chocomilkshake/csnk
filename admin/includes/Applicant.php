@@ -1099,19 +1099,22 @@ class Applicant
      * - Includes required document completeness (for original’s BU country)
      * - Sorted by score DESC, docs_completed DESC, years_experience DESC, created_at ASC
      */
-    public function searchPendingCandidatesForReplacement(int $originalApplicantId, int $limit = 50): array
+    public function searchPendingCandidatesForReplacement(int $originalApplicantId, int $limit = 50, ?int $branchId = null): array
     {
+        $scope = $this->getSessionScope();
+        $sessionBranchId = $scope['is_employee'] && $scope['agency'] === self::CSNK_AGENCY_CODE ? (int) $scope['branch_id'] : null;
+        $effectiveBranchId = $branchId ?? $sessionBranchId;
+
         $original = $this->getById($originalApplicantId);
         if (!$original)
             return [];
 
-        // Resolve BU + country for the ORIGINAL from business_units (more reliable than applicants.country_id)
+        // Resolve BU + country + orig branch
         $origBuId = null;
         $origCountryId = null;
         $stmt = $this->db->prepare("
-            SELECT bu.id AS bu_id, bu.country_id AS country_id
-            FROM applicants a
-            JOIN business_units bu ON bu.id = a.business_unit_id
+            SELECT bu.id AS bu_id, bu.country_id AS country_id, a.branch_id
+            FROM applicants a JOIN business_units bu ON bu.id = a.business_unit_id
             WHERE a.id = ?
             LIMIT 1
         ");
@@ -1130,43 +1133,35 @@ class Applicant
         if (!$origCountryId)
             $origCountryId = (int) ($original['country_id'] ?? 0);
 
-        // Helper to fetch candidates with required docs count
-        $fetchCandidates = function (?int $buIdFilter, int $maxRows) use ($origCountryId): array {
+        // Helper to fetch with docs + optional branch/BU filter
+        $fetchCandidates = function (?int $buFilter, ?int $branchFilter, int $maxRows) use ($origCountryId) {
             $rows = [];
             $sql = "
-                SELECT 
-                    a.*,
-                    -- count of required documents completed for the ORIGINAL's country
-                    (
-                        SELECT COUNT(*)
-                        FROM applicant_documents ad
-                        JOIN document_types dt ON dt.id = ad.document_type_id
-                        WHERE ad.applicant_id = a.id
-                          AND dt.is_required = 1
-                          AND dt.country_id = ?
-                    ) AS docs_completed
-                FROM applicants a
-                JOIN business_units bu ON bu.id = a.business_unit_id
+                SELECT a.*, (
+                    SELECT COUNT(*)
+                    FROM applicant_documents ad
+                    JOIN document_types dt ON dt.id = ad.document_type_id
+                    WHERE ad.applicant_id = a.id AND dt.is_required = 1 AND dt.country_id = ?
+                ) AS docs_completed
+                FROM applicants a JOIN business_units bu ON bu.id = a.business_unit_id
                 JOIN agencies ag ON ag.id = bu.agency_id
-                WHERE a.status = 'pending'
-                  AND a.deleted_at IS NULL
-                  AND ag.code = ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM blacklisted_applicants b
-                      WHERE b.applicant_id = a.id AND b.is_active = 1
-                  )
+                WHERE a.status = 'pending' AND a.deleted_at IS NULL AND ag.code = ?
+                  AND NOT EXISTS (SELECT 1 FROM blacklisted_applicants b WHERE b.applicant_id = a.id AND b.is_active = 1)
             ";
             $types = "is";
             $params = [$origCountryId, self::CSNK_AGENCY_CODE];
 
-            if ($buIdFilter !== null && $buIdFilter > 0) {
-                $sql .= " AND a.business_unit_id = ? ";
+            if ($branchFilter && $this->tableHasColumn('applicants', 'branch_id')) {
+                $sql .= " AND a.branch_id = ?";
                 $types .= "i";
-                $params[] = $buIdFilter;
+                $params[] = $branchFilter;
             }
-
-            // Soft pre-sort: more recent first can be noisy; let PHP sort by score thoroughly.
-            $sql .= " ORDER BY a.created_at DESC LIMIT ? ";
+            if ($buFilter > 0) {
+                $sql .= " AND a.business_unit_id = ?";
+                $types .= "i";
+                $params[] = $buFilter;
+            }
+            $sql .= " ORDER BY a.created_at DESC LIMIT ?";
             $types .= "i";
             $params[] = $maxRows;
 
@@ -1183,25 +1178,25 @@ class Applicant
             return $rows;
         };
 
-        // Phase 1: same BU (strong locality)
-        $phase1 = $fetchCandidates($origBuId, max(100, $limit));
+        $hasBranchCol = $this->tableHasColumn('applicants', 'branch_id');
+        $size1 = max(100, $limit);
+        $size2 = max(200, $limit * 2);
+        $size3 = max(300, $limit * 3);
 
-        // If not enough, Phase 2: expand to any CSNK BU
-        $phase2 = [];
-        if (count($phase1) < $limit) {
-            $phase2 = $fetchCandidates(null, max(200, $limit * 2));
-        }
+        // Phase 1: Branch (employee/original priority)
+        $phase1 = $effectiveBranchId && $hasBranchCol ? $fetchCandidates(null, $effectiveBranchId, $size1) : [];
 
-        // Merge unique by id (phase1 priority)
+        // Phase 2: Same BU
+        $phase2 = count($phase1) < $limit ? $fetchCandidates($origBuId, null, $size2) : [];
+
+        // Phase 3: Any CSNK
+        $phase3 = (count($phase1) + count($phase2)) < $limit ? $fetchCandidates(null, null, $size3) : [];
+
+        // Merge unique
         $byId = [];
-        foreach ($phase1 as $r) {
-            $byId[(int) $r['id']] = $r;
-        }
-        foreach ($phase2 as $r) {
-            $id = (int) $r['id'];
-            if (!isset($byId[$id]))
-                $byId[$id] = $r;
-        }
+        foreach ([$phase1, $phase2, $phase3] as $phase)
+            foreach ($phase as $r)
+                $byId[(int) $r['id']] = $r;
         $rows = array_values($byId);
 
         // Score each candidate
