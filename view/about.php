@@ -104,6 +104,32 @@ function slugify(string $text): string
  * Your admin uploads are under: /csnk/admin/uploads/<path>
  */
       $stmt->bind_param("i", $csnkBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+
+      while ($row = $result->fetch_assoc()) {
+        $categories[] = $row;
+      }
+    }
+  }
+  mysqli_close($conn);
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSNK Manpower Agency</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="<?= asset('resources/img/csnk-icon.png') ?>">
+</head>
+
+<body class="bg-light">
+
+  <!-- ✅ Reusable Navbar (old behavior preserved) -->
+  <?php include __DIR__ . '/navbar.php'; ?>
+
+  <!-- ===================== -->
+  <!-- Page Content Starts   -->
+  <!-- ===================== -->
 
   <style>
     /* ---------- Base / utilities applicable to this page ---------- */
