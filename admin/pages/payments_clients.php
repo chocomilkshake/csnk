@@ -1281,7 +1281,27 @@ function renderAvatar($picture, $client_name)
                         </div>
                         <h6 class="text-slate-700 fw-semibold mb-2">Pending</h6>
                         <div class="h2 fw-bold text-slate-900 mb-1" id="pendingVal">₱
-                </div>oter">
+                </div>
+                <h6 class="modal-title fw-semibold" id="actionModalTitle">
+                    Processing
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center py-5">
+                <!-- ✅ REQUIRED -->
+                <div id="actionModalIcon" class="mb-4"></div>
+
+                <div class="fw-semibold" id="actionModalTitle2">
+                    Sending Invoice
+                </div>
+
+                <p class="text-muted mb-0" id="actionModalMessage">
+                    Please wait a moment…
+                </p>
+            </div>
+
+            <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
                 <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
                     OK
                 </button>
