@@ -602,9 +602,9 @@ if (isset($_GET['clear']) && $_GET['clear'] === '1') {
 $sql = "
     SELECT
         client_booking_id,
-        client_name,
-        client_email,
-        client_address,
+        MAX(client_name) AS client_name,
+        MAX(client_email) AS client_email,
+        MAX(client_address) AS client_address,
         MAX(created_at) AS last_invoice_date,
         COUNT(*) AS total_invoices,
         SUM(total_amount) AS total_amount,
