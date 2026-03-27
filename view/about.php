@@ -1,4 +1,119 @@
- 0, 0, 0) 0%, rgba(0, 0, 0, .9) 10%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
+<?php
+// Set the active page for navbar highlighting
+$page = 'about';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+/**
+ * PROJECT BASE URL
+ * For localhost: /csnk
+ * For production: change this to '' (empty) or your domain
+ */
+$BASE = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
+
+/**
+ * Build absolute URL for assets (css, js, images)
+ */
+function asset($path)
+{
+  global $BASE;
+  $path = '/' . ltrim($path, '/');
+  return rtrim($BASE, '/') . $path;
+}
+
+/**
+ * Get database connection using config
+ */
+function getDbConnection()
+{
+  // Defaults
+  $dbHost = 'localhost';
+  $dbUser = 'root';
+  $dbPass = '';
+  $dbName = 'csnk';
+
+  mysqli_report(MYSQLI_REPORT_OFF);
+
+  $hosts = [$dbHost === 'localhost' ? '127.0.0.1' : $dbHost];
+
+  foreach (array_unique($hosts) as $host) {
+    $port = 3306;
+    $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+    if (!$socket) {
+      continue;
+    }
+    fclose($socket);
+
+    $conn = mysqli_init();
+    if (!$conn) {
+      continue;
+    }
+
+    mysqli_options($conn, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+    if (defined('MYSQLI_OPT_READ_TIMEOUT')) {
+      mysqli_options($conn, MYSQLI_OPT_READ_TIMEOUT, 1);
+    }
+
+    if (@mysqli_real_connect($conn, $host, $dbUser, $dbPass, $dbName, $port)) {
+      mysqli_set_charset($conn, 'utf8mb4');
+      return $conn;
+    }
+
+    mysqli_close($conn);
+  }
+
+  return null;
+}
+
+function getCSNKBusinessUnitId($conn)
+{
+  $stmt = $conn->prepare("SELECT id FROM business_units WHERE agency_id = 1 AND active = 1 LIMIT 1");
+  if (!$stmt)
+    return null;
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $stmt->close();
+  return $row ? (int) $row['id'] : null;
+}
+
+/**
+ * Helper: slugify label for safe filtering (EXACT match)
+ */
+function slugify(string $text): string
+{
+  $text = trim($text);
+  $text = function_exists('mb_strtolower')
+    ? mb_strtolower($text, 'UTF-8')
+    : strtolower($text);
+  $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+  if (function_exists('iconv')) {
+    $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    if ($trans !== false)
+      $text = $trans;
+  }
+  $text = preg_replace('~[^-\w]+~', '', $text);
+  $text = trim($text, '-');
+  $text = preg_replace('~-+~', '-', $text);
+  return $text !== '' ? $text : 'n-a';
+}
+
+/**
+ * Helper: build content image URL (uploaded via admin)
+ * Your admin uploads are under: /csnk/admin/uploads/<path>
+ */
+      $stmt->bind_param("i", $csnkBuId);    .hero-grid,
+    .hero-gradient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
+        radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17, 17, 17, 0) 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .25) 60%, rgba(255, 84, 84, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 10%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
     }
 
     .hero-section .container {
