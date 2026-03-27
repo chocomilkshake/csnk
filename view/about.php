@@ -3,6 +3,25 @@
 
     .hero-section .container {
       position: relative;
+      z-index: 1;
+    }
+#4ecdc4 0%, #44a08d 100%);
+      bottom: 15%;
+      left: -5%;
+      opacity: 0.6;
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-12px) scale(1.05);
+      }
+    }
+
+    /* Layered frame effect */
+    .hero-frame {
+      position: relative;
+      border-radius: 20px;
       background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
       padding: 8px;
       box-shadow:
