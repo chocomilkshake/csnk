@@ -1290,6 +1290,28 @@ function renderAvatar($picture, $client_name)
                             <i class="bi bi-people fs-2 text-violet-600 opacity-90"></i>
                         </div>
                         </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
+                            Total Amount
+                        </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                            Paid
+                        </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                            Unpaid
+                        </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-200">
+                    <?php if (!$invoices): ?>
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                No clients found
+                            </td>
+                        </tr>
                     <?php else: foreach ($invoices as $inv): ?>
 
                         <tr class="hover:bg-gray-50">
