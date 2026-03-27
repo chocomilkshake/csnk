@@ -1289,6 +1289,31 @@ function renderAvatar($picture, $client_name)
                         <div class="mb-2">
                             <i class="bi bi-people fs-2 text-violet-600 opacity-90"></i>
                         </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Applicants Billed</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="applicantsVal">0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-indigo-500/10 to-sky-500/10 backdrop-blur-sm border-indigo-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-currency-exchange fs-2 text-indigo-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Avg Invoice</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="avgInvoiceVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-500/15 to-green-500/15 backdrop-blur-sm border-emerald-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
+                            <i class="bi bi-graph-up-arrow fs-2 text-emerald-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Conversion Rate</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="conversionVal">0<span class="text-success">%</span></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+                    <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 backdrop-blur-sm border-amber-200/50 p-5 rounded-3xl text-center h-100">
+                        <div class="mb-2">
                             <i class="bi bi-clock-history fs-2 text-amber-600 opacity-90"></i>
                         </div>
                         <h6 class="text-slate-700 fw-semibold mb-2">Avg Days to Pay</h6>
