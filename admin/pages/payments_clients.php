@@ -1269,7 +1269,30 @@ function renderAvatar($picture, $client_name)
                     <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 backdrop-blur-sm border-emerald-200/50 p-5 rounded-3xl text-center h-100">
                         <div class="mb-2">
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Total Revenue</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="revenueVal">₱0</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-xl-1.5">
+="modal"></button>
+            </div>
 
+            <div class="modal-body p-0">
+
+                <!-- CLIENT INFO -->
+                <div class="px-5 py-4 border-bottom" style="background:#f8fafc;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 id="historyClientFullName" class="fw-semibold mb-1"
+                                style="font-size:1.25rem;color:#0f172a;">
+                                Loading Client...
+                            </h5>
+                            <div style="font-size:.9rem;color:#64748b;">
+                                <span id="historyClientEmail"></span> •
+                                <span id="historyClientAddress"></span>
+                            </div>
+                        </div>
                         <div class="col-md-4 text-end">
                             <div id="historyInvoiceCount" class="fw-bold" style="font-size:1.3rem;color:#2563eb;">
                                 0 Invoices
