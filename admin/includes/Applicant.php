@@ -1178,54 +1178,33 @@ class Applicant
             return $rows;
         };
 
-        $hasBranchCol = $this->tableHasColumn('applicants', 'branch_id');
-        $size1 = max(100, $limit);
-        $size2 = max(200, $limit * 2);
-        $size3 = max(300, $limit * 3);
+        // STRICT branch-only query - NO Phase 2/3 fallbacks
+        $size = max(300, $limit * 6);
+        $rows = $fetchCandidates(null, $effectiveBranchId, $size);
 
-        // Phase 1: Branch (employee/original priority)
-        $phase1 = $effectiveBranchId && $hasBranchCol ? $fetchCandidates(null, $effectiveBranchId, $size1) : [];
-
-        // Phase 2: Same BU
-        $phase2 = count($phase1) < $limit ? $fetchCandidates($origBuId, null, $size2) : [];
-
-        // Phase 3: Any CSNK
-        $phase3 = (count($phase1) + count($phase2)) < $limit ? $fetchCandidates(null, null, $size3) : [];
-
-        // Merge unique
-        $byId = [];
-        foreach ([$phase1, $phase2, $phase3] as $phase)
-            foreach ($phase as $r)
-                $byId[(int) $r['id']] = $r;
-        $rows = array_values($byId);
-
-        // Score each candidate
+        // Score candidates
         foreach ($rows as &$r) {
             $docsCompleted = (int) ($r['docs_completed'] ?? 0);
             $r['_score'] = $this->computeSimilarityScore($original, $r, $docsCompleted);
         }
         unset($r);
 
-        // Sort by: score DESC, docs_completed DESC, years_experience DESC, created_at ASC
+        // Sort: score > docs > exp > created (earlier first)
         usort($rows, function ($x, $y) {
             if (($y['_score'] ?? 0) !== ($x['_score'] ?? 0))
                 return ($y['_score'] ?? 0) <=> ($x['_score'] ?? 0);
-            $y_docs = (int) ($y['docs_completed'] ?? 0);
-            $x_docs = (int) ($x['docs_completed'] ?? 0);
-            if ($y_docs !== $x_docs)
-                return $y_docs <=> $x_docs;
-            $y_exp = (int) ($y['years_experience'] ?? 0);
-            $x_exp = (int) ($x['years_experience'] ?? 0);
-            if ($y_exp !== $x_exp)
-                return $y_exp <=> $x_exp;
-            // earlier created first (longer in pipeline)
-            return strcmp((string) ($x['created_at'] ?? ''), (string) ($y['created_at'] ?? ''));
+            $yd = (int) ($y['docs_completed'] ?? 0);
+            $xd = (int) ($x['docs_completed'] ?? 0);
+            if ($yd !== $xd)
+                return $yd <=> $xd;
+            $ye = (int) ($y['years_experience'] ?? 0);
+            $xe = (int) ($x['years_experience'] ?? 0);
+            if ($ye !== $xe)
+                return $ye <=> $xe;
+            return strcmp($x['created_at'] ?? '', $y['created_at'] ?? '');
         });
 
-        if ($limit > 0 && count($rows) > $limit) {
-            $rows = array_slice($rows, 0, $limit);
-        }
-        return $rows;
+        return array_slice($rows, 0, $limit);
     }
 
     public function createReplacementInit(
