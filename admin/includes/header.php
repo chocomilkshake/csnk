@@ -65,6 +65,17 @@ $isSuperAdmin = ($currentRole === 'super_admin');
 $isAdmin = ($currentRole === 'admin');
 $isEmployee = ($currentRole === 'employee');
 
+/* Shared helper for RBAC redirects */
+if (!function_exists('redirectDashboardForRole')) {
+    function redirectDashboardForRole(?array $user = null): void
+    {
+        $agency = strtolower((string) ($user['agency'] ?? $_SESSION['agency'] ?? ''));
+        $target = ($agency === 'smc') ? 'turkey_dashboard.php' : 'dashboard.php';
+        header('Location: ' . $target);
+        exit;
+    }
+}
+
 /* ===== RBAC HARD-BLOCK: Country Management is only for Admin / Super Admin ===== */
 if ($currentPage === 'country_management' && !($isAdmin || $isSuperAdmin)) {
     // Block access for employees (CSNK or SMC) and any non-admin roles
@@ -84,6 +95,16 @@ if ($currentPage === 'branch_management' && !($isAdmin || $isSuperAdmin)) {
     }
     header('Location: dashboard.php');
     exit;
+}
+/* ============================================================================== */
+
+/* ===== RBAC HARD-BLOCK: Monitoring pages are only for Admin / Super Admin ===== */
+$adminOnlyMonitoringPages = ['client-management', 'client-profile', 'payments_clients'];
+if (in_array($currentPage, $adminOnlyMonitoringPages, true) && !($isAdmin || $isSuperAdmin)) {
+    if (function_exists('setFlashMessage')) {
+        setFlashMessage('error', 'You do not have permission to access this monitoring page.');
+    }
+    redirectDashboardForRole($currentUser);
 }
 /* ============================================================================== */
 
