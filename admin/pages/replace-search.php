@@ -37,83 +37,33 @@ if ($originalId <= 0) {
     $originalId = (int) $rep['original_applicant_id'];
 }
 
-// --- Pass 1: ask the scorer for more items up-front so UI has enough choices ---
-$primaryFetchSize = max(200, $limit * 4); // pull more; scorer will sort & slice
-$branchId = isset($_SESSION['current_branch_id']) ? (int) $_SESSION['current_branch_id'] : 0;
-$candidates = $applicant->searchPendingCandidatesForReplacement($originalId, $primaryFetchSize, $branchId);
-
-// If still very few (e.g., only 0–1), do a defensive open-net fallback (CSNK + pending, excluding original)
-if (count($candidates) < $limit) {
-    try {
-        $conn = $database->getConnection();
-        if ($conn instanceof mysqli) {
-            // Find the original BU & country to keep scoring meaningful
-            $origBuId = null;
-            $origCountryId = null;
-            if (
-                $stmt = $conn->prepare("
-                SELECT bu.id AS bu_id, bu.country_id AS country_id
-                FROM applicants a
-                JOIN business_units bu ON bu.id = a.business_unit_id
-                WHERE a.id = ?
-                LIMIT 1
-            ")
-            ) {
-                $stmt->bind_param('i', $originalId);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                if ($res && ($row = $res->fetch_assoc())) {
-                    $origBuId = (int) $row['bu_id'];
-                    $origCountryId = (int) $row['country_id'];
-                }
-                $stmt->close();
-            }
-
-            // Pull a wider pool: all pending CSNK (excluding original & blacklisted)
-            $widerLimit = max(300, $limit * 6);
-            $sql = "
-                SELECT a.*
-                FROM applicants a
-                JOIN business_units bu ON bu.id = a.business_unit_id
-                JOIN agencies ag ON ag.id = bu.agency_id
-                WHERE a.id <> ?
-                  AND a.status = 'pending'
-                  AND a.deleted_at IS NULL
-                  AND ag.code = 'csnk'
-                  AND NOT EXISTS (
-                      SELECT 1 FROM blacklisted_applicants b
-                      WHERE b.applicant_id = a.id AND b.is_active = 1
-                  )
-                ORDER BY a.created_at DESC
-                LIMIT ?
-            ";
-            if ($stmt = $conn->prepare($sql)) {
-                $stmt->bind_param('ii', $originalId, $widerLimit);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $wideRows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-                $stmt->close();
-
-                // Merge unique by id, preserving items we already had from the scorer
-                $byId = [];
-                foreach ($candidates as $r) {
-                    $byId[(int) $r['id']] = $r;
-                }
-                foreach ($wideRows as $r) {
-                    $id = (int) $r['id'];
-                    if (!isset($byId[$id]))
-                        $byId[$id] = $r;
-                }
-                $candidates = array_values($byId);
-            }
+// STRICT branch filtering - fetch original branch_id explicitly, NO cross-branch fallback
+$origBranchId = 0;
+$conn = $database->getConnection();
+if ($conn instanceof mysqli) {
+    $stmt = $conn->prepare("SELECT branch_id FROM applicants WHERE id = ? LIMIT 1");
+    if ($stmt) {
+        $stmt->bind_param('i', $originalId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($res && ($row = $res->fetch_assoc())) {
+            $origBranchId = (int) $row['branch_id'];
         }
-    } catch (Throwable $e) {
-        error_log('replace-search fallback error: ' . $e->getMessage());
-        // ignore; we still return what we have
+        $stmt->close();
     }
 }
+$sessionBranchId = isset($_SESSION['current_branch_id']) ? (int) $_SESSION['current_branch_id'] : 0;
+$branchId = $sessionBranchId ?: $origBranchId; // prefer session employee branch, fallback to original
+$primaryFetchSize = max(200, $limit * 4);
+$candidates = $applicant->searchPendingCandidatesForReplacement($originalId, $primaryFetchSize, $branchId);
 
-// Final slice to requested limit (UI will show up to this many)
+// Branch warning if no matches
+$branchWarning = '';
+if (empty($candidates)) {
+    $branchWarning = "No pending candidates available in branch ID {$branchId}.";
+}
+
+// Final slice (not needed if scorer handles it)
 if ($limit > 0 && count($candidates) > $limit) {
     $candidates = array_slice($candidates, 0, $limit);
 }
@@ -149,6 +99,10 @@ foreach ($candidates as $row) {
 echo json_encode([
     'ok' => true,
     'original_applicant_id' => $originalId,
+    'branch_id_used' => $branchId,
+    'orig_branch_id' => $origBranchId,
+    'session_branch_id' => $sessionBranchId,
+    'branch_warning' => $branchWarning,
     'count' => count($out),
     'data' => $out
 ], JSON_UNESCAPED_UNICODE);
