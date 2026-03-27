@@ -10,6 +10,20 @@
       .hero-section .display-4 {
         font-size: 3rem;
         line-height: 1.1;
+      }
+    }
+
+    .fade-swap {
+      transition: opacity .22s ease, transform .22s ease;
+    }
+
+    .is-swapping {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    /* ---------- PILL BAR ---------- */
+    .hero-pills-abs-wrapper {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
