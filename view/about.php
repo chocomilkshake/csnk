@@ -110,6 +110,25 @@ function slugify(string $text): string
       while ($row = $result->fetch_assoc()) {
         $categories[] = $row;
       }
+
+      $stmt->close();
+    }
+
+    // Content items (active only) + join category name (CSNK BU)
+    $sql = "SELECT ci.*, cc.name as category_name 
+            FROM content_items ci 
+            LEFT JOIN content_categories cc ON ci.category_id = cc.id 
+            WHERE ci.business_unit_id = ? AND ci.is_active = 1
+            ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
+    $stmt = $conn->prepare($sql);
+    if ($stmt) {
+      $stmt->bind_param("i", $csnkBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        $contentItems[] = $row;
+      }
+      $stmt->close();
     }
   }
   mysqli_close($conn);
