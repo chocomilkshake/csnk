@@ -1276,7 +1276,24 @@ vh;">
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dism
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="downloadPdfBtn">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>
+    let actionModal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        actionModal = new bootstrap.Modal(
+            document.getElementById('actionModal')
+        );
     });
 
     function showActionModal(title, message, type = 'loading') {
