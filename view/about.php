@@ -109,6 +109,18 @@ function slugify(string $text): string
       inset: 0;
       z-index: 0;
       pointer-events: none;
+    }
+
+    .hero-grid {
+      opacity: .22;
+      background-image:
+        linear-gradient(to right, rgba(0, 0, 0, .06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, .06) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, 0) 100%);
+    }
+
+    .hero-gradient {
       background:
         radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
         radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17, 17, 17, 0) 60%),
