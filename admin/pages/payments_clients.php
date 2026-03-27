@@ -1284,7 +1284,19 @@ function renderAvatar($picture, $client_name)
                 </div>oter">
             <div class="modal-body text-center">
                 <p class="mb-0">
-                    Are you sure you want to resend the invoice email to
+                    Are you sure you want to resend the invoice email to the client?
+                </p>
+            </div> -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content border-0 shadow-lg overflow-hidden"
+            style="background:#fff;border-radius:20px;font-family:Inter,system-ui,-apple-system,sans-serif;">
+
+            <!-- HEADER -->
+            <div class="modal-header px-5 py-4 border-0" style="background:#2563eb;color:#fff;">
+                <div>
+                    <h4 class="fw-semibold mb-1 d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
                         Invoice History
                     </h4>
                     <div id="historyClientName" style="font-size:.9rem;opacity:.85;"></div>
