@@ -1,4 +1,17 @@
 <?php
+/**
+ * Analytics Report Template for Invoicr
+ * SAFE VERSION – JSON & PDF compatible
+ */
+
+
+    <!-- ================= CLIENTS TABLE ================= -->
+    <section class="table-section">
+        <h2>Top Clients Summary</h2>
+
+        <table class="summary-table">
+            <thead>
+                <tr>
                     <th>Client</th>
                     <th>Total Invoices</th>
                     <th>Total Amount</th>
