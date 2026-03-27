@@ -4,6 +4,31 @@
  * SAFE VERSION – JSON & PDF compatible
  */
 
+/* ===============================
+   HELPER FUNCTIONS (MUST BE FIRST)
+<body>
+
+<div class="report">
+
+    <!-- ================= HEADER ================= -->
+    <header class="report-header">
+        <div class="company-logo">
+            <img src="<?= h($company[0] ?? '') ?>" alt="Company Logo">
+        </div>
+
+        <div class="report-title">
+            <h1>Analytics &amp; Payments Report</h1>
+            <p>
+                Generated: <?= date('F j, Y g:i A') ?><br>
+                Company: <?= h($company[1] ?? '') ?>
+            </p>
+        </div>
+
+        <div class="company-badge">
+            <img src="<?= h($company[2] ?? '') ?>" alt="Company Badge">
+        </div>
+    </header>
+
     <!-- ================= SUMMARY KPI ================= -->
     <section class="kpis-section">
         <h2>Executive Summary</h2>
