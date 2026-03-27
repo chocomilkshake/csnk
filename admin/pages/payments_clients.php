@@ -1287,6 +1287,26 @@ function renderAvatar($picture, $client_name)
                 <div class="col-lg-3 col-xl-1.5">
                     <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-500/10 to-purple-500/10 backdrop-blur-sm border-violet-200/50 p-5 rounded-3xl text-center h-100">
                         <div class="mb-2">
+                            <i class="bi bi-people fs-2 text-violet-600 opacity-90"></i>
+                        </div>
+                        </th>
+                    <?php else: foreach ($invoices as $inv): ?>
+
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <strong><?= h($inv['client_name']) ?></strong><br>
+                                <small class="text-muted"><?= h($inv['client_email']) ?></small>
+                            </td>
+
+                            <td class="text-center"><?= (int) $inv['total_invoices'] ?></td>
+                            <td class="text-center">₱<?= number_format($inv['total_amount'], 2) ?></td>
+                            <td class="text-center"><?= (int) $inv['paid_count'] ?></td>
+                            <td class="text-center"><?= (int) $inv['unpaid_count'] ?></td>
+
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-primary"
+                                    data-booking="<?= (int) $inv['client_booking_id'] ?>"
+                                    data-tab="<?= $activeTab ?>">
                                     History
                                 </button>
                             </td>
