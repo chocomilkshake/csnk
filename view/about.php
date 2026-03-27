@@ -1,19 +1,31 @@
 <?php
-// Set the active page for navbar highlighting
 $page = 'about';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 /**
+ * Determine Bahrain Business Unit ID dynamically
+ */
+function getBahrainBusinessUnitId($conn)
+{
+  $stmt = $conn->prepare("SELECT id FROM business_units WHERE (code LIKE '%bahrain%' OR name LIKE '%bahrain%') AND active = 1 LIMIT 1");
+  if (!$stmt)
+    return null;
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $stmt->close();
+  return $row ? (int) $row['id'] : null;
+}
+
+/**
  * PROJECT BASE URL
- * For localhost: /csnk
- * For production: change this to '' (empty) or your domain
  */
 $BASE = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
 
 /**
- * Build absolute URL for assets (css, js, images)
+ * Build absolute URL for assets
  */
 function asset($path)
 {
@@ -27,7 +39,6 @@ function asset($path)
  */
 function getDbConnection()
 {
-  // Defaults
   $dbHost = 'localhost';
   $dbUser = 'root';
   $dbPass = '';
@@ -66,18 +77,6 @@ function getDbConnection()
   return null;
 }
 
-function getCSNKBusinessUnitId($conn)
-{
-  $stmt = $conn->prepare("SELECT id FROM business_units WHERE agency_id = 1 AND active = 1 LIMIT 1");
-  if (!$stmt)
-    return null;
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $row = $result->fetch_assoc();
-  $stmt->close();
-  return $row ? (int) $row['id'] : null;
-}
-
 /**
  * Helper: slugify label for safe filtering (EXACT match)
  */
@@ -101,56 +100,53 @@ function slugify(string $text): string
 
 /**
  * Helper: build content image URL (uploaded via admin)
- * Your admin uploads are under: /csnk/admin/uploads/<path>
  */
 function getContentImageUrl($path)
 {
   global $BASE;
   if (empty($path))
     return '';
-  $base = rtrim($BASE, '/');
-  return $base . '/admin/uploads/' . ltrim($path, '/');
+  $adminBase = str_replace('smc/smc-bahrain', 'admin', $BASE);
+  return rtrim($adminBase, '/') . '/uploads/' . ltrim($path, '/');
 }
 
 /* ---------- Fetch data (CMS) ---------- */
 $conn = getDbConnection();
-$csnkBuId = null;
+$bahrainBuId = null;
 $categories = [];
 $contentItems = [];
 $categoryCounts = [];
 $totalItems = 0;
 
 if ($conn) {
-  $csnkBuId = getCSNKBusinessUnitId($conn);
+  $bahrainBuId = getBahrainBusinessUnitId($conn);
 
-  if ($csnkBuId) {
-    // Categories (active only, CSNK BU)
+  if ($bahrainBuId) {
+    // Categories (active only, scoped to Bahrain BU)
     $sql = "SELECT id, name, business_unit_id, is_active, display_order
             FROM content_categories
             WHERE business_unit_id = ? AND is_active = 1
             ORDER BY display_order ASC, id ASC";
     $stmt = $conn->prepare($sql);
     if ($stmt) {
-      $stmt->bind_param("i", $csnkBuId);
+      $stmt->bind_param("i", $bahrainBuId);
       $stmt->execute();
       $result = $stmt->get_result();
-
       while ($row = $result->fetch_assoc()) {
         $categories[] = $row;
       }
-
       $stmt->close();
     }
 
-    // Content items (active only) + join category name (CSNK BU)
-    $sql = "SELECT ci.*, cc.name as category_name 
-            FROM content_items ci 
-            LEFT JOIN content_categories cc ON ci.category_id = cc.id 
+    // Content items (active only) + join category name
+    $sql = "SELECT ci.*, cc.name as category_name
+            FROM content_items ci
+            LEFT JOIN content_categories cc ON ci.category_id = cc.id
             WHERE ci.business_unit_id = ? AND ci.is_active = 1
             ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
     $stmt = $conn->prepare($sql);
     if ($stmt) {
-      $stmt->bind_param("i", $csnkBuId);
+      $stmt->bind_param("i", $bahrainBuId);
       $stmt->execute();
       $result = $stmt->get_result();
       while ($row = $result->fetch_assoc()) {
@@ -158,53 +154,200 @@ if ($conn) {
       }
       $stmt->close();
     }
+
+    // Category counts
+    foreach ($contentItems as $itm) {
+      $slug = slugify($itm['category_name'] ?? '');
+      $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
+    }
+    $totalItems = count($contentItems);
   }
   mysqli_close($conn);
 }
 
-// Category counts
-$categoryCounts = [];
-foreach ($contentItems as $itm) {
-  $slug = slugify($itm['category_name'] ?? '');
-  $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
-}
-$totalItems = count($contentItems);
 ?>
-
-
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CSNK Manpower Agency</title>
+  <title>SMC Manpower Agency Co.</title>
+
+  <!-- SEO -->
+  <meta name="description"
+    content="Learn about SMC Manpower Agency Co. — DMW-licensed, compliance-first, and ethically driven recruitment connecting Bahrain-ready and global employers with skilled Filipino talent.">
+  <meta name="theme-color" content="#0B1F3A">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="About — SMC Manpower Agency Co." />
+  <meta property="og:description" content="DMW-licensed, compliance-first, and ethically driven recruitment." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="../resources/img/hero1.jpg" />
+  <meta property="og:url" content="https://example.com/view/about.php" />
+
+  <!-- ✅ FAVICONS -->
+  <link rel="icon" type="image/png" href="/resources/img/smc.png" />
+  <link rel="shortcut icon" href="/resources/img/smc.png" />
+  <link rel="apple-touch-icon" href="/resources/img/smc.png" />
+  <!-- Fallback for /view/ -->
+  <link rel="icon" type="image/png" href="../resources/img/smc.png" />
+  <link rel="apple-touch-icon" href="../resources/img/smc.png" />
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <link rel="icon" type="image/png" href="<?= asset('resources/img/csnk-icon.png') ?>">
-</head>
 
-<body class="bg-light">
-
-  <!-- ✅ Reusable Navbar (old behavior preserved) -->
-  <?php include __DIR__ . '/navbar.php'; ?>
-
-  <!-- ===================== -->
-  <!-- Page Content Starts   -->
-  <!-- ===================== -->
+  <!-- Arabic font (used when RTL is active) -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ---------- Base / utilities applicable to this page ---------- */
+    /* ===========================
+       NAVY + GOLD THEME TOKENS
+       =========================== */
+    :root {
+      --smc-navy: #0B1F3A;
+      /* deep navy */
+      --smc-navy-2: #132A4A;
+      /* secondary navy */
+      --smc-navy-3: #1B355C;
+      /* accent navy */
+      --smc-navy-ink: #16243B;
+      /* readable navy text */
+      --smc-gold: #FFD84D;
+      /* gold accent */
+      --soft-bg: #f5f8ff;
+      /* page background sections */
+      --soft-border: #e6ecf5;
+      /* soft border */
+      --shadow: 0 12px 28px rgba(11, 31, 58, .12);
+      --r-out: 1.25rem;
+      --r-in: 1rem;
+
+      /* Optional subtle accent */
+      --accent-red: #CE1126;
+      /* used minimally for emphasis */
+      --accent-red-2: #B10F20;
+    }
+
+    html,
+    body {
+      background: #f8f9fb;
+      color: var(--smc-navy-ink);
+    }
+
     img,
     svg {
       max-width: 100%;
       height: auto;
     }
 
-    /* ---------- HERO SECTION ---------- */
+    /* RTL language mode */
+    body.rtl {
+      direction: rtl;
+      font-family: "Noto Kufi Arabic", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+
+    .rtl .flip-rtl {
+      transform: scaleX(-1);
+    }
+
+    .text-navy {
+      color: var(--smc-navy) !important;
+    }
+
+    .text-muted-navy {
+      color: #6f7e96 !important;
+    }
+
+    .border-soft {
+      border: 1px solid var(--soft-border);
+      border-radius: var(--r-in);
+    }
+
+    .shadow-soft {
+      box-shadow: 0 10px 24px rgba(13, 29, 54, .08);
+    }
+
+    .badge-soft {
+      background: #fff;
+      border: 1px solid rgba(11, 31, 58, .12);
+      color: var(--smc-navy);
+      border-radius: 999px;
+      padding: .45rem .8rem;
+      font-weight: 700;
+    }
+
+    .badge-gold {
+      background: var(--smc-gold);
+      color: var(--smc-navy);
+      border-radius: 999px;
+      padding: .45rem .8rem;
+      font-weight: 800;
+    }
+
+    .btn-navy {
+      background: linear-gradient(180deg, var(--smc-navy-3), var(--smc-navy));
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(11, 31, 58, .22);
+    }
+
+    .btn-navy:hover {
+      filter: brightness(1.03);
+      color: #fff;
+    }
+
+    .btn-gold {
+      background: linear-gradient(180deg, #ffe169, var(--smc-gold));
+      color: #18243b;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(255, 216, 77, .25);
+    }
+
+    .btn-gold:hover {
+      filter: brightness(1.03);
+      color: #18243b;
+    }
+
+    /* ===========================
+       Floating Language Toggle
+       =========================== */
+    .lang-toggle {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1040;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: #fff;
+      color: #B10F20;
+      border: 2px solid #B10F20;
+      border-radius: 999px;
+      padding: .4rem .9rem;
+      font-weight: 900;
+      box-shadow: 0 8px 22px rgba(206, 17, 38, .18), 0 1px 0 #fff inset;
+      cursor: pointer;
+    }
+
+    .lang-toggle .dot {
+      width: .5rem;
+      height: .5rem;
+      background: #CE1126;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ===========================
+       HERO
+       =========================== */
     .hero-section {
       background-color: #f8f9fb;
       position: relative;
@@ -223,18 +366,18 @@ $totalItems = count($contentItems);
     .hero-grid {
       opacity: .22;
       background-image:
-        linear-gradient(to right, rgba(0, 0, 0, .06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, .06) 1px, transparent 1px);
+        linear-gradient(to right, rgba(11, 31, 58, .08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(11, 31, 58, .08) 1px, transparent 1px);
       background-size: 32px 32px, 32px 32px;
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, .85) 40%, rgba(0, 0, 0, .55) 70%, rgba(0, 0, 0, 0) 100%);
     }
 
     .hero-gradient {
       background:
-        radial-gradient(900px 400px at 15% 35%, rgba(255, 159, 169, 0.88), rgba(220, 53, 69, 0) 60%),
-        radial-gradient(700px 350px at 80% 45%, rgba(17, 17, 17, .12), rgba(17, 17, 17, 0) 60%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .25) 60%, rgba(255, 84, 84, 0) 100%);
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 10%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
+        radial-gradient(900px 400px at 15% 35%, rgba(255, 216, 77, 0.25), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(700px 350px at 80% 45%, rgba(19, 42, 74, .10), rgba(19, 42, 74, 0) 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(240, 244, 255, .6) 60%, rgba(240, 244, 255, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .9) 12%, rgba(0, 0, 0, .95) 85%, rgba(0, 0, 0, 0) 100%);
     }
 
     .hero-section .container {
@@ -242,23 +385,12 @@ $totalItems = count($contentItems);
       z-index: 1;
     }
 
-    @media (min-width: 992px) {
-      .hero-section .display-4 {
-        font-size: 3rem;
-        line-height: 1.1;
+    @media (max-width: 575.98px) {
+      .hero-section {
+        overflow: visible !important;
       }
     }
 
-    .fade-swap {
-      transition: opacity .22s ease, transform .22s ease;
-    }
-
-    .is-swapping {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-
-    /* ---------- PILL BAR ---------- */
     .hero-pills-abs-wrapper {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -272,11 +404,9 @@ $totalItems = count($contentItems);
       align-items: center;
       padding: .5rem .6rem;
       border-radius: 999px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, .08);
-      overflow: visible;
-      flex-wrap: nowrap;
-      scroll-snap-type: x proximity;
+      box-shadow: 0 4px 15px rgba(11, 31, 58, .08);
       background: #fff;
+      scroll-snap-type: x proximity;
     }
 
     #heroPills .btn {
@@ -286,214 +416,12 @@ $totalItems = count($contentItems);
     }
 
     .hero-section .btn-light.active {
-      background: #111;
+      background: var(--smc-navy);
       color: #fff;
+      border: 0;
     }
 
-    .hero-visual {
-      display: flex;
-      justify-content: center;
-      position: relative;
-    }
-
-    /* ===== ENHANCED HERO IMAGE STYLES ===== */
-    .hero-image-container {
-      position: relative;
-      width: clamp(280px, 42vw, 540px);
-      padding: 20px;
-    }
-
-    /* Floating decorative shapes */
-    .hero-float-shape {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .hero-float-shape-1 {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
-      top: -10px;
-      right: 5%;
-      opacity: 0.7;
-      animation: floatPulse 4s ease-in-out infinite;
-    }
-
-    .hero-float-shape-2 {
-      width: 35px;
-      height: 35px;
-      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-      bottom: 15%;
-      left: -5%;
-      opacity: 0.6;
-      animation: floatPulse 5s ease-in-out infinite 0.5s;
-    }
-
-    .hero-float-shape-3 {
-      width: 25px;
-      height: 25px;
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-      top: 30%;
-      right: -8%;
-      opacity: 0.8;
-      animation: floatPulse 6s ease-in-out infinite 1s;
-    }
-
-    @keyframes floatPulse {
-
-      0%,
-      100% {
-        transform: translateY(0) scale(1);
-      }
-
-      50% {
-        transform: translateY(-12px) scale(1.05);
-      }
-    }
-
-    /* Layered frame effect */
-    .hero-frame {
-      position: relative;
-      border-radius: 20px;
-      background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
-      padding: 8px;
-      box-shadow:
-        0 25px 50px -12px rgba(0, 0, 0, 0.25),
-        0 0 0 1px rgba(255, 255, 255, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .hero-frame::before {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 22px;
-      background: linear-gradient(135deg, #ff6b6b, #ffa500, #4ecdc4, #a8edea);
-      z-index: -1;
-      opacity: 0.5;
-      filter: blur(8px);
-    }
-
-    .hero-image-wrap {
-      background: transparent;
-      border-radius: 14px;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    }
-
-    .hero-image-wrap img {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      transition: transform 0.5s ease;
-    }
-
-    /* Entrance animation */
-    .hero-image-wrap {
-      animation: heroImgEntrance 0.8s ease-out forwards;
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    @keyframes heroImgEntrance {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .hero-image-wrap:hover img {
-      transform: scale(1.03);
-    }
-
-    /* Corner accent */
-    .hero-corner-accent {
-      position: absolute;
-      bottom: -5px;
-      right: -5px;
-      width: 50px;
-      height: 50px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
-      border-radius: 0 0 14px 0;
-      z-index: 2;
-    }
-
-    .hero-corner-accent::after {
-      content: '';
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 12px;
-      height: 12px;
-      background: white;
-      border-radius: 50%;
-    }
-
-    @media (max-width: 575.98px) {
-      .hero-section {
-        overflow: visible !important;
-      }
-
-      .hero-title-wrap .display-4 {
-        font-size: 2rem;
-        line-height: 1.2;
-      }
-
-      .hero-lead-wrap .lead {
-        font-size: 1rem;
-      }
-
-      .hero-pills-abs-wrapper {
-        margin-bottom: .5rem;
-      }
-
-      .hero-pills-spacer {
-        height: 0;
-      }
-
-      .hero-image-container {
-        width: min(85vw, 420px);
-        padding: 15px;
-      }
-
-      .hero-float-shape-1 {
-        width: 45px;
-        height: 45px;
-      }
-
-      .hero-float-shape-2 {
-        width: 28px;
-        height: 28px;
-      }
-
-      .hero-float-shape-3 {
-        width: 20px;
-        height: 20px;
-      }
-    }
-
-    @media (max-width: 991.98px) {
-      .hero-image-container {
-        margin: 0 auto !important;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-
-      .hero-float-shape,
-      .hero-image-wrap {
-        animation: none !important;
-        transition: none !important;
-      }
-    }
-
-    /* ====================== */
-    /* Gallery with Category  */
-    /* ====================== */
+    /* Gallery CSS (dynamic) */
     .gallery-wrapper {
       position: relative;
     }
@@ -510,7 +438,6 @@ $totalItems = count($contentItems);
       position: relative;
     }
 
-    /* Swipe indicators (mobile/tablet only) */
     .gallery-swipe-indicators {
       display: none;
       position: absolute;
@@ -537,11 +464,10 @@ $totalItems = count($contentItems);
     }
 
     .swipe-dot.active {
-      background: #dc3545;
-      box-shadow: 0 0 4px rgba(220, 53, 69, 0.8);
+      background: var(--smc-navy);
+      box-shadow: 0 0 4px rgba(11, 31, 58, 0.8);
     }
 
-    /* Touch feedback arrows */
     .swipe-arrow {
       position: absolute;
       top: 50%;
@@ -640,7 +566,6 @@ $totalItems = count($contentItems);
       transform: scale(1.1);
     }
 
-    /* Overlay with title */
     .gallery-tile-overlay {
       position: absolute;
       inset: 0;
@@ -664,9 +589,8 @@ $totalItems = count($contentItems);
       margin: 0;
       transform: translateY(10px);
       transition: transform 0.3s ease;
-      line-clamp: 2;
-      -webkit-line-clamp: 2;
       display: -webkit-box;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -679,55 +603,6 @@ $totalItems = count($contentItems);
       display: none !important;
     }
 
-    /* View more indicator */
-    .gallery-view-more {
-      flex: 0 0 auto;
-      width: calc(50% - 8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      min-height: 180px;
-    }
-
-    @media (min-width: 576px) {
-      .gallery-view-more {
-        width: calc(33.333% - 11px);
-      }
-    }
-
-    @media (min-width: 992px) {
-      .gallery-view-more {
-        width: calc(25% - 12px);
-        flex: none;
-      }
-    }
-
-    .gallery-view-more:hover {
-      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .gallery-view-more-content {
-      text-align: center;
-      color: #6c757d;
-    }
-
-    .gallery-view-more-icon {
-      font-size: 2rem;
-      margin-bottom: 8px;
-    }
-
-    .gallery-view-more-text {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    /* Enhanced filter buttons */
     .gallery-filters-wrapper {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -741,7 +616,6 @@ $totalItems = count($contentItems);
 
     #galleryFilters {
       display: inline-flex;
-      flex-wrap: nowrap;
       gap: 8px;
       padding: 6px;
       background: #fff;
@@ -752,133 +626,27 @@ $totalItems = count($contentItems);
 
     .btn-outline-secondary {
       height: 42px;
-      width: auto;
       padding: 0 1.1rem;
       font-size: 0.9rem;
       font-weight: 600;
       border-radius: 999px;
       white-space: nowrap;
-      transition: all 0.25s ease;
+      transition: all 0.25s;
     }
 
     .btn-outline-secondary.active {
-      background: linear-gradient(135deg, #b42a00 0%, #d63318 100%);
+      background: linear-gradient(135deg, var(--smc-navy) 0%, var(--smc-navy-2) 100%);
       color: #fff;
-      border-color: #b42a00;
-      box-shadow: 0 4px 15px rgba(180, 42, 0, 0.3);
+      border-color: var(--smc-navy);
+      box-shadow: 0 4px 15px rgba(11, 31, 58, 0.3);
     }
 
     .btn-outline-secondary:hover:not(.active) {
       background: #f8f9fa;
-      color: #333;
+      color: var(--smc-navy-ink);
       border-color: #ccc;
     }
 
-    /* ====================== */
-    /* FINAL CTA: Hire Now!   */
-    /* ====================== */
-
-    .cta-hire {
-      background:
-        radial-gradient(800px 260px at 8% 5%, rgba(255, 170, 120, .18), rgba(255, 170, 120, 0) 60%),
-        radial-gradient(1000px 320px at 92% 110%, rgba(12, 32, 76, .08), rgba(12, 32, 76, 0) 60%),
-        linear-gradient(180deg, #ffffff 0%, #fbfcff 60%, #f7f9fc 100%);
-
-      border-radius: 20px;
-      padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3.5vw, 2rem);
-
-      box-shadow:
-        0 20px 40px rgba(13, 29, 54, .06),
-        0 1px 0 rgba(255, 255, 255, .6) inset;
-    }
-
-    .cta-row {
-      display: grid;
-      grid-template-columns: 1fr;
-      align-items: center;
-      gap: clamp(.75rem, 2vw, 1rem);
-    }
-
-    @media (min-width: 768px) {
-      .cta-row {
-        grid-template-columns: 1fr auto;
-      }
-    }
-
-    .cta-title {
-      font-weight: 800;
-      font-size: clamp(1.05rem, 2.1vw, 1.35rem);
-      color: #1b1d22;
-      margin: 0;
-      line-height: 1.35;
-    }
-
-    .cta-actions {
-      display: flex;
-      justify-content: flex-start;
-    }
-
-    @media (min-width: 768px) {
-      .cta-actions {
-        justify-content: flex-end;
-      }
-    }
-
-    .cta-btn {
-      --grad-a: #ff7a3d;
-      --grad-b: #ffb04a;
-      background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
-      color: #fff;
-      border: 0;
-      border-radius: 999px;
-      padding: .85rem 1.5rem;
-      font-weight: 700;
-      letter-spacing: .2px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: .6rem;
-      box-shadow: 0 12px 26px rgba(255, 122, 61, .28);
-      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
-      position: relative;
-      isolation: isolate;
-      white-space: nowrap;
-    }
-
-    .cta-btn:hover,
-    .cta-btn:focus {
-      transform: translateY(-1px);
-      box-shadow: 0 16px 34px rgba(255, 122, 61, .34);
-      filter: brightness(1.03);
-      color: #fff;
-    }
-
-    .cta-btn::after {
-      content: "✦ ✦ ✦";
-      font-size: .85rem;
-      color: #ffa95a;
-      position: absolute;
-      right: -2rem;
-      top: 50%;
-      transform: translateY(-50%);
-      opacity: .95;
-      pointer-events: none;
-    }
-
-    @media (max-width: 575.98px) {
-      .cta-btn::after {
-        right: -1.6rem;
-        font-size: .8rem;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .cta-btn {
-        transition: none !important;
-      }
-    }
-
-    /* ===== ENHANCED LIGHTBOX ===== */
     #lightboxModal .modal-dialog {
       max-width: 900px;
     }
@@ -914,7 +682,7 @@ $totalItems = count($contentItems);
       justify-content: center;
       opacity: 1;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
     #lightboxModal .btn-close:hover {
@@ -923,10 +691,10 @@ $totalItems = count($contentItems);
     }
 
     #lightboxModal .btn-close::after {
-      content: '\f00d';
+      content: '\\f00d';
       font-family: 'Font Awesome 6 Free';
       font-weight: 900;
-      color: #333;
+      color: var(--smc-navy-ink);
       font-size: 1rem;
     }
 
@@ -957,12 +725,12 @@ $totalItems = count($contentItems);
     #lbNext {
       background: rgba(255, 255, 255, 0.95);
       border: none;
-      color: #333;
+      color: var(--smc-navy-ink);
       padding: 12px 20px;
       border-radius: 999px;
       font-weight: 600;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
     #lbPrev:hover,
@@ -976,7 +744,6 @@ $totalItems = count($contentItems);
       font-size: 0.9rem;
     }
 
-    /* Lightbox navigation arrows on image */
     .lightbox-nav-overlay {
       position: absolute;
       top: 50%;
@@ -990,7 +757,7 @@ $totalItems = count($contentItems);
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       z-index: 5;
     }
@@ -1009,7 +776,7 @@ $totalItems = count($contentItems);
     }
 
     .lightbox-nav-overlay i {
-      color: #333;
+      color: var(--smc-navy-ink);
       font-size: 1.2rem;
     }
 
@@ -1027,7 +794,65 @@ $totalItems = count($contentItems);
         right: 5px;
       }
     }
+
+    .training-gallery .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .training-gallery .btn-icon.btn-outline-secondary {
+      border-color: var(--soft-border);
+      color: var(--smc-navy);
+    }
+
+    .training-gallery .btn-icon.btn-outline-secondary:hover {
+      background: var(--smc-navy);
+      color: #fff;
+    }
+
+    .cta-wrap {
+      background: radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%), radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%), linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
+      border-radius: var(--r-out);
+      box-shadow: 0 16px 36px rgba(11, 31, 58, .08), 0 1px 0 rgba(255, 255, 255, .6) inset;
+    }
+
+    .is-swapping {
+      opacity: .25;
+      transition: opacity .15s ease;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
   </style>
+</head>
+
+<body class="bg-light">
+
+  <!-- Floating Translate Button (EN ⇄ AR) -->
+  <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
+    title="Translate to Arabic">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="langToggleLabel">AR</span>
+  </button>
+
+  <!-- ✅ Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
+
+  <!-- ===================== -->
+  <!-- Page Content Starts   -->
+  <!-- ===================== -->
 
   <!-- HERO -->
   <section class="hero-section">
@@ -1040,64 +865,66 @@ $totalItems = count($contentItems);
         <!-- LEFT: Text + pills -->
         <div class="col-12 col-lg-6">
           <div class="hero-title-wrap mb-2">
-            <h1 id="heroTitle" class="display-4 fw-bold mb-0 fade-swap">
-              Get to know CSNK Manpower Agency
+            <h1 id="heroTitle" class="display-5 fw-bold mb-0 text-navy">
+              Get to know SMC Manpower Agency Philippines Co.
             </h1>
           </div>
 
           <div class="hero-lead-wrap mb-4">
-            <p id="heroLead" class="lead text-black-100 mb-0 fade-swap">
-              Clear, honest and customer‑first guidance. We connect families with properly
-              screened domestic workers through safe and compliant processes.
+            <p id="heroLead" class="lead text-muted-navy mb-0">
+              Clear, honest, and customer‑first guidance. We connect employers and families with properly
+              screened Filipino workers through safe and compliant processes.
             </p>
           </div>
 
           <!-- Pills -->
-          <div class="hero-pills-abs-wrapper">
+          <div class="hero-pills-abs-wrapper mb-3">
             <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
               aria-label="Hero options">
-
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
-                data-title="Get to know CSNK" data-lead="CSNK Manpower Agency is dedicated to providing families with reliable 
-                    and compassionate household assistance. Beyond offering quality domestic help, we 
-                    are a full‑service manpower agency committed to supporting and empowering Filipino 
-                    women by connecting them with safe, legitimate, and rewarding employment opportunities. 
-                    Through proper screening, guidance, and documentation, we ensure that every home receives 
-                    trustworthy service, while every applicant receives a fair chance to build a better future."
-                data-img="<?= asset('resources/img/overview2.png') ?>" data-img-alt="Overview image">
-                Overview
+                data-title="About SMC"
+                data-title-ar="نبذة عن SMC"
+                data-lead="SMC Manpower Agency Philippines Co. is a DMW-licensed, compliance-first recruitment agency connecting skilled Filipino talent with reputable employers. We prioritize transparent processes, lawful documentation, and respectful placements."
+                data-lead-ar="شركة SMC Manpower Agency Philippines Co. وكالة توظيف مرخصة من DMW تضع الامتثال أولاً، وتربط الكفاءات الفلبينية الماهرة بأصحاب العمل الموثوقين. نعطي الأولوية للشفافية، والإجراءات النظامية، والتوظيف باحترام."
+                data-img="../resources/img/hero1.jpg" data-img-alt="About SMC">
+                <span data-i18n="hero.pill_overview">Overview</span>
               </button>
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
-                data-title="Meet Founder of CSNK"
-                data-lead="CSNK was founded by Mr. Rogelio M. Lansang year 2010, driven by the mission to provide safe, legitimate and rewarding opportunities to Filipino women, carried out with integrity."
-                data-img="<?= asset('resources/img/MrRog.png') ?>" data-img-alt="Founder image">
-                Founder
+                data-title="Meet Our Founder"
+                data-title-ar="تعرّف على مؤسسنا"
+                data-lead="Founded by Mr. Rogelio M. Lansang—an OFW in the Middle East for ten years (1989–2004)—SMC's mission is to create fair and dignified employment opportunities that uplift Filipino families."
+                data-lead-ar="أسسها السيد روجيليو إم. لانسنج، وهو عامل فلبيني سابق في الشرق الأوسط لمدة عشر سنوات (1989-2004). وتتمثل رسالة SMC في توفير فرص عمل عادلة وكريمة ترفع من مستوى الأسر الفلبينية."
+                data-img="../resources/img/MrRog.png" data-img-alt="Founder">
+                <span data-i18n="hero.pill_founder">Founder</span>
+              </button>
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Mission & Vision"
+                data-title-ar="الرسالة والرؤية"
+                data-lead="Our mission is ethical recruitment and worker welfare; our vision is to be a trusted bridge between global employers and Filipino talent—built on integrity, safety, and service."
+                data-lead-ar="رسالتنا هي التوظيف الأخلاقي ورعاية العامل، ورؤيتنا أن نكون الجسر الموثوق بين أصحاب العمل حول العالم والكفاءات الفلبينية، على أساس النزاهة والسلامة والخدمة."
+                data-img="../resources/img/overview3.png" data-img-alt="Mission & Vision">
+                <span data-i18n="hero.pill_mv">Mission & Vision</span>
               </button>
             </div>
           </div>
 
-          <!-- Spacer (kept for layout compatibility) -->
-          <div class="hero-pills-spacer"></div>
+          <div class="d-flex gap-2">
+            <a href="./applicant.php" class="btn btn-navy">
+              <span data-i18n="hero.btn_apply">View Applicants</span> <i class="fa-solid fa-users ms-2"></i>
+            </a>
+            <a href="#compliance" class="btn btn-gold">
+              <span data-i18n="hero.btn_compliance">Our Compliance</span> <i class="fa-solid fa-shield-halved ms-2"></i>
+            </a>
+          </div>
         </div>
 
-        <!-- RIGHT: Enhanced Image -->
+        <!-- RIGHT: Image -->
         <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-container">
-            <!-- Floating decorative shapes -->
-            <div class="hero-float-shape hero-float-shape-1"></div>
-            <div class="hero-float-shape hero-float-shape-2"></div>
-            <div class="hero-float-shape hero-float-shape-3"></div>
-
-            <!-- Layered frame -->
-            <div class="hero-frame">
-              <div class="hero-image-wrap rounded-4">
-                <img id="heroImg" src="<?= asset('resources/img/hero1.jpg') ?>" alt="Hero visual"
-                  class="img-fluid fade-swap">
-                <!-- Corner accent -->
-                <div class="hero-corner-accent"></div>
-              </div>
-            </div>
+          <div class="hero-image-wrap rounded-4"
+            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(280px, 40vw, 560px);">
+            <img id="heroImg" src="../resources/img/hero2.jpg" alt="Hero visual" class="img-fluid">
           </div>
         </div>
 
@@ -1105,24 +932,84 @@ $totalItems = count($contentItems);
     </div>
   </section>
 
-  <!-- ===================== -->
-  <!-- Training Gallery      -->
-  <!-- ===================== -->
+  <!-- TRUST STRIP -->
+  <section class="py-3">
+    <div class="container trust-strip text-center">
+      <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
+        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW
+            Licensed</span></div>
+        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span
+            data-i18n="trust.compliance">Compliance‑First</span></div>
+        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical
+            Recruitment</span></div>
+        <div class="item"><i class="fa-solid fa-comments text-navy"></i> <span data-i18n="trust.support">Clear
+            Communication</span></div>
+        <div class="item"><i class="fa-solid fa-people-roof text-navy"></i> <span data-i18n="trust.welfare">Worker
+            Welfare</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSION • VISION • VALUES -->
+  <section class="py-5">
+    <div class="container">
+      <div class="text-center mb-4">
+        <span class="badge-soft" data-i18n="mv.badge">Who We Are</span>
+        <h2 class="fw-bold text-navy mt-2" data-i18n="mv.title">Mission • Vision • Values</h2>
+        <p class="text-muted mb-0" data-i18n="mv.subtitle">Built on integrity, clarity, and service—serving employers
+          and supporting Filipino talent.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-bullseye text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.mission_t">Mission</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.mission_d">Deliver ethical, compliant, and dignified
+                  recruitment with clear guidance from screening to deployment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-eye text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.vision_t">Vision</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.vision_d">Be a trusted bridge between Bahrain & global
+                  employers and Filipino workers—recognized for integrity and results.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-scale-balanced text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.values_t">Values</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous
+                  improvement.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINING GALLERY (Dynamic - Step 4 Complete) -->
   <section id="training-gallery" class="training-gallery py-5 bg-white">
     <div class="container">
-
-      <!-- Header + Category Filters -->
       <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
-        <h2 class="h1 fw-bold mb-0">Trainings</h2>
-
-        <!-- Category buttons (CMS-driven) -->
-        <div id="galleryFilters" class="btn-group flex-wrap" role="group" aria-label="Gallery categories">
-          <!-- ALL -->
+        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
+        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
+          aria-label="Gallery categories">
           <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
-            All
-            <?= $totalItems > 0 ? " ($totalItems)" : "" ?>
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
           </button>
-
           <?php if (!empty($categories)): ?>
             <?php foreach ($categories as $cat):
               $catName = $cat['name'] ?? 'Category';
@@ -1131,15 +1018,13 @@ $totalItems = count($contentItems);
               ?>
               <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
                 aria-pressed="false">
-                <?= htmlspecialchars($catName) ?>
-                <?= $cnt > 0 ? " ($cnt)" : "" ?>
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
             <?php endforeach; ?>
           <?php endif; ?>
         </div>
       </div>
 
-      <!-- Thumbnails Grid (CMS-driven) with row limiter -->
       <div class="gallery-wrapper">
         <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
           <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
@@ -1158,16 +1043,23 @@ $totalItems = count($contentItems);
                   aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
                   <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
                   <div class="gallery-tile-overlay">
-                    <p class="gallery-tile-title">
-                      <?= htmlspecialchars($itemTitle) ?>
-                    </p>
+                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
                   </div>
                 </button>
               <?php endforeach; ?>
+            <?php elseif ($bahrainBuId): ?>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-info">
+                  <i class="fas fa-images me-2"></i>No gallery content yet.
+                  <a href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>" target="_blank">
+                    Upload in Admin → Content Management → SMC/Bahrain
+                  </a>
+                </div>
+              </div>
             <?php else: ?>
-              <div class="col-12">
-                <div class="text-center py-5 bg-white rounded-3 border">
-                  <p class="text-muted mb-0">Contents and Blogs soon!</p>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle me-2"></i>Gallery coming soon! Business Unit setup required.
                 </div>
               </div>
             <?php endif; ?>
@@ -1177,347 +1069,99 @@ $totalItems = count($contentItems);
     </div>
   </section>
 
-  <!-- ====================== -->
-  <!-- FINAL CTA: Hire Now!  -->
-  <!-- ====================== -->
+  <!-- FINAL CTA -->
   <section class="py-4 py-md-5">
     <div class="container">
-      <div class="cta-hire">
-        <div class="cta-row">
-          <p class="cta-title">
-            Hire reliable, properly screened Household Service Workers (HSWs)
-            for your home.
+      <div class="p-3 p-md-4 cta-wrap">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem" data-i18n="final.cta">
+            Hire reliable, properly screened Filipino Skilled Workers.
           </p>
-
-          <div class="cta-actions">
-            <a class="cta-btn" href="./applicant.php" aria-label="Hire Now">
-              Hire Now! <i class="fa-solid fa-arrow-right"></i>
-            </a>
-          </div>
+          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
+            <span data-i18n="final.btn">Hire Now!</span> <i class="fa-solid fa-arrow-right ms-1 flip-rtl"></i>
+          </a>
         </div>
-      </div><!-- /.cta-hire -->
+      </div>
     </div>
   </section>
 
-  <!-- ===================== -->
-  <!-- Page Content Ends     -->
-  <!-- ===================== -->
-
-  <!-- ✅ Reusable Footer -->
+  <!-- Footer -->
   <?php include __DIR__ . '/footer.php'; ?>
 
-  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Policy Modals Handler (kept as in your old page) -->
-  <script src="<?= asset('resources/js/policy-modals.js') ?>"></script>
 
-  <!-- Page‑local: Hero pill swapper (unchanged from old) -->
+  <!-- Counters, Hero, Gallery JS, i18n (existing + new gallery) -->
   <script>
+    // Counters (existing)
+    (function () { const counters = document.querySelectorAll('.counter-number'); const animate = el => { const target = +el.getAttribute('data-count'); const duration = 1200; const start = performance.now(); const step = now => { const p = Math.min((now - start) / duration, 1); el.textContent = Math.floor(p * target).toLocaleString(); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }; let triggered = false; const onScroll = () => { if (triggered) return; const rect = counters[0]?.getBoundingClientRect(); if (rect?.top < window.innerHeight) { counters.forEach(animate); triggered = true; window.removeEventListener('scroll', onScroll); } }; window.addEventListener('scroll', onScroll); onScroll(); })();
+
+    // Hero swap
     (function () {
       const container = document.getElementById('heroPills');
       const titleEl = document.getElementById('heroTitle');
       const leadEl = document.getElementById('heroLead');
       const imgEl = document.getElementById('heroImg');
-
       if (!container || !titleEl || !leadEl || !imgEl) return;
 
-      const pills = container.querySelectorAll('.btn');
-      const swapEls = [titleEl, leadEl, imgEl];
+      const pills = Array.from(container.querySelectorAll('.btn'));
+
+      function getLang() {
+        return localStorage.getItem('lang_about') || 'en';
+      }
 
       function setActive(btn) {
-        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+        pills.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
       }
 
       function applyFrom(btn) {
-        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
-        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
+        const lang = getLang();
+        const title = lang === 'ar' ? (btn.dataset.titleAr || btn.dataset.title) : btn.dataset.title;
+        const lead = lang === 'ar' ? (btn.dataset.leadAr || btn.dataset.lead) : btn.dataset.lead;
+
+        if (title) titleEl.textContent = title;
+        if (lead) leadEl.textContent = lead;
         if (btn.dataset.img) {
           imgEl.src = btn.dataset.img;
-          imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image';
+          imgEl.alt = btn.dataset.imgAlt || title || 'Hero image';
         }
       }
 
       function swap(btn) {
         setActive(btn);
-        swapEls.forEach(el => el.classList.add('is-swapping'));
+        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
         setTimeout(() => {
           applyFrom(btn);
-          swapEls.forEach(el => el.classList.remove('is-swapping'));
+          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
         }, 150);
       }
 
       pills.forEach(btn => {
         btn.addEventListener('click', () => swap(btn));
         btn.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
-        });
-      });
-
-      const init = container.querySelector('.btn.active') || pills[0];
-      if (init) applyFrom(init);
-    })();
-  </script>
-
-  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev + Row Limiter -->
-  <script>
-    (function () {
-      const grid = document.getElementById('galleryGrid');
-      const filters = document.getElementById('galleryFilters');
-      const scrollContainer = document.getElementById('galleryScrollContainer');
-      if (!grid || !filters) return;
-
-      const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
-
-      // Configuration: Max rows to show (4 rows - shows rest of pictures)
-      const MAX_VISIBLE_ROWS = 4;
-      const COLS_DESKTOP = 4;
-      const COLS_TABLET = 3;
-      const COLS_MOBILE = 2;
-
-      let currentFilter = 'all';
-      let hasMoreItems = false;
-      let hiddenTiles = [];
-
-      // Function to get columns based on viewport
-      function getColumns() {
-        if (window.innerWidth >= 992) return COLS_DESKTOP;
-        if (window.innerWidth >= 576) return COLS_TABLET;
-        return COLS_MOBILE;
-      }
-
-      // Function to calculate max visible items
-      function getMaxVisible() {
-        return MAX_VISIBLE_ROWS * getColumns();
-      }
-
-      // Function to update gallery based on filter and row limit
-      function updateGallery() {
-        const maxVisible = getMaxVisible();
-
-        // Get visible tiles based on filter
-        const filteredTiles = tiles.map((tile, idx) => ({
-          tile,
-          cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(),
-          originalIndex: idx
-        })).filter(item => {
-          if (currentFilter === 'all') return true;
-          return item.cat === currentFilter;
-        });
-
-        // Reset all tiles first
-        tiles.forEach(t => t.classList.remove('limited'));
-
-        if (filteredTiles.length > maxVisible) {
-          // Hide tiles beyond the limit
-          filteredTiles.forEach((item, idx) => {
-            if (idx >= maxVisible) {
-              item.tile.classList.add('limited');
-              item.tile.hidden = true;
-            } else {
-              item.tile.classList.remove('limited');
-              item.tile.hidden = false;
-            }
-          });
-          hasMoreItems = true;
-        } else {
-          // Show all if within limit
-          filteredTiles.forEach(item => {
-            item.tile.classList.remove('limited');
-            item.tile.hidden = false;
-          });
-          hasMoreItems = false;
-        }
-
-        // Update scroll container behavior
-        if (scrollContainer) {
-          if (hasMoreItems && window.innerWidth < 992) {
-            scrollContainer.style.overflowX = 'auto';
-            scrollContainer.style.overflowY = 'hidden';
-          } else {
-            scrollContainer.style.overflowX = '';
-            scrollContainer.style.overflowY = '';
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            swap(btn);
           }
-        }
-      }
-
-      // Filter buttons (All + dynamic categories)
-      filters.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-filter]');
-        if (!btn) return;
-
-        currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
-
-        // Update active state
-        filters.querySelectorAll('button[data-filter]').forEach(b => {
-          b.classList.toggle('active', b === btn);
-          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
         });
-
-        // Show/hide tiles based on slug (strict match)
-        tiles.forEach(tile => {
-          const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
-          const show = (currentFilter === 'all') ? true : (cat === currentFilter);
-          tile.hidden = !show;
-        });
-
-        // Apply row limiter
-        updateGallery();
       });
 
-      // Handle window resize
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(updateGallery, 150);
-      });
+      window.updateHeroContentForLanguage = function () {
+        const active = container.querySelector('.btn.active') || pills[0];
+        if (active) applyFrom(active);
+      };
 
-      // Initial setup
-      updateGallery();
-
-      // Enhanced swipe logic (preserves existing)
-      if (scrollContainer.dataset.indicators === 'true') {
-        const indicators = document.getElementById('swipeIndicators');
-        const leftBtn = document.getElementById('swipeLeft');
-        const rightBtn = document.getElementById('swipeRight');
-
-        function updateIndicators() {
-          const scrollLeft = scrollContainer.scrollLeft;
-          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
-          const index = Math.round(progress * (tiles.length - 1)) || 0;
-
-          // Dots
-          indicators.innerHTML = '';
-          for (let i = 0; i < Math.min(5, tiles.length); i++) {
-            const dot = document.createElement('div');
-            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
-            dot.addEventListener('click', () => {
-              const tileWidth = tiles[i]?.offsetWidth || 0;
-              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
-            });
-            indicators.appendChild(dot);
-          }
-        }
-
-        // Scroll events
-        let scrollTimeout;
-        scrollContainer.addEventListener('scroll', () => {
-          scrollContainer.classList.add('swiping');
-          updateIndicators();
-          clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(() => {
-            scrollContainer.classList.remove('swiping');
-          }, 1500);
-        }, { passive: true });
-
-        // Arrow buttons (touch only)
-        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
-        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
-
-        // Snap to tile edges on scroll end
-        scrollContainer.addEventListener('scrollend', () => {
-          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
-          const scrollLeft = scrollContainer.scrollLeft;
-          const closest = tilesInView.reduce((prev, curr) =>
-            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
-          );
-          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
-        });
-
-        updateIndicators();
-      }
-
-      // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
-      // Create modal HTML once
-      const modalHtml = `
-        <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content bg-transparent border-0">
-              <div class="modal-body p-0 d-flex flex-column align-items-center">
-                <button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-
-                <div class="w-100 text-center pt-4 pb-3">
-                  <img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;">
-                </div>
-
-                <div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3">
-                  <button id="lbPrev" class="btn btn-dark rounded-pill px-3">
-                    <i class="fa-solid fa-chevron-left me-1"></i> Prev
-                  </button>
-                  <div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div>
-                  <button id="lbNext" class="btn btn-dark rounded-pill px-3">
-                    Next <i class="fa-solid fa-chevron-right ms-1"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>`;
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-      const modalEl = document.getElementById('lightboxModal');
-      const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
-
-      const imgEl = document.getElementById('lightboxImg');
-      const captionEl = document.getElementById('lightboxCaption');
-      const btnPrev = document.getElementById('lbPrev');
-      const btnNext = document.getElementById('lbNext');
-
-      let visible = [];   // currently visible tiles
-      let index = 0;      // current index in visible
-
-      function collectVisible() {
-        visible = tiles.filter(el => !el.hidden);
-      }
-
-      function showAt(i) {
-        if (!visible.length) return;
-        index = (i + visible.length) % visible.length;
-        const tile = visible[index];
-        const src = tile.getAttribute('data-full');
-        const caption = tile.getAttribute('data-caption') || '';
-        imgEl.src = src;
-        imgEl.alt = caption || 'Training image';
-        captionEl.textContent = caption;
-      }
-
-      // Open lightbox on tile click
-      grid.addEventListener('click', (e) => {
-        const tile = e.target.closest('.gallery-tile');
-        if (!tile) return;
-
-        collectVisible();
-        if (!visible.length) return;
-
-        // set index to the clicked one
-        index = visible.indexOf(tile);
-        if (index < 0) index = 0;
-
-        showAt(index);
-        bsModal.show();
-      });
-
-      btnPrev.addEventListener('click', () => showAt(index - 1));
-      btnNext.addEventListener('click', () => showAt(index + 1));
-
-      // Keyboard navigation when modal is open
-      modalEl.addEventListener('shown.bs.modal', () => {
-        function onKey(e) {
-          if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); }
-          if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); }
-        }
-        document.addEventListener('keydown', onKey);
-        modalEl.addEventListener('hidden.bs.modal', () => {
-          document.removeEventListener('keydown', onKey);
-          imgEl.src = '';
-        }, { once: true });
-      });
+      window.updateHeroContentForLanguage();
     })();
-  </script>
 
+    // Dynamic Gallery JS (from Turkey - complete)
+    (function () { const grid = document.getElementById('galleryGrid'); const filters = document.getElementById('galleryFilters'); const scrollContainer = document.getElementById('galleryScrollContainer'); if (!grid || !filters) return; const tiles = Array.from(grid.querySelectorAll('.gallery-tile')); const MAX_VISIBLE_ROWS = 4; const COLS_DESKTOP = 4, COLS_TABLET = 3, COLS_MOBILE = 2; let currentFilter = 'all'; function getColumns() { return window.innerWidth >= 992 ? COLS_DESKTOP : window.innerWidth >= 576 ? COLS_TABLET : COLS_MOBILE; } function getMaxVisible() { return MAX_VISIBLE_ROWS * getColumns(); } function updateGallery() { const maxVisible = getMaxVisible(); const filteredTiles = tiles.map((tile, idx) => ({ tile, cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(), originalIndex: idx })).filter(item => currentFilter === 'all' || item.cat === currentFilter); tiles.forEach(t => t.classList.remove('limited')); if (filteredTiles.length > maxVisible) { filteredTiles.forEach((item, idx) => { if (idx >= maxVisible) { item.tile.classList.add('limited'); item.tile.hidden = true; } else { item.tile.classList.remove('limited'); item.tile.hidden = false; } }); } else { filteredTiles.forEach(item => { item.tile.classList.remove('limited'); item.tile.hidden = false; }); } if (scrollContainer) { if (filteredTiles.length > maxVisible && window.innerWidth < 992) { scrollContainer.style.overflowX = 'auto'; scrollContainer.style.overflowY = 'hidden'; } else { scrollContainer.style.overflowX = ''; scrollContainer.style.overflowY = ''; } } } filters.addEventListener('click', e => { const btn = e.target.closest('button[data-filter]'); if (!btn) return; currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase(); filters.querySelectorAll('button[data-filter]').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); tiles.forEach(tile => { const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(); tile.hidden = !(currentFilter === 'all' || cat === currentFilter); }); updateGallery(); }); let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(updateGallery, 150); }); updateGallery(); if (scrollContainer.dataset.indicators === 'true') { const indicators = document.getElementById('swipeIndicators'); const leftBtn = document.getElementById('swipeLeft'); const rightBtn = document.getElementById('swipeRight'); function updateIndicators() { const scrollLeft = scrollContainer.scrollLeft; const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth; const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth)); const index = Math.round(progress * (tiles.length - 1)) || 0; indicators.innerHTML = ''; for (let i = 0; i < Math.min(5, tiles.length); i++) { const dot = document.createElement('div'); dot.className = `swipe-dot ${i === index ? 'active' : ''}`; dot.addEventListener('click', () => { const tileWidth = tiles[i]?.offsetWidth || 0; scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' }); }); indicators.appendChild(dot); } } let scrollTimeout; scrollContainer.addEventListener('scroll', () => { scrollContainer.classList.add('swiping'); updateIndicators(); clearTimeout(scrollTimeout); scrollTimeout = setTimeout(() => { scrollContainer.classList.remove('swiping'); }, 1500); }, { passive: true }); leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' })); rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' })); scrollContainer.addEventListener('scrollend', () => { const tilesInView = Array.from(tiles).filter(t => !t.hidden); const scrollLeft = scrollContainer.scrollLeft; const closest = tilesInView.reduce((prev, curr) => Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev); scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' }); }); updateIndicators(); } // Lightbox (Bootstrap Modal) const modalHtml = `<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-transparent border-0"><div class="modal-body p-0 d-flex flex-column align-items-center"><button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button><div class="w-100 text-center pt-4 pb-3"><img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;"></div><div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3"><button id="lbPrev" class="btn btn-dark rounded-pill px-3"><i class="fa-solid fa-chevron-left me-1"></i> Prev</button><div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div><button id="lbNext" class="btn btn-dark rounded-pill px-3">Next <i class="fa-solid fa-chevron-right ms-1"></i></button></div></div></div></div></div>`; document.body.insertAdjacentHTML('beforeend', modalHtml); const modalEl = document.getElementById('lightboxModal'); const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true }); const imgEl = document.getElementById('lightboxImg'); const captionEl = document.getElementById('lightboxCaption'); const btnPrev = document.getElementById('lbPrev'); const btnNext = document.getElementById('lbNext'); let visible = []; let index = 0; function collectVisible() { visible = tiles.filter(el => !el.hidden); } function showAt(i) { if (!visible.length) return; index = (i + visible.length) % visible.length; const tile = visible[index]; const src = tile.getAttribute('data-full'); const caption = tile.getAttribute('data-caption') || ''; imgEl.src = src; imgEl.alt = caption || 'Training image'; captionEl.textContent = caption; } grid.addEventListener('click', e => { const tile = e.target.closest('.gallery-tile'); if (!tile) return; collectVisible(); if (!visible.length) return; index = visible.indexOf(tile); if (index < 0) index = 0; showAt(index); bsModal.show(); }); btnPrev.addEventListener('click', () => showAt(index - 1)); btnNext.addEventListener('click', () => showAt(index + 1)); modalEl.addEventListener('shown.bs.modal', () => { function onKey(e) { if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); } if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); } } document.addEventListener('keydown', onKey); modalEl.addEventListener('hidden.bs.modal', () => { document.removeEventListener('keydown', onKey); imgEl.src = ''; }, { once: true }); }); // i18n (existing) const I18N_AR = { "hero.title": "تعرّف على شركة إس إم سي لتوظيف العمالة الفلبينية", "hero.lead": "إرشاد واضح وصادق يضع العميل أولاً. نصل بين أصحاب العمل والأسر والعمال الفلبينيين بعد فرز مناسب عبر عمليات آمنة ومتوافقة.", "hero.pill_overview": "نظرة عامة", "hero.pill_founder": "المؤسس", "hero.pill_mv": "الرسالة والرؤية", "hero.btn_apply": "عرض المتقدمين", "hero.btn_compliance": "امتثالنا", "trust.dmw": "ترخيص DMW", "trust.compliance": "الالتزام أولاً", "trust.ethical": "توظيف أخلاقي", "trust.support": "تواصل واضح", "trust.welfare": "رفاهية العامل", "mv.badge": "من نحن", "mv.title": "الرسالة • الرؤية • القيم", "mv.subtitle": "نبني عملنا على النزاهة والوضوح والخدمة—لنخدم أصحاب العمل وندعم المواهب الفلبينية.", "mv.mission_t": "رسالتنا", "mv.mission_d": "تقديم توظيف أخلاقي ومتوافق مع القوانين وبكرامة، مع إرشاد واضح من الفرز حتى الإيفاد.", "mv.vision_t": "رؤيتنا", "mv.vision_d": "أن نكون الجسر الموثوق بين أصحاب العمل في البحرين والعالم والعمال الفلبينيين—على أساس النزاهة والنتائج.", "mv.values_t": "قيمنا", "mv.values_d": "النزاهة والاحترام والسلامة والوضوح والتحسين المستمر.", "comp.badge": "التراخيص والامتثال", "comp.title": "نضع السلامة والالتزام والوضوح أولاً", "comp.l1": "<strong>ترخيص DMW:</strong> DMW-062-LB-03232023-R (سابقاً POEA)", "comp.l2": "<strong>توثيق شفاف:</strong> عقود وهويات وتصاريح وفحوصات طبية", "comp.l3": "<strong>توظيف أخلاقي:</strong> بلا رسوم غير قانونية؛ كرامة واحترام للعاملين", "comp.l4": "<strong>مواءمة للأنظمة:</strong> إجراءات البحرين والفلبين", "comp.note": "تختلف الجداول والمتطلبات حسب الدور والحالة.", "comp.docs_title": "تدفق المستندات القياسي", "comp.d1": "طلب التوظيف وتفاصيل الدور", "comp.d2": "الاستقطاب والفرز والمقابلات", "comp.d3": "العقود وفحوصات الامتثال", "comp.d4": "إجراءات التأشيرة والسفر", "comp.d5": "الإيفاد ودعم الاندماج", "comp.cta": "تحدث مع فريق الامتثال", "lead.badge": "القيادة", "lead.title": "خبرة وغاية تقودنا", "lead.subtitle": "رسالة يقودها احتكاك حقيقي بالعمل في الخارج وعقلية خدمية.", "lead.name": "السيد روجيليو إم. لانسنج", "lead.role": "المؤسس والرئيس", "lead.bio": "عمل كعامل فلبيني في الشرق الأوسط لمدة عشر سنوات (1989–2004). أسس إس إم سي لفتح فرص عمل عادلة وكريمة للفلبينيين وتوظيف موثوق للعملاء. مع نهج يضع الإنسان أولاً وعقلية امتثال، تواصل SMC تقديم خدمة مسؤولة.", "time.badge": "محطات", "time.title": "قصتنا بإيجاز", "time.m1": "تأسيس إدارة مجموعة شركات SMC", "time.m2": "تأسيس شركة إس إم سي للتوظيف", "time.m3": "تأكيد ترخيص DMW رقم DMW-062-LB-03232023-R", "quality.title": "سياسة الجودة", "quality.q1": "متطلبات وجداول زمنية واضحة", "quality.q2": "توثيق وفرز مُتحقق منه", "quality.q3": "تواصل شفاف وتحديثات", "quality.q4": "تحسين مستمر وتغذية راجعة", "ethics.title": "مدونة الأخلاقيات", "ethics.e1": "الاحترام والكرامة لكل المرشحين", "ethics.e2": "شروط عادلة وقانونية—بدون رسوم غير قانونية", "ethics.e3": "خصوصية البيانات وسريتها", "ethics.e4": "عدم التسامح مع أي سلوك مسيء", "metrics.yos": "سنوات الخدمة", "metrics.compliance": "% تركيز على الامتثال", "metrics.screened": "+ مرشحون مُفرزون", "metrics.response": "ساعات للاستجابة", "gallery.title": "المعرض", "final.cta": "وظّف عمالة فلبينية ماهرة ومُفرزة بعناية.", "final.btn": "وظّف الآن!" }; const i18nNodes = Array.from(document.querySelectorAll('[data-i18n]')); i18nNodes.forEach(n => { n.dataset.en = n.innerHTML; }); const setLang = lang => { const html = document.documentElement; const body = document.body; const toggle = document.getElementById('langToggle'); const label = document.getElementById('langToggleLabel'); if (lang === 'ar') { html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl'); body.classList.add('rtl'); i18nNodes.forEach(n => { const key = n.getAttribute('data-i18n'); const val = I18N_AR[key]; if (typeof val === 'string') n.innerHTML = val; }); toggle.setAttribute('aria-pressed', 'true'); toggle.setAttribute('title', 'Return to English'); label.textContent = 'EN'; } else { html.setAttribute('lang', 'en'); html.setAttribute('dir', 'ltr'); body.classList.remove('rtl'); i18nNodes.forEach(n => { n.innerHTML = n.dataset.en; }); toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('title', 'Translate to Arabic'); label.textContent = 'AR'; } localStorage.setItem('lang_about', lang); }; const saved = localStorage.getItem('lang_about') || 'en'; setLang(saved); document.getElementById('langToggle').addEventListener('click', () => { const current = localStorage.getItem('lang_about') || 'en'; setLang(current === 'en' ? 'ar' : 'en'); });
+  </script>
 </body>
 
 </html>
