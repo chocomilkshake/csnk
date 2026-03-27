@@ -1282,6 +1282,26 @@ function renderAvatar($picture, $client_name)
                         <h6 class="text-slate-700 fw-semibold mb-2">Pending</h6>
                         <div class="h2 fw-bold text-slate-900 mb-1" id="pendingVal">₱
                 </div>
+
+                <div class="modal-footer justify-content-center d-none" id="actionModalFooter">
+                    <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            
+    </div>
+</div>
+<!-- ================= GLOBAL ACTION MODAL ================= -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content action-modal">
+>>>>>>> 235a54802af57f4d780274015e0b84896be86e42
+
+            <div class="modal-header">
                 <h6 class="modal-title fw-semibold" id="actionModalTitle">
                     Processing
                 </h6>
