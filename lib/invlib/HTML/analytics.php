@@ -8,6 +8,24 @@
     <section class="kpis-section">
         <h2>Executive Summary</h2>
 
+        <div class="kpis-grid">
+            <div class="kpi-card">
+                <h3>Gross Total</h3>
+                <div class="kpi-value">
+                    <?= formatCurrency($summary['gross'] ?? 0) ?>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Net Revenue</h3>
+                <div class="kpi-value">
+                    <?= formatCurrency($summary['net'] ?? 0) ?>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Pending</h3>
+                <div class="kpi-value danger">
                     <?= formatCurrency($summary['pending'] ?? 0) ?>
                 </div>
             </div>
