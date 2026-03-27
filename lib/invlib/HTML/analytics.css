@@ -29,7 +29,36 @@ body {
   padding-bottom: 25px;
 }
 
+.company-logo img,
+.company-badge img {
+  max-height: 110px;
+}
 
+.report-title {
+
+}
+
+.summary-table .success {
+  color: #059669;
+  font-weight: bold;
+}
+
+.summary-table .danger {
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* ================= FOOTER ================= */
+.report-footer {
+  border-top: 2px solid #e5e7eb;
+  padding-top: 25px;
+  text-align: center;
+  font-size: 10pt;
+  color: #9ca3af;
+  margin-top: 40px;
+}
+
+/* ================= PRINT ================= */
 @media print {
   .report {
     padding: 20px;
