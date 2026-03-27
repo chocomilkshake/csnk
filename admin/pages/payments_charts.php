@@ -17,6 +17,14 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
+if (strtolower((string) ($_SESSION['admin_role'] ?? $_SESSION['role'] ?? 'employee')) === 'employee') {
+    http_response_code(403);
+    echo json_encode([
+        'error' => 'Forbidden'
+    ]);
+    exit;
+}
+
 // ================= INCLUDES =================
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
