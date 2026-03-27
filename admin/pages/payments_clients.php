@@ -1271,6 +1271,33 @@ function renderAvatar($picture, $client_name)
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
 vh;">
 
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Period</th>
+                                <th class="text-center">Days</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pv-items"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">TOTAL:</td>
+                                <td class="text-end fw-bold text-success">
+                                    ₱<span id="pv-total">0.00</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="inv-declaration">
+                        I declare that all information contained in this invoice are certified true and correct.
+                    </div>
+
+                    <div class="inv-payment">
+                        <strong>Issued By:</strong> <span id="issued-by">CSNK Agency</span>
+                    </div>
 
                 </div>
             </div>
