@@ -6,6 +6,26 @@
       background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
       padding: 8px;
       box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .hero-frame::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #ff6b6b, #ffa500, #4ecdc4, #a8edea);
+      z-index: -1;
+      opacity: 0.5;
+      filter: blur(8px);
+    }
+
+    .hero-image-wrap {
+      background: transparent;
+      border-radius: 14px;
+      overflow: hidden;
       position: relative;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     }
