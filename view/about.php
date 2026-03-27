@@ -103,7 +103,25 @@ function slugify(string $text): string
  * Helper: build content image URL (uploaded via admin)
  * Your admin uploads are under: /csnk/admin/uploads/<path>
  */
-      $stmt->bind_param("i", $csnkBuId);    .hero-grid,
+      $stmt->bind_param("i", $csnkBuId);
+
+  <style>
+    /* ---------- Base / utilities applicable to this page ---------- */
+    img,
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ---------- HERO SECTION ---------- */
+    .hero-section {
+      background-color: #f8f9fb;
+      position: relative;
+      isolation: isolate;
+      padding: clamp(2rem, 6vw, 5rem) 0;
+    }
+
+    .hero-grid,
     .hero-gradient {
       position: absolute;
       inset: 0;
