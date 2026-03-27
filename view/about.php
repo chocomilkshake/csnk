@@ -103,6 +103,34 @@ function slugify(string $text): string
  * Helper: build content image URL (uploaded via admin)
  * Your admin uploads are under: /csnk/admin/uploads/<path>
  */
+function getContentImageUrl($path)
+{
+  global $BASE;
+  if (empty($path))
+    return '';
+  $base = rtrim($BASE, '/');
+  return $base . '/admin/uploads/' . ltrim($path, '/');
+}
+
+/* ---------- Fetch data (CMS) ---------- */
+$conn = getDbConnection();
+$csnkBuId = null;
+$categories = [];
+$contentItems = [];
+$categoryCounts = [];
+$totalItems = 0;
+
+if ($conn) {
+  $csnkBuId = getCSNKBusinessUnitId($conn);
+
+  if ($csnkBuId) {
+    // Categories (active only, CSNK BU)
+    $sql = "SELECT id, name, business_unit_id, is_active, display_order
+            FROM content_categories
+            WHERE business_unit_id = ? AND is_active = 1
+            ORDER BY display_order ASC, id ASC";
+    $stmt = $conn->prepare($sql);
+    if ($stmt) {
       $stmt->bind_param("i", $csnkBuId);
       $stmt->execute();
       $result = $stmt->get_result();
