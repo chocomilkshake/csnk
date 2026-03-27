@@ -4,6 +4,22 @@
  * SAFE VERSION – JSON & PDF compatible
  */
 
+
+        <div class="charts-grid">
+
+            <figure class="chart-item">
+                <img src="<?= h($chart_status ?? '') ?>" class="chart-img" alt="Payment Status">
+                <figcaption>Payment Status Distribution</figcaption>
+            </figure>
+
+            <figure class="chart-item">
+                <img src="<?= h($chart_methods ?? '') ?>" class="chart-img" alt="Payment Methods">
+                <figcaption>Revenue by Payment Method</figcaption>
+            </figure>
+
+            <figure class="chart-item full">
+                <img src="<?= h($chart_trend ?? '') ?>" class="chart-img" alt="Revenue Trend">
+                <figcaption>Revenue Trend Over Time</figcaption>
             </figure>
 
             <figure class="chart-item">
