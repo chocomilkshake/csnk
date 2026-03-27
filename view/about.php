@@ -113,6 +113,24 @@ function slugify(string $text): string
     }
   }
   mysqli_close($conn);
+}
+
+// Category counts
+$categoryCounts = [];
+foreach ($contentItems as $itm) {
+  $slug = slugify($itm['category_name'] ?? '');
+  $categoryCounts[$slug] = ($categoryCounts[$slug] ?? 0) + 1;
+}
+$totalItems = count($contentItems);
+?>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CSNK Manpower Agency</title>
 
