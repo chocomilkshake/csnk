@@ -8,6 +8,24 @@
 
     @media (min-width: 992px) {
       .hero-section .display-4 {
+        font-size: 3rem;
+        line-height: 1.1;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #heroPills {
+      display: inline-flex;
+      width: max-content;
+      max-width: 100%;
+      gap: .5rem;
+      align-items: center;
+      padding: .5rem .6rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, .08);
+      overflow: visible;
+      flex-wrap: nowrap;
+      scroll-snap-type: x proximity;
       background: #fff;
     }
 
