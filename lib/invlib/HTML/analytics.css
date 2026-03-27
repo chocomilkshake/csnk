@@ -35,7 +35,39 @@ body {
 }
 
 .report-title {
+  text-align: center;
+  flex: 1;
+  margin: 0 20px;
+}
 
+.report-title h1 {
+  font-size: 28pt;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: #374151;
+}
+
+/* ================= TABLE ================= */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 10pt;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summary-table th {
+  background: #f8fafc;
+  text-transform: uppercase;
+  font-size: 9pt;
+  color: #1e293b;
 }
 
 .summary-table .success {
