@@ -1282,6 +1282,28 @@ function renderAvatar($picture, $client_name)
                         <h6 class="text-slate-700 fw-semibold mb-2">Pending</h6>
                         <div class="h2 fw-bold text-slate-900 mb-1" id="pendingVal">₱
                 </div>oter">
+                <button id="actionModalOK" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">
+                    OK
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================= CONFIRM RESEND MODAL ================= -->
+<div class="modal fade" id="confirmResendModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-envelope-paper me-2"></i>
+                    Resend Invoice
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
             <div class="modal-body text-center">
                 <p class="mb-0">
                     Are you sure you want to resend the invoice email to the client?
