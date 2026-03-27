@@ -6,6 +6,26 @@
 
 /* ===============================
    HELPER FUNCTIONS (MUST BE FIRST)
+================================ */
+function h($str) {
+    return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
+}
+
+function formatCurrency($val) {
+    return '₱' . number_format((float)$val, 2);
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Analytics Report</title>
+
+    <style>
+        <?= file_get_contents(__DIR__ . '/analytics.css'); ?>
+    </style>
+</head>
 <body>
 
 <div class="report">
