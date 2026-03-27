@@ -1062,7 +1062,7 @@ function renderAvatar($picture, $client_name)
 
         <!-- LEFT: TAB BUTTONS -->
         <div class="invoice-tabs">
-<a href="payments_clients.php?tab=CSNK"
+            <a href="payments_clients.php?tab=CSNK" onclick="localStorage.removeItem('dashboardTab')"
                 class="tab-btn tab-csnk <?= $activeTab === 'CSNK' ? '' : 'inactive' ?>">
                 CSNK
             </a>
@@ -2380,10 +2380,12 @@ function renderAvatar($picture, $client_name)
 
     
     // Enhanced Tab Management with Persistence, Lazy Charts, Smooth Transitions
-    let chartInstances = {}; // Store chart instances for lazy destroy/create
+    let chartInstances = {};
+    let analyticsCache = {}; // ✅ STORE DATA PER COMPANY (CSNK / SMC)
+    let lastCompanyLoaded = null;
     let currentCompanyTab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
-let isChartsLoaded = false;
-let chartLoadPromise = null; // Prevent concurrent loads
+    let isChartsLoaded = false;
+    let chartLoadPromise = null; // Prevent concurrent loads
     
     // Update URL with dashboard tab state
     function updateDashboardTabURL(targetId) {
@@ -2425,16 +2427,14 @@ let chartLoadPromise = null; // Prevent concurrent loads
         const targetPane = document.getElementById(activeTabId);
         
         // Set initial active state
-// Reset dashboard tabs to ANALYTICS first
-document.querySelector('#analytics-tab-btn').classList.add('active');
-document.querySelector('#analytics-tab').classList.add('show', 'active');
-document.querySelector('#clients-tab-btn').classList.remove('active');
-document.querySelector('#clients-tab').classList.remove('show', 'active');
+        // Reset dashboard tabs to ANALYTICS first
+        document.querySelector('#analytics-tab-btn').classList.add('active');
+        document.querySelector('#analytics-tab').classList.add('show', 'active');
+        document.querySelector('#clients-tab-btn').classList.remove('active');
+        document.querySelector('#clients-tab').classList.remove('show', 'active');
         
-        // Initial chart load if analytics active
-        if (activeTabId === 'analytics-tab') {
-            loadAndRenderCharts();
-        }
+        // ✅ PRELOAD ANALYTICS IMMEDIATELY (NO WAIT)
+        loadAndRenderCharts();
         
         // PDF Export Button Handler
         document.getElementById('exportPdfBtn')?.addEventListener('click', exportAnalyticsPdf);
@@ -2619,7 +2619,6 @@ document.addEventListener('shown.bs.tab', function (e) {
                 }
                 toggleSearchSection(false);
             } else {
-                destroyAllCharts();
                 toggleSearchSection(true);
             }
         });
@@ -2630,30 +2629,42 @@ document.addEventListener('shown.bs.tab', function (e) {
     }
     
     // Lazy chart loading with destroy/create
-    function loadAndRenderCharts() {
+    function loadAndRenderCharts(forceReload = false) {
         const tab = new URLSearchParams(window.location.search).get('tab') || 'CSNK';
+
+        // ✅ USE CACHE IF ALREADY LOADED
+        if (!forceReload && analyticsCache[tab]) {
+            console.log('✅ Using cached analytics for', tab);
+            renderCharts(analyticsCache[tab]);
+            return Promise.resolve();
+        }
+
         const cacheBust = Date.now();
 
         return fetch(`payments_charts.php?company=${tab}&cb=${cacheBust}`, {
             cache: 'no-cache'
         })
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if (!data || Object.keys(data).length === 0 || data.error) {
-                showNoDataCharts();
-                return;
-            }
-            renderCharts(data);
-        })
-        .catch(err => {
-            console.error('Chart load error:', err);
-            showNoDataCharts();
-        });
-    }
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (!data || data.error) {
+                    showNoDataCharts();
+                    return;
+                }
 
+                // ✅ SAVE TO CACHE
+                analyticsCache[tab] = data;
+                lastCompanyLoaded = tab;
+
+                renderCharts(data);
+            })
+            .catch(err => {
+                console.error('Chart load error:', err);
+                showNoDataCharts();
+            });
+    }
     
     function destroyAllCharts() {
         Object.values(chartInstances).forEach(chart => {
@@ -2664,7 +2675,6 @@ document.addEventListener('shown.bs.tab', function (e) {
 
 function renderCharts(data) {
 
-    destroyAllCharts(); // ✅ CLEAR OLD CHARTS FIRST
     chartInstances = {}; // ✅ RESET STORAGE
     
     // Populate summary cards first (safe even with empty data)
