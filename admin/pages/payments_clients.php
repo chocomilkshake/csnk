@@ -1269,7 +1269,30 @@ function renderAvatar($picture, $client_name)
                     <div class="card border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 backdrop-blur-sm border-emerald-200/50 p-5 rounded-3xl text-center h-100">
                         <div class="mb-2">
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
-vh;">
+
+                        <div class="col-md-4 text-end">
+                            <div id="historyInvoiceCount" class="fw-bold" style="font-size:1.3rem;color:#2563eb;">
+                                0 Invoices
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEARCH -->
+                <div class="px-5 py-3 border-bottom">
+                    <div class="position-relative">
+                        <input id="modalSearch" type="text" class="form-control ps-5"
+                            placeholder="Search invoice number, date, status…"
+                            style="border-radius:14px;border:1px solid #e5e7eb;">
+                        <button id="modalSearchClear" class="position-absolute end-0 top-50 translate-middle-y me-3"
+                            style="border:none;background:none;color:#9ca3af;font-size:1.2rem;cursor:pointer;display:none;">×</button>
+                        <i class="bi bi-search position-absolute"
+                            style="left:16px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+                    </div>
+                </div>
+
+                <!-- TABLE -->
+                <div class="table-responsive" style="max-height:65vh;">
                     <table class="table mb-0 align-middle">
                         <thead class="sticky-top" style="background:#f8fafc;">
                             <tr>
