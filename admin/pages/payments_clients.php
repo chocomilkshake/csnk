@@ -1271,6 +1271,28 @@ function renderAvatar($picture, $client_name)
                             <i class="bi bi-graph-up fs-2 text-emerald-600 opacity-90"></i>
 vh;">
                     <table class="table mb-0 align-middle">
+                        <thead class="sticky-top" style="background:#f8fafc;">
+                            <tr>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================= VIEW MODAL ================= -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+
+    <div class="modal-dialog modal-l modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    📄 <span id="modal-company">CSNK</span> Invoice Preview
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
                 <div class="invoice-preview-paper">
 
                     <!-- HEADER -->
