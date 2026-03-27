@@ -4,6 +4,26 @@
  * SAFE VERSION – JSON & PDF compatible
  */
 
+    <!-- ================= SUMMARY KPI ================= -->
+    <section class="kpis-section">
+        <h2>Executive Summary</h2>
+
+                    <?= formatCurrency($summary['pending'] ?? 0) ?>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Applicants Billed</h3>
+                <div class="kpi-value">
+                    <?= (int)($kpis['applicants_billed'] ?? 0) ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= CHARTS ================= -->
+    <section class="charts-section">
+        <h2>Visual Analytics</h2>
 
         <div class="charts-grid">
 
