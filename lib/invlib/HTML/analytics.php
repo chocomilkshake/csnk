@@ -4,6 +4,20 @@
  * SAFE VERSION – JSON & PDF compatible
  */
 
+            </figure>
+
+            <figure class="chart-item">
+                <img src="<?= h($chart_timeline ?? '') ?>" class="chart-img" alt="Invoice Timeline">
+                <figcaption>Invoice Timeline (Paid vs Pending)</figcaption>
+            </figure>
+
+            <figure class="chart-item">
+                <img src="<?= h($chart_clients ?? '') ?>" class="chart-img" alt="Top Clients">
+                <figcaption>Top Clients by Revenue</figcaption>
+            </figure>
+
+        </div>
+    </section>
 
     <!-- ================= CLIENTS TABLE ================= -->
     <section class="table-section">
