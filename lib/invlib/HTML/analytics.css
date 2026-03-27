@@ -50,6 +50,34 @@ body {
 .report-title p {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.kpi-card h3 {
+  font-size: 12pt;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-size: 24pt;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.kpi-value.danger {
+  color: #dc2626;
+}
+
+/* ================= CHARTS ================= */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+}
+
 .chart-item {
   background: #fff;
   border-radius: 16px;
