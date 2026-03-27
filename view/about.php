@@ -11,6 +11,22 @@
       justify-content: center;
       position: relative;
     }
+
+    /* ===== ENHANCED HERO IMAGE STYLES ===== */
+    .hero-image-container {
+      position: relative;
+      width: clamp(280px, 42vw, 540px);
+      padding: 20px;
+    }
+
+    /* Floating decorative shapes */
+    .hero-float-shape {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
     .hero-float-shape-1 {
       width: 60px;
       height: 60px;
