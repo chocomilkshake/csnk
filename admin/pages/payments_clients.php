@@ -1289,6 +1289,28 @@ function renderAvatar($picture, $client_name)
                         <div class="mb-2">
                             <i class="bi bi-people fs-2 text-violet-600 opacity-90"></i>
                         </div>
+                            <i class="bi bi-clock-history fs-2 text-amber-600 opacity-90"></i>
+                        </div>
+                        <h6 class="text-slate-700 fw-semibold mb-2">Avg Days to Pay</h6>
+                        <div class="h2 fw-bold text-slate-900 mb-1" id="daysToPayVal">0</div>
+                        <small class="text-slate-500">days</small>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="fw-semibold mb-4 text-gray-900">
+                Client Invoice List
+            </h4>
+
+            <table class="w-full border border-gray-300">
+
+                <thead class="bg-gray-50 border border-gray-300">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-96">
+                            Client
+                        </th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">
+                            Invoices
                         </th>
                         <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-48">
                             Total Amount
