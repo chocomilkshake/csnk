@@ -5,6 +5,27 @@
       position: relative;
       background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
       padding: 8px;
+      box-shadow:
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .hero-image-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      transition: transform 0.5s ease;
+    }
+
+    /* Entrance animation */
+    .hero-image-wrap {
+      animation: heroImgEntrance 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    @keyframes heroImgEntrance {
       to {
         opacity: 1;
         transform: translateY(0);
