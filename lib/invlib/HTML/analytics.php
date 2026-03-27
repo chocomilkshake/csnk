@@ -1,6 +1,20 @@
 <?php
                     <th>Client</th>
                     <th>Total Invoices</th>
+                    <th>Total Amount</th>
+                    <th>Paid</th>
+                    <th>Unpaid</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach (($clients ?? []) as $client): ?>
+                <tr>
+                    <td><?= h($client['client_name'] ?? '') ?></td>
+                    <td><?= (int)($client['total_invoices'] ?? 0) ?></td>
+                    <td><?= formatCurrency($client['total_amount'] ?? 0) ?></td>
+                    <td class="success"><?= (int)($client['paid_count'] ?? 0) ?></td>
+                    <td class="danger"><?= (int)($client['unpaid_count'] ?? 0) ?></td>
+                </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
