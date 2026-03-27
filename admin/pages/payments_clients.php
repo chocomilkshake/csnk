@@ -1,5 +1,44 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once '../includes/config.php';
+require_once '../includes/Database.php';
+require_once '../includes/Auth.php';
+require_once '../includes/functions.php';
+
+$database = new Database();
+$auth = new Auth($database);
+$auth->requireLogin();
+$currentUser = $auth->getCurrentUser();
+$currentRole = strtolower((string) ($currentUser['role'] ?? 'employee'));
+
+if (!in_array($currentRole, ['admin', 'super_admin'], true)) {
+    $target = strtolower((string) ($currentUser['agency'] ?? $_SESSION['agency'] ?? '')) === 'smc'
+        ? 'turkey_dashboard.php'
+        : 'dashboard.php';
+
+    $isAjaxRequest =
+        isset($_GET['resend_invoice_email']) ||
+        isset($_GET['export_analytics_pdf']) ||
+        isset($_GET['get_client_history']) ||
+        (isset($_GET['action']) && $_GET['action'] === 'delete') ||
+        isset($_GET['get_invoice_applicants']);
+
+    if ($isAjaxRequest) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Forbidden'
+        ]);
+        exit;
+    }
+
+    setFlashMessage('error', 'You do not have permission to access client payments.');
+    header('Location: ' . $target);
+    exit;
+}
 require_once '../includes/invoice_mailer.php';
 
 
