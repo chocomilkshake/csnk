@@ -1273,6 +1273,24 @@ vh;">
                     <table class="table mb-0 align-middle">
                         <thead class="sticky-top" style="background:#f8fafc;">
                             <tr>
+                                <th class="ps-5 py-3 small text-uppercase">Invoice</th>
+                                <th class="py-3 small text-uppercase">Date</th>
+                                <th class="py-3 small text-uppercase">Due</th>
+                                <th class="py-3 small text-uppercase text-end">Amount</th>
+                                <th class="py-3 small text-uppercase text-center">Status</th>
+                                <th class="pe-5 py-3 small text-uppercase text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer px-5 py-3 border-0" style="background:#f8fafc;">
+                <button class="btn px-4 rounded-pill" data-bs-dismiss="modal" style="border:1px solid #cbd5e1;">
+                    Close
+                </button>
             </div>
 
         </div>
