@@ -846,7 +846,24 @@ if ($conn) {
               <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
                 data-title="Meet Founder of SMC"
                 data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
-                data-img="../==rid" class="gallery-grid">
+                data-img="../resources/img/MrRog.png" data-img-alt="Founder image">
+                Founder
+              </button>===utline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+                aria-pressed="false">
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
+              </button>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Thumbnails Grid (CMS-driven) with row limiter -->
+      <div class="gallery-wrapper">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
+          <div id="galleryGrid" class="gallery-grid">
             <?php if (!empty($contentItems)): ?>
               <?php foreach ($contentItems as $item):
                 $itemTitle = $item['title'] ?: 'Training image';
