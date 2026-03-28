@@ -853,7 +853,21 @@ if ($conn) {
                 <div class="text-center py-5 bg-light rounded-3 border">
                   <p class="text-muted mb-0">No content yet. <a
                       href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>">Upload in Admin → Content
-                      Management==
+                      Management → SMC/Turkey</a></p>
+                </div>
+              </div>
+            <?php else: ?>
+              <div class="col-12">
+                <div class="text-center py-5 bg-light rounded-3 border">
+                  <p class="text-muted mb-0">Gallery coming soon! Content setup required.</p>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- FINAL CTA: Hire Now! -->
   <section class="py-4 py-md-5">
