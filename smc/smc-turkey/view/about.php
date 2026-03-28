@@ -826,7 +826,43 @@ if ($conn) {
 
           <div class="hero-lead-wrap mb-4">
             <p id="heroLead" class="lead text-muted-navy mb-0">
-              Clear, honest and customer‑first guidance. We connec
+              Clear, honest and customer‑first guidance. We connect families with properly
+              screened domestic workers through safe and compliant processes.
+            </p>
+          </div>
+
+          <!-- Pills -->
+        tiles.forEach(t => t.classList.remove('limited'));
+
+        if (filteredTiles.length > maxVisible) {
+          // Hide tiles beyond the limit
+          filteredTiles.forEach((item, idx) => {
+            if (idx >= maxVisible) {
+              item.tile.classList.add('limited');
+              item.tile.hidden = true;
+            } else {
+              item.tile.classList.remove('limited');
+              item.tile.hidden = false;
+            }
+          });
+          hasMoreItems = true;
+        } else {
+          // Show all if within limit
+          filteredTiles.forEach(item => {
+            item.tile.classList.remove('limited');
+            item.tile.hidden = false;
+          });
+          hasMoreItems = false;
+        }
+
+        // Update scroll container behavior
+        if (scrollContainer) {
+          if (hasMoreItems && window.innerWidth < 992) {
+            scrollContainer.style.overflowX = 'auto';
+            scrollContainer.style.overflowY = 'hidden';
+          } else {
+            scrollContainer.style.overflowX = '';
+            scrollContainer.style.overflowY = '';
           }
         }
       }
