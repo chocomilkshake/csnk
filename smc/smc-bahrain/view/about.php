@@ -843,7 +843,28 @@ if ($conn) {
   <!-- Floating Translate Button (EN ⇄ AR) -->
   <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
     title="Translate to Arabic">
-    <span class="dot" aria-hidden="true"></span>ta-i18n="mv.values_t">Values</h5>
+    <span class="dot" aria-hidden="true"></span>
+    <span id="langToggleLabel">AR</span>
+  </button>
+      </div>
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-eye text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.vision_t">Vision</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.vision_d">Be a trusted bridge between Bahrain & global
+                  employers and Filipino workers—recognized for integrity and results.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-scale-balanced text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.values_t">Values</h5>
                 <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous
                   improvement.</p>
               </div>
