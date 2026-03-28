@@ -808,6 +808,14 @@ if ($conn) {
   <!-- Page Content Starts   -->
   <!-- ===================== -->
 
+  <!-- HERO -->
+  <section class="hero-section">
+    <!-- background layers -->
+    <div class="hero-grid"></div>
+    <div class="hero-gradient"></div>
+
+
+      const modalHtml = `
         <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content bg-transparent border-0">
