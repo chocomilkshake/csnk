@@ -824,7 +824,24 @@ if ($conn) {
             </h1>
           </div>
 
-  
+          <div class="hero-lead-wrap mb-4">
+   
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateGallery, 150);
+      });
+
+      // Initial setup
+      updateGallery();
+
+      // Enhanced swipe logic (preserves existing)
+      if (scrollContainer.dataset.indicators === 'true') {
+        const indicators = document.getElementById('swipeIndicators');
+        const leftBtn = document.getElementById('swipeLeft');
+        const rightBtn = document.getElementById('swipeRight');
+
+        function updateIndicators() {
           const scrollLeft = scrollContainer.scrollLeft;
           const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
           const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
