@@ -785,7 +785,14 @@ if ($conn) {
         width: 40px;
         height: 40px;
       }
-
+-live="polite" aria-pressed="false"
+    title="Translate to Arabic">
+    <span class="dot" aria-hidden="true"></span>ta-i18n="mv.values_t">Values</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.values_d">In
+      const container = document.getElementById('heroPills');
+      const titleEl = document.getElementById('heroTitle');
+      const leadEl = document.getElementById('heroLead');
+      const imgEl = document.getElementById('heroImg');
       if (!container || !titleEl || !leadEl || !imgEl) return;
 aset.title) : btn.dataset.title;
 </html>
