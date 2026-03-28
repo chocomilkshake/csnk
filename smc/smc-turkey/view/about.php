@@ -814,7 +814,46 @@ if ($conn) {
     <div class="hero-grid"></div>
     <div class="hero-gradient"></div>
 
+    <divnt('div');
+            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
+            dot.addEventListener('click', () => {
+              const tileWidth = tiles[i]?.offsetWidth || 0;
+              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
+            });
+            indicators.appendChild(dot);
+          }
+        }
 
+        // Scroll events
+        let scrollTimeout;
+        scrollContainer.addEventListener('scroll', () => {
+          scrollContainer.classList.add('swiping');
+          updateIndicators();
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            scrollContainer.classList.remove('swiping');
+          }, 1500);
+        }, { passive: true });
+
+        // Arrow buttons (touch only)
+        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+
+        // Snap to tile edges on scroll end
+        scrollContainer.addEventListener('scrollend', () => {
+          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
+          const scrollLeft = scrollContainer.scrollLeft;
+          const closest = tilesInView.reduce((prev, curr) =>
+            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
+          );
+          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
+        });
+
+        updateIndicators();
+      }
+
+      // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
+      // Create modal HTML once
       const modalHtml = `
         <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-xl">
