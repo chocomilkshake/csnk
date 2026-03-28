@@ -855,7 +855,22 @@ if ($conn) {
                 $catName = $item['category_name'] ?? '';
                 $catSlug = slugify($catName);
                 $imgUrl = getContentImageUrl($item['image_path']);
-                ?> SMC/Bahrain
+                ?>
+                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+                  <div class="gallery-tile-overlay">
+                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
+                  </div>
+                </button>
+              <?php endforeach; ?>
+            <?php elseif ($bahrainBuId): ?>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-info">
+                  <i class="fas fa-images me-2"></i>No gallery content yet.
+                  <a href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>" target="_blank">
+                    Upload in Admin → Content Management → SMC/Bahrain
                   </a>
                 </div>
               </div>
