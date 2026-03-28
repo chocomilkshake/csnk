@@ -848,6 +848,25 @@ if ($conn) {
                   improvement.</p>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINING GALLERY (Dynamic - Step 4 Complete) -->
+  <section id="training-gallery" class="training-gallery py-5 bg-white">
+    <div class="container">
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
+        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
+          aria-label="Gallery categories">
+          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
+          </button>
+          <?php if (!empty($categories)): ?>
+            <?php foreach ($categories as $cat):
+              $catName = $cat['name'] ?? 'Category';
               $catSlug = slugify($catName);
               $cnt = $categoryCounts[$catSlug] ?? 0;
               ?>
