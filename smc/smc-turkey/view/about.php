@@ -832,6 +832,34 @@ if ($conn) {
           </div>
 
           <!-- Pills -->
+          <div class="hero-pills-abs-wrapper">
+            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
+              aria-label="Hero options">
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
+                data-title="Get to know SMC"
+                data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
+                data-img="../resources/img/overview3.pngx with Next/Prev + Row Limiter -->
+  <script>
+    (function () {
+      const grid = document.getElementById('galleryGrid');
+      const filters = document.getElementById('galleryFilters');
+      const scrollContainer = document.getElementById('galleryScrollContainer');
+      if (!grid || !filters) return;
+=) {
+        const maxVisible = getMaxVisible();
+
+        // Get visible tiles based on filter
+        const filteredTiles = tiles.map((tile, idx) => ({
+          tile,
+          cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(),
+          originalIndex: idx
+        })).filter(item => {
+          if (currentFilter === 'all') return true;
+          return item.cat === currentFilter;
+        });
+
+        // Reset all tiles first
         tiles.forEach(t => t.classList.remove('limited'));
 
         if (filteredTiles.length > maxVisible) {
