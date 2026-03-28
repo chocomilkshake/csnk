@@ -850,7 +850,25 @@ if ($conn) {
       const leadEl = document.getElementById('heroLead');
       const imgEl = document.getElementById('heroImg');
       if (!container || !titleEl || !leadEl || !imgEl) return;
-aset.title) : btn.dataset.title;
+
+      const pills = Array.from(container.querySelectorAll('.btn'));
+
+      function getLang() {
+        return localStorage.getItem('lang_about') || 'en';
+      }
+
+      function setActive(btn) {
+        pills.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+      }
+
+      function applyFrom(btn) {
+        const lang = getLang();
+        const title = lang === 'ar' ? (btn.dataset.titleAr || btn.dataset.title) : btn.dataset.title;
         const lead = lang === 'ar' ? (btn.dataset.leadAr || btn.dataset.lead) : btn.dataset.lead;
 
         if (title) titleEl.textContent = title;
