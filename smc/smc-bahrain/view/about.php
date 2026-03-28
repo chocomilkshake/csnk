@@ -1,5 +1,8 @@
 <?php
 $page = 'about';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 /**
  * Determine Bahrain Business Unit ID dynamically
@@ -19,12 +22,12 @@ function getBahrainBusinessUnitId($conn)
 /**
  * PROJECT BASE URL
  */
-$BASE = '/csnk/smc/smc-bahrain';
+$BASE = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
 
 /**
  * Build absolute URL for assets
  */
-function asset(string $path): string
+function asset($path)
 {
   global $BASE;
   $path = '/' . ltrim($path, '/');
@@ -41,24 +44,37 @@ function getDbConnection()
   $dbPass = '';
   $dbName = 'csnk';
 
-  $configFile = __DIR__ . '/../../admin/includes/config.php';
-  if (file_exists($configFile)) {
-    include $configFile;
-    if (defined('DB_HOST'))
-      $dbHost = DB_HOST;
-    if (defined('DB_USER'))
-      $dbUser = DB_USER;
-    if (defined('DB_PASS'))
-      $dbPass = DB_PASS;
-    if (defined('DB_NAME'))
-      $dbName = DB_NAME;
+  mysqli_report(MYSQLI_REPORT_OFF);
+
+  $hosts = [$dbHost === 'localhost' ? '127.0.0.1' : $dbHost];
+
+  foreach (array_unique($hosts) as $host) {
+    $port = 3306;
+    $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+    if (!$socket) {
+      continue;
+    }
+    fclose($socket);
+
+    $conn = mysqli_init();
+    if (!$conn) {
+      continue;
+    }
+
+    mysqli_options($conn, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+    if (defined('MYSQLI_OPT_READ_TIMEOUT')) {
+      mysqli_options($conn, MYSQLI_OPT_READ_TIMEOUT, 1);
+    }
+
+    if (@mysqli_real_connect($conn, $host, $dbUser, $dbPass, $dbName, $port)) {
+      mysqli_set_charset($conn, 'utf8mb4');
+      return $conn;
+    }
+
+    mysqli_close($conn);
   }
 
-  $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
-  if (!$conn) {
-    return null;
-  }
-  return $conn;
+  return null;
 }
 
 /**
@@ -67,7 +83,9 @@ function getDbConnection()
 function slugify(string $text): string
 {
   $text = trim($text);
-  $text = mb_strtolower($text, 'UTF-8');
+  $text = function_exists('mb_strtolower')
+    ? mb_strtolower($text, 'UTF-8')
+    : strtolower($text);
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   if (function_exists('iconv')) {
     $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
@@ -105,15 +123,20 @@ if ($conn) {
 
   if ($bahrainBuId) {
     // Categories (active only, scoped to Bahrain BU)
-    $sql = "SELECT * FROM content_categories WHERE business_unit_id = ? AND is_active = 1 ORDER BY display_order ASC, id ASC";
+    $sql = "SELECT id, name, business_unit_id, is_active, display_order
+            FROM content_categories
+            WHERE business_unit_id = ? AND is_active = 1
+            ORDER BY display_order ASC, id ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $bahrainBuId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-      $categories[] = $row;
+    if ($stmt) {
+      $stmt->bind_param("i", $bahrainBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        $categories[] = $row;
+      }
+      $stmt->close();
     }
-    $stmt->close();
 
     // Content items (active only) + join category name
     $sql = "SELECT ci.*, cc.name as category_name
@@ -122,13 +145,15 @@ if ($conn) {
             WHERE ci.business_unit_id = ? AND ci.is_active = 1
             ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $bahrainBuId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-      $contentItems[] = $row;
+    if ($stmt) {
+      $stmt->bind_param("i", $bahrainBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        $contentItems[] = $row;
+      }
+      $stmt->close();
     }
-    $stmt->close();
 
     // Category counts
     foreach ($contentItems as $itm) {
@@ -760,317 +785,6 @@ if ($conn) {
         width: 40px;
         height: 40px;
       }
-
-      .lightbox-nav-overlay.prev {
-        left: 5px;
-      }
-
-      .lightbox-nav-overlay.next {
-        right: 5px;
-      }
-    }
-
-    .training-gallery .btn-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .training-gallery .btn-icon.btn-outline-secondary {
-      border-color: var(--soft-border);
-      color: var(--smc-navy);
-    }
-
-    .training-gallery .btn-icon.btn-outline-secondary:hover {
-      background: var(--smc-navy);
-      color: #fff;
-    }
-
-    .cta-wrap {
-      background: radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%), radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%), linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
-      border-radius: var(--r-out);
-      box-shadow: 0 16px 36px rgba(11, 31, 58, .08), 0 1px 0 rgba(255, 255, 255, .6) inset;
-    }
-
-    .is-swapping {
-      opacity: .25;
-      transition: opacity .15s ease;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      border: 0;
-    }
-  </style>
-</head>
-
-<body class="bg-light">
-
-  <!-- Floating Translate Button (EN ⇄ AR) -->
-  <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
-    title="Translate to Arabic">
-    <span class="dot" aria-hidden="true"></span>
-    <span id="langToggleLabel">AR</span>
-  </button>
-
-  <!-- ✅ Reusable Navbar -->
-  <?php include __DIR__ . '/navbar.php'; ?>
-
-  <!-- ===================== -->
-  <!-- Page Content Starts   -->
-  <!-- ===================== -->
-
-  <!-- HERO -->
-  <section class="hero-section">
-    <div class="hero-grid"></div>
-    <div class="hero-gradient"></div>
-
-    <div class="container">
-      <div class="row align-items-center g-4 g-lg-5">
-
-        <!-- LEFT: Text + pills -->
-        <div class="col-12 col-lg-6">
-          <div class="hero-title-wrap mb-2">
-            <h1 id="heroTitle" class="display-5 fw-bold mb-0 text-navy" data-i18n="hero.title">
-              Get to know SMC Manpower Agency Philippines Co.
-            </h1>
-          </div>
-
-          <div class="hero-lead-wrap mb-4">
-            <p id="heroLead" class="lead text-muted-navy mb-0" data-i18n="hero.lead">
-              Clear, honest, and customer‑first guidance. We connect employers and families with properly
-              screened Filipino workers through safe and compliant processes.
-            </p>
-          </div>
-
-          <!-- Pills -->
-          <div class="hero-pills-abs-wrapper mb-3">
-            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
-              aria-label="Hero options">
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
-                data-title="About SMC"
-                data-lead="SMC Manpower Agency Philippines Co. is a DMW-licensed, compliance-first recruitment agency connecting skilled Filipino talent with reputable employers. We prioritize transparent processes, lawful documentation, and respectful placements."
-                data-img="../resources/img/hero1.jpg" data-img-alt="About SMC">
-                <span data-i18n="hero.pill_overview">Overview</span>
-              </button>
-
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
-                data-title="Meet Our Founder"
-                data-lead="Founded by Mr. Rogelio M. Lansang—an OFW in the Middle East for ten years (1989–2004)—SMC's mission is to create fair and dignified employment opportunities that uplift Filipino families."
-                data-img="../resources/img/MrRog.png" data-img-alt="Founder">
-                <span data-i18n="hero.pill_founder">Founder</span>
-              </button>
-
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
-                data-title="Mission & Vision"
-                data-lead="Our mission is ethical recruitment and worker welfare; our vision is to be a trusted bridge between global employers and Filipino talent—built on integrity, safety, and service."
-                data-img="../resources/img/overview3.png" data-img-alt="Mission & Vision">
-                <span data-i18n="hero.pill_mv">Mission & Vision</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="d-flex gap-2">
-            <a href="./applicant.php" class="btn btn-navy">
-              <span data-i18n="hero.btn_apply">View Applicants</span> <i class="fa-solid fa-users ms-2"></i>
-            </a>
-            <a href="#compliance" class="btn btn-gold">
-              <span data-i18n="hero.btn_compliance">Our Compliance</span> <i class="fa-solid fa-shield-halved ms-2"></i>
-            </a>
-          </div>
-        </div>
-
-        <!-- RIGHT: Image -->
-        <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4"
-            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(280px, 40vw, 560px);">
-            <img id="heroImg" src="../resources/img/hero1.jpg" alt="Hero visual" class="img-fluid">
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- TRUST STRIP -->
-  <section class="py-3">
-    <div class="container trust-strip text-center">
-      <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
-        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW
-            Licensed</span></div>
-        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span
-            data-i18n="trust.compliance">Compliance‑First</span></div>
-        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical
-            Recruitment</span></div>
-        <div class="item"><i class="fa-solid fa-comments text-navy"></i> <span data-i18n="trust.support">Clear
-            Communication</span></div>
-        <div class="item"><i class="fa-solid fa-people-roof text-navy"></i> <span data-i18n="trust.welfare">Worker
-            Welfare</span></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- MISSION • VISION • VALUES -->
-  <section class="py-5">
-    <div class="container">
-      <div class="text-center mb-4">
-        <span class="badge-soft" data-i18n="mv.badge">Who We Are</span>
-        <h2 class="fw-bold text-navy mt-2" data-i18n="mv.title">Mission • Vision • Values</h2>
-        <p class="text-muted mb-0" data-i18n="mv.subtitle">Built on integrity, clarity, and service—serving employers
-          and supporting Filipino talent.</p>
-      </div>
-      <div class="row g-4">
-        <div class="col-lg-4">
-          <div class="panel p-4 h-100">
-            <div class="d-flex align-items-start gap-3">
-              <div class="icon-hex"><i class="fa-solid fa-bullseye text-navy"></i></div>
-              <div>
-                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.mission_t">Mission</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.mission_d">Deliver ethical, compliant, and dignified
-                  recruitment with clear guidance from screening to deployment.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="panel p-4 h-100">
-            <div class="d-flex align-items-start gap-3">
-              <div class="icon-hex"><i class="fa-solid fa-eye text-navy"></i></div>
-              <div>
-                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.vision_t">Vision</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.vision_d">Be a trusted bridge between Bahrain & global
-                  employers and Filipino workers—recognized for integrity and results.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="panel p-4 h-100">
-            <div class="d-flex align-items-start gap-3">
-              <div class="icon-hex"><i class="fa-solid fa-scale-balanced text-navy"></i></div>
-              <div>
-                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.values_t">Values</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous
-                  improvement.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TRAINING GALLERY (Dynamic - Step 4 Complete) -->
-  <section id="training-gallery" class="training-gallery py-5 bg-white">
-    <div class="container">
-      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
-        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
-        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
-          aria-label="Gallery categories">
-          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
-            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
-          </button>
-          <?php if (!empty($categories)): ?>
-            <?php foreach ($categories as $cat):
-              $catName = $cat['name'] ?? 'Category';
-              $catSlug = slugify($catName);
-              $cnt = $categoryCounts[$catSlug] ?? 0;
-              ?>
-              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
-                aria-pressed="false">
-                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
-              </button>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <div class="gallery-wrapper">
-        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
-          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
-          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
-          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
-          <div id="galleryGrid" class="gallery-grid">
-            <?php if (!empty($contentItems)): ?>
-              <?php foreach ($contentItems as $item):
-                $itemTitle = $item['title'] ?: 'Training image';
-                $catName = $item['category_name'] ?? '';
-                $catSlug = slugify($catName);
-                $imgUrl = getContentImageUrl($item['image_path']);
-                ?>
-                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
-                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
-                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
-                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
-                  <div class="gallery-tile-overlay">
-                    <p class="gallery-tile-title"><?= htmlspecialchars($itemTitle) ?></p>
-                  </div>
-                </button>
-              <?php endforeach; ?>
-            <?php elseif ($bahrainBuId): ?>
-              <div class="col-12 text-center py-5">
-                <div class="alert alert-info">
-                  <i class="fas fa-images me-2"></i>No gallery content yet.
-                  <a href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>" target="_blank">
-                    Upload in Admin → Content Management → SMC/Bahrain
-                  </a>
-                </div>
-              </div>
-            <?php else: ?>
-              <div class="col-12 text-center py-5">
-                <div class="alert alert-warning">
-                  <i class="fas fa-exclamation-triangle me-2"></i>Gallery coming soon! Business Unit setup required.
-                </div>
-              </div>
-            <?php endif; ?>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FINAL CTA -->
-  <section class="py-4 py-md-5">
-    <div class="container">
-      <div class="p-3 p-md-4 cta-wrap">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem" data-i18n="final.cta">
-            Hire reliable, properly screened Filipino Skilled Workers.
-          </p>
-          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
-            <span data-i18n="final.btn">Hire Now!</span> <i class="fa-solid fa-arrow-right ms-1 flip-rtl"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <?php include __DIR__ . '/footer.php'; ?>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Counters, Hero, Gallery JS, i18n (existing + new gallery) -->
-  <script>
-    // Counters (existing)
-    (function () { const counters = document.querySelectorAll('.counter-number'); const animate = el => { const target = +el.getAttribute('data-count'); const duration = 1200; const start = performance.now(); const step = now => { const p = Math.min((now - start) / duration, 1); el.textContent = Math.floor(p * target).toLocaleString(); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }; let triggered = false; const onScroll = () => { if (triggered) return; const rect = counters[0]?.getBoundingClientRect(); if (rect?.top < window.innerHeight) { counters.forEach(animate); triggered = true; window.removeEventListener('scroll', onScroll); } }; window.addEventListener('scroll', onScroll); onScroll(); })();
-
-    // Hero swap (existing)
-    (function () { const container = document.getElementById('heroPills'); const titleEl = document.getElementById('heroTitle'); const leadEl = document.getElementById('heroLead'); const imgEl = document.getElementById('heroImg'); if (!container || !titleEl || !leadEl || !imgEl) return; const pills = container.querySelectorAll('.btn'); function setActive(btn) { pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }); btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); } function applyFrom(btn) { if (btn.dataset.title) titleEl.textContent = btn.dataset.title; if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead; if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; } } function swap(btn) { setActive(btn);[titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping')); setTimeout(() => { applyFrom(btn);[titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping')); }, 150); } pills.forEach(btn => { btn.addEventListener('click', () => swap(btn)); btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); } }); }); const init = container.querySelector('.btn.active') || pills[0]; if (init) applyFrom(init); })();
-
-    // Dynamic Gallery JS (from Turkey - complete)
-    (function () { const grid = document.getElementById('galleryGrid'); const filters = document.getElementById('galleryFilters'); const scrollContainer = document.getElementById('galleryScrollContainer'); if (!grid || !filters) return; const tiles = Array.from(grid.querySelectorAll('.gallery-tile')); const MAX_VISIBLE_ROWS = 4; const COLS_DESKTOP = 4, COLS_TABLET = 3, COLS_MOBILE = 2; let currentFilter = 'all'; function getColumns() { return window.innerWidth >= 992 ? COLS_DESKTOP : window.innerWidth >= 576 ? COLS_TABLET : COLS_MOBILE; } function getMaxVisible() { return MAX_VISIBLE_ROWS * getColumns(); } function updateGallery() { const maxVisible = getMaxVisible(); const filteredTiles = tiles.map((tile, idx) => ({ tile, cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(), originalIndex: idx })).filter(item => currentFilter === 'all' || item.cat === currentFilter); tiles.forEach(t => t.classList.remove('limited')); if (filteredTiles.length > maxVisible) { filteredTiles.forEach((item, idx) => { if (idx >= maxVisible) { item.tile.classList.add('limited'); item.tile.hidden = true; } else { item.tile.classList.remove('limited'); item.tile.hidden = false; } }); } else { filteredTiles.forEach(item => { item.tile.classList.remove('limited'); item.tile.hidden = false; }); } if (scrollContainer) { if (filteredTiles.length > maxVisible && window.innerWidth < 992) { scrollContainer.style.overflowX = 'auto'; scrollContainer.style.overflowY = 'hidden'; } else { scrollContainer.style.overflowX = ''; scrollContainer.style.overflowY = ''; } } } filters.addEventListener('click', e => { const btn = e.target.closest('button[data-filter]'); if (!btn) return; currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase(); filters.querySelectorAll('button[data-filter]').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); tiles.forEach(tile => { const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(); tile.hidden = !(currentFilter === 'all' || cat === currentFilter); }); updateGallery(); }); let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(updateGallery, 150); }); updateGallery(); if (scrollContainer.dataset.indicators === 'true') { const indicators = document.getElementById('swipeIndicators'); const leftBtn = document.getElementById('swipeLeft'); const rightBtn = document.getElementById('swipeRight'); function updateIndicators() { const scrollLeft = scrollContainer.scrollLeft; const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth; const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth)); const index = Math.round(progress * (tiles.length - 1)) || 0; indicators.innerHTML = ''; for (let i = 0; i < Math.min(5, tiles.length); i++) { const dot = document.createElement('div'); dot.className = `swipe-dot ${i === index ? 'active' : ''}`; dot.addEventListener('click', () => { const tileWidth = tiles[i]?.offsetWidth || 0; scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' }); }); indicators.appendChild(dot); } } let scrollTimeout; scrollContainer.addEventListener('scroll', () => { scrollContainer.classList.add('swiping'); updateIndicators(); clearTimeout(scrollTimeout); scrollTimeout = setTimeout(() => { scrollContainer.classList.remove('swiping'); }, 1500); }, { passive: true }); leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' })); rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' })); scrollContainer.addEventListener('scrollend', () => { const tilesInView = Array.from(tiles).filter(t => !t.hidden); const scrollLeft = scrollContainer.scrollLeft; const closest = tilesInView.reduce((prev, curr) => Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev); scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' }); }); updateIndicators(); } // Lightbox (Bootstrap Modal) const modalHtml = `<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-transparent border-0"><div class="modal-body p-0 d-flex flex-column align-items-center"><button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button><div class="w-100 text-center pt-4 pb-3"><img id="lightboxImg" src="" alt="" class="img-fluid mx-auto rounded-3" style="max-height: calc(100vh - 10rem); object-fit: contain;"></div><div class="w-100 d-flex align-items-center justify-content-between px-3 pb-3"><button id="lbPrev" class="btn btn-dark rounded-pill px-3"><i class="fa-solid fa-chevron-left me-1"></i> Prev</button><div id="lightboxCaption" class="text-white px-3 py-2 rounded-pill bg-black bg-opacity-50 small"></div><button id="lbNext" class="btn btn-dark rounded-pill px-3">Next <i class="fa-solid fa-chevron-right ms-1"></i></button></div></div></div></div></div>`; document.body.insertAdjacentHTML('beforeend', modalHtml); const modalEl = document.getElementById('lightboxModal'); const bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true }); const imgEl = document.getElementById('lightboxImg'); const captionEl = document.getElementById('lightboxCaption'); const btnPrev = document.getElementById('lbPrev'); const btnNext = document.getElementById('lbNext'); let visible = []; let index = 0; function collectVisible() { visible = tiles.filter(el => !el.hidden); } function showAt(i) { if (!visible.length) return; index = (i + visible.length) % visible.length; const tile = visible[index]; const src = tile.getAttribute('data-full'); const caption = tile.getAttribute('data-caption') || ''; imgEl.src = src; imgEl.alt = caption || 'Training image'; captionEl.textContent = caption; } grid.addEventListener('click', e => { const tile = e.target.closest('.gallery-tile'); if (!tile) return; collectVisible(); if (!visible.length) return; index = visible.indexOf(tile); if (index < 0) index = 0; showAt(index); bsModal.show(); }); btnPrev.addEventListener('click', () => showAt(index - 1)); btnNext.addEventListener('click', () => showAt(index + 1)); modalEl.addEventListener('shown.bs.modal', () => { function onKey(e) { if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(index - 1); } if (e.key === 'ArrowRight') { e.preventDefault(); showAt(index + 1); } } document.addEventListener('keydown', onKey); modalEl.addEventListener('hidden.bs.modal', () => { document.removeEventListener('keydown', onKey); imgEl.src = ''; }, { once: true }); }); // i18n (existing) const I18N_AR = { "hero.title": "تعرّف على شركة إس إم سي لتوظيف العمالة الفلبينية", "hero.lead": "إرشاد واضح وصادق يضع العميل أولاً. نصل بين أصحاب العمل والأسر والعمال الفلبينيين بعد فرز مناسب عبر عمليات آمنة ومتوافقة.", "hero.pill_overview": "نظرة عامة", "hero.pill_founder": "المؤسس", "hero.pill_mv": "الرسالة والرؤية", "hero.btn_apply": "عرض المتقدمين", "hero.btn_compliance": "امتثالنا", "trust.dmw": "ترخيص DMW", "trust.compliance": "الالتزام أولاً", "trust.ethical": "توظيف أخلاقي", "trust.support": "تواصل واضح", "trust.welfare": "رفاهية العامل", "mv.badge": "من نحن", "mv.title": "الرسالة • الرؤية • القيم", "mv.subtitle": "نبني عملنا على النزاهة والوضوح والخدمة—لنخدم أصحاب العمل وندعم المواهب الفلبينية.", "mv.mission_t": "رسالتنا", "mv.mission_d": "تقديم توظيف أخلاقي ومتوافق مع القوانين وبكرامة، مع إرشاد واضح من الفرز حتى الإيفاد.", "mv.vision_t": "رؤيتنا", "mv.vision_d": "أن نكون الجسر الموثوق بين أصحاب العمل في البحرين والعالم والعمال الفلبينيين—على أساس النزاهة والنتائج.", "mv.values_t": "قيمنا", "mv.values_d": "النزاهة والاحترام والسلامة والوضوح والتحسين المستمر.", "comp.badge": "التراخيص والامتثال", "comp.title": "نضع السلامة والالتزام والوضوح أولاً", "comp.l1": "<strong>ترخيص DMW:</strong> DMW-062-LB-03232023-R (سابقاً POEA)", "comp.l2": "<strong>توثيق شفاف:</strong> عقود وهويات وتصاريح وفحوصات طبية", "comp.l3": "<strong>توظيف أخلاقي:</strong> بلا رسوم غير قانونية؛ كرامة واحترام للعاملين", "comp.l4": "<strong>مواءمة للأنظمة:</strong> إجراءات البحرين والفلبين", "comp.note": "تختلف الجداول والمتطلبات حسب الدور والحالة.", "comp.docs_title": "تدفق المستندات القياسي", "comp.d1": "طلب التوظيف وتفاصيل الدور", "comp.d2": "الاستقطاب والفرز والمقابلات", "comp.d3": "العقود وفحوصات الامتثال", "comp.d4": "إجراءات التأشيرة والسفر", "comp.d5": "الإيفاد ودعم الاندماج", "comp.cta": "تحدث مع فريق الامتثال", "lead.badge": "القيادة", "lead.title": "خبرة وغاية تقودنا", "lead.subtitle": "رسالة يقودها احتكاك حقيقي بالعمل في الخارج وعقلية خدمية.", "lead.name": "السيد روجيليو إم. لانسنج", "lead.role": "المؤسس والرئيس", "lead.bio": "عمل كعامل فلبيني في الشرق الأوسط لمدة عشر سنوات (1989–2004). أسس إس إم سي لفتح فرص عمل عادلة وكريمة للفلبينيين وتوظيف موثوق للعملاء. مع نهج يضع الإنسان أولاً وعقلية امتثال، تواصل SMC تقديم خدمة مسؤولة.", "time.badge": "محطات", "time.title": "قصتنا بإيجاز", "time.m1": "تأسيس إدارة مجموعة شركات SMC", "time.m2": "تأسيس شركة إس إم سي للتوظيف", "time.m3": "تأكيد ترخيص DMW رقم DMW-062-LB-03232023-R", "quality.title": "سياسة الجودة", "quality.q1": "متطلبات وجداول زمنية واضحة", "quality.q2": "توثيق وفرز مُتحقق منه", "quality.q3": "تواصل شفاف وتحديثات", "quality.q4": "تحسين مستمر وتغذية راجعة", "ethics.title": "مدونة الأخلاقيات", "ethics.e1": "الاحترام والكرامة لكل المرشحين", "ethics.e2": "شروط عادلة وقانونية—بدون رسوم غير قانونية", "ethics.e3": "خصوصية البيانات وسريتها", "ethics.e4": "عدم التسامح مع أي سلوك مسيء", "metrics.yos": "سنوات الخدمة", "metrics.compliance": "% تركيز على الامتثال", "metrics.screened": "+ مرشحون مُفرزون", "metrics.response": "ساعات للاستجابة", "gallery.title": "المعرض", "final.cta": "وظّف عمالة فلبينية ماهرة ومُفرزة بعناية.", "final.btn": "وظّف الآن!" }; const i18nNodes = Array.from(document.querySelectorAll('[data-i18n]')); i18nNodes.forEach(n => { n.dataset.en = n.innerHTML; }); const setLang = lang => { const html = document.documentElement; const body = document.body; const toggle = document.getElementById('langToggle'); const label = document.getElementById('langToggleLabel'); if (lang === 'ar') { html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl'); body.classList.add('rtl'); i18nNodes.forEach(n => { const key = n.getAttribute('data-i18n'); const val = I18N_AR[key]; if (typeof val === 'string') n.innerHTML = val; }); toggle.setAttribute('aria-pressed', 'true'); toggle.setAttribute('title', 'Return to English'); label.textContent = 'EN'; } else { html.setAttribute('lang', 'en'); html.setAttribute('dir', 'ltr'); body.classList.remove('rtl'); i18nNodes.forEach(n => { n.innerHTML = n.dataset.en; }); toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('title', 'Translate to Arabic'); label.textContent = 'AR'; } localStorage.setItem('lang_about', lang); }; const saved = localStorage.getItem('lang_about') || 'en'; setLang(saved); document.getElementById('langToggle').addEventListener('click', () => { const current = localStorage.getItem('lang_about') || 'en'; setLang(current === 'en' ? 'ar' : 'en'); });
-  </script>
-</body>
-
+      if (!container || !titleEl || !leadEl || !imgEl) return;
+aset.title) : btn.dataset.title;
 </html>
