@@ -850,6 +850,23 @@ if ($conn) {
             </div>
               $catSlug = slugify($catName);
               $cnt = $categoryCounts[$catSlug] ?? 0;
+              ?>
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+                aria-pressed="false">
+                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
+              </button>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="gallery-wrapper">
+        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
+          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
+          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
+          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
+          <div id="galleryGrid" class="gallery-grid">
+            <?php if (!empty($contentItems)): ?>
               <?php foreach ($contentItems as $item):
                 $itemTitle = $item['title'] ?: 'Training image';
                 $catName = $item['category_name'] ?? '';
