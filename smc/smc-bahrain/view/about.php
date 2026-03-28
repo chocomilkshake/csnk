@@ -795,6 +795,20 @@ if ($conn) {
       }
     }
     }
+
+    .training-gallery .btn-icon.btn-outline-secondary:hover {
+      background: var(--smc-navy);
+      color: #fff;
+    }
+
+    .cta-wrap {
+      background: radial-gradient(820px 260px at 8% 5%, rgba(255, 216, 77, .13), rgba(255, 216, 77, 0) 60%), radial-gradient(900px 320px at 92% 110%, rgba(19, 42, 74, .08), rgba(19, 42, 74, 0) 60%), linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #f4f8ff 100%);
+      border-radius: var(--r-out);
+      box-shadow: 0 16px 36px rgba(11, 31, 58, .08), 0 1px 0 rgba(255, 255, 255, .6) inset;
+    }
+
+    .is-swapping {
+      opacity: .25;
       transition: opacity .15s ease;
     }
 
