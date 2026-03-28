@@ -1,6 +1,9 @@
 <?php
 // Set the active page for navbar highlighting
 $page = 'about';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 /**
  * Determine Turkey Business Unit ID dynamically
@@ -21,12 +24,12 @@ function getTurkeyBusinessUnitId($conn)
  * PROJECT BASE URL
  * For localhost: /csnk/smc/smc-turkey
  */
-$BASE = '/csnk/smc/smc-turkey';
+$BASE = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
 
 /**
  * Build absolute URL for assets (css, js, images)
  */
-function asset(string $path): string
+function asset($path)
 {
   global $BASE;
   $path = '/' . ltrim($path, '/');
@@ -43,24 +46,37 @@ function getDbConnection()
   $dbPass = '';
   $dbName = 'csnk';
 
-  $configFile = __DIR__ . '/../../admin/includes/config.php';
-  if (file_exists($configFile)) {
-    include $configFile;
-    if (defined('DB_HOST'))
-      $dbHost = DB_HOST;
-    if (defined('DB_USER'))
-      $dbUser = DB_USER;
-    if (defined('DB_PASS'))
-      $dbPass = DB_PASS;
-    if (defined('DB_NAME'))
-      $dbName = DB_NAME;
+  mysqli_report(MYSQLI_REPORT_OFF);
+
+  $hosts = [$dbHost === 'localhost' ? '127.0.0.1' : $dbHost];
+
+  foreach (array_unique($hosts) as $host) {
+    $port = 3306;
+    $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+    if (!$socket) {
+      continue;
+    }
+    fclose($socket);
+
+    $conn = mysqli_init();
+    if (!$conn) {
+      continue;
+    }
+
+    mysqli_options($conn, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+    if (defined('MYSQLI_OPT_READ_TIMEOUT')) {
+      mysqli_options($conn, MYSQLI_OPT_READ_TIMEOUT, 1);
+    }
+
+    if (@mysqli_real_connect($conn, $host, $dbUser, $dbPass, $dbName, $port)) {
+      mysqli_set_charset($conn, 'utf8mb4');
+      return $conn;
+    }
+
+    mysqli_close($conn);
   }
 
-  $conn = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
-  if (!$conn) {
-    return null;
-  }
-  return $conn;
+  return null;
 }
 
 /**
@@ -69,7 +85,9 @@ function getDbConnection()
 function slugify(string $text): string
 {
   $text = trim($text);
-  $text = mb_strtolower($text, 'UTF-8');
+  $text = function_exists('mb_strtolower')
+    ? mb_strtolower($text, 'UTF-8')
+    : strtolower($text);
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   if (function_exists('iconv')) {
     $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
@@ -108,15 +126,20 @@ if ($conn) {
 
   if ($turkeyBuId) {
     // Categories (active only, scoped to Turkey BU)
-    $sql = "SELECT * FROM content_categories WHERE business_unit_id = ? AND is_active = 1 ORDER BY display_order ASC, id ASC";
+    $sql = "SELECT id, name, business_unit_id, is_active, display_order
+            FROM content_categories
+            WHERE business_unit_id = ? AND is_active = 1
+            ORDER BY display_order ASC, id ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $turkeyBuId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-      $categories[] = $row;
+    if ($stmt) {
+      $stmt->bind_param("i", $turkeyBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        $categories[] = $row;
+      }
+      $stmt->close();
     }
-    $stmt->close();
 
     // Content items (active only) + join category name
     $sql = "SELECT ci.*, cc.name as category_name
@@ -125,13 +148,15 @@ if ($conn) {
             WHERE ci.business_unit_id = ? AND ci.is_active = 1
             ORDER BY COALESCE(cc.display_order, 9999) ASC, ci.display_order ASC, ci.id ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $turkeyBuId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-      $contentItems[] = $row;
+    if ($stmt) {
+      $stmt->bind_param("i", $turkeyBuId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        $contentItems[] = $row;
+      }
+      $stmt->close();
     }
-    $stmt->close();
 
     // Category counts
     foreach ($contentItems as $itm) {
@@ -783,380 +808,6 @@ if ($conn) {
   <!-- Page Content Starts   -->
   <!-- ===================== -->
 
-  <!-- HERO -->
-  <section class="hero-section">
-    <!-- background layers -->
-    <div class="hero-grid"></div>
-    <div class="hero-gradient"></div>
-
-    <div class="container">
-      <div class="row align-items-center g-4 g-lg-5">
-
-        <!-- LEFT: Text + pills -->
-        <div class="col-12 col-lg-6">
-          <div class="hero-title-wrap mb-2">
-            <h1 id="heroTitle" class="display-4 fw-bold mb-0 text-navy">Get to know SMC Manpower Agency Philippines Co.
-            </h1>
-          </div>
-
-          <div class="hero-lead-wrap mb-4">
-            <p id="heroLead" class="lead text-muted-navy mb-0">
-              Clear, honest and customer‑first guidance. We connect families with properly
-              screened domestic workers through safe and compliant processes.
-            </p>
-          </div>
-
-          <!-- Pills -->
-          <div class="hero-pills-abs-wrapper">
-            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
-              aria-label="Hero options">
-
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
-                data-title="Get to know SMC"
-                data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
-                data-img="../resources/img/overview3.png" data-img-alt="Overview image">
-                Overview
-              </button>
-
-              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
-                data-title="Meet Founder of SMC"
-                data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
-                data-img="../resources/img/MrRog.png" data-img-alt="Founder image">
-                Founder
-              </button>
-            </div>
-          </div>
-
-          <!-- Spacer -->
-          <div class="hero-pills-spacer"></div>
-        </div>
-
-        <!-- RIGHT: Image -->
-        <div class="col-12 col-lg-6 hero-visual">
-          <div class="hero-image-wrap rounded-4"
-            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(260px, 40vw, 520px);">
-            <img id="heroImg" src="../resources/img/hero1.jpg" alt="Hero visual" class="img-fluid">
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== -->
-  <!-- Training Gallery     -->
-  <!-- ===================== -->
-  <section id="training-gallery" class="training-gallery py-5 bg-white">
-    <div class="container">
-      <!-- Header + Category Filters -->
-      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
-        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
-
-        <!-- Category buttons (CMS-driven) -->
-        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
-          aria-label="Gallery categories">
-          <!-- ALL -->
-          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
-            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
-          </button>
-
-          <?php if (!empty($categories)): ?>
-            <?php foreach ($categories as $cat):
-              $catName = $cat['name'] ?? 'Category';
-              $catSlug = slugify($catName);
-              $cnt = $categoryCounts[$catSlug] ?? 0;
-              ?>
-              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
-                aria-pressed="false">
-                <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
-              </button>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- Thumbnails Grid (CMS-driven) with row limiter -->
-      <div class="gallery-wrapper">
-        <div id="galleryScrollContainer" class="gallery-scroll-container" data-indicators="true">
-          <div class="gallery-swipe-indicators" id="swipeIndicators"></div>
-          <button class="swipe-arrow" id="swipeLeft"><i class="fas fa-chevron-left"></i></button>
-          <button class="swipe-arrow" id="swipeRight"><i class="fas fa-chevron-right"></i></button>
-          <div id="galleryGrid" class="gallery-grid">
-            <?php if (!empty($contentItems)): ?>
-              <?php foreach ($contentItems as $item):
-                $itemTitle = $item['title'] ?: 'Training image';
-                $catName = $item['category_name'] ?? '';
-                $catSlug = slugify($catName);
-                $imgUrl = getContentImageUrl($item['image_path']);
-                ?>
-                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
-                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
-                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
-                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
-                  <div class="gallery-tile-overlay">
-                    <p class="gallery-tile-title">
-                      <?= htmlspecialchars($itemTitle) ?>
-                    </p>
-                  </div>
-                </button>
-              <?php endforeach; ?>
-            <?php elseif ($turkeyBuId): ?>
-              <div class="col-12">
-                <div class="text-center py-5 bg-light rounded-3 border">
-                  <p class="text-muted mb-0">No content yet. <a
-                      href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>">Upload in Admin → Content
-                      Management → SMC/Turkey</a></p>
-                </div>
-              </div>
-            <?php else: ?>
-              <div class="col-12">
-                <div class="text-center py-5 bg-light rounded-3 border">
-                  <p class="text-muted mb-0">Gallery coming soon! Content setup required.</p>
-                </div>
-              </div>
-            <?php endif; ?>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FINAL CTA: Hire Now! -->
-  <section class="py-4 py-md-5">
-    <div class="container">
-      <div class="p-3 p-md-4 cta-wrap">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem">
-            Hire reliable, properly screened Filipino Skilled Workers.
-          </p>
-          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
-            Hire Now! <i class="fa-solid fa-arrow-right ms-1"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== -->
-  <!-- Page Content Ends     -->
-  <!-- ===================== -->
-
-  <!-- ✅ Reusable Footer -->
-  <?php include __DIR__ . '/footer.php'; ?>
-
-  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Page‑local: Hero pill swapper -->
-  <script>
-    (function () {
-      const container = document.getElementById('heroPills');
-      const titleEl = document.getElementById('heroTitle');
-      const leadEl = document.getElementById('heroLead');
-      const imgEl = document.getElementById('heroImg');
-      if (!container || !titleEl || !leadEl || !imgEl) return;
-
-      const pills = container.querySelectorAll('.btn');
-      function setActive(btn) {
-        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
-      }
-      function applyFrom(btn) {
-        if (btn.dataset.title) titleEl.textContent = btn.dataset.title;
-        if (btn.dataset.lead) leadEl.textContent = btn.dataset.lead;
-        if (btn.dataset.img) { imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.imgAlt || btn.dataset.title || 'Hero image'; }
-      }
-      function swap(btn) {
-        setActive(btn);
-        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
-        setTimeout(() => {
-          applyFrom(btn);
-          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
-        }, 150);
-      }
-      pills.forEach(btn => {
-        btn.addEventListener('click', () => swap(btn));
-        btn.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(btn); }
-        });
-      });
-      const init = container.querySelector('.btn.active') || pills[0];
-      if (init) applyFrom(init);
-    })();
-  </script>
-
-  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev + Row Limiter -->
-  <script>
-    (function () {
-      const grid = document.getElementById('galleryGrid');
-      const filters = document.getElementById('galleryFilters');
-      const scrollContainer = document.getElementById('galleryScrollContainer');
-      if (!grid || !filters) return;
-
-      const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
-
-      // Configuration: Max rows to show (4 rows - shows rest of pictures)
-      const MAX_VISIBLE_ROWS = 4;
-      const COLS_DESKTOP = 4;
-      const COLS_TABLET = 3;
-      const COLS_MOBILE = 2;
-
-      let currentFilter = 'all';
-      let hasMoreItems = false;
-      let hiddenTiles = [];
-
-      // Function to get columns based on viewport
-      function getColumns() {
-        if (window.innerWidth >= 992) return COLS_DESKTOP;
-        if (window.innerWidth >= 576) return COLS_TABLET;
-        return COLS_MOBILE;
-      }
-
-      // Function to calculate max visible items
-      function getMaxVisible() {
-        return MAX_VISIBLE_ROWS * getColumns();
-      }
-
-      // Function to update gallery based on filter and row limit
-      function updateGallery() {
-        const maxVisible = getMaxVisible();
-
-        // Get visible tiles based on filter
-        const filteredTiles = tiles.map((tile, idx) => ({
-          tile,
-          cat: (tile.getAttribute('data-category-slug') || '').toLowerCase().trim(),
-          originalIndex: idx
-        })).filter(item => {
-          if (currentFilter === 'all') return true;
-          return item.cat === currentFilter;
-        });
-
-        // Reset all tiles first
-        tiles.forEach(t => t.classList.remove('limited'));
-
-        if (filteredTiles.length > maxVisible) {
-          // Hide tiles beyond the limit
-          filteredTiles.forEach((item, idx) => {
-            if (idx >= maxVisible) {
-              item.tile.classList.add('limited');
-              item.tile.hidden = true;
-            } else {
-              item.tile.classList.remove('limited');
-              item.tile.hidden = false;
-            }
-          });
-          hasMoreItems = true;
-        } else {
-          // Show all if within limit
-          filteredTiles.forEach(item => {
-            item.tile.classList.remove('limited');
-            item.tile.hidden = false;
-          });
-          hasMoreItems = false;
-        }
-
-        // Update scroll container behavior
-        if (scrollContainer) {
-          if (hasMoreItems && window.innerWidth < 992) {
-            scrollContainer.style.overflowX = 'auto';
-            scrollContainer.style.overflowY = 'hidden';
-          } else {
-            scrollContainer.style.overflowX = '';
-            scrollContainer.style.overflowY = '';
-          }
-        }
-      }
-
-      // Filter buttons (All + dynamic categories)
-      filters.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-filter]');
-        if (!btn) return;
-
-        currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
-
-        // Update active state
-        filters.querySelectorAll('button[data-filter]').forEach(b => {
-          b.classList.toggle('active', b === btn);
-          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-        });
-
-        // Show/hide tiles based on slug (strict match)
-        tiles.forEach(tile => {
-          const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
-          const show = (currentFilter === 'all') ? true : (cat === currentFilter);
-          tile.hidden = !show;
-        });
-
-        // Apply row limiter
-        updateGallery();
-      });
-
-      // Handle window resize
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(updateGallery, 150);
-      });
-
-      // Initial setup
-      updateGallery();
-
-      // Enhanced swipe logic (preserves existing)
-      if (scrollContainer.dataset.indicators === 'true') {
-        const indicators = document.getElementById('swipeIndicators');
-        const leftBtn = document.getElementById('swipeLeft');
-        const rightBtn = document.getElementById('swipeRight');
-
-        function updateIndicators() {
-          const scrollLeft = scrollContainer.scrollLeft;
-          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
-          const index = Math.round(progress * (tiles.length - 1)) || 0;
-
-          // Dots
-          indicators.innerHTML = '';
-          for (let i = 0; i < Math.min(5, tiles.length); i++) {
-            const dot = document.createElement('div');
-            dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
-            dot.addEventListener('click', () => {
-              const tileWidth = tiles[i]?.offsetWidth || 0;
-              scrollContainer.scrollTo({ left: i * tileWidth, behavior: 'smooth' });
-            });
-            indicators.appendChild(dot);
-          }
-        }
-
-        // Scroll events
-        let scrollTimeout;
-        scrollContainer.addEventListener('scroll', () => {
-          scrollContainer.classList.add('swiping');
-          updateIndicators();
-          clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(() => {
-            scrollContainer.classList.remove('swiping');
-          }, 1500);
-        }, { passive: true });
-
-        // Arrow buttons (touch only)
-        leftBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: -200, behavior: 'smooth' }));
-        rightBtn?.addEventListener('click', () => scrollContainer.scrollBy({ left: 200, behavior: 'smooth' }));
-
-        // Snap to tile edges on scroll end
-        scrollContainer.addEventListener('scrollend', () => {
-          const tilesInView = Array.from(tiles).filter(t => !t.hidden);
-          const scrollLeft = scrollContainer.scrollLeft;
-          const closest = tilesInView.reduce((prev, curr) =>
-            Math.abs(curr.offsetLeft - scrollLeft) < Math.abs(prev.offsetLeft - scrollLeft) ? curr : prev
-          );
-          scrollContainer.scrollTo({ left: closest.offsetLeft, behavior: 'smooth' });
-        });
-
-        updateIndicators();
-      }
-
-      // ===== Lightbox (Bootstrap Modal) with Next/Prev (from new page) =====
-      // Create modal HTML once
-      const modalHtml = `
         <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content bg-transparent border-0">
