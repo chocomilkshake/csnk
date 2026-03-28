@@ -860,7 +860,27 @@ if ($conn) {
                 </div>
               </div>
   <section class="py-4 py-md-5">
-    <div class="container">-->
+    <div class="container">
+      <div class="p-3 p-md-4 cta-wrap">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem" data-i18n="final.cta">
+            Hire reliable, properly screened Filipino Skilled Workers.
+          </p>
+          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
+            <span data-i18n="final.btn">Hire Now!</span> <i class="fa-solid fa-arrow-right ms-1 flip-rtl"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Counters, Hero, Gallery JS, i18n (existing + new gallery) -->
   <script>
     // Counters (existing)
     (function () { const counters = document.querySelectorAll('.counter-number'); const animate = el => { const target = +el.getAttribute('data-count'); const duration = 1200; const start = performance.now(); const step = now => { const p = Math.min((now - start) / duration, 1); el.textContent = Math.floor(p * target).toLocaleString(); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }; let triggered = false; const onScroll = () => { if (triggered) return; const rect = counters[0]?.getBoundingClientRect(); if (rect?.top < window.innerHeight) { counters.forEach(animate); triggered = true; window.removeEventListener('scroll', onScroll); } }; window.addEventListener('scroll', onScroll); onScroll(); })();
