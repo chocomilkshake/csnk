@@ -841,7 +841,25 @@ if ($conn) {
                 data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
                 data-img="../resources/img/overview3.png" data-img-alt="Overview image">
                 Overview
-              </button>=
+              </button>
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Meet Fo=
+                  </div>
+                </button>
+
+  <!-- ===================== -->
+  <!-- Page Content Ends     -->
+  <!-- ===================== -->
+
+  <!-- ✅ Reusable Footer -->
+  <?php include __DIR__ . '/footer.php'; ?>
+
+  <!-- Bootstrap JS (bundle includes Popper + Carousel) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Page‑local: Hero pill swapper -->
+  <script>
     (function () {
       const container = document.getElementById('heroPills');
       const titleEl = document.getElementById('heroTitle');
