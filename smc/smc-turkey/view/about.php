@@ -852,7 +852,28 @@ if ($conn) {
             </div>
           </div>
 
-          <!-- Spacer -->==
+          <!-- Spacer -->
+          <div class="hero-pills-spacer"></div>
+        </div>
+
+        <!-- RIGHT: Image -->
+        <div class="col-12 col-lg-6 hero-visual">
+          <div class="hero-image-wrap rounded-4"
+            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(260px, 40vw, 520px);">
+            <img id="heroImg" src="../resources/img/hero1.jpg" alt="Hero visual" class="img-fluid">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== -->
+  <!-- Training Gallery     -->
+  <!-- ===================== -->
+  <section id="training-gallery" class="training-gallery py-5 bg-white">
+    <div class="container">
+      <!-- Header + Category Filters -->
       <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
         <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
 
