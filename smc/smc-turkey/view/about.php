@@ -847,6 +847,29 @@ if ($conn) {
                 data-title="Meet Fo=
                   </div>
                 </button>
+              <?php endforeach; ?>
+            <?php elseif ($turkeyBuId): ?>
+              <div class="col-12">
+                <div class="text-center py-5 bg-light rounded-3 border">
+                  <p class="text-muted mb-0">No content yet. <a
+                      href="<?= asset('../../admin/pages/content_management.php?agency=2') ?>">Upload in Admin → Content
+                      Management==
+
+  <!-- FINAL CTA: Hire Now! -->
+  <section class="py-4 py-md-5">
+    <div class="container">
+      <div class="p-3 p-md-4 cta-wrap">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <p class="mb-0 fw-bold text-navy" style="font-size:1.15rem">
+            Hire reliable, properly screened Filipino Skilled Workers.
+          </p>
+          <a class="btn btn-navy rounded-pill px-4" href="./applicant.php" aria-label="Hire Now">
+            Hire Now! <i class="fa-solid fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ===================== -->
   <!-- Page Content Ends     -->
