@@ -785,6 +785,7 @@ if ($conn) {
         width: 40px;
         height: 40px;
       }
+
       if (!container || !titleEl || !leadEl || !imgEl) return;
 aset.title) : btn.dataset.title;
 </html>
