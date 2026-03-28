@@ -814,7 +814,26 @@ if ($conn) {
     <div class="hero-grid"></div>
     <div class="hero-gradient"></div>
 
-    <divnt('div');
+    <div class="container">
+      <div class="row align-items-center g-4 g-lg-5">
+
+        <!-- LEFT: Text + pills -->
+        <div class="col-12 col-lg-6">
+          <div class="hero-title-wrap mb-2">
+            <h1 id="heroTitle" class="display-4 fw-bold mb-0 text-navy">Get to know SMC Manpower Agency Philippines Co.
+            </h1>
+          </div>
+
+  
+          const scrollLeft = scrollContainer.scrollLeft;
+          const scrollWidth = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+          const progress = Math.max(0, Math.min(1, scrollLeft / scrollWidth));
+          const index = Math.round(progress * (tiles.length - 1)) || 0;
+
+          // Dots
+          indicators.innerHTML = '';
+          for (let i = 0; i < Math.min(5, tiles.length); i++) {
+            const dot = document.createElement('div');
             dot.className = `swipe-dot ${i === index ? 'active' : ''}`;
             dot.addEventListener('click', () => {
               const tileWidth = tiles[i]?.offsetWidth || 0;
