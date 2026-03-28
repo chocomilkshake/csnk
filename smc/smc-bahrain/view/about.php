@@ -844,7 +844,29 @@ if ($conn) {
   <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
     title="Translate to Arabic">
     <span class="dot" aria-hidden="true"></span>ta-i18n="mv.values_t">Values</h5>
-                <p class="mb-0 text-muted" data-i18n="mv.values_d">In
+                <p class="mb-0 text-muted" data-i18n="mv.values_d">Integrity, respect, safety, clarity, and continuous
+                  improvement.</p>
+              </div>
+            </div>
+              $catSlug = slugify($catName);
+              $cnt = $categoryCounts[$catSlug] ?? 0;
+              <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName = $item['category_name'] ?? '';
+                $catSlug = slugify($catName);
+                $imgUrl = getContentImageUrl($item['image_path']);
+                ?> SMC/Bahrain
+                  </a>
+                </div>
+              </div>
+  <section class="py-4 py-md-5">
+    <div class="container">-->
+  <script>
+    // Counters (existing)
+    (function () { const counters = document.querySelectorAll('.counter-number'); const animate = el => { const target = +el.getAttribute('data-count'); const duration = 1200; const start = performance.now(); const step = now => { const p = Math.min((now - start) / duration, 1); el.textContent = Math.floor(p * target).toLocaleString(); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }; let triggered = false; const onScroll = () => { if (triggered) return; const rect = counters[0]?.getBoundingClientRect(); if (rect?.top < window.innerHeight) { counters.forEach(animate); triggered = true; window.removeEventListener('scroll', onScroll); } }; window.addEventListener('scroll', onScroll); onScroll(); })();
+
+    // Hero swap
+    (function () {
       const container = document.getElementById('heroPills');
       const titleEl = document.getElementById('heroTitle');
       const leadEl = document.getElementById('heroLead');
