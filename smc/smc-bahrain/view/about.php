@@ -861,6 +861,22 @@ aset.title) : btn.dataset.title;
         }
       }
 
+      function swap(btn) {
+        setActive(btn);
+        [titleEl, leadEl, imgEl].forEach(el => el.classList.add('is-swapping'));
+        setTimeout(() => {
+          applyFrom(btn);
+          [titleEl, leadEl, imgEl].forEach(el => el.classList.remove('is-swapping'));
+        }, 150);
+      }
+
+      pills.forEach(btn => {
+        btn.addEventListener('click', () => swap(btn));
+        btn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            swap(btn);
+          }
         });
       });
 
