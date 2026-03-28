@@ -846,7 +846,33 @@ if ($conn) {
       const filters = document.getElementById('galleryFilters');
       const scrollContainer = document.getElementById('galleryScrollContainer');
       if (!grid || !filters) return;
-=) {
+
+      const tiles = Array.from(grid.querySelectorAll('.gallery-tile'));
+
+      // Configuration: Max rows to show (4 rows - shows rest of pictures)
+      const MAX_VISIBLE_ROWS = 4;
+      const COLS_DESKTOP = 4;
+      const COLS_TABLET = 3;
+      const COLS_MOBILE = 2;
+
+      let currentFilter = 'all';
+      let hasMoreItems = false;
+      let hiddenTiles = [];
+
+      // Function to get columns based on viewport
+      function getColumns() {
+        if (window.innerWidth >= 992) return COLS_DESKTOP;
+        if (window.innerWidth >= 576) return COLS_TABLET;
+        return COLS_MOBILE;
+      }
+
+      // Function to calculate max visible items
+      function getMaxVisible() {
+        return MAX_VISIBLE_ROWS * getColumns();
+      }
+
+      // Function to update gallery based on filter and row limit
+      function updateGallery() {
         const maxVisible = getMaxVisible();
 
         // Get visible tiles based on filter
