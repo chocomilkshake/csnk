@@ -825,7 +825,37 @@ if ($conn) {
           </div>
 
           <div class="hero-lead-wrap mb-4">
-   
+            <p id="heroLead" class="lead text-muted-navy mb-0">
+              Clear, honest and customer‑first guidance. We connec
+          }
+        }
+      }
+
+      // Filter buttons (All + dynamic categories)
+      filters.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-filter]');
+        if (!btn) return;
+
+        currentFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+
+        // Update active state
+        filters.querySelectorAll('button[data-filter]').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+
+        // Show/hide tiles based on slug (strict match)
+        tiles.forEach(tile => {
+          const cat = (tile.getAttribute('data-category-slug') || '').toLowerCase().trim();
+          const show = (currentFilter === 'all') ? true : (cat === currentFilter);
+          tile.hidden = !show;
+        });
+
+        // Apply row limiter
+        updateGallery();
+      });
+
+      // Handle window resize
       let resizeTimeout;
       window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
