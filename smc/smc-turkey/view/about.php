@@ -844,7 +844,24 @@ if ($conn) {
               </button>
 
               <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
-                data-title="Meet Fo=
+                data-title="Meet Founder of SMC"
+                data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
+                data-img="../==rid" class="gallery-grid">
+            <?php if (!empty($contentItems)): ?>
+              <?php foreach ($contentItems as $item):
+                $itemTitle = $item['title'] ?: 'Training image';
+                $catName = $item['category_name'] ?? '';
+                $catSlug = slugify($catName);
+                $imgUrl = getContentImageUrl($item['image_path']);
+                ?>
+                <button class="gallery-tile" data-category-slug="<?= htmlspecialchars($catSlug) ?>"
+                  data-full="<?= htmlspecialchars($imgUrl) ?>" data-caption="<?= htmlspecialchars($itemTitle) ?>"
+                  aria-label="Open <?= htmlspecialchars($itemTitle) ?>">
+                  <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($itemTitle) ?>">
+                  <div class="gallery-tile-overlay">
+                    <p class="gallery-tile-title">
+                      <?= htmlspecialchars($itemTitle) ?>
+                    </p>
                   </div>
                 </button>
               <?php endforeach; ?>
