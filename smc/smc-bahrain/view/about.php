@@ -794,6 +794,19 @@ if ($conn) {
         right: 5px;
       }
     }
+
+    .training-gallery .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .training-gallery .btn-icon.btn-outline-secondary {
+      border-color: var(--soft-border);
+      color: var(--smc-navy);
     }
 
     .training-gallery .btn-icon.btn-outline-secondary:hover {
