@@ -785,7 +785,26 @@ if ($conn) {
         width: 40px;
         height: 40px;
       }
--live="polite" aria-pressed="false"
+
+      .lightbox-nav-overlay.prev {
+        left: 5px;
+      }
+
+      .lightbox-nav-overlay.next {
+        right: 5px;
+      }
+    }
+    }
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+
+  <!-- Floating Translate Button (EN ⇄ AR) -->
+  <button id="langToggle" class="lang-toggle" type="button" aria-live="polite" aria-pressed="false"
     title="Translate to Arabic">
     <span class="dot" aria-hidden="true"></span>ta-i18n="mv.values_t">Values</h5>
                 <p class="mb-0 text-muted" data-i18n="mv.values_d">In
