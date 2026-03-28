@@ -848,7 +848,29 @@ if ($conn) {
                 data-lead="SMC was founded by Mr. Rogelio M. Lansang in 2010, driven by his passion to help people and provide jobs to those in need. A former Overseas Filipino Worker in the Middle East for ten years from 1989 to 2004, his goal is to provide opportunities that help Filipinos build a better future for themselves and their families. He has successfully managed the SMC GROUP OF COMPANY since 2006 and remains committed to ensuring that SMC carries out its mission with integrity."
                 data-img="../resources/img/MrRog.png" data-img-alt="Founder image">
                 Founder
-              </button>===utline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
+              </button>
+            </div>
+          </div>
+
+          <!-- Spacer -->==
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+        <h2 class="h1 fw-bold mb-0 text-navy">Gallery</h2>
+
+        <!-- Category buttons (CMS-driven) -->
+        <div id="galleryFilters" class="gallery-filters-wrapper btn-group flex-wrap" role="group"
+          aria-label="Gallery categories">
+          <!-- ALL -->
+          <button type="button" class="btn btn-outline-secondary active" data-filter="all" aria-pressed="true">
+            All<?= $totalItems > 0 ? " ($totalItems)" : "" ?>
+          </button>
+
+          <?php if (!empty($categories)): ?>
+            <?php foreach ($categories as $cat):
+              $catName = $cat['name'] ?? 'Category';
+              $catSlug = slugify($catName);
+              $cnt = $categoryCounts[$catSlug] ?? 0;
+              ?>
+              <button type="button" class="btn btn-outline-secondary" data-filter="<?= htmlspecialchars($catSlug) ?>"
                 aria-pressed="false">
                 <?= htmlspecialchars($catName) ?>     <?= $cnt > 0 ? " ($cnt)" : "" ?>
               </button>
