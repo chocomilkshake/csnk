@@ -839,7 +839,25 @@ if ($conn) {
               <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
                 data-title="Get to know SMC"
                 data-lead="SMC Manpower Agency Philippines Co. is dedicated to providing families with reliable and compassionate household assistance. Beyond offering quality domestic help, we are a full‑service manpower agency committed to supporting and empowering Filipinos by connecting them with safe, legitimate, and rewarding employment opportunities. Through proper screening, guidance, and documentation, we ensure that every home receives trustworthy service, while every applicant receives a fair chance to build a better future."
-                data-img="../resources/img/overview3.pngx with Next/Prev + Row Limiter -->
+                data-img="../resources/img/overview3.png" data-img-alt="Overview image">
+                Overview
+              </button>=
+    (function () {
+      const container = document.getElementById('heroPills');
+      const titleEl = document.getElementById('heroTitle');
+      const leadEl = document.getElementById('heroLead');
+      const imgEl = document.getElementById('heroImg');
+      if (!container || !titleEl || !leadEl || !imgEl) return;
+
+      const pills = container.querySelectorAll('.btn');
+      function setActive(btn) {
+        pills.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      }
+      function applyFrom(btn) {
+        if (btn.dataset.title) titleEl.textContent = btn.
+
+  <!-- Page‑local: CMS Gallery filter + Bootstrap Lightbox with Next/Prev + Row Limiter -->
   <script>
     (function () {
       const grid = document.getElementById('galleryGrid');
