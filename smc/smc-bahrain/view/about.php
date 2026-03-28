@@ -846,7 +846,132 @@ if ($conn) {
     <span class="dot" aria-hidden="true"></span>
     <span id="langToggleLabel">AR</span>
   </button>
+
+  <!-- ✅ Reusable Navbar -->
+  <?php include __DIR__ . '/navbar.php'; ?>
+
+  <!-- ===================== -->
+  <!-- Page Content Starts   -->
+  <!-- ===================== -->
+
+  <!-- HERO -->
+  <section class="hero-section">
+    <div class="hero-grid"></div>
+    <div class="hero-gradient"></div>
+
+    <div class="container">
+      <div class="row align-items-center g-4 g-lg-5">
+
+        <!-- LEFT: Text + pills -->
+        <div class="col-12 col-lg-6">
+          <div class="hero-title-wrap mb-2">
+            <h1 id="heroTitle" class="display-5 fw-bold mb-0 text-navy">
+              Get to know SMC Manpower Agency Philippines Co.
+            </h1>
+          </div>
+
+          <div class="hero-lead-wrap mb-4">
+            <p id="heroLead" class="lead text-muted-navy mb-0">
+              Clear, honest, and customer‑first guidance. We connect employers and families with properly
+              screened Filipino workers through safe and compliant processes.
+            </p>
+          </div>
+
+          <!-- Pills -->
+          <div class="hero-pills-abs-wrapper mb-3">
+            <div id="heroPills" class="rounded-pill px-3 py-2 d-inline-flex align-items-center" role="tablist"
+              aria-label="Hero options">
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2 active" role="tab" aria-selected="true"
+                data-title="About SMC"
+                data-title-ar="نبذة عن SMC"
+                data-lead="SMC Manpower Agency Philippines Co. is a DMW-licensed, compliance-first recruitment agency connecting skilled Filipino talent with reputable employers. We prioritize transparent processes, lawful documentation, and respectful placements."
+                data-lead-ar="شركة SMC Manpower Agency Philippines Co. وكالة توظيف مرخصة من DMW تضع الامتثال أولاً، وتربط الكفاءات الفلبينية الماهرة بأصحاب العمل الموثوقين. نعطي الأولوية للشفافية، والإجراءات النظامية، والتوظيف باحترام."
+                data-img="../resources/img/hero1.jpg" data-img-alt="About SMC">
+                <span data-i18n="hero.pill_overview">Overview</span>
+              </button>
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Meet Our Founder"
+                data-title-ar="تعرّف على مؤسسنا"
+                data-lead="Founded by Mr. Rogelio M. Lansang—an OFW in the Middle East for ten years (1989–2004)—SMC's mission is to create fair and dignified employment opportunities that uplift Filipino families."
+                data-lead-ar="أسسها السيد روجيليو إم. لانسنج، وهو عامل فلبيني سابق في الشرق الأوسط لمدة عشر سنوات (1989-2004). وتتمثل رسالة SMC في توفير فرص عمل عادلة وكريمة ترفع من مستوى الأسر الفلبينية."
+                data-img="../resources/img/MrRog.png" data-img-alt="Founder">
+                <span data-i18n="hero.pill_founder">Founder</span>
+              </button>
+
+              <button type="button" class="btn btn-light rounded-pill px-3 py-2" role="tab" aria-selected="false"
+                data-title="Mission & Vision"
+                data-title-ar="الرسالة والرؤية"
+                data-lead="Our mission is ethical recruitment and worker welfare; our vision is to be a trusted bridge between global employers and Filipino talent—built on integrity, safety, and service."
+                data-lead-ar="رسالتنا هي التوظيف الأخلاقي ورعاية العامل، ورؤيتنا أن نكون الجسر الموثوق بين أصحاب العمل حول العالم والكفاءات الفلبينية، على أساس النزاهة والسلامة والخدمة."
+                data-img="../resources/img/overview3.png" data-img-alt="Mission & Vision">
+                <span data-i18n="hero.pill_mv">Mission & Vision</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a href="./applicant.php" class="btn btn-navy">
+              <span data-i18n="hero.btn_apply">View Applicants</span> <i class="fa-solid fa-users ms-2"></i>
+            </a>
+            <a href="#compliance" class="btn btn-gold">
+              <span data-i18n="hero.btn_compliance">Our Compliance</span> <i class="fa-solid fa-shield-halved ms-2"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- RIGHT: Image -->
+        <div class="col-12 col-lg-6 hero-visual">
+          <div class="hero-image-wrap rounded-4"
+            style="filter: drop-shadow(0 12px 22px rgba(11,31,58,.18)); width: clamp(280px, 40vw, 560px);">
+            <img id="heroImg" src="../resources/img/hero2.jpg" alt="Hero visual" class="img-fluid">
+          </div>
+        </div>
+
       </div>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <section class="py-3">
+    <div class="container trust-strip text-center">
+      <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
+        <div class="item"><i class="fa-solid fa-id-card-clip text-navy"></i> <span data-i18n="trust.dmw">DMW
+            Licensed</span></div>
+        <div class="item"><i class="fa-solid fa-shield-halved text-navy"></i> <span
+            data-i18n="trust.compliance">Compliance‑First</span></div>
+        <div class="item"><i class="fa-solid fa-handshake-angle text-navy"></i> <span data-i18n="trust.ethical">Ethical
+            Recruitment</span></div>
+        <div class="item"><i class="fa-solid fa-comments text-navy"></i> <span data-i18n="trust.support">Clear
+            Communication</span></div>
+        <div class="item"><i class="fa-solid fa-people-roof text-navy"></i> <span data-i18n="trust.welfare">Worker
+            Welfare</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSION • VISION • VALUES -->
+  <section class="py-5">
+    <div class="container">
+      <div class="text-center mb-4">
+        <span class="badge-soft" data-i18n="mv.badge">Who We Are</span>
+        <h2 class="fw-bold text-navy mt-2" data-i18n="mv.title">Mission • Vision • Values</h2>
+        <p class="text-muted mb-0" data-i18n="mv.subtitle">Built on integrity, clarity, and service—serving employers
+          and supporting Filipino talent.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <div class="d-flex align-items-start gap-3">
+              <div class="icon-hex"><i class="fa-solid fa-bullseye text-navy"></i></div>
+              <div>
+                <h5 class="fw-bold text-navy mb-1" data-i18n="mv.mission_t">Mission</h5>
+                <p class="mb-0 text-muted" data-i18n="mv.mission_d">Deliver ethical, compliant, and dignified
+                  recruitment with clear guidance from screening to deployment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="col-lg-4">
           <div class="panel p-4 h-100">
             <div class="d-flex align-items-start gap-3">
