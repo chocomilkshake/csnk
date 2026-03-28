@@ -859,6 +859,20 @@ if ($conn) {
                   </a>
                 </div>
               </div>
+            <?php else: ?>
+              <div class="col-12 text-center py-5">
+                <div class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle me-2"></i>Gallery coming soon! Business Unit setup required.
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
   <section class="py-4 py-md-5">
     <div class="container">
       <div class="p-3 p-md-4 cta-wrap">
