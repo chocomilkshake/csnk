@@ -122,7 +122,17 @@ class Auth
         $_SESSION['allowed_bu_ids'] = [];
 
         if ($role === 'super_admin') {
-            // Load from bridge table
+
+            // ✅ Check table exists first
+            $check = $this->db->query("SHOW TABLES LIKE 'admin_user_business_units'");
+            if ($check && $check->num_rows === 0) {
+                // fallback: allow current BU only
+                if (!empty($_SESSION['current_bu_id'])) {
+                    $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
+                }
+                return;
+            }
+
             $sql = "SELECT business_unit_id FROM admin_user_business_units WHERE admin_user_id = ?";
             if ($stmt = $this->db->prepare($sql)) {
                 $stmt->bind_param('i', $adminId);
@@ -133,12 +143,12 @@ class Auth
                 }
                 $stmt->close();
             }
-            // Ensure at least current_bu_id is present
+
             if (empty($_SESSION['allowed_bu_ids']) && !empty($_SESSION['current_bu_id'])) {
                 $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
             }
+
         } else {
-            // Admin/Employee: lock to current BU
             if (!empty($_SESSION['current_bu_id'])) {
                 $_SESSION['allowed_bu_ids'][] = (int) $_SESSION['current_bu_id'];
             }
