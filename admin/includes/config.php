@@ -4,7 +4,13 @@
 ====================================================== */
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '');=== */
+define('DB_PASS', '');
+define('DB_NAME', 'csnk');
+
+
+/* ======================================================
+   APPLICATION CONFIGURATION
+====================================================== */
 define('APP_NAME', 'CSNK Admin System');
 
 // Auto-detect protocol (http / https)
