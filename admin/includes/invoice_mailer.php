@@ -40,6 +40,17 @@ function sendInvoiceEmail(
     ?string $paymentLink = null
 ): bool {
 
+    $mail = new PHPMailer(true);
+    <meta charset='UTF-8'>
+    <title>Invoice {$invoiceNumber}</title>
+</head>
+
+<body style='margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;'>
+
+<table width='100%' cellpadding='0' cellspacing='0' style='padding:48px 0;'>
+<tr>
+<td align='center'>
+
     <table width='620' cellpadding='0' cellspacing='0'
            style='background:#ffffff;border-radius:14px;
                   box-shadow:0 12px 36px rgba(0,0,0,0.14);
