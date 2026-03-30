@@ -155,5 +155,64 @@ function sendInvoiceEmail(
                             <strong>Attachment:</strong> PDF Invoice
                         </td>
                     </tr>
+                </table>
+
+                {$payButtonHtml}
+
+                <!-- PAYMENT INSTRUCTION -->
+                <div style='
+                    background:#fff4f4;
+                    border-left:4px solid #c4161c;
+                    padding:16px;
+                    border-radius:6px;
+                    margin:26px 0;
+                    font-size:14px;
+                '>
+                    <strong>Important Payment Instruction</strong><br>
+                    After successful payment, kindly reply to this email and attach
+                    a clear receipt or screenshot of the completed transaction.
+                    This will allow our billing team to promptly verify and update
+                    your payment status.
+                </div>
+
+                <p>
+                    Should you have any questions or require further assistance,
+                    please do not hesitate to contact our billing department.
+                </p>
+
+                <p style='margin-top:32px;'>
+                    Sincerely,<br>
+                    <strong>CSNK Manpower Agency</strong><br>
+                    Billing & Accounts Department
+                </p>
+
+            </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+            <td style='background:#f2f2f2;padding:18px;
+                       text-align:center;font-size:12px;color:#666;'>
+                This is an automated billing notice. Please do not reply directly.<br>
+                © {$year} CSNK Manpower Agency. All rights reserved.
+            </td>
+        </tr>
+
+    </table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+";
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        error_log('Invoice email error: ' . $e->getMessage());
+        return false;
     }
 }
