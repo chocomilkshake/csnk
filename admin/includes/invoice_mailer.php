@@ -119,6 +119,21 @@ function sendInvoiceEmail(
                 padding:30px 32px;
                 color:#ffffff;
             '>
+                <h1 style='margin:0;font-size:24px;font-weight:bold;'>
+                    CSNK Manpower Agency
+                </h1>
+                <p style='margin:6px 0 0;font-size:14px;opacity:0.95;'>
+                    Billing & Accounts Department
+                </p>
+            </td>
+                       style='background:#fafafa;border-radius:10px;
+                              border:1px solid #e6e6e6;margin:22px 0;'>
+
+                    <tr>
+                        <td style='padding:18px;font-size:14px;'>
+                            <strong>Invoice Number:</strong> {$invoiceNumber}<br>
+                            <strong>Agency:</strong> CSNK Manpower Agency<br>
+                            <strong>Attachment:</strong> PDF Invoice
                         </td>
                     </tr>
     }
