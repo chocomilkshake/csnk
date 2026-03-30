@@ -59,3 +59,11 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 /* ======================================================
    TIMEZONE
 ====================================================== */
+date_default_timezone_set('Asia/Manila');
+// ✅ Xendit API Base URL
+define(
+    'XENDIT_API_URL',
+    XENDIT_ENV === 'production'
+        ? 'https://api.xendit.co'
+        : 'https://api.xendit.co'
+);
