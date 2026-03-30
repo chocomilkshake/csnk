@@ -44,7 +44,26 @@ function sendInvoiceEmail(
 
     try {
 
-        /* ================= SMTP SETTINGS ===============
+        /* ================= SMTP SETTINGS ================= */
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USER;
+
+        /* ================= PAY BUTTON (WORKING) ================= */
+        $payButtonHtml = '';
+
+        if (!empty($paymentLink)) {
+            $payButtonHtml = '
+                <div style="margin:34px 0;text-align:center;">
+                    <a href="' . $paymentLink . '" target="_blank"
+                       style="
+                           display:inline-block;
+                           padding:14px 36px;
+                           background:#c4161c;
+                           color:#ffffff;
+                           text-decoration:none;
+                           border-radius:8px;
                            font-size:15px;
                            font-weight:bold;
                            box-shadow:0 6px 18px rgba(196,22,28,0.35);
