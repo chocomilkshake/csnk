@@ -60,6 +60,22 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
    TIMEZONE
 ====================================================== */
 date_default_timezone_set('Asia/Manila');
+
+
+/* ======================================================
+/* ======================================================
+   XENDIT PAYMENT GATEWAY CONFIGURATION
+====================================================== */
+
+// ✅ Environment: 'sandbox' or 'production'
+define('XENDIT_ENV', 'sandbox');
+
+// ✅ Xendit Secret API Key (SERVER SIDE ONLY)
+define('XENDIT_SECRET_KEY', 'xnd_development_V9rC6qIrgqsJUET0lCCYR81I9K7x2K7XqWOBTNbfGbzkP33ppxDLlHARZI');
+
+// ✅ Xendit Webhook Verification Token
+define('XENDIT_WEBHOOK_TOKEN', '6XaV9HehrczUDRW6kG1hGgZ8DQnSv4vLlhod6qXyhswU1Hla');
+
 // ✅ Xendit API Base URL
 define(
     'XENDIT_API_URL',
