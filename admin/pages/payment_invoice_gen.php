@@ -518,9 +518,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
                     <div class="inv-payment">
                         <strong>Issued By:</strong> CSNK Agency<br><br>
-                        <strong>Payment method:</strong><br>
-                        GCASH: 091‑0000‑0000<br>
-                        Bank Transfer: RCBC acc no: 1234‑1234‑1234‑1234
                     </div>
 
                 </div>
@@ -687,14 +684,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
                     <div class="payment">
                         <strong>Issued By:</strong> SMC Agency<br><br>
-                        <strong>Payment Method:</strong><br>
-                        Bank Transfer / International Remittance
                     </div>
 
                 </div>
-
-
-
             </div>
         </div>
 
