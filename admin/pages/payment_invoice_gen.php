@@ -35,6 +35,45 @@ $client_email   = trim($_POST['client_email'] ?? '');
 $client_address = trim($_POST['client_address'] ?? '');
 $due_date       = $_POST['due_date'] ?? '';
 
+function resolveCompanyType(mysqli $conn, int $businessUnitId): string
+{
+    if ($businessUnitId <= 0) {
+        return 'CSNK';
+    }
+
+    $stmt = $conn->prepare("
+        SELECT bu.agency_id, bu.code, bu.name
+        FROM business_units bu
+        WHERE bu.id = ?
+        LIMIT 1
+    ");
+
+    if (!$stmt) {
+        return 'CSNK';
+    }
+
+    $stmt->bind_param("i", $businessUnitId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+
+    if (!$row) {
+        return 'CSNK';
+    }
+
+    if ((int) ($row['agency_id'] ?? 0) === 2) {
+        return 'SMC';
+    }
+
+    $code = strtoupper((string) ($row['code'] ?? ''));
+    $name = strtoupper((string) ($row['name'] ?? ''));
+
+    return (strpos($code, 'SMC') === 0 || strpos($name, 'SMC') !== false)
+        ? 'SMC'
+        : 'CSNK';
+}
+
 
 function createXenditInvoice(array $data)
 {
@@ -83,7 +122,9 @@ function createXenditInvoice(array $data)
 
 // POST HANDLER BLOCK
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
+    }
 
     if (!empty($_SESSION['invoice_processing'])) {
         setFlashMessage('warning', 'Invoice is already being processed.');
@@ -97,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     // ================= BASIC INPUTS =================
     $client_name       = trim($_POST['client_name']);
     $business_unit_id  = (int) ($_POST['business_unit_id'] ?? 0);
-    $company_type      = ($business_unit_id == 2) ? 'SMC' : 'CSNK';
+    $company_type      = resolveCompanyType($conn, $business_unit_id);
 
     // ✅ STEP 3 — READ client_booking_id HERE (VERY IMPORTANT)
     $booking_id = (int) ($_POST['client_booking_id'] ?? 0);
@@ -122,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     }
 
     // ================= INVOICE TEMPLATE SETUP =================
-    if ($business_unit_id == 2) {
+    if ($company_type === 'SMC') {
         // SMC
         $invoice_prefix = 'SMC';
         $template_name  = 'smc';
@@ -140,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     $invoicr->template($template_name);
 
     /* COMPANY */
-    if ($business_unit_id == 2) {
+    if ($company_type === 'SMC') {
         $companyName = 'SMC Agency';
         $companyLogo = "<img src='" . __DIR__ . "/../../resources/img/SMC-LOGO.png'>";
     } else {
@@ -195,9 +236,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
     $invoicr->add('totals', ['Total', '₱' . number_format($total, 2)]);
 
+    $issuedBy = ($company_type === 'SMC')
+        ? 'Issued by: SMC Agency'
+        : 'Issued by: CSNK Agency';
+
     $invoicr->set('notes', [
         'I declare that all information contained in this invoice are certified true and correct.',
-        'Issued by: CSNK Agency',
+        $issuedBy,
         'Payment via GCash or RCBC bank transfer.'
     ]);
 
@@ -323,41 +368,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             );
         }
 
-        // ✅ EMAIL HANDLING (ASYNC-LIKE, NON-BLOCKING)
+        // ✅ EMAIL HANDLING (DIRECT & RELIABLE — FIXED)
         if (filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
 
-            // Send email AFTER response is finished (prevents slow UI & double click panic)
-            register_shutdown_function(function () use (
-                $client_email,
-                $client_name,
-                $invoice_num,
-                $filepath,
-                $company_type,
-                $payment_link
-            ) {
-                try {
-                    sendInvoiceEmail(
-                        $client_email,
-                        $client_name,
-                        $invoice_num,
-                        $filepath,
-                        $company_type,
-                        $payment_link
-                    );
-                } catch (Throwable $e) {
-                    error_log('Invoice email failed: ' . $e->getMessage());
-                }
-            });
+            try {
 
-            setFlashMessage(
-                'success',
-                '✅ Invoice generated and is being emailed to the client.'
-            );
+                $emailSent = sendInvoiceEmail(
+                    $client_email,
+                    $client_name,
+                    $invoice_num,
+                    $filepath,
+                    $company_type,   // CSNK or SMC
+                    $payment_link
+                );
+
+                if ($emailSent) {
+                    setFlashMessage(
+                        'success',
+                        '✅ Invoice generated and email sent successfully to the client.'
+                    );
+                } else {
+                    $mailerError = getLastInvoiceMailerError();
+                    setFlashMessage(
+                        'warning',
+                        '⚠️ Invoice generated, but email could not be sent. Please check email configuration.'
+                    );
+                    if ($mailerError !== '') {
+                        setFlashMessage(
+                            'warning',
+                            'âš ï¸ Invoice generated, but email could not be sent. Mailer error: ' . $mailerError
+                        );
+                    }
+                }
+
+            } catch (Throwable $e) {
+
+                error_log('Invoice email failed: ' . $e->getMessage());
+
+                setFlashMessage(
+                    'error',
+                    '❌ Invoice generated, but an error occurred while sending the email.'
+                );
+            }
 
         } else {
+
             setFlashMessage(
                 'warning',
-                '⚠️ Invoice generated and saved, but client email is invalid.'
+                '⚠️ Invoice generated and saved, but client email address is invalid.'
             );
         }
 
@@ -378,8 +436,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             CONCAT(cb.client_first_name,' ',cb.client_last_name) AS client_name,
             cb.client_phone,
             cb.client_address,
-            cb.business_unit_id
+            cb.business_unit_id,
+            bu.agency_id,
+            bu.code AS business_unit_code,
+            bu.name AS business_unit_name
         FROM client_bookings cb
+        LEFT JOIN business_units bu ON bu.id = cb.business_unit_id
         WHERE cb.status IN ('submitted','confirmed','on_process','approved')
         ORDER BY cb.client_last_name, cb.client_first_name
             ";
@@ -387,6 +449,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
     while ($row = $r->fetch_assoc()) {
         $apps = get_client_applicants($conn, (int)$row['booking_id']);
         $row['applicants'] = $apps;
+        $row['agency_group'] = ((int) ($row['agency_id'] ?? 0) === 2)
+            ? 'SMC'
+            : resolveCompanyType($conn, (int) ($row['business_unit_id'] ?? 0));
         $clients[] = $row;
     }
     ?>
@@ -712,8 +777,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                             <label class="form-label small fw-semibold">Select Agency</label>
                             <select class="form-select form-control-lg" id="agency-select" onchange="filterClientsByAgency(); updateInvoiceNumPreview();">
                                 <option value="">Select Agency</option>
-                                <option value="1">CSNK</option>
-                                <option value="2">SMC</option>
+                                <option value="CSNK">CSNK</option>
+                                <option value="SMC">SMC</option>
                             </select>
                         </div>
 
@@ -733,8 +798,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                                             data-address="<?= h($c['client_address']) ?>"
                                             data-apps="<?= htmlspecialchars(json_encode($c['applicants']), ENT_QUOTES, 'UTF-8') ?>"
                                             data-bu="<?= (int)$c['business_unit_id'] ?>"
+                                            data-agency="<?= h($c['agency_group']) ?>"
                                         >
-                                            <?= h($c['client_name']) ?> (<?= count($c['applicants']) ?> applicants)
+                                            <?= h($c['client_name']) ?><?= !empty($c['business_unit_name']) ? ' - ' . h($c['business_unit_name']) : '' ?> (<?= count($c['applicants']) ?> applicants)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -1112,8 +1178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
             return;
         }
         const opt = sel.options[sel.selectedIndex];
-        document.getElementById('client_booking_id').value = opt.value;
         if (!opt || opt.value === '') return;
+        document.getElementById('client_booking_id').value = opt.value;
+        document.getElementById('business_unit_id').value = opt.dataset.bu || '';
         // CLIENT INFO
         document.getElementById('client_name').value = opt.dataset.name || '';
         document.getElementById('client_email').value = opt.dataset.email || '';
@@ -1304,6 +1371,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
         clientSelect.value = '';
         clientSelect.disabled = true;
+        document.getElementById('client_booking_id').value = '';
+        document.getElementById('business_unit_id').value = '';
         document.getElementById('client-info').classList.add('d-none');
 
         Array.from(clientSelect.options).forEach(opt => {
@@ -1312,14 +1381,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                 return;
             }
             opt.hidden = true;
-            if (agencyId && opt.dataset.bu === agencyId) {
+            if (agencyId && opt.dataset.agency === agencyId) {
                 opt.hidden = false;
             }
         });
 
         if (agencyId) {
             clientSelect.disabled = false;
-            document.getElementById('business_unit_id').value = agencyId;
         }
         updateInvoiceNumPreview();
     }
@@ -1332,14 +1400,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
 
         if (!agency) return;
 
-        const prefix = agency === '2' ? 'SMC' : 'CSNK';
+        const prefix = agency === 'SMC' ? 'SMC' : 'CSNK';
         const today = new Date();
         const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
 
         const rand = Math.floor(Math.random() * 900) + 100;
         const invoiceNum = `${prefix}-${dateStr}-${rand}`;
 
-        if (agency === '2') {
+        if (agency === 'SMC') {
             document.getElementById('preview-smc').classList.remove('d-none');
             document.getElementById('smc-invoice-num').textContent = invoiceNum;
         } else {
@@ -1432,17 +1500,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
         const form = document.querySelector('form');
         const btn  = document.getElementById('generateBtn');
 
-        form.addEventListener('submit', () => {
-        btn.disabled = true;
-        btn.querySelector('.btn-text').classList.add('d-none');
-        btn.querySelector('.btn-loading').classList.remove('d-none');
-        });
+        if (form && btn) {
+            form.addEventListener('submit', () => {
+                btn.disabled = true;
+                btn.querySelector('.btn-text').classList.add('d-none');
+                btn.querySelector('.btn-loading').classList.remove('d-none');
+            });
+        }
     });
 
-    const modal = new bootstrap.Modal(
-        document.getElementById('actionModal')
-        );
-    modal.show();
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalElement = document.getElementById('actionModal');
+        if (modalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    });
 </script>
 
 <?php include '../includes/footer.php'; ?>
