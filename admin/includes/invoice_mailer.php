@@ -2,6 +2,32 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+/* ======================================================
+   LOAD CONFIG & PHPMailer
+====================================================== */
+require_once __DIR__ . '/config.php';
+
+// Load PHPMailer (Composer first, fallback second)
+$composerAutoload = __DIR__ . '/../../vendor/autoload.php';
+
+if (is_readable($composerAutoload)) {
+    require_once $composerAutoload;
+} else {
+    require_once __DIR__ . '/../../lib/phpmailer/src/Exception.php';
+    require_once __DIR__ . '/../../lib/phpmailer/src/PHPMailer.php';
+    require_once __DIR__ . '/../../lib/phpmailer/src/SMTP.php';
+}
+
+/* ======================================================
+   SEND CSNK INVOICE EMAIL
+====================================================== */
+/**
+ * @param string      $toEmail
+ * @param string      $clientName
+ * @param string      $invoiceNumber
+ * @param string      $pdfPath
+ * @param string      $companyType
+ * @param string|null $paymentLink
  *
  * @return bool
  */
