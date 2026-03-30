@@ -74,24 +74,18 @@ ini_set('display_errors', 1); // ❗ set to 0 in production
 ====================================================== */
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_SECURE', 'tls');
 define('SMTP_USER', 'csnkmanila@gmail.com');        // ✅ CHANGE IF NEEDED
 define('SMTP_PASS', 'svmw uiwi vjvt hteu');         // ✅ Gmail App Password
 define('SMTP_FROM_EMAIL', 'csnkmanila@gmail.com');
-define('SMTP_FROM_NAME', 'CSNK Agency');
-define('SMTP_TIMEOUT', 30);
-define('SMTP_KEEPALIVE', false);
-define('SMTP_AUTO_TLS', true);
-define('SMTP_BCC_SENDER_COPY', false);
+define('SMTP_FROM_NAME', 'CSNK Billing');
+
+
 
 // === SMC EMAIL SETTINGS ===
-define('SMC_SMTP_HOST', 'smtp.gmail.com');
-define('SMC_SMTP_PORT', 587);
-define('SMC_SMTP_SECURE', 'tls');
 define('SMC_SMTP_USER', 'smcagency.ph@gmail.com');
 define('SMC_SMTP_PASS', 'ahgg slcm tcaq hhqr');
 define('SMC_FROM_EMAIL', 'smcagency.ph@gmail.com');
-define('SMC_FROM_NAME', 'SMC Agency');
+define('SMC_FROM_NAME', 'SMC Agency Billing');
 
 
 /* ======================================================
