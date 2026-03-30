@@ -25,7 +25,19 @@ define('UPLOAD_URL', APP_URL . '/uploads/');
 
 // Replacement uploads
 define('REPLACEMENTS_UPLOAD_SUBDIR', 'replacements');
-define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENT
+define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENTS_UPLOAD_SUBDIR . '/');
+define('REPLACEMENTS_UPLOAD_URL', UPLOAD_URL . REPLACEMENTS_UPLOAD_SUBDIR . '/');
+
+// Ensure replacements directory exists
+if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
+    @mkdir(REPLACEMENTS_UPLOAD_PATH, 0755, true);
+}
+
+
+/* ======================================================
+   SESSION CONFIGURATION (SECURE)
+====================================================== */
+if (session_status() !== PHP_SESSION_ACTIVE) {
 
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
