@@ -2,14 +2,10 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-/* ======================================================
-   LOAD CONFIG & PHPMailer
-====================================================== */
 require_once __DIR__ . '/config.php';
 
-// Load PHPMailer (Composer first, fallback second)
+// ========== PHPMailer Loader ==========
 $composerAutoload = __DIR__ . '/../../vendor/autoload.php';
-
 if (is_readable($composerAutoload)) {
     require_once $composerAutoload;
 } else {
@@ -19,200 +15,225 @@ if (is_readable($composerAutoload)) {
 }
 
 /* ======================================================
-   SEND CSNK INVOICE EMAIL
+   LOGGER
 ====================================================== */
-/**
- * @param string      $toEmail
- * @param string      $clientName
- * @param string      $invoiceNumber
- * @param string      $pdfPath
- * @param string      $companyType
- * @param string|null $paymentLink
- *
- * @return bool
- */
+function logInvoiceMailerEvent(string $message): void
+{
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+
+    file_put_contents(
+        $logDir . '/invoice_mailer.log',
+        '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL,
+        FILE_APPEND
+    );
+}
+
+function setLastInvoiceMailerError(string $message): void
+{
+    $GLOBALS['last_invoice_mailer_error'] = $message;
+}
+
+function getLastInvoiceMailerError(): string
+{
+    return trim((string) ($GLOBALS['last_invoice_mailer_error'] ?? ''));
+}
+
+/* ======================================================
+   SMTP CONFIG
+====================================================== */
+function getSmtpConfig(string $companyType): array
+{
+    if (strtoupper($companyType) === 'SMC') {
+        return [
+            'host'     => SMTP_HOST,
+            'port'     => SMTP_PORT,
+            'username' => SMC_SMTP_USER,
+            'password' => SMC_SMTP_PASS,
+            'from'     => SMC_FROM_EMAIL,
+            'fromName' => 'SMC Manpower Agency Billing',
+        ];
+    }
+
+    return [
+        'host'     => SMTP_HOST,
+        'port'     => SMTP_PORT,
+        'username' => SMTP_USER,
+        'password' => SMTP_PASS,
+        'from'     => SMTP_FROM_EMAIL,
+        'fromName' => 'CSNK Manpower Agency Billing',
+    ];
+}
+
+/* ======================================================
+   SEND INVOICE EMAIL
+====================================================== */
 function sendInvoiceEmail(
     string $toEmail,
     string $clientName,
     string $invoiceNumber,
     string $pdfPath,
-    string $companyType = 'CSNK',
+    string $companyType,
     ?string $paymentLink = null
 ): bool {
 
+    $smtp = getSmtpConfig($companyType);
     $mail = new PHPMailer(true);
+    setLastInvoiceMailerError('');
 
     try {
-
-        /* ================= SMTP SETTINGS ================= */
+        /* SMTP */
         $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Host       = $smtp['host'];
         $mail->Port       = SMTP_PORT;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $smtp['username'];
+        $mail->Password   = $smtp['password'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 
-        /* ================= EMAIL HEADERS ================= */
-        $mail->setFrom(SMTP_FROM_EMAIL, 'CSNK Manpower Agency Billing');
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true,
+            ]
+        ];
+
+        $mail->setFrom($smtp['from'], $smtp['fromName']);
         $mail->addAddress($toEmail, $clientName);
+        $mail->addReplyTo($smtp['from'], $smtp['fromName']);
 
-        /* ================= ATTACH INVOICE ================= */
-        if (!empty($pdfPath) && is_readable($pdfPath)) {
-            $mail->addAttachment($pdfPath);
+        if (is_readable($pdfPath)) {
+            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf");
         }
 
-        /* ================= META ================= */
         $mail->isHTML(true);
-        $mail->Subject = "Invoice {$invoiceNumber} | CSNK Manpower Agency";
+        $mail->CharSet = 'UTF-8';
+        $mail->Subject = "Invoice {$invoiceNumber} | {$companyType} Agency";
 
+        /* THEME + LOGO */
         $year = date('Y');
 
-        /* ================= PAY BUTTON (WORKING) ================= */
-        $payButtonHtml = '';
+        $siteBaseUrl = preg_replace('#/admin/?$#', '', APP_URL);
 
-        if (!empty($paymentLink)) {
-            $payButtonHtml = '
-                <div style="margin:34px 0;text-align:center;">
-                    <a href="' . $paymentLink . '" target="_blank"
-                       style="
-                           display:inline-block;
-                           padding:14px 36px;
-                           background:#c4161c;
-                           color:#ffffff;
-                           text-decoration:none;
-                           border-radius:8px;
-                           font-size:15px;
-                           font-weight:bold;
-                           box-shadow:0 6px 18px rgba(196,22,28,0.35);
-                       ">
+        if (strtoupper($companyType) === 'SMC') {
+            $headerBg = '#0a1f44'; // Navy
+            $accent   = '#d4af37'; // Gold
+            $title    = 'SMC Manpower Agency Philippines Co.';
+            $logoTag = "<img src='" . $siteBaseUrl . "/resources/img/smcbrandname.png'
+                alt='SMC Logo'
+                style='max-width:95px;height:auto;display:block;'>";
+        } else {
+            $headerBg = '#8b0000'; // CSNK Red
+            $accent   = '#c4161c';
+            $title    = 'CSNK Manpower Agency';
+            $logoTag = "<img src='" . $siteBaseUrl . "/resources/img/csnklogo.png'
+                alt='CSNK Logo'
+                style='max-width:95px;height:auto;display:block;'>";
+        }
+
+        $payBtn = '';
+        if ($paymentLink) {
+            $payBtn = "
+                <div style='text-align:center;margin:26px 0;'>
+                    <a href='{$paymentLink}' target='_blank'
+                       style='background:{$accent};
+                              color:#ffffff;
+                              padding:14px 32px;
+                              text-decoration:none;
+                              border-radius:6px;
+                              font-weight:bold;
+                              display:inline-block;'>
                         💳 Pay Invoice Securely
                     </a>
                 </div>
-            ';
+            ";
         }
 
-        /* ================= EMAIL BODY ================= */
+        /* EMAIL BODY */
         $mail->Body = "
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset='UTF-8'>
-    <title>Invoice {$invoiceNumber}</title>
-</head>
+<body style='margin:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;'>
+<table width='100%' style='padding:40px 0;'>
+<tr><td align='center'>
 
-<body style='margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;'>
+<table width='620' style='background:#ffffff;border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;'>
 
-<table width='100%' cellpadding='0' cellspacing='0' style='padding:48px 0;'>
 <tr>
-<td align='center'>
+<td style='background:{$headerBg};padding:22px;color:#ffffff;'>
+<table width='100%'>
+<tr>
+<td width='110' valign='middle'>{$logoTag}</td>
+<td valign='middle'>
+    <h2 style='margin:0;font-size:20px;'>{$title}</h2>
+    <p style='margin:6px 0 0;font-size:13px;'>Billing & Accounts Department</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
 
-    <table width='620' cellpadding='0' cellspacing='0'
-           style='background:#ffffff;border-radius:14px;
-                  box-shadow:0 12px 36px rgba(0,0,0,0.14);
-                  overflow:hidden;'>
+<tr>
+<td style='padding:32px;color:#333;font-size:15px;'>
+<p>Good day <strong>{$clientName}</strong>,</p>
 
-        <!-- HEADER -->
-        <tr>
-            <td style='
-                background:linear-gradient(135deg,#c4161c,#6d0f14);
-                padding:30px 32px;
-                color:#ffffff;
-            '>
-                <h1 style='margin:0;font-size:24px;font-weight:bold;'>
-                    CSNK Manpower Agency
-                </h1>
-                <p style='margin:6px 0 0;font-size:14px;opacity:0.95;'>
-                    Billing & Accounts Department
-                </p>
-            </td>
-        </tr>
+<p>Please find attached your <strong>official invoice</strong>
+from <strong>{$companyType} Agency</strong>.</p>
 
-        <!-- CONTENT -->
-        <tr>
-            <td style='padding:36px 32px;color:#333;font-size:15px;line-height:1.7;'>
-
-                <p>
-                    Good day <strong>{$clientName}</strong>,
-                </p>
-
-                <p>
-                    Thank you for your continued trust in
-                    <strong>CSNK Manpower Agency</strong>.
-                    Please find attached your official invoice for this transaction,
-                    provided for your reference and accounting records.
-                </p>
-
-                <!-- INVOICE DETAILS -->
-                <table width='100%' cellpadding='0' cellspacing='0'
-                       style='background:#fafafa;border-radius:10px;
-                              border:1px solid #e6e6e6;margin:22px 0;'>
-
-                    <tr>
-                        <td style='padding:18px;font-size:14px;'>
-                            <strong>Invoice Number:</strong> {$invoiceNumber}<br>
-                            <strong>Agency:</strong> CSNK Manpower Agency<br>
-                            <strong>Attachment:</strong> PDF Invoice
-                        </td>
-                    </tr>
-                </table>
-
-                {$payButtonHtml}
-
-                <!-- PAYMENT INSTRUCTION -->
-                <div style='
-                    background:#fff4f4;
-                    border-left:4px solid #c4161c;
-                    padding:16px;
-                    border-radius:6px;
-                    margin:26px 0;
-                    font-size:14px;
-                '>
-                    <strong>Important Payment Instruction</strong><br>
-                    After successful payment, kindly reply to this email and attach
-                    a clear receipt or screenshot of the completed transaction.
-                    This will allow our billing team to promptly verify and update
-                    your payment status.
-                </div>
-
-                <p>
-                    Should you have any questions or require further assistance,
-                    please do not hesitate to contact our billing department.
-                </p>
-
-                <p style='margin-top:32px;'>
-                    Sincerely,<br>
-                    <strong>CSNK Manpower Agency</strong><br>
-                    Billing & Accounts Department
-                </p>
-
-            </td>
-        </tr>
-
-        <!-- FOOTER -->
-        <tr>
-            <td style='background:#f2f2f2;padding:18px;
-                       text-align:center;font-size:12px;color:#666;'>
-                This is an automated billing notice. Please do not reply directly.<br>
-                © {$year} CSNK Manpower Agency. All rights reserved.
-            </td>
-        </tr>
-
-    </table>
-
+<table width='100%' style='background:#fafafa;border-radius:8px;
+border:1px solid #e6e6e6;margin:20px 0;'>
+<tr>
+<td style='padding:16px;font-size:14px;'>
+<strong>Invoice Number:</strong> {$invoiceNumber}<br>
+<strong>Agency:</strong> {$companyType} Agency<br>
+<strong>Attachment:</strong> PDF Invoice
 </td>
 </tr>
 </table>
 
+{$payBtn}
+
+<div style='background:#fff5eb;border-left:4px solid {$accent};
+padding:14px;margin-top:20px;font-size:14px;'>
+<strong>Payment Confirmation:</strong><br>
+After payment, kindly reply to this email with your receipt or screenshot.
+</div>
+
+<p style='margin-top:26px;'>Sincerely,<br>
+<strong>{$title}</strong><br>Billing Department</p>
+</td>
+</tr>
+
+<tr>
+<td style='background:#f1f1f1;text-align:center;font-size:12px;color:#666;padding:16px;'>
+© {$year} {$title}. All rights reserved.
+</td>
+</tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>
 ";
 
+        $mail->AltBody =
+            "Invoice {$invoiceNumber}\n\n" .
+            "Please see attached invoice.\n" .
+            ($paymentLink ? "Payment link: {$paymentLink}\n\n" : "") .
+            "Reply with receipt after payment.\n\n{$title}";
+
         $mail->send();
+        logInvoiceMailerEvent("SUCCESS {$companyType} {$invoiceNumber} → {$toEmail}");
         return true;
 
-    } catch (Exception $e) {
-        error_log('Invoice email error: ' . $e->getMessage());
+    } catch (Throwable $e) {
+        setLastInvoiceMailerError($e->getMessage());
+        logInvoiceMailerEvent("FAIL {$companyType} {$invoiceNumber} → {$e->getMessage()}");
         return false;
     }
 }
