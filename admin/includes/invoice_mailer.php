@@ -126,6 +126,25 @@ function sendInvoiceEmail(
                     Billing & Accounts Department
                 </p>
             </td>
+        </tr>
+
+        <!-- CONTENT -->
+        <tr>
+            <td style='padding:36px 32px;color:#333;font-size:15px;line-height:1.7;'>
+
+                <p>
+                    Good day <strong>{$clientName}</strong>,
+                </p>
+
+                <p>
+                    Thank you for your continued trust in
+                    <strong>CSNK Manpower Agency</strong>.
+                    Please find attached your official invoice for this transaction,
+                    provided for your reference and accounting records.
+                </p>
+
+                <!-- INVOICE DETAILS -->
+                <table width='100%' cellpadding='0' cellspacing='0'
                        style='background:#fafafa;border-radius:10px;
                               border:1px solid #e6e6e6;margin:22px 0;'>
 
