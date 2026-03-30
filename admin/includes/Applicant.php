@@ -789,8 +789,31 @@ class Applicant
 
     public function addDocument($applicantId, $documentType, $filePath)
     {
-        $stmt = $this->db->prepare("INSERT INTO applicant_documents (applicant_id, document_type, file_path) VALUES (?, ?, ?)");
-        $stmt->bind_param("iss", $applicantId, $documentType, $filePath);
+        $businessUnitId = (int) ($_SESSION['current_bu_id'] ?? 0);
+
+        $sql = "
+            INSERT INTO applicant_documents
+                (applicant_id, business_unit_id, document_type, file_path)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                file_path = VALUES(file_path),
+                uploaded_at = CURRENT_TIMESTAMP
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            error_log('addDocument prepare failed: ' . $this->db->error);
+            return false;
+        }
+
+        $stmt->bind_param(
+            "iiss",
+            $applicantId,
+            $businessUnitId,
+            $documentType,
+            $filePath
+        );
+
         $ok = $stmt->execute();
         $stmt->close();
         return $ok;
