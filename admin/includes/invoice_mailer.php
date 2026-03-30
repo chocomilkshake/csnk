@@ -49,6 +49,24 @@ function sendInvoiceEmail(
         $mail->Host       = SMTP_HOST;
         $mail->SMTPAuth   = true;
         $mail->Username   = SMTP_USER;
+        $mail->Password   = SMTP_PASS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
+
+        /* ================= EMAIL HEADERS ================= */
+        $mail->setFrom(SMTP_FROM_EMAIL, 'CSNK Manpower Agency Billing');
+        $mail->addAddress($toEmail, $clientName);
+
+        /* ================= ATTACH INVOICE ================= */
+        if (!empty($pdfPath) && is_readable($pdfPath)) {
+            $mail->addAttachment($pdfPath);
+        }
+
+        /* ================= META ================= */
+        $mail->isHTML(true);
+        $mail->Subject = "Invoice {$invoiceNumber} | CSNK Manpower Agency";
+
+        $year = date('Y');
 
         /* ================= PAY BUTTON (WORKING) ================= */
         $payButtonHtml = '';
