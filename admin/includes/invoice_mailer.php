@@ -41,6 +41,25 @@ function sendInvoiceEmail(
 ): bool {
 
     $mail = new PHPMailer(true);
+
+    try {
+
+        /* ================= SMTP SETTINGS ===============
+                           font-size:15px;
+                           font-weight:bold;
+                           box-shadow:0 6px 18px rgba(196,22,28,0.35);
+                       ">
+                        💳 Pay Invoice Securely
+                    </a>
+                </div>
+            ';
+        }
+
+        /* ================= EMAIL BODY ================= */
+        $mail->Body = "
+<!DOCTYPE html>
+<html>
+<head>
     <meta charset='UTF-8'>
     <title>Invoice {$invoiceNumber}</title>
 </head>
