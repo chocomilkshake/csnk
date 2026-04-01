@@ -233,125 +233,152 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Alternate phone must be 11 digits and start with 09 (e.g., 09123456789).';
     }
 
-    // ===================== Picture upload =====================
+    // ===================== VALIDATION HAS ALREADY RUN ABOVE THIS =====================
+
+    // Auto-compute years of experience from work history
+    $yearsExperience = computeTotalYears($workHistoryArr);
+
+    // Resolve Business Unit / Branch
+    $dataBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
+    $postedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== ''
+        ? (int) $_POST['branch_id']
+        : null;
+
+    if ($isEmployee) {
+        $dataBuId = $currentBuId > 0 ? $currentBuId : $dataBuId;
+        $postedBranchId = ($userAgency === 'csnk' && $currentBranchId > 0)
+            ? $currentBranchId
+            : null;
+    }
+
+    if (
+        !$isSuperAdmin &&
+        !empty($allowedBuIds) &&
+        !in_array($dataBuId, $allowedBuIds, true)
+    ) {
+        $dataBuId = $currentBuId;
+    }
+
+    // ===================== STOP IF THERE ARE VALIDATION ERRORS =====================
+    if (!empty($errors)) {
+        // return;
+    }
+
+    // ===================== FILE UPLOADS (ONLY NOW) =====================
     $picturePath = null;
-    if (isset($_FILES['picture']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
+
+    // Profile picture
+    if (!empty($_FILES['picture']['name']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
         $picturePath = uploadFile($_FILES['picture'], 'applicants');
         if (!$picturePath) {
             $errors[] = 'Failed to upload picture.';
         }
     }
 
-    // Auto-compute years of experience from work history
-    $yearsExperience = computeTotalYears($workHistoryArr);
-
-    // Get business_unit_id from POST (admin can select country) or fallback to current user's session
-    $dataBuId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
-    $postedBranchId = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null;
-
-    if ($isEmployee) {
-        $dataBuId = $currentBuId > 0 ? $currentBuId : $dataBuId;
-        $postedBranchId = ($userAgency === 'csnk' && $currentBranchId > 0) ? $currentBranchId : null;
+    // Stop if upload failed
+    if (!empty($errors)) {
+        // return;
     }
 
-    // Validate business_unit_id belongs to allowed BUs if user has restrictions
-    // Super admins can add applicants to ANY business unit, so skip this validation for them
-    if (!$isSuperAdmin && !empty($allowedBuIds) && !in_array($dataBuId, $allowedBuIds)) {
-        $dataBuId = $currentBuId; // Fallback to user's BU if invalid
+    // ===================== CREATE APPLICANT =====================
+    $data = [
+        'first_name'             => $firstName,
+        'middle_name'            => $middleName,
+        'last_name'              => $lastName,
+        'suffix'                 => $suffix,
+
+        'phone_number'           => $phoneNumber,
+        'alt_phone_number'       => $phoneAlternate,
+        'email'                  => $email,
+        'date_of_birth'          => $dateOfBirth,
+        'address'                => $address,
+
+        'educational_attainment' => $educationalAttainmentJson,
+        'work_history'           => $workHistoryJson,
+        'preferred_location'     => $preferredLocationJson,
+        'languages'              => $languagesJson,
+        'specialization_skills'  => $specializationSkillsJson,
+
+        'employment_type'        => $employmentType,
+        'education_level'        => $educationLevel,
+        'years_experience'       => $yearsExperience,
+        'daily_rate'             => $dailyRate,
+
+        'picture'                => $picturePath,
+        'status'                 => $status,
+        'created_by'             => $_SESSION['admin_id'],
+        'business_unit_id'       => $dataBuId,
+        'branch_id'              => $postedBranchId
+    ];
+
+    $applicantId = $applicant->create($data);
+
+    if (!$applicantId) {
+        $errors[] = 'Failed to create applicant.';
+        return;
     }
 
+    // ===================== DOCUMENT UPLOADS =====================
+    $documentTypes = [
+        'brgy_clearance',
+        'birth_certificate',
+        'sss',
+        'pagibig',
+        'nbi',
+        'police_clearance',
+        'tin_id',
+        'passport'
+    ];
 
-    if (empty($errors)) {
-        $data = [
-            'first_name' => $firstName,
-            'middle_name' => $middleName,
-            'last_name' => $lastName,
-            'suffix' => $suffix,
-
-            'phone_number' => $phoneNumber,
-            'alt_phone_number' => $phoneAlternate,
-            'email' => $email,
-            'date_of_birth' => $dateOfBirth,
-            'address' => $address,
-
-            'educational_attainment' => $educationalAttainmentJson,
-            'work_history' => $workHistoryJson,
-            'preferred_location' => $preferredLocationJson,
-            'languages' => $languagesJson,
-            'specialization_skills' => $specializationSkillsJson, // NEW
-
-            'employment_type' => $employmentType,
-            'education_level' => $educationLevel,
-            'years_experience' => $yearsExperience,
-            'daily_rate' => $dailyRate,
-
-            'picture' => $picturePath,
-            'status' => $status,
-            'created_by' => $_SESSION['admin_id'],
-            'business_unit_id' => $dataBuId,
-            'branch_id' => $postedBranchId
-        ];
-
-        $applicantId = $applicant->create($data);
-
-        if ($applicantId) {
-            // Document uploads
-            $documentTypes = [
-                'brgy_clearance',
-                'birth_certificate',
-                'sss',
-                'pagibig',
-                'nbi',
-                'police_clearance',
-                'tin_id',
-                'passport'
-            ];
-
-            foreach ($documentTypes as $docType) {
-                if (isset($_FILES[$docType]) && $_FILES[$docType]['error'] === UPLOAD_ERR_OK) {
-                    $docPath = uploadFile($_FILES[$docType], 'documents');
-                    if ($docPath) {
-                        $applicant->addDocument($applicantId, $docType, $docPath);
-                    }
-                }
+    foreach ($documentTypes as $docType) {
+        if (!empty($_FILES[$docType]['name']) && $_FILES[$docType]['error'] === UPLOAD_ERR_OK) {
+            $docPath = uploadFile($_FILES[$docType], 'documents');
+            if ($docPath) {
+                $applicant->addDocument($applicantId, $docType, $docPath);
             }
-
-            // ---- Video uploads (optional - save first one to applicants table) ----
-            if (isset($_FILES['videos']) && is_array($_FILES['videos']['name']) && count($_FILES['videos']['name']) > 0) {
-                // Take the first video file
-                $videoFile = [
-                    'name' => $_FILES['videos']['name'][0],
-                    'type' => $_FILES['videos']['type'][0],
-                    'tmp_name' => $_FILES['videos']['tmp_name'][0],
-                    'error' => $_FILES['videos']['error'][0],
-                    'size' => $_FILES['videos']['size'][0],
-                ];
-
-                if ($videoFile['error'] === UPLOAD_ERR_OK) {
-                    $vidPath = uploadFile($videoFile, 'video');
-                    if ($vidPath) {
-                        // Update applicant with video info
-                        $videoData = [
-                            'video_url' => $vidPath,
-                            'video_provider' => 'file',
-                            'video_type' => 'file',
-                            'video_title' => isset($_POST['video_title']) ? sanitizeInput($_POST['video_title']) : pathinfo($videoFile['name'], PATHINFO_FILENAME),
-                            'video_thumbnail_url' => null,
-                            'video_duration_seconds' => null,
-                        ];
-                        $applicant->updateVideoFields($applicantId, $videoData);
-                    }
-                }
-            }
-
-            $auth->logActivity($_SESSION['admin_id'], 'Add Applicant', "Added new applicant: $firstName $lastName");
-            setFlashMessage('success', 'Applicant added successfully!');
-            redirect('applicants.php');
-        } else {
-            $errors[] = 'Failed to create applicant.';
         }
     }
-}
+
+    // ===================== VIDEO UPLOAD (FIRST FILE ONLY) =====================
+    if (
+        isset($_FILES['videos']) &&
+        is_array($_FILES['videos']['name']) &&
+        !empty($_FILES['videos']['name'][0])
+    ) {
+        if ($_FILES['videos']['error'][0] === UPLOAD_ERR_OK) {
+            $videoFile = [
+                'name'     => $_FILES['videos']['name'][0],
+                'type'     => $_FILES['videos']['type'][0],
+                'tmp_name' => $_FILES['videos']['tmp_name'][0],
+                'error'    => $_FILES['videos']['error'][0],
+                'size'     => $_FILES['videos']['size'][0],
+            ];
+
+            $vidPath = uploadFile($videoFile, 'video');
+            if ($vidPath) {
+                $applicant->updateVideoFields($applicantId, [
+                    'video_url'               => $vidPath,
+                    'video_provider'          => 'file',
+                    'video_type'              => 'file',
+                    'video_title'             => sanitizeInput(
+                        $_POST['video_title'] ?? pathinfo($videoFile['name'], PATHINFO_FILENAME)
+                    ),
+                    'video_thumbnail_url'     => null,
+                    'video_duration_seconds'  => null,
+                ]);
+            }
+        }
+    }
+
+    // ===================== SUCCESS =====================
+    $auth->logActivity(
+        $_SESSION['admin_id'],
+        'Add Applicant',
+        "Added new applicant: {$firstName} {$lastName}"
+    );
+
+    setFlashMessage('success', 'Applicant added successfully!');
+    redirect('applicants.php');
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -711,7 +738,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Branch (only for CSNK) -->
                 <div class="col-md-4">
                     <label class="form-label">Branch <small class="text-muted">(CSNK only)</small></label>
-                    <select class="form-select" name="branch_id" id="branchSelect" disabled>
+                    <select class="form-select" name="branch_id" id="branchSelect" readonly>
                         <option value="">Select Branch...</option>
                         <?php
                         // Get branches for CSNK only
@@ -870,6 +897,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- ===== Minimal JS: Wizard, dynamic rows, tags, preview ===== -->
 <script>
+
+    document.getElementById('applicantForm').addEventListener('submit', function () {
+        this.querySelectorAll('input, select, textarea').forEach(el => {
+            el.disabled = false;
+        });
+    });
+
     (function () {
         // Prevent ENTER from submitting the whole form (especially in tag inputs)
         const form = document.getElementById('applicantForm');
@@ -1253,14 +1287,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function updateBranchState() {
             if (!countrySelect || !branchSelect) return;
+
             const selectedOption = countrySelect.options[countrySelect.selectedIndex];
             const isCSNK = selectedOption.text.toLowerCase().includes('csnk');
 
             if (isCSNK) {
-                branchSelect.disabled = false;
+                branchSelect.readOnly = false;
+                branchSelect.style.pointerEvents = 'auto';
+                branchSelect.style.backgroundColor = '';
             } else {
-                branchSelect.disabled = true;
-                branchSelect.value = ''; // Clear selection when disabled
+                branchSelect.readOnly = true;
+                branchSelect.value = '';
+                branchSelect.style.pointerEvents = 'none';
+                branchSelect.style.backgroundColor = '#e9ecef';
             }
         }
 
