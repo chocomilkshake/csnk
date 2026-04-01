@@ -455,6 +455,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="col-md-6">
                             <label class="form-label">Middle Name</label>
+                            <input type="text" class="form-control" name="middle_name"
+                                value="<?= htmlspecialchars($_POST['middle_name'] ?? '') 
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" autocomplete="email"
+                                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="date_of_birth" required
+                                value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
+
                         </div>
 
                         <div class="col-12">
