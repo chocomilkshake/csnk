@@ -461,7 +461,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <!-- Employment Type moved here -->
                         <div class="col-md-3">
-                            <label class="form-label">Employment Type <span class="text-dang
+                            <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="employment_type" required>
+                                <option value="">Select...</option>
+                                <option value="Full Time" <?= (($_POST['employment_type'] ?? '') === 'Full Time') ? 'selected' : '' ?>>Full Time</option>
+                                <option value="Part Time" <?= (($_POST['employment_type'] ?? '') === 'Part Time') ? 'selected' : '' ?>>Part Time</option>
+                            </select>
+
+                        </div>
+
+                        <!-- Daily Rate -->
+                        <div class="col-md-2">
+                            <label class="form-label">Daily Rate (₱)</label>
                             <input type="number" class="form-control" name="daily_rate" id="daily_rate" step="0.01"
                                 min="0" max="100000" inputmode="decimal" placeholder="e.g., 650.00"
                                 value="<?= htmlspecialchars($_POST['daily_rate'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
