@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $months = trim((string) ($row['months'] ?? ''));
             $role = sanitizeInput($row['role'] ?? '');
             $location = sanitizeInput($row['location'] ?? '');
-            if ($months !== '' && !ctype_digit($months)) {
+                        if ($months !== '' && !ctype_digit($months)) {
                 $errors[] = 'Work history months must be a whole number from 0 to 11.';
             } elseif ($months !== '' && (int) $months > 11) {
                 $errors[] = 'Work history months must be between 0 and 11.';
