@@ -185,8 +185,12 @@ function renderWorkHistoryListHtml(?string $json): string
     $company = trim((string) ($row['company'] ?? ''));
     $role = trim((string) ($row['role'] ?? ''));
     $years = trim((string) ($row['years'] ?? ''));
+    $months = isset($row['months']) ? (int) $row['months'] : 0;
+    $duration = $years;
+    if ($months > 0)
+      $duration = trim($duration . ($duration !== '' ? ' ' : '') . $months . ' month' . ($months === 1 ? '' : 's'));
     $location = trim((string) ($row['location'] ?? ''));
-    if ($company === '' && $role === '' && $years === '' && $location === '')
+    if ($company === '' && $role === '' && $duration === '' && $location === '')
       continue;
     $line = '<li class="mb-1">';
     $top = [];
@@ -197,8 +201,8 @@ function renderWorkHistoryListHtml(?string $json): string
     if (!empty($top))
       $line .= implode(' — ', $top);
     $meta = [];
-    if ($years !== '')
-      $meta[] = safe($years);
+    if ($duration !== '')
+      $meta[] = safe($duration);
     if ($location !== '')
       $meta[] = safe($location);
     if (!empty($meta))
