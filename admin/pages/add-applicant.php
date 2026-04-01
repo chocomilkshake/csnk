@@ -454,6 +454,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
             <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label">Highest Educational Level <span class="text-danger">*</span></label>
+                    <select class="form-select" name="education_level" required>
+                        <option value="">Select...</option>
+                        <?php
+                        $opts = getEducationLevelOptions();
+                        $sel = $_POST['education_level'] ?? '';
+                        foreach ($opts as $o):
+                            ?>
+                            <option value="<?= htmlspecialchars($o) ?>" <?= ($sel === $o ? 'selected' : '') ?>>
+                                <?= htmlspecialchars($o) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                 </div>
             </div>
 
