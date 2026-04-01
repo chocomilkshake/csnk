@@ -459,6 +459,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 value="<?= htmlspecialchars($_POST['middle_name'] ?? '') ?>">
 
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" required
+                                value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
+
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Suffix</label>
+                            <input type="text" class="form-control" name="suffix" placeholder="Jr., Sr., III, etc."
+                                value="<?= htmlspecialchars($_POST['suffix'] ?? '') ?>">
+
+                        </div>
+
                         <!-- Employment Type moved here -->
                         <div class="col-md-3">
                             <label class="form-label">Employment Type <span class="text-danger">*</span></label>
