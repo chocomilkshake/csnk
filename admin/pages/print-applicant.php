@@ -318,7 +318,10 @@ $csnkLogo = '../resources/img/csnk-logo.png';
                   $parts=[];
                   if (!empty($w['company']))  $parts[]=$w['company'];
                   if (!empty($w['role']))     $parts[]=$w['role'];
-                  if (!empty($w['years']))    $parts[]=$w['years'];
+                  $duration = trim((string) ($w['years'] ?? ''));
+                  $months = isset($w['months']) ? (int) $w['months'] : 0;
+                  if ($months > 0) $duration = trim($duration . ($duration !== '' ? ' ' : '') . $months . ' month' . ($months === 1 ? '' : 's'));
+                  if ($duration !== '')       $parts[]=$duration;
                   if (!empty($w['location'])) $parts[]=$w['location'];
                   if ($parts) echo '<li class="small">'.safe(truncate(implode(' — ', $parts), 88)).'</li>';
                 }
