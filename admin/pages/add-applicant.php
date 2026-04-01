@@ -455,6 +455,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="col-md-6">
                             <label class="form-label">Middle Name</label>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="address" rows="2" autocomplete="address"
+                                required><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="card-footer bg-white d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-primary next-step">Next</button>
         </div>
