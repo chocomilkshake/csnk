@@ -461,6 +461,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <!-- Employment Type moved here -->
                         <div class="col-md-3">
+                            <label class="form-label">Employment Type <span class="text-dang
+                            <input type="number" class="form-control" name="daily_rate" id="daily_rate" step="0.01"
+                                min="0" max="100000" inputmode="decimal" placeholder="e.g., 650.00"
+                                value="<?= htmlspecialchars($_POST['daily_rate'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+
+                            <div class="form-text">Leave blank if not set. Use numbers only (auto-rounded to 2
+                                decimals).</div>
+                        </div>
+
+                        <!-- Phones -->
+                        <div class="col-md-5">
+                            <label class="form-label">Phone Number (Primary)</label>
+                            <input type="tel" class="form-control" name="phone_number"
+                                placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
+                                value="<?= htmlspecialchars($_POST['phone_number'] ?? '') ?>">
+
                             <div class="form-text">Optional. If provided, must be 11 digits and start with 09.</div>
                         </div>
 
