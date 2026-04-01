@@ -461,6 +461,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">High School</h6>
                 </div>
+                <div class="col-md-8">
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[highschool][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['school'] ?? '') ?>">
+
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Year</label>
+                    <input type="text" class="form-control" name="edu[highschool][year]" placeholder="e.g., 2012"
+                        value="<?= htmlspecialchars($_POST['edu']['highschool']['year'] ?? '') ?>">
+
+                </div>
 
                 <div class="col-12 mt-2">
                     <h6 class="fw-semibold mb-2">Senior High School</h6>
