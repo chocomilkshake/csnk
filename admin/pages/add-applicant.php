@@ -453,6 +453,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 autocomplete="given-name" value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label">Middle Name</label>
+        <div class="card-footer bg-white d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-primary next-step">Next</button>
+        </div>
+    </div>
+
+    <!-- ==================== STEP 2: Education ==================== -->
+    <div class="card mb-4 wizard-step d-none" data-step="2">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold">Education</h5>
+        </div>
+        <div class="card-body">
             <div class="row g-3 mb-2">
                 <div class="col-md-4">
                     <label class="form-label">Highest Educational Level <span class="text-danger">*</span></label>
