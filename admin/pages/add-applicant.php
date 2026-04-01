@@ -456,7 +456,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6">
                             <label class="form-label">Middle Name</label>
                             <input type="text" class="form-control" name="middle_name"
-                                value="<?= htmlspecialchars($_POST['middle_name'] ?? '') 
+                                value="<?= htmlspecialchars($_POST['middle_name'] ?? '') ?>">
+
+                        </div>
+                        <!-- Employment Type moved here -->
+                        <div class="col-md-3">
+                            <div class="form-text">Optional. If provided, must be 11 digits and start with 09.</div>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label">Phone Number (Alternate)</label>
+                            <input type="tel" class="form-control" name="alt_phone_number"
+                                placeholder="sample (09123456789)" minlength="11" maxlength="11" pattern="^09\d{9}$"
+                                value="<?= htmlspecialchars($_POST['alt_phone_number'] ?? '') ?>">
+
+                            <div class="form-text">Optional backup number.</div>
+                        </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
