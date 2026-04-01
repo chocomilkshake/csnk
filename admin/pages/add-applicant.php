@@ -448,7 +448,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-6">
                             <label for="first_name" class="form-label">
                                 First Name <span class="text-danger">*</span>
-                            </label>ary']['school'] ?? '') ?>">
+                            </label>
+                            <input id="first_name" type="text" class="form-control" name="first_name" required
+                                autocomplete="given-name" value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
+                        </div>
+
+            <div class="row g-3 mb-2">
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <h6 class="fw-semibold mb-2">Elementary</h6>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">School Name</label>
+                    <input type="text" class="form-control" name="edu[elementary][school]"
+                        value="<?= htmlspecialchars($_POST['edu']['elementary']['school'] ?? '') ?>">
 
                 </div>
                 <div class="col-md-4">
