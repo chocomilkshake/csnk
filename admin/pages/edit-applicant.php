@@ -68,6 +68,31 @@ function computeTotalYears($workHistoryArr)
         $total += computeYearsFromString($row['years'] ?? '');
     return $total;
 }
+function parseExperienceToMonths($yearsValue, $monthsValue = null)
+{
+    $years = trim((string) $yearsValue);
+    $months = trim((string) $monthsValue);
+
+    if ($years !== '' && ctype_digit($years)) {
+        $totalMonths = ((int) $years) * 12;
+        if ($months !== '' && ctype_digit($months)) {
+            $totalMonths += min(11, (int) $months);
+        }
+        return max(0, $totalMonths);
+    }
+
+    return computeYearsFromString($years) * 12;
+}
+function computeTotalExperienceMonths($workHistoryArr)
+{
+    $total = 0;
+    if (!is_array($workHistoryArr))
+        return 0;
+    foreach ($workHistoryArr as $row) {
+        $total += parseExperienceToMonths($row['years'] ?? '', $row['months'] ?? '');
+    }
+    return $total;
+}
 function getEducationLevelOptions()
 {
     return [
@@ -272,11 +297,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['work_history']) && is_array($_POST['work_history'])) {
         foreach ($_POST['work_history'] as $row) {
             $company = sanitizeInput($row['company'] ?? '');
-            $years = sanitizeInput($row['years'] ?? '');
+            $years = trim((string) ($row['years'] ?? ''));
+            $months = trim((string) ($row['months'] ?? ''));
             $role = sanitizeInput($row['role'] ?? '');
             $location = sanitizeInput($row['location'] ?? '');
-            if ($company || $years || $role || $location) {
-                $workHistoryArr[] = compact('company', 'years', 'role', 'location');
+            if ($months !== '' && !ctype_digit($months)) {
+                $errors[] = 'Work history months must be a whole number from 0 to 11.';
+            } elseif ($months !== '' && (int) $months > 11) {
+                $errors[] = 'Work history months must be between 0 and 11.';
+            }
+            if ($company || $years !== '' || $months !== '' || $role || $location) {
+                $workHistoryArr[] = compact('company', 'years', 'months', 'role', 'location');
             }
         }
     }
@@ -378,7 +409,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Compute years of experience
-    $yearsExperience = computeTotalYears($workHistoryArr);
+    $totalExperienceMonths = computeTotalExperienceMonths($workHistoryArr);
+    $yearsExperience = intdiv($totalExperienceMonths, 12);
 
     // Get business_unit_id from POST
     $businessUnitId = isset($_POST['business_unit_id']) ? (int) $_POST['business_unit_id'] : $currentBuId;
@@ -858,8 +890,8 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
             <div id="workHistoryRows" class="vstack gap-3"></div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <label class="form-label">Years of Experience (Auto)
-                        <input type="text" id="yearsTotal" class="form-control" value="0 years" readonly>
+                    <label class="form-label">Total Experience (Auto)
+                        <input type="text" id="yearsTotal" class="form-control" value="0 years, 0 months" readonly>
                     </label>
                     <div class="form-text">Computed from the “Years” column (e.g., 2019–2021 = 2; “3 years” = 3).</div>
                 </div>
@@ -1035,11 +1067,11 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         const addBtn = document.getElementById('addWorkRow');
 
         function createRow(idx, v) {
-            v = v || { company: '', years: '', role: '', location: '' };
+            v = v || { company: '', years: '', months: '', role: '', location: '' };
             const row = document.createElement('div');
             row.className = 'row g-2 align-items-end';
             row.innerHTML = `
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label">Company Name
         <input type="text" class="form-control" name="work_history[${idx}][company]" value="${escapeHtml(v.company)}">
         </label>
@@ -1049,7 +1081,12 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
         <input type="text" class="form-control years-input" name="work_history[${idx}][years]" placeholder="e.g., 2019–2021 or 2 years" value="${escapeHtml(v.years)}">
         </label>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
+        <label class="form-label">Months
+        <input type="number" class="form-control exp-months-input" name="work_history[${idx}][months]" min="0" max="11" step="1" value="${escapeHtml(v.months)}">
+        </label>
+      </div>
+      <div class="col-md-2">
         <label class="form-label">Role 
         <input type="text" class="form-control" name="work_history[${idx}][role]" value="${escapeHtml(v.role)}">
         </label>
@@ -1083,14 +1120,29 @@ $backUrl = 'applicants.php' . ($q !== '' ? ('?q=' . urlencode($q)) : '');
             if (nums.length >= 2) { const a = parseInt(nums[0], 10), b = parseInt(nums[1], 10); return Math.max(0, (isFinite(b - a) ? (b - a) : 0)); }
             const one = norm.match(/\d+/); return one ? Math.max(0, parseInt(one[0], 10)) : 0;
         }
+        function parseMonths(text) {
+            if (text === null || text === undefined || text === '') return 0;
+            const parsed = parseInt(text, 10);
+            if (!Number.isFinite(parsed) || parsed < 0) return 0;
+            return Math.min(parsed, 11);
+        }
+        function formatExperience(totalMonths) {
+            const years = Math.floor(totalMonths / 12);
+            const months = totalMonths % 12;
+            return `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'}`;
+        }
         function updateYearsTotal() {
-            let total = 0;
-            document.querySelectorAll('.years-input').forEach(inp => total += parseYears(inp.value));
+            let totalMonths = 0;
+            container.querySelectorAll('.row').forEach(row => {
+                const yearsInput = row.querySelector('.years-input');
+                const monthsInput = row.querySelector('.exp-months-input');
+                totalMonths += (parseYears(yearsInput?.value) * 12) + parseMonths(monthsInput?.value);
+            });
             const out = document.getElementById('yearsTotal');
-            if (out) out.value = total + (total === 1 ? ' year' : ' years');
+            if (out) out.value = formatExperience(totalMonths);
         }
         function onYearsChange() { updateYearsTotal(); }
-        function attachYearsListener() { document.querySelectorAll('.years-input').forEach(inp => { inp.removeEventListener('input', onYearsChange); inp.addEventListener('input', onYearsChange); }); }
+        function attachYearsListener() { document.querySelectorAll('.years-input, .exp-months-input').forEach(inp => { inp.removeEventListener('input', onYearsChange); inp.addEventListener('input', onYearsChange); }); }
         attachYearsListener(); updateYearsTotal();
 
         // -------- Preferred Cities tags --------
