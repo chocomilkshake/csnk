@@ -117,7 +117,7 @@ function getSmtpConfig(string $companyType): array
             $supportEmail = SMC_FROM_EMAIL;
             $logoUrl      = "{$siteBaseUrl}/resources/img/smcbrandname.png";
                 $mail,
-                ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'
+                ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'],
                 'invoice_brand_logo',
                 'smcbrandname.png'
             ) ?? $logoUrl;
