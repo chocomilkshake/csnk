@@ -109,12 +109,18 @@ function getEducationLevelOptions()
 function getSpecializationOptions()
 {
     return [
-        'Cleaning & Housekeeping (General)',
-        'Laundry & Clothing Care',
-        'Cooking & Food Service',
-        'Childcare & Maternity (Yaya)',
-        'Elderly & Special Care (Caregiver)',
-        'Pet & Outdoor Maintenance',
+        'Cleaning and Housekeeping (General)',
+        'Laundry and Clothing Care',
+        'Cooking and Food Service',
+        'Childcare and Maternity (Yaya)',
+        'Elderly and Special Care (Caregiver)',
+        'Pet and Outdoor Maintenance',
+        'Driver',
+        'Electrician',
+        'Plumber',
+        'Welder',
+        'Automotive technician',
+        'Carpenter',
     ];
 }
 /* Normalize a label for safe compare: decode entities, trim, fold case. */
@@ -122,6 +128,7 @@ function norm_label($s)
 {
     $s = is_string($s) ? $s : '';
     $s = html_entity_decode($s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $s = str_replace('&', ' and ', $s);
     $s = trim(preg_replace('/\s+/u', ' ', $s));
     return mb_strtolower($s);
 }
