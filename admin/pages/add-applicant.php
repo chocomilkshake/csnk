@@ -305,8 +305,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_FILES['picture']['name']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
         $picturePath = uploadFile($_FILES['picture'], 'applicants');
         if (!$picturePath) {
-            $errors[] = 'Failed to upload picture.';
+            $errors[] = 'Failed to upload picture. ' . explainUploadFailure($_FILES['picture'], 'applicants');
         }
+    } elseif (!empty($_FILES['picture']['name'])) {
+        $errors[] = 'Picture upload error. ' . explainUploadFailure($_FILES['picture'], 'applicants');
     }
 
     // Stop if upload failed
@@ -400,7 +402,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'video_thumbnail_url'     => null,
                     'video_duration_seconds'  => null,
                 ]);
+            } else {
+                $errors[] = 'Failed to upload video. ' . explainUploadFailure($videoFile, 'video');
             }
+        } else {
+            $errors[] = 'Video upload error. ' . explainUploadFailure([
+                'name' => $_FILES['videos']['name'][0] ?? '',
+                'type' => $_FILES['videos']['type'][0] ?? '',
+                'tmp_name' => $_FILES['videos']['tmp_name'][0] ?? '',
+                'error' => $_FILES['videos']['error'][0] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $_FILES['videos']['size'][0] ?? 0,
+            ], 'video');
         }
     }
 
