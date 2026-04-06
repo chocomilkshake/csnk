@@ -121,6 +121,11 @@ function getSmtpConfig(string $companyType): array
     setLastInvoiceMailerError('');
     $companyCode = strtoupper($companyType);
 
+    try {
+
+        /* ================= SMTP SETUP ================= */
+        $mail->isSMTP();
+        $mail->Host       = $smtp['host'];
         $mail->Port       = $smtp['port'];
         $mail->SMTPAuth   = true;
         $mail->Username   = $smtp['username'];
