@@ -17,7 +17,23 @@ define('APP_NAME', 'CSNK Admin System');
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-define('APP_URL', $scheme . '://' . $host . '/csnk/admin');
+function detectAdminBasePath(): string
+{
+    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($scriptName !== '') {
+        $adminPos = stripos($scriptName, '/admin');
+        if ($adminPos !== false) {
+            $base = substr($scriptName, 0, $adminPos + strlen('/admin'));
+            return rtrim($base, '/');
+        }
+    }
+
+    return '/admin';
+}
+
+$adminBasePath = detectAdminBasePath();
+
+define('APP_URL', $scheme . '://' . $host . $adminBasePath);
 
 // Upload paths
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
