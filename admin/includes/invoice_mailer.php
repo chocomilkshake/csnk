@@ -120,6 +120,7 @@ function getSmtpConfig(string $companyType): array
     $mail = new PHPMailer(true);
     setLastInvoiceMailerError('');
     $companyCode = strtoupper($companyType);
+
         $mail->Port       = $smtp['port'];
         $mail->SMTPAuth   = true;
         $mail->Username   = $smtp['username'];
