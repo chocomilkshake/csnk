@@ -325,6 +325,20 @@ function sendInvoiceEmail(
                                             </td>
                                         </tr>
                                         <tr>
+                                            <td width='50%' style='padding:0 10px 0 0;vertical-align:top;'>
+
+                                <td align='right' style='font-size:12px;line-height:1.7;color:#9ca3af;'>
+                                    &copy; {$year} {$safeTitle}<br>
+                                    All rights reserved.
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
 ";
