@@ -336,7 +336,26 @@ function sendInvoiceEmail(
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
                                                     <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>R</div>
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Required Reply</p>
-                                                    <p style='margin:0;font-size:15px;font-weight:700;color:#11182end your official receipt or transaction screenshot by replying to this message so we can verify and post your payment faster.</p>
+                                                    <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>Send receipt or proof of payment</p>
+                                                </div>
+                                            </td>n the attached PDF and confirm the billing details, service period, and total amount due.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                    </table>
+                            <tr>
+                                <td style='padding:0;'>
+                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
+                                        <tr>
+                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
+                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>4</div>
+                                            </td>
+                                            <td style='padding:18px 18px 18px 6px;'>
+                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Reply with proof of payment</p>
+                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Send your official receipt or transaction screenshot by replying to this message so we can verify and post your payment faster.</p>
                                             </td>
                                         </tr>
                                     </table>
