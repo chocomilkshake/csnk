@@ -1,0 +1,14 @@
+I updated the app so production uploads are much easier to diagnose.
+
+The first fix is in config.php: APP_URL now detects the real deployed /admin path from the current request instead of being hardcoded to /csnk/admin. That means uploaded photo/video URLs should now resolve correctly on z.com if your site is hosted under a different path.
+
+The second fix is in functions.php: uploads now check whether the target folder can actually be created and written to, and there’s a new failure explainer that reports the real cause. I wired that into both add-applicant.php and edit-applicant.php, so instead of just seeing “Failed to upload picture,” you’ll now get messages like:
+
+upload exceeds upload_max_filesize
+server missing temp folder
+upload folder is not writable
+invalid file type
+server rejected move due to permissions or PHP limits
+Verification: php -l passed for all four updated files.
+
+Next step: try the same upload on z.com again. The new on-screen error should tell us exactly whether the problem is path/URL, PHP size limits, or folder permissions.
