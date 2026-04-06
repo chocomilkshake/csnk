@@ -111,6 +111,18 @@ function getSmtpConfig(string $companyType): array
     return [
         'host'     => SMTP_HOST,
         'port'     => SMTP_PORT,
+        'username' => SMTP_USER,
+        'password' => SMTP_PASS,
+    ?string $paymentLink = null
+): bool {
+
+    $smtp = getSmtpConfig($companyType);
+    $mail = new PHPMailer(true);
+    setLastInvoiceMailerError('');
+    $companyCode = strtoupper($companyType);
+        $mail->Port       = $smtp['port'];
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $smtp['username'];
         $mail->Password   = $smtp['password'];
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 
