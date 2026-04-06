@@ -113,6 +113,20 @@ function getSmtpConfig(string $companyType): array
         'port'     => SMTP_PORT,
         'username' => SMTP_USER,
         'password' => SMTP_PASS,
+        'from'     => SMTP_FROM_EMAIL,
+        'fromName' => 'CSNK Manpower Agency Billing',
+    ];
+}
+
+/* ==========================================================
+   MAIN EMAIL FUNCTION
+========================================================== */
+function sendInvoiceEmail(
+    string $toEmail,
+    string $clientName,
+    string $invoiceNumber,
+    string $pdfPath,
+    string $companyType,
     ?string $paymentLink = null
 ): bool {
 
