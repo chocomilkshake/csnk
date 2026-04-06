@@ -379,8 +379,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 deleteFile($picturePath);
             $picturePath = $newPicturePath;
         } else {
-            $errors[] = 'Failed to upload picture.';
+            $errors[] = 'Failed to upload picture. ' . explainUploadFailure($_FILES['picture'], 'applicants');
         }
+    } elseif (!empty($_FILES['picture']['name'])) {
+        $errors[] = 'Picture upload error. ' . explainUploadFailure($_FILES['picture'], 'applicants');
     }
 
     // ---- Video handling (delete/replace) ----
@@ -406,10 +408,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newVideoRelPath = $saved;   // e.g., 'video/abc123.mp4'
                 $videoOp = 'replace';
             } else {
-                $errors[] = 'Failed to upload video (format/size or move error).';
+                $errors[] = 'Failed to upload video. ' . explainUploadFailure($first, 'video');
             }
         } else {
-            $errors[] = 'Error uploading video (code ' . (int) $first['error'] . ').';
+            $errors[] = 'Video upload error. ' . explainUploadFailure($first, 'video');
         }
     } elseif ($deleteVideoReq && !empty($currentVideoUrl)) {
         $videoOp = 'delete';
