@@ -349,7 +349,12 @@ function sendInvoiceEmail(
                         <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:14px 0 0;background:{$accentSoft};border:1px solid rgba(0,0,0,0.05);border-radius:18px;'>
                             <tr>
                                 <td style='padding:18px 20px;'>
-                                    <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Posting
+                                    <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Posting reminder</p>
+                                    <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Payments are considered posted only after valid proof of payment is received and verified by our billing team.</p>
+                                </td>
+                            </tr>
+                        </table>
+
                         <p style='margin:24px 0 0;font-size:15px;line-height:1.8;color:#4b5563;'>
                             If you have any questions, simply reply to this email and our billing team will assist you.
                         </p>
