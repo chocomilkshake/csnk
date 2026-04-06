@@ -271,7 +271,20 @@ function sendInvoiceEmail(
                     </td>
                 </tr>
 
-                <tr>apshot</p>
+                <tr>
+                    <td style='padding:0 32px;'>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin-t
+                        <p style='margin:0 0 14px;font-size:16px;line-height:1.8;color:#374151;'>
+                            Good day <strong>{$safeClientName}</strong>,
+                        </p>
+                        <p style='margin:0 0 14px;font-size:15px;line-height:1.8;color:#4b5563;'>
+                            Attached to this email is your official invoice from <strong>{$safeTitle}</strong>. Please review the file and follow the payment steps below for faster posting and confirmation.
+                        </p>
+
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:26px 0;background:{$panelBg};border:1px solid #e5e7eb;border-radius:20px;'>
+                            <tr>
+                                <td style='padding:24px;'>
+                                    <p style='margin:0 0 18px;font-size:18px;font-weight:700;color:#111827;'>Invoice snapshot</p>
                                     <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
                                         <tr>
                                             <td width='50%' style='padding:0 10px 14px 0;vertical-align:top;'>
