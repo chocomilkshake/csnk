@@ -110,6 +110,29 @@ function getSmtpConfig(string $companyType): array
 
         if ($companyCode === 'SMC') {
             $headerBg     = '#0f274b';
+            $accent       = '#c8a85d';
+        $safeClientName = htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8');
+        $safeInvoiceNumber = htmlspecialchars($invoiceNumber, ENT_QUOTES, 'UTF-8');
+        $safeCompanyType = htmlspecialchars($companyType, ENT_QUOTES, 'UTF-8');
+        $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $safeSupportEmail = htmlspecialchars($supportEmail, ENT_QUOTES, 'UTF-8');
+
+        /* ================= PAYMENT BUTTON ================= */
+        $payButton = '';
+        if ($paymentLink) {
+            $safePaymentLink = htmlspecialchars($paymentLink, ENT_QUOTES, 'UTF-8');
+            $payButton =
+<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:28px 0 10px;'>
+    <tr>
+        <td align='center'>
+            <a href='{$safePaymentLink}' target='_blank'
+               style='background:{$accent};color:#ffffff;padding:15px 28px;border-radius:999px;text-decoration:none;font-size:15px;font-weight:700;display:inline-block;'>
+                View Secure Payment Page
+            </a>
+            <p style='margin:10px 0 0;font-size:12px;line-height:1.5;color:#6b7280;'>
+                Use the secure payment page above or your approved payment channel.
+            </p>
+        </td>
     </tr>
 </table>";
         }
