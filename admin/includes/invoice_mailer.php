@@ -345,6 +345,17 @@ function sendInvoiceEmail(
                                 </td>
                             </tr>
                             <tr>
+                                <td style='padding:0 0 14px;'>
+                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
+                                        <tr>
+                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
+                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>2</div>
+                                            </td>
+                                            <td style='padding:18px 18px 18px 6px;'>
+                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Proceed with payment</p>
+                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Use the secure payment button below when available, or follow your approved payment arrangement with our billing team.</p>
+                                            </td>
+                                        </tr>
                                     </table>
                                 </td>
                             </tr>
