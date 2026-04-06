@@ -33,7 +33,13 @@ function uploadFile($file, $folder = 'general')
 
     $uploadDir = rtrim(UPLOAD_PATH, '/') . '/' . trim($folder, '/') . '/';
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!@mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+            return false;
+        }
+    }
+
+    if (!is_writable($uploadDir)) {
+        return false;
     }
 
     $newFileName = uniqid('file_', true) . '.' . $fileExt;
@@ -44,6 +50,69 @@ function uploadFile($file, $folder = 'general')
     }
 
     return false;
+}
+
+function getUploadErrorDescription(int $errorCode): string
+{
+    switch ($errorCode) {
+        case UPLOAD_ERR_OK:
+            return 'No upload error.';
+        case UPLOAD_ERR_INI_SIZE:
+            return 'The uploaded file exceeds the server upload_max_filesize limit.';
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'The uploaded file exceeds the form MAX_FILE_SIZE limit.';
+        case UPLOAD_ERR_PARTIAL:
+            return 'The file was only partially uploaded.';
+        case UPLOAD_ERR_NO_FILE:
+            return 'No file was uploaded.';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return 'The server is missing a temporary upload folder.';
+        case UPLOAD_ERR_CANT_WRITE:
+            return 'The server could not write the uploaded file to disk.';
+        case UPLOAD_ERR_EXTENSION:
+            return 'A PHP extension stopped the file upload.';
+        default:
+            return 'Unknown upload error.';
+    }
+}
+
+function explainUploadFailure(array $file, string $folder = 'general'): string
+{
+    $errorCode = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($errorCode !== UPLOAD_ERR_OK) {
+        return getUploadErrorDescription($errorCode);
+    }
+
+    $allowedExtensions = [
+        'jpg','jpeg','png','gif','pdf','doc','docx',
+        'mp4','mov','webm','ogg','mkv','avi','mpeg'
+    ];
+
+    $fileName = (string) ($file['name'] ?? '');
+    $fileSize = (int) ($file['size'] ?? 0);
+    $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $maxFileSize = 200 * 1024 * 1024;
+
+    if ($fileExt === '' || !in_array($fileExt, $allowedExtensions, true)) {
+        return 'Invalid file type. Allowed types: ' . implode(', ', $allowedExtensions) . '.';
+    }
+
+    if ($fileSize > $maxFileSize) {
+        return 'The file exceeds the 200MB application upload limit.';
+    }
+
+    $uploadDir = rtrim(UPLOAD_PATH, '/') . '/' . trim($folder, '/') . '/';
+    if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+        return 'The upload folder could not be created: ' . $uploadDir;
+    }
+
+    if (!is_writable($uploadDir)) {
+        return 'The upload folder is not writable: ' . $uploadDir;
+    }
+
+    $uploadMax = ini_get('upload_max_filesize') ?: 'unknown';
+    $postMax = ini_get('post_max_size') ?: 'unknown';
+    return 'The server rejected the upload while moving the file. Check folder permissions and PHP limits (upload_max_filesize=' . $uploadMax . ', post_max_size=' . $postMax . ').';
 }
 
 function uploadMultipleFiles(array $filesControl, string $folder = 'general'): array
