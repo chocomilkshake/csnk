@@ -124,6 +124,11 @@ function getSmtpConfig(string $companyType): array
         <td align='center'>
             <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:680px;background:#ffffff;border-radius:24px;overflow:hidden;'>
                 <tr>
+                    <td style='background:linear-gradient(135deg, {$headerBg} 0%, {$accent} 100%);padding:30px 32px 22px;color:#ffffff;'>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
+                            <tr>
+                                <td align='left' style='vertical-align:top;'>
+                                    <table role='presentation' cellpadding='0' cellspacing='0'>
                                         <tr>
                                             <td style='background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:18px;padding:12px 16px;'>
                                                 <img src='{$logoSrc}' alt='{$safeTitle} logo' style='display:block;max-width:160px;width:100%;height:auto;'>
