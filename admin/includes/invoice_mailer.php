@@ -111,6 +111,23 @@ function getSmtpConfig(string $companyType): array
         if ($companyCode === 'SMC') {
             $headerBg     = '#0f274b';
             $accent       = '#c8a85d';
+            ) ?? $logoUrl;
+        } else {
+            $headerBg     = '#8b1e24';
+            $accent       = '#d14b52';
+            $accentSoft   = '#fff1f2';
+            $panelBg      = '#faf7f7';
+            $title        = 'CSNK Manpower Agency';
+            $supportEmail = SMTP_FROM_EMAIL;
+            $logoUrl      = "{$siteBaseUrl}/resources/img/csnklogo.png";
+            $logoSrc      = embedInvoiceMailerImage(
+                $mail,
+                ['resources/img/csnklogo.png', 'admin/resources/img/csnklogo.png'],
+                'invoice_brand_logo',
+                'csnklogo.png'
+            ) ?? $logoUrl;
+        }
+
         $safeClientName = htmlspecialchars($clientName, ENT_QUOTES, 'UTF-8');
         $safeInvoiceNumber = htmlspecialchars($invoiceNumber, ENT_QUOTES, 'UTF-8');
         $safeCompanyType = htmlspecialchars($companyType, ENT_QUOTES, 'UTF-8');
