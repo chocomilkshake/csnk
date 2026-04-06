@@ -92,6 +92,48 @@ function embedInvoiceMailerImage(
     }
 }
 
+function buildInvoiceMailerStepCard(
+    string $accent,
+    string $accentSoft,
+    string $stepNumber,
+    string $iconHtml,
+    string $title,
+    string $description,
+    bool $isLast = false
+): string {
+    $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    $safeDescription = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
+    $spacing = $isLast ? '0' : '14px';
+
+    return "
+<tr>
+    <td style='padding:0 0 {$spacing};'>
+        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 8px 20px rgba(15,23,42,0.04);'>
+            <tr>
+                <td width='76' style='padding:18px 0 18px 18px;vertical-align:top;'>
+                    <table role='presentation' cellpadding='0' cellspacing='0'>
+                        <tr>
+                            <td style='width:42px;height:42px;line-height:42px;text-align:center;background:{$accentSoft};border-radius:14px;font-size:20px;color:{$accent};font-weight:700;'>
+                                {$iconHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='padding-top:10px;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#9ca3af;text-align:center;'>
+                                Step {$stepNumber}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style='padding:18px 18px 18px 0;'>
+                    <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>{$safeTitle}</p>
+                    <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>{$safeDescription}</p>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>";
+}
+
 /* ==========================================================
    SMTP CONFIGURATION
 ========================================================== */
@@ -206,6 +248,46 @@ function sendInvoiceEmail(
         $safeCompanyType = htmlspecialchars($companyType, ENT_QUOTES, 'UTF-8');
         $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         $safeSupportEmail = htmlspecialchars($supportEmail, ENT_QUOTES, 'UTF-8');
+        $preheader = htmlspecialchars(
+            "Invoice {$invoiceNumber} from {$title}. Review the attached PDF and follow the payment steps below.",
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+        $stepCards =
+            buildInvoiceMailerStepCard(
+                $accent,
+                $accentSoft,
+                '1',
+                '&#128196;',
+                'Review the invoice',
+                'Open the attached PDF and confirm the billing details, service period, and total amount due.'
+            ) .
+            buildInvoiceMailerStepCard(
+                $accent,
+                $accentSoft,
+                '2',
+                '&#128179;',
+                'Proceed with payment',
+                'Use the secure payment button below when available, or follow your approved payment arrangement with our billing team.'
+            ) .
+            buildInvoiceMailerStepCard(
+                $accent,
+                $accentSoft,
+                '3',
+                '&#9989;',
+                'Keep the confirmation',
+                'Wait for your bank or payment provider to confirm that the transaction completed successfully.'
+            ) .
+            buildInvoiceMailerStepCard(
+                $accent,
+                $accentSoft,
+                '4',
+                '&#9993;',
+                'Reply with proof of payment',
+                'Send your official receipt or transaction screenshot by replying to this message so we can verify and post your payment faster.',
+                true
+            );
 
         /* ================= PAYMENT BUTTON ================= */
         $payButton = '';
@@ -232,10 +314,13 @@ function sendInvoiceEmail(
 <!DOCTYPE html>
 <html>
 <body style='margin:0;padding:0;background-color:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;'>
+<div style='display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;'>
+    {$preheader}
+</div>
 <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background-color:#eef2f7;margin:0;padding:24px 12px;'>
     <tr>
         <td align='center'>
-            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:680px;background:#ffffff;border-radius:24px;overflow:hidden;'>
+            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:680px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 45px rgba(15,23,42,0.12);'>
                 <tr>
                     <td style='background:linear-gradient(135deg, {$headerBg} 0%, {$accent} 100%);padding:30px 32px 22px;color:#ffffff;'>
                         <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
@@ -267,6 +352,17 @@ function sendInvoiceEmail(
                             <p style='margin:12px 0 0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.92);max-width:480px;'>
                                 Your invoice is attached and ready for review. We also included a simple payment guide below so the process stays smooth from start to confirmation.
                             </p>
+                            <table role='presentation' cellpadding='0' cellspacing='0' style='margin-top:18px;'>
+                                <tr>
+                                    <td style='background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;color:#ffffff;'>
+                                        PDF Attached
+                                    </td>
+                                    <td style='width:8px;'></td>
+                                    <td style='background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;color:#ffffff;'>
+                                        Reply with Receipt
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                 </tr>
@@ -296,6 +392,9 @@ function sendInvoiceEmail(
 
                 <tr>
                     <td style='padding:30px 32px 18px;'>
+                        <p style='margin:0 0 8px;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:{$accent};font-weight:700;'>
+                            Payment Instructions
+                        </p>
                         <p style='margin:0 0 14px;font-size:16px;line-height:1.8;color:#374151;'>
                             Good day <strong>{$safeClientName}</strong>,
                         </p>
@@ -311,14 +410,14 @@ function sendInvoiceEmail(
                                         <tr>
                                             <td width='50%' style='padding:0 10px 14px 0;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
-                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>#</div>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>&#35;</div>
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Invoice Number</p>
                                                     <p style='margin:0;font-size:17px;font-weight:700;color:#111827;'>{$safeInvoiceNumber}</p>
                                                 </div>
                                             </td>
                                             <td width='50%' style='padding:0 0 14px 10px;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
-                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>@</div>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>&#64;</div>
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Reply To</p>
                                                     <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>{$safeSupportEmail}</p>
                                                 </div>
@@ -327,14 +426,14 @@ function sendInvoiceEmail(
                                         <tr>
                                             <td width='50%' style='padding:0 10px 0 0;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
-                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>P</div>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>&#8369;</div>
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Payment</p>
                                                     <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>Use approved payment channel</p>
                                                 </div>
                                             </td>
                                             <td width='50%' style='padding:0 0 0 10px;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
-                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>R</div>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>&#10003;</div>
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Required Reply</p>
                                                     <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>Send receipt or proof of payment</p>
                                                 </div>
@@ -345,69 +444,15 @@ function sendInvoiceEmail(
                             </tr>
                         </table>
 
-                        <p style='margin:0 0 16px;font-size:20px;font-weight:700;color:#111827;'>How to complete payment</p>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:4px 0 18px;'>
+                            <tr>
+                                <td style='font-size:20px;font-weight:700;color:#111827;'>How to complete payment</td>
+                                <td align='right' style='font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#9ca3af;'>4 guided steps</td>
+                            </tr>
+                        </table>
 
                         <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
-                            <tr>
-                                <td style='padding:0 0 14px;'>
-                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
-                                        <tr>
-                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
-                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>1</div>
-                                            </td>
-                                            <td style='padding:18px 18px 18px 6px;'>
-                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Review the invoice</p>
-                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Open the attached PDF and confirm the billing details, service period, and total amount due.</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style='padding:0 0 14px;'>
-                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
-                                        <tr>
-                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
-                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>2</div>
-                                            </td>
-                                            <td style='padding:18px 18px 18px 6px;'>
-                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Proceed with payment</p>
-                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Use the secure payment button below when available, or follow your approved payment arrangement with our billing team.</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style='padding:0 0 14px;'>
-                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
-                                        <tr>
-                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
-                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>3</div>
-                                            </td>
-                                            <td style='padding:18px 18px 18px 6px;'>
-                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Keep the confirmation</p>
-                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Wait for your bank or payment provider to confirm that the transaction completed successfully.</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style='padding:0;'>
-                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
-                                        <tr>
-                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
-                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>4</div>
-                                            </td>
-                                            <td style='padding:18px 18px 18px 6px;'>
-                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Reply with proof of payment</p>
-                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Send your official receipt or transaction screenshot by replying to this message so we can verify and post your payment faster.</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
+                            {$stepCards}
                         </table>
 
                         {$payButton}
@@ -417,6 +462,15 @@ function sendInvoiceEmail(
                                 <td style='padding:18px 20px;'>
                                     <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Posting reminder</p>
                                     <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Payments are considered posted only after valid proof of payment is received and verified by our billing team.</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:14px 0 0;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
+                            <tr>
+                                <td style='padding:18px 20px;'>
+                                    <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Need help with billing?</p>
+                                    <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Reply directly to this email at <strong>{$safeSupportEmail}</strong> and our billing team will gladly assist you.</p>
                                 </td>
                             </tr>
                         </table>
