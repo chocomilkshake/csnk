@@ -121,7 +121,7 @@ function getSmtpConfig(string $companyType): array
         $payButton = '';
         if ($paymentLink) {
             $safePaymentLink = htmlspecialchars($paymentLink, ENT_QUOTES, 'UTF-8');
-            $payButton =
+            $payButton = "
 <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:28px 0 10px;'>
     <tr>
         <td align='center'>
