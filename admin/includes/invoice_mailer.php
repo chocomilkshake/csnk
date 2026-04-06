@@ -111,6 +111,19 @@ function getSmtpConfig(string $companyType): array
     return [
         'host'     => SMTP_HOST,
         'port'     => SMTP_PORT,
+        $mail->Password   = $smtp['password'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true,
+            ]
+        ];
+
+        /* ================= HEADERS ================= */
+        $mail->setFrom($smtp['from'], $smtp['fromName']);
         $mail->addAddress($toEmail, $clientName);
         $mail->addReplyTo($smtp['from'], $smtp['fromName']);
 
