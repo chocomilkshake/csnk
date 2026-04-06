@@ -338,7 +338,26 @@ function sendInvoiceEmail(
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Required Reply</p>
                                                     <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>Send receipt or proof of payment</p>
                                                 </div>
-                                            </td>n the attached PDF and confirm the billing details, service period, and total amount due.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style='margin:0 0 16px;font-size:20px;font-weight:700;color:#111827;'>How to complete payment</p>
+
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
+                            <tr>
+                                <td style='padding:0 0 14px;'>
+                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;'>
+                                        <tr>
+                                            <td width='54' style='padding:18px 0 18px 18px;vertical-align:top;'>
+                                                <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:16px;font-weight:700;color:{$accent};'>1</div>
+                                            </td>
+                                            <td style='padding:18px 18px 18px 6px;'>
+                                                <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Review the invoice</p>
+                                                <p style='margin:0;font-size:14px;line-height:1.7;color:#4b5563;'>Open the attached PDF and confirm the billing details, service period, and total amount due.</p>
                                             </td>
                                         </tr>
                                     </table>
