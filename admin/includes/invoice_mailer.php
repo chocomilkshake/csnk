@@ -116,6 +116,7 @@ function getSmtpConfig(string $companyType): array
             $title        = 'SMC Manpower Agency Philippines Co.';
             $supportEmail = SMC_FROM_EMAIL;
             $logoUrl      = "{$siteBaseUrl}/resources/img/smcbrandname.png";
+            $logoSrc      = embedInvoiceMailerImage(
                 $mail,
                 ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'],
                 'invoice_brand_logo',
