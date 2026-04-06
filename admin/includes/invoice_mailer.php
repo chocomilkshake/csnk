@@ -326,7 +326,29 @@ function sendInvoiceEmail(
                                         </tr>
                                         <tr>
                                             <td width='50%' style='padding:0 10px 0 0;vertical-align:top;'>
+                                                <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>P</div>
+                                                    <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Payment</p>
+                                                    <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>Use approved payment channel</p>
+                                                </div>
+                                            </td>
+                                            <td width='50%' style='padding:0 0 0 10px;vertical-align:top;'>
+                                                <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;bac
+                            <strong>{$safeTitle}</strong><br>
+                            Billing &amp; Accounts Department
+                        </p>
+                    </td>
+                </tr>
 
+                <tr>
+                    <td style='padding:24px 32px 30px;background:#f8fafc;border-top:1px solid #e5e7eb;'>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
+                            <tr>
+                                <td align='left' style='font-size:12px;line-height:1.7;color:#6b7280;'>
+                                    {$safeTitle}<br>
+                                    Reply to: {$safeSupportEmail}
+                                </td>
                                 <td align='right' style='font-size:12px;line-height:1.7;color:#9ca3af;'>
                                     &copy; {$year} {$safeTitle}<br>
                                     All rights reserved.
