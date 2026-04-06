@@ -103,6 +103,20 @@ function getSmtpConfig(string $companyType): array
             'port'     => SMTP_PORT,
             'username' => SMC_SMTP_USER,
             'password' => SMC_SMTP_PASS,
+            'from'     => SMC_FROM_EMAIL,
+            'fromName' => 'SMC Manpower Agency Billing',
+        ];
+    }
+
+    return [
+        'host'     => SMTP_HOST,
+        'port'     => SMTP_PORT,
+        $mail->addAddress($toEmail, $clientName);
+        $mail->addReplyTo($smtp['from'], $smtp['fromName']);
+
+        if (is_readable($pdfPath)) {
+            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf")
+        $mail->Subject = "Invoice {$invoiceNumber} | {$companyType} Manpower Agency";
 
         /* ================= BRANDING ================= */
         $year = date('Y');
