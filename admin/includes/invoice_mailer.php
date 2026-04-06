@@ -275,6 +275,11 @@ function sendInvoiceEmail(
                                     <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
                                         <tr>
                                             <td width='50%' style='padding:0 10px 14px 0;vertical-align:top;'>
+                                                <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>#</div>
+                                                    <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Invoice Number</p>
+                                                    <p style='margin:0;font-size:17px;font-weight:700;color:#111827;'>{$safeInvoiceNumber}</p>
+                                                </div>
                                             </td>
                                             <td width='50%' style='padding:0 0 14px 10px;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
