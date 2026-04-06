@@ -352,7 +352,8 @@ function sendInvoiceEmail(
                                     <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Posting
                         <p style='margin:24px 0 0;font-size:15px;line-height:1.8;color:#4b5563;'>
                             If you have any questions, simply reply to this email and our billing team will assist you.
-                        </p
+                        </p>
+                        <p style='margin:24px 0 0;font-size:15px;line-height:1.8;color:#374151;'>
                             Sincerely,<br>
                             <strong>{$safeTitle}</strong><br>
                             Billing &amp; Accounts Department
