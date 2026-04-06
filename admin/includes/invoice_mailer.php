@@ -115,7 +115,9 @@ function getSmtpConfig(string $companyType): array
         $mail->addReplyTo($smtp['from'], $smtp['fromName']);
 
         if (is_readable($pdfPath)) {
-            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf")
+            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf");
+        }
+        $mail->CharSet = 'UTF-8';
         $mail->Subject = "Invoice {$invoiceNumber} | {$companyType} Manpower Agency";
 
         /* ================= BRANDING ================= */
