@@ -334,7 +334,26 @@ function sendInvoiceEmail(
                                             </td>
                                             <td width='50%' style='padding:0 0 0 10px;vertical-align:top;'>
                                                 <div style='background:#ffffff;border-radius:16px;border:1px solid #eadede;padding:16px;'>
-                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;bac
+                                                    <div style='width:36px;height:36px;line-height:36px;text-align:center;background:{$accentSoft};border-radius:50%;font-size:18px;color:{$accent};font-weight:700;'>R</div>
+                                                    <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Required Reply</p>
+                                                    <p style='margin:0;font-size:15px;font-weight:700;color:#11182end your official receipt or transaction screenshot by replying to this message so we can verify and post your payment faster.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        {$payButton}
+
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:14px 0 0;background:{$accentSoft};border:1px solid rgba(0,0,0,0.05);border-radius:18px;'>
+                            <tr>
+                                <td style='padding:18px 20px;'>
+                                    <p style='margin:0 0 6px;font-size:15px;font-weight:700;color:#111827;'>Posting
+                        <p style='margin:24px 0 0;font-size:15px;line-height:1.8;color:#4b5563;'>
+                            If you have any questions, simply reply to this email and our billing team will assist you.
+                        </p
+                            Sincerely,<br>
                             <strong>{$safeTitle}</strong><br>
                             Billing &amp; Accounts Department
                         </p>
