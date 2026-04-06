@@ -273,7 +273,29 @@ function sendInvoiceEmail(
 
                 <tr>
                     <td style='padding:0 32px;'>
-                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin-t
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin-top:-22px;'>
+                            <tr>
+                                <td style='background:#ffffff;border:1px solid #e5e7eb;border-radius:20px;padding:18px 20px;box-shadow:0 12px 30px rgba(15,23,42,0.08);'>
+                                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>
+                                        <tr>
+                                            <td style='font-size:13px;color:#6b7280;padding-bottom:8px;'>Recipient</td>
+                                            <td style='font-size:13px;color:#6b7280;padding-bottom:8px;'>Agency</td>
+                                            <td style='font-size:13px;color:#6b7280;padding-bottom:8px;'>Attachment</td>
+                                        </tr>
+                                        <tr>
+                                            <td style='font-size:16px;font-weight:700;color:#111827;'>{$safeClientName}</td>
+                                            <td style='font-size:16px;font-weight:700;color:#111827;'>{$safeCompanyType} Manpower Agency</td>
+                                            <td style='font-size:16px;font-weight:700;color:#111827;'>PDF Invoice Included</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style='padding:30px 32px 18px;'>
                         <p style='margin:0 0 14px;font-size:16px;line-height:1.8;color:#374151;'>
                             Good day <strong>{$safeClientName}</strong>,
                         </p>
@@ -300,7 +322,29 @@ function sendInvoiceEmail(
                                                     <p style='margin:12px 0 4px;font-size:12px;letter-spacing:0.8px;text-transform:uppercase;color:#6b7280;'>Reply To</p>
                                                     <p style='margin:0;font-size:15px;font-weight:700;color:#111827;'>{$safeSupportEmail}</p>
                                                 </div>
-                                            </td
+                                            </td>
+                                        </tr>
+                                        <tr>
+</body>
+</html>
+";
+
+        /* ================= TEXT FALLBACK ================= */
+        $mail->AltBody =
+            "Invoice {$invoiceNumber}\n\n" .
+            "Hello {$clientName},\n\n" .
+            "Your invoice PDF is attached to this email.\n\n" .
+            "Payment Steps:\n" .
+            "1. Review attached invoice\n" .
+            "2. Make your payment\n" .
+            "3. Complete transaction\n" .
+            "4. Reply with proof of payment\n\n" .
+            ($paymentLink ? "Payment link: {$paymentLink}\n\n" : '') .
+            "Reply to: {$supportEmail}\n\n" .
+            "{$title} Billing Department";
+
+        /* ================= SEND ================= */
+        $mail->send();
         logInvoiceMailerEvent("SUCCESS {$companyType} {$invoiceNumber} -> {$toEmail}");
         return true;
 
