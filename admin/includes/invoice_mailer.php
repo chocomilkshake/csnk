@@ -111,6 +111,15 @@ function getSmtpConfig(string $companyType): array
         if ($companyCode === 'SMC') {
             $headerBg     = '#0f274b';
             $accent       = '#c8a85d';
+            $accentSoft   = '#f6efe2';
+            $panelBg      = '#f7f9fc';
+            $title        = 'SMC Manpower Agency Philippines Co.';
+            $supportEmail = SMC_FROM_EMAIL;
+            $logoUrl      = "{$siteBaseUrl}/resources/img/smcbrandname.png";
+                $mail,
+                ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'
+                'invoice_brand_logo',
+                'smcbrandname.png'
             ) ?? $logoUrl;
         } else {
             $headerBg     = '#8b1e24';
