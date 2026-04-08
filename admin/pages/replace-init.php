@@ -92,6 +92,19 @@ if (!$s) {
     error_log('Prepare failed for agency check: ' . $conn->error);
     if ($isAjax) json_out(false, ['message' => 'Internal error (agency check).'], 500);
     setFlashMessage('error', 'Internal error (agency check).');
+    redirect('approved.php'); exit;
+}
+$s->bind_param('i', $originalId);
+$s->execute();
+$r = $s->get_result();
+$row = $r ? $r->fetch_assoc() : null;
+$s->close();
+
+if (!$row || strtolower((string)$row['agency_code']) !== CSNK_AGENCY_CODE) {
+    if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
+    setFlashMessage('error', 'Operation blocked: not CSNK.');
+    redirect('approved.php'); exit;
+}
 
 // Upload attachments (optional)
 $attachments = [];
