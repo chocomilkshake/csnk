@@ -81,6 +81,20 @@ if (!($conn instanceof mysqli)) {
 // Ensure original applicant is CSNK
 $sqlGetAgencyByApplicant = "
     SELECT ag.code AS agency_code
+    FROM applicants a
+    JOIN business_units bu ON bu.id = a.business_unit_id
+    JOIN agencies ag ON ag.id = bu.agency_id
+    WHERE a.id = ?
+    LIMIT 1
+";y for Approved applicants).');
+        redirect('approved.php'); exit;
+    }
+
+    if ($isAjax) {
+        json_out(true, [
+            'message'        => 'Replacement request created successfully.',
+            'replacement_id' => (int)$replacementId
+        ]);
     } else {
         setFlashMessage('success', 'Replacement request created. Select a replacement next.');
         redirect('approved.php');
