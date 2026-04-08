@@ -90,6 +90,19 @@ $sqlGetAgencyByApplicant = "
 $s = $conn->prepare($sqlGetAgencyByApplicant);
 if (!$s) {
     error_log('Prepare failed for agency check: ' . $conn->error);
+    if ($isAjax) json_out(false, ['message' => 'Internal error (agency check).'], 500);
+    setFlashMessage('error', 'Internal error (agency check).');
+
+// Upload attachments (optional)
+$attachments = [];
+if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
+    $uploadDir = defined('REPLACEMENTS_UPLOAD_SUBDIR') ? REPLACEMENTS_UPLOAD_SUBDIR : 'replacements/';
+    $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
+}
+
+$applicant = new Applicant($database);
+try {
+    $replacementId = $applicant->createReplacementInit(
         $originalId,
         $reason,
         $reportText,
