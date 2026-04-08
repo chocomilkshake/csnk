@@ -113,6 +113,7 @@ if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
     $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
 }
 
+
 $applicant = new Applicant($database);
 try {
     $replacementId = $applicant->createReplacementInit(
