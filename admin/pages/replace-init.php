@@ -81,66 +81,7 @@ if (!($conn instanceof mysqli)) {
 // Ensure original applicant is CSNK
 $sqlGetAgencyByApplicant = "
     SELECT ag.code AS agency_code
-    FROM applicants a
-    JOIN business_units bu ON bu.id = a.business_unit_id
-    JOIN agencies ag ON ag.id = bu.agency_id
-    WHERE a.id = ?
-    LIMIT 1
-";
-$s = $conn->prepare($sqlGetAgencyByApplicant);
-if (!$s) {
-    error_log('Prepare failed for agency check: ' . $conn->error);
-    if ($isAjax) json_out(false, ['message' => 'Internal error (agency check).'], 500);
-    setFlashMessage('error', 'Internal error (agency check).');
-    redirect('approved.php'); exit;
-}
-$s->bind_param('i', $originalId);
-$s->execute();
-$r = $s->get_result();
-$row = $r ? $r->fetch_assoc() : null;
-$s->close();
-
-if (!$row || strtolower((string)$row['agency_code']) !== CSNK_AGENCY_CODE) {
-    if ($isAjax) json_out(false, ['message' => 'Operation blocked: original applicant is not CSNK.'], 403);
-    setFlashMessage('error', 'Operation blocked: not CSNK.');
-    redirect('approved.php'); exit;
-}
-
-// Upload attachments (optional)
-$attachments = [];
-if (isset($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
-    $uploadDir = defined('REPLACEMENTS_UPLOAD_SUBDIR') ? REPLACEMENTS_UPLOAD_SUBDIR : 'replacements/';
-    $attachments = uploadMultipleFiles($_FILES['attachments'], $uploadDir);
-}
-
-$applicant = new Applicant($database);
-try {
-    $replacementId = $applicant->createReplacementInit(
-        $originalId,
-        $reason,
-        $reportText,
-        $attachments,
-        $adminId
-    );
-
-    if (!$replacementId) {
-        if ($isAjax) json_out(false, ['message' => 'Failed to create replacement (only allowed for Approved applicants).'], 422);
-        setFlashMessage('error', 'Failed to create replacement (allowed only for Approved applicants).');
-        redirect('approved.php'); exit;
-    }
-
-    if ($isAjax) {
-        json_out(true, [
-            'message'        => 'Replacement request created successfully.',
-            'replacement_id' => (int)$replacementId
-        ]);
     } else {
         setFlashMessage('success', 'Replacement request created. Select a replacement next.');
         redirect('approved.php');
-    }
-} catch (Throwable $e) {
-    error_log('Replace-init error: ' . $e->getMessage());
-    if ($isAjax) json_out(false, ['message' => 'An internal error occurred. Please try again later.'], 500);
-    setFlashMessage('error', 'An internal error occurred. Please try again.');
-    redirect('approved.php'); exit;
 }
