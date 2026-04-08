@@ -86,7 +86,20 @@ $sqlGetAgencyByApplicant = "
     JOIN agencies ag ON ag.id = bu.agency_id
     WHERE a.id = ?
     LIMIT 1
-";y for Approved applicants).');
+";
+$s = $conn->prepare($sqlGetAgencyByApplicant);
+if (!$s) {
+    error_log('Prepare failed for agency check: ' . $conn->error);
+        $originalId,
+        $reason,
+        $reportText,
+        $attachments,
+        $adminId
+    );
+
+    if (!$replacementId) {
+        if ($isAjax) json_out(false, ['message' => 'Failed to create replacement (only allowed for Approved applicants).'], 422);
+        setFlashMessage('error', 'Failed to create replacement (allowed only for Approved applicants).');
         redirect('approved.php'); exit;
     }
 
