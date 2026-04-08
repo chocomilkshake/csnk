@@ -84,4 +84,10 @@ $sqlGetAgencyByApplicant = "
     } else {
         setFlashMessage('success', 'Replacement request created. Select a replacement next.');
         redirect('approved.php');
+    }
+} catch (Throwable $e) {
+    error_log('Replace-init error: ' . $e->getMessage());
+    if ($isAjax) json_out(false, ['message' => 'An internal error occurred. Please try again later.'], 500);
+    setFlashMessage('error', 'An internal error occurred. Please try again.');
+    redirect('approved.php'); exit;
 }
