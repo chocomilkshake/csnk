@@ -203,6 +203,19 @@ function sendInvoiceEmail(
     /* ================= SMTP SETUP ================= */
         $mail->isSMTP();
         $mail->Host       = $smtp['host'];
+        $mail->Port       = $smtp['port'];
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $smtp['username'];
+        $mail->Password   = $smtp['password'];
+
+        $mail->SMTPSecure  = PHPMailer::ENCRYPTION_SMTPS; // ✅ SSL
+        $mail->SMTPAutoTLS = false;                        // ✅ REQUIRED
+
+        $mail->SMTPKeepAlive = defined('SMTP_KEEPALIVE') ? SMTP_KEEPALIVE : false;
+        $mail->Timeout = defined('SMTP_TIMEOUT') ? SMTP_TIMEOUT : 30;
+
+        $mail->SMTPDebug = 0; // ✅ SET TO 2 ONLY WHEN DEBUGGING
+
         $mail->SMTPOptions = [
             'ssl' => [
                 'verify_peer'       => false,
