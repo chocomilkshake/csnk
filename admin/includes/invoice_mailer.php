@@ -189,6 +189,20 @@ function sendInvoiceEmail(
     string $pdfPath,
     string $companyType,
     ?string $paymentLink = null
+): bool {
+
+        $siteBaseUrl = preg_replace('#/admin/?$#', '', APP_URL);
+
+        if ($companyCode === 'SMC') {
+            $headerBg     = '#0f274b';
+            $accent       = '#c8a85d';
+            $accentSoft   = '#f6efe2';
+            $panelBg      = '#f7f9fc';
+            $title        = 'SMC Manpower Agency Philippines Co.';
+            $supportEmail = SMC_FROM_EMAIL;
+            $logoUrl      = "{$siteBaseUrl}/resources/img/smcbrandname.png";
+            $logoSrc      = embedInvoiceMailerImage(
+                $mail,
                 ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'],
                 'invoice_brand_logo',
                 'smcbrandname.png'
