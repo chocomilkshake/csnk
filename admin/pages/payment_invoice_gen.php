@@ -396,7 +396,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invoice'])) 
                     if ($mailerError !== '') {
                         setFlashMessage(
                             'warning',
-                            'âš ï¸ Invoice generated, but email could not be sent. Mailer error: ' . $mailerError
+                            'Mailer error: ' . $mailerError
                         );
                     }
                 }
