@@ -1230,7 +1230,8 @@ class Applicant
                 throw new \RuntimeException('Candidate not in assignable status (Pending/Approved/On-Process).');
 
             // Assign
-            $stmt = $this->db->prepare(
+            $stmt = $this->db->prepare("
+                UPDATE applicant_replacements
                 SET replacement_applicant_id = ?, status = 'assigned', assigned_at = NOW()
                 WHERE id = ?
                   AND replacement_applicant_id IS NULL
