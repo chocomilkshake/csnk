@@ -14,6 +14,65 @@ require_once '../includes/Applicant.php';
 const CSNK_AGENCY_CODE = 'csnk';
 const AUTO_MOVE_CANDIDATE_TO_ON_PROCESS = true; // keep your behavior
 
+function json_out($ok, $payload = [], $http = 200) {
+    if (ob_get_length()) ob_end_clean();
+    http_response_code($http);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+// --- Bootstrap ---
+$database = new Database();
+$auth     = new Auth($database);
+$auth->requireLogin();
+
+$currentUser = $auth->getCurrentUser();
+$adminId     = isset($currentUser['id']) ? (int)$currentUser['id'] : (int)($_SESSION['admin_id'] ?? 0);
+
+$isAjax = (
+    (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
+    (isset($_REQUEST['ajax']) && (string)$_REQUEST['ajax'] === '1') ||
+    (isset($_POST['ajax']) && (string)$_POST['ajax'] === '1')
+);
+
+function json_out($ok, $payload = [], $http = 200) {
+    http_response_code($http);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
+    setFlashMessage('error', 'Invalid request method.');
+    redirect('approved.php'); exit;
+}
+
+// --- Optional CSRF ---
+if (!empty($_POST['csrf_token'])) {
+    if (empty($_SESSION['csrf_token']) || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
+        if ($isAjax) json_out(false, ['message' => 'Invalid security token.'], 403);
+        setFlashMessage('error', 'Invalid security token.');
+        redirect('approved.php'); exit;
+    }
+}
+
+$replacementId = isset($_POST['replacement_id']) ? (int)$_POST['replacement_id'] : 0;
+$candidateId   = isset($_POST['replacement_applicant_id']) ? (int)$_POST['replacement_applicant_id'] : 0;
+
+if ($replacementId <= 0 || $candidateId <= 0 || $adminId <= 0) {
+    if ($isAjax) json_out(false, ['message' => 'Missing required fields or authentication.'], 422);
+    setFlashMessage('error', 'Missing fields or authentication.');
+    redirect('approved.php'); exit;
+}
+
+// --- Get mysqli connection ---
+$conn = method_exists($database, 'getConnection') ? $database->getConnection() : null;
 if (!($conn instanceof mysqli)) {
     if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
     setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
