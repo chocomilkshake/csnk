@@ -137,27 +137,46 @@ function buildInvoiceMailerStepCard(
 /* ==========================================================
    SMTP CONFIGURATION
 ========================================================== */
+function normalizeSmtpString(string $value): string
+{
+    return trim(preg_replace('/\s+/', '', $value));
+}
+
 function getSmtpConfig(string $companyType): array
 {
     if (strtoupper($companyType) === 'SMC') {
         return [
-            'host'     => SMTP_HOST,
-            'port'     => SMTP_PORT,
-            'username' => SMC_SMTP_USER,
-            'password' => SMC_SMTP_PASS,
+            'host'     => defined('SMC_SMTP_HOST') ? SMC_SMTP_HOST : SMTP_HOST,
+            'port'     => defined('SMC_SMTP_PORT') ? SMC_SMTP_PORT : SMTP_PORT,
+            'secure'   => defined('SMC_SMTP_SECURE') ? SMC_SMTP_SECURE : SMTP_SECURE,
+            'username' => trim(SMC_SMTP_USER),
+            'password' => normalizeSmtpString(SMC_SMTP_PASS),
             'from'     => SMC_FROM_EMAIL,
-            'fromName' => 'SMC Manpower Agency Billing',
+            'fromName' => defined('SMC_FROM_NAME') ? SMC_FROM_NAME : 'SMC Manpower Agency Billing',
         ];
     }
 
     return [
         'host'     => SMTP_HOST,
         'port'     => SMTP_PORT,
-        'username' => SMTP_USER,
-        'password' => SMTP_PASS,
+        'secure'   => defined('SMTP_SECURE') ? SMTP_SECURE : 'tls',
+        'username' => trim(SMTP_USER),
+        'password' => normalizeSmtpString(SMTP_PASS),
         'from'     => SMTP_FROM_EMAIL,
-        'fromName' => 'CSNK Manpower Agency Billing',
+        'fromName' => defined('SMTP_FROM_NAME') ? SMTP_FROM_NAME : 'CSNK Manpower Agency Billing',
     ];
+}
+
+function getSmtpSecureConstant(string $secure): string
+{
+    $lower = strtolower(trim($secure));
+    if ($lower === 'ssl') {
+        return PHPMailer::ENCRYPTION_SMTPS;
+    }
+    if ($lower === 'tls' || $lower === 'starttls') {
+        return PHPMailer::ENCRYPTION_STARTTLS;
+    }
+    return PHPMailer::ENCRYPTION_STARTTLS;
 }
 
 /* ==========================================================
@@ -170,59 +189,6 @@ function sendInvoiceEmail(
     string $pdfPath,
     string $companyType,
     ?string $paymentLink = null
-): bool {
-
-    $smtp = getSmtpConfig($companyType);
-    $mail = new PHPMailer(true);
-    setLastInvoiceMailerError('');
-    $companyCode = strtoupper($companyType);
-
-    try {
-
-        /* ================= SMTP SETUP ================= */
-        $mail->isSMTP();
-        $mail->Host       = $smtp['host'];
-        $mail->Port       = $smtp['port'];
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $smtp['username'];
-        $mail->Password   = $smtp['password'];
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-
-        $mail->SMTPOptions = [
-            'ssl' => [
-                'verify_peer'       => false,
-                'verify_peer_name'  => false,
-                'allow_self_signed' => true,
-            ]
-        ];
-
-        /* ================= HEADERS ================= */
-        $mail->setFrom($smtp['from'], $smtp['fromName']);
-        $mail->addAddress($toEmail, $clientName);
-        $mail->addReplyTo($smtp['from'], $smtp['fromName']);
-
-        if (is_readable($pdfPath)) {
-            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf");
-        }
-
-        $mail->isHTML(true);
-        $mail->CharSet = 'UTF-8';
-        $mail->Subject = "Invoice {$invoiceNumber} | {$companyType} Manpower Agency";
-
-        /* ================= BRANDING ================= */
-        $year = date('Y');
-        $siteBaseUrl = preg_replace('#/admin/?$#', '', APP_URL);
-
-        if ($companyCode === 'SMC') {
-            $headerBg     = '#0f274b';
-            $accent       = '#c8a85d';
-            $accentSoft   = '#f6efe2';
-            $panelBg      = '#f7f9fc';
-            $title        = 'SMC Manpower Agency Philippines Co.';
-            $supportEmail = SMC_FROM_EMAIL;
-            $logoUrl      = "{$siteBaseUrl}/resources/img/smcbrandname.png";
-            $logoSrc      = embedInvoiceMailerImage(
-                $mail,
                 ['resources/img/smcbrandname.png', 'admin/resources/img/smcbrandname.png'],
                 'invoice_brand_logo',
                 'smcbrandname.png'
@@ -524,14 +490,20 @@ function sendInvoiceEmail(
             "Reply to: {$supportEmail}\n\n" .
             "{$title} Billing Department";
 
+        $smtpBody = $mail->Body;
+        $smtpAltBody = $mail->AltBody;
+
         /* ================= SEND ================= */
         $mail->send();
         logInvoiceMailerEvent("SUCCESS {$companyType} {$invoiceNumber} -> {$toEmail}");
         return true;
 
     } catch (Throwable $e) {
-        setLastInvoiceMailerError($e->getMessage());
-        logInvoiceMailerEvent("FAIL {$companyType} {$invoiceNumber} -> {$e->getMessage()}");
+        $primaryError = $e->getMessage();
+        logInvoiceMailerEvent("FAIL {$companyType} {$invoiceNumber} -> PRIMARY SMTP ERROR: {$primaryError}");
+
+        // Retry once with common alternate SMTP settings for Gmail if the first attempt fails.
+        setLastInvoiceMailerError($primaryError);
         return false;
     }
 }
