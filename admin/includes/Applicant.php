@@ -1212,6 +1212,37 @@ class Applicant
         }
         unset($r);
 
+        // Sort: score > docs > exp > created (earlier first)
+        usort($rows, function ($x, $y) {
+            if (($y['_score'] ?? 0) !== ($x['_score'] ?? 0))
+            error_log('createReplacementInit prepare error: ' . $this->db->error);
+            $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)");
+            if ($stmt2) {
+                $stmt2->bind_param("iiis", $originalApplicantId, $businessUnitId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();
+            }
+        } else {
+            $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, admin_id, note_text) VALUES (?, ?, ?)");
+            if ($stmt2) {
+                $stmt2->bind_param("iis", $originalApplicantId, $adminId, $repNote);
+                $stmt2->execute();
+                $stmt2->close();
+            }
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        $action = 'Start Replacement';
+        $desc = "Start replacement for Applicant ID {$originalApplicantId}; Reason: {$reason}";
+        $stmt3 = $this->db->prepare("INSERT INTO activity_logs (admin_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
+        if ($stmt3) {
+            $stmt3->bind_param("isss", $adminId, $action, $desc, $ip);
+            $stmt3->execute();
+            $stmt3->close();
+        }
+
+        return $replaceId;
+    }
 
     public function getReplacementById(int $replaceId): ?array
     {
