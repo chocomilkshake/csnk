@@ -1,78 +1,12 @@
 <?php
 // FILE: admin/pages/replace-assign.php (MySQLi-only, AUTO-HOLD ORIGINAL after assignment)
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
+
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
-require_once '../includes/functions.php';
-require_once '../includes/Applicant.php';
-
-// --- CONFIG ---
-const CSNK_AGENCY_CODE = 'csnk';
-const AUTO_MOVE_CANDIDATE_TO_ON_PROCESS = true; // keep your behavior
-
-// --- Bootstrap ---
-$database = new Database();
-$auth     = new Auth($database);
-$auth->requireLogin();
-
-$currentUser = $auth->getCurrentUser();
-$adminId     = isset($currentUser['id']) ? (int)$currentUser['id'] : null;
-
-$isAjax = (
-    (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
-    (isset($_REQUEST['ajax']) && (string)$_REQUEST['ajax'] === '1') ||
-    (isset($_POST['ajax']) && (string)$_POST['ajax'] === '1')
-);
-
-function json_out($ok, $payload = [], $http = 200) {
-    http_response_code($http);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
-    setFlashMessage('error', 'Invalid request method.');
-    redirect('approved.php'); exit;
-}
-
-// === CSRF ===
-if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
-    || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
-    if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
-    setFlashMessage('error', 'Invalid security token.');
-    redirect('approved.php'); exit;
-}
-
-$replacementId = isset($_POST['replacement_id']) ? (int)$_POST['replacement_id'] : 0;
-$candidateId   = isset($_POST['replacement_applicant_id']) ? (int)$_POST['replacement_applicant_id'] : 0;
-
-if ($replacementId <= 0 || $candidateId <= 0 || $adminId === null) {
-    if ($isAjax) json_out(false, ['message' => 'Missing required fields or authentication.'], 422);
-    setFlashMessage('error', 'Missing fields or authentication.');
-    redirect('approved.php'); exit;
-}
-
-// --- Get mysqli connection ---
-$conn = method_exists($database, 'getConnection') ? $database->getConnection() : null;
-if (!($conn instanceof mysqli)) {
-    if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
-    setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
-    redirect('approved.php'); exit;
-}
-
-// SQLs
-$sqlLockReplacement = "
-    SELECT id, original_applicant_id, replacement_applicant_id, status, business_unit_id
-    FROM applicant_replacements
-    WHERE id = ?
-    FOR UPDATE
-";
-
-$sqlGetAgencyAndStatusByApplicant = "
-    SELECT a.id, a.status, a.business_unit_id, ag.code AS agency_code
-    FROM applicants a
     JOIN business_units bu ON bu.id = a.business_unit_id
     JOIN agencies ag ON ag.id = bu.agency_id
     WHERE a.id = ?
