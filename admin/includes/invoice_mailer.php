@@ -198,6 +198,23 @@ function sendInvoiceEmail(
     $smtpBody = '';
     $smtpAltBody = '';
 
+    try {
+
+    /* ================= SMTP SETUP ================= */
+        $mail->isSMTP();
+        $mail->Host       = $smtp['host'];
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true,
+            ]
+        ];
+
+        /* ================= HEADERS ================= */
+        $mail->setFrom($smtp['from'], $smtp['fromName']);
+        $mail->addAddress($toEmail, $clientName);
+        $mail->addReplyTo($smtp['from'], $smtp['fromName']);
 
         if (is_readable($pdfPath)) {
             $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf");
