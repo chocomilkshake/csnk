@@ -1209,6 +1209,22 @@ class Applicant
         foreach ($rows as &$r) {
             $docsCompleted = (int) ($r['docs_completed'] ?? 0);
             $r['_score'] = $this->computeSimilarityScore($original, $r, $docsCompleted);
+        }
+        unset($r);
+
+
+    public function getReplacementById(int $replaceId): ?array
+    {
+        $this->ensureApplicantReplacementsTable();
+        $stmt = $this->db->prepare("SELECT * FROM applicant_replacements WHERE id = ? LIMIT 1");
+        if (!$stmt) {
+            error_log('getReplacementById prepare failed: ' . $this->db->error);
+            return null;
+        }
+        $stmt->bind_param("i", $replaceId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
         $stmt->close();
         return $row ?: null;
     }
