@@ -7,6 +7,30 @@ ob_start();
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
+require_once '../includes/functions.php';
+require_once '../includes/Applicant.php';
+
+// --- CONFIG ---
+const CSNK_AGENCY_CODE = 'csnk';
+const AUTO_MOVE_CANDIDATE_TO_ON_PROCESS = true; // keep your behavior
+
+if (!($conn instanceof mysqli)) {
+    if ($isAjax) json_out(false, ['message' => 'Database connection type not supported (expecting MySQLi).'], 500);
+    setFlashMessage('error', 'DB connection type not supported (MySQLi required).');
+    redirect('approved.php'); exit;
+}
+
+// SQLs
+$sqlLockReplacement = "
+    SELECT id, original_applicant_id, replacement_applicant_id, status, business_unit_id
+    FROM applicant_replacements
+    WHERE id = ?
+    FOR UPDATE
+";
+
+$sqlGetAgencyAndStatusByApplicant = "
+    SELECT a.id, a.status, a.business_unit_id, ag.code AS agency_code
+    FROM applicants a
     JOIN business_units bu ON bu.id = a.business_unit_id
     JOIN agencies ag ON ag.id = bu.agency_id
     WHERE a.id = ?
