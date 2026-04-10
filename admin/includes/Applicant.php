@@ -1220,6 +1220,16 @@ class Applicant
             $st->close();
             if (!$origRow)
                 throw new \RuntimeException('Original applicant not found.');
+            $origStatus = strtolower((string) $origRow['status']);
+            $origBuId = (int) ($origRow['business_unit_id'] ?? $repBuId);
+
+            $st = $this->db->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
+            if (!$st)
+                throw new \RuntimeException('Failed to prepare candidate status check.');
+            $st->bind_param('i', $replacementApplicantId);
+            $st->execute();
+            $rc = $st->get_result();
+            $candRow = $rc ? $rc->fetch_assoc() : null;
             $st->close();
             if (!$candRow)
                 throw new \RuntimeException('Candidate not found.');
