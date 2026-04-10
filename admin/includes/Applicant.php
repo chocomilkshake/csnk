@@ -1219,6 +1219,17 @@ class Applicant
             $origRow = $ro ? $ro->fetch_assoc() : null;
             $st->close();
             if (!$origRow)
+                throw new \RuntimeException('Original applicant not found.');
+            $st->close();
+            if (!$candRow)
+                throw new \RuntimeException('Candidate not found.');
+            $candStatus = strtolower((string) $candRow['status']);
+            $candBuId = (int) ($candRow['business_unit_id'] ?? null);
+
+            if (!in_array($candStatus, $allowedCandidateStatuses, true))
+                throw new \RuntimeException('Candidate not in assignable status (Pending/Approved/On-Process).');
+
+            // Assign
             $stmt = $this->db->prepare(
                 SET replacement_applicant_id = ?, status = 'assigned', assigned_at = NOW()
                 WHERE id = ?
