@@ -1208,6 +1208,18 @@ class Applicant
         // Score candidates
         foreach ($rows as &$r) {
             $docsCompleted = (int) ($r['docs_completed'] ?? 0);
+            $r['_score'] = $this->computeSimilarityScore($original, $r, $docsCompleted);
+        $stmt->close();
+        return $row ?: null;
+    }
+
+    /**
+     * Assign replacement and move statuses (candidate -> on_process, original -> on_hold)
+     */
+    public function assignReplacement(int $replaceId, int $replacementApplicantId, int $adminId): bool
+    {
+        $allowedCandidateStatuses = ['pending', 'approved', 'on_process'];
+
         $this->ensureApplicantReplacementsTable();
         $this->db->begin_transaction();
         try {
