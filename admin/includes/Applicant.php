@@ -1215,6 +1215,20 @@ class Applicant
 
             $origAgency = $this->getAgencyCodeByApplicantId($originalId);
             $st->execute();
+            $ro = $st->get_result();
+            $origRow = $ro ? $ro->fetch_assoc() : null;
+            $st->close();
+            if (!$origRow)
+            if (!$stmt)
+                throw new \RuntimeException('Failed to prepare assignment update.');
+            $stmt->bind_param('ii', $replacementApplicantId, $replaceId);
+            $stmt->execute(
+            $affectedAssign = $stmt->affected_rows;
+            $stmt->close();
+            if ($affectedAssign !== 1)
+                throw new \RuntimeException('Failed to assign (already assigned?).');
+
+            // Candidate -> on_process (+ report)
             if (in_array($candStatus, ['pending', 'approved'], true)) {
                 $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL LIMIT 1");
                 if ($stmt) {
