@@ -86,6 +86,25 @@ ini_set('display_errors', 0);
 define('SMTP_HOST', 'mail.crempcophilippines.com');
 define('SMTP_PORT', 465);
 define('SMTP_SECURE', 'ssl');
+
+define('SMTP_USER', 'billing@crempcophilippines.com');
+define('SMTP_PASS', ']I85gcDgU$}DSRsC'); // ✅ cPanel email password
+
+define('SMTP_FROM_EMAIL', 'billing@crempcophilippines.com');
+define('SMTP_FROM_NAME', 'CSNK Agency Billing');
+
+define('SMTP_TIMEOUT', 30);
+define('SMTP_KEEPALIVE', false);
+define('SMTP_AUTO_TLS', false);
+
+
+/* ======================================================
+   ✅ SMC SMTP (SAME SERVER — SAFE)
+====================================================== */
+define('SMC_SMTP_HOST', 'mail.crempcophilippines.com');
+define('SMC_SMTP_PORT', 465);
+define('SMC_SMTP_SECURE', 'ssl');
+
 define('SMC_SMTP_USER', 'billing@crempcophilippines.com');
 define('SMC_SMTP_PASS', ']I85gcDgU$}DSRsC');
 
