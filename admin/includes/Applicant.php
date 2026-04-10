@@ -1215,7 +1215,79 @@ class Applicant
         // Sort: score > docs > exp > created (earlier first)
         usort($rows, function ($x, $y) {
             if (($y['_score'] ?? 0) !== ($x['_score'] ?? 0))
+                return ($y['_score'] ?? 0) <=> ($x['_score'] ?? 0);
+            $yd = (int) ($y['docs_completed'] ?? 0);
+            $xd = (int) ($x['docs_completed'] ?? 0);
+            if ($yd !== $xd)
+                return $yd <=> $xd;
+            $ye = (int) ($y['years_experience'] ?? 0);
+            $xe = (int) ($x['years_experience'] ?? 0);
+            if ($ye !== $xe)
+                return $ye <=> $xe;
+            return strcmp($x['created_at'] ?? '', $y['created_at'] ?? '');
+        });
+
+        return array_slice($rows, 0, $limit);
+    }
+
+    public function createReplacementInit(
+        int $originalApplicantId,
+        string $reason,
+        string $reportText,
+        array $attachmentsPaths,
+        int $adminId
+    ): ?int {
+        try {
+            $this->ensureApplicantReplacementsTable();
+        } catch (\Throwable $e) {
+        }
+
+        $allowedReasons = ['AWOL', 'Client Left', 'Not Finished Contract', 'Performance Issue', 'Other'];
+        if (!in_array($reason, $allowedReasons, true)) {
+            $reason = 'Other';
+        }
+
+        $orig = $this->getById($originalApplicantId);
+        if (!$orig) {
+            error_log('createReplacementInit: original not found');
+            return null;
+        }
+        if (($orig['status'] ?? '') !== 'approved') {
+            error_log('createReplacementInit: original not approved');
+            return null;
+        }
+
+        $businessUnitId = isset($orig['business_unit_id']) ? (int) $orig['business_unit_id'] : null;
+        if ($businessUnitId === null || $businessUnitId <= 0) {
+            error_log('createReplacementInit: no BU');
+            return null;
+        }
+
+        $bookingId = $this->getLatestBookingIdForApplicant($originalApplicantId);
+        $attachmentsJson = json_encode(array_values($attachmentsPaths), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $sql = "INSERT INTO applicant_replacements
+        (business_unit_id, original_applicant_id, client_booking_id, reason, report_text, attachments_json, status, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, 'selection', ?)";
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
             error_log('createReplacementInit prepare error: ' . $this->db->error);
+            return null;
+        }
+        $bindBusinessUnit = ($businessUnitId !== null && $businessUnitId > 0) ? $businessUnitId : null;
+        $bindBooking = $bookingId !== null ? $bookingId : null;
+        $stmt->bind_param("iiisssi", $bindBusinessUnit, $originalApplicantId, $bindBooking, $reason, $reportText, $attachmentsJson, $adminId);
+        if (!$stmt->execute()) {
+            error_log('createReplacementInit insert error: ' . $stmt->error);
+            $stmt->close();
+            return null;
+        }
+        $replaceId = (int) $this->db->insert_id;
+        $stmt->close();
+
+        $repNote = "Replacement Initiated (Reason: {$reason})\n" . $reportText;
+        $checkCol = $this->db->query("SHOW COLUMNS FROM applicant_reports LIKE 'business_unit_id'");
+        if ($checkCol && $checkCol->num_rows > 0) {
             $stmt2 = $this->db->prepare("INSERT INTO applicant_reports (applicant_id, business_unit_id, admin_id, note_text) VALUES (?, ?, ?, ?)");
             if ($stmt2) {
                 $stmt2->bind_param("iiis", $originalApplicantId, $businessUnitId, $adminId, $repNote);
