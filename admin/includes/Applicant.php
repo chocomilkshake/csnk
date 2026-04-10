@@ -1209,6 +1209,15 @@ class Applicant
         foreach ($rows as &$r) {
             $docsCompleted = (int) ($r['docs_completed'] ?? 0);
         $this->ensureApplicantReplacementsTable();
+        $this->db->begin_transaction();
+        try {
+            $sqlLock = "
+                SELECT id, original_applicant_id, replacement_applicant_id, status, business_unit_id
+                FROM applicant_replacements
+                WHERE id = ?
+                FOR UPDATE
+            ";
+            $stmt = $this->db->prepare($sqlLock);
             if (!$stmt)
                 throw new \RuntimeException('Failed to prepare replacement lock statement.');
             $stmt->bind_param('i', $replaceId);
