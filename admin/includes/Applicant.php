@@ -1219,6 +1219,13 @@ class Applicant
             $origRow = $ro ? $ro->fetch_assoc() : null;
             $st->close();
             if (!$origRow)
+            $stmt = $this->db->prepare(
+                SET replacement_applicant_id = ?, status = 'assigned', assigned_at = NOW()
+                WHERE id = ?
+                  AND replacement_applicant_id IS NULL
+                  AND status IN ('selection')
+                LIMIT 1
+            ");
             if (!$stmt)
                 throw new \RuntimeException('Failed to prepare assignment update.');
             $stmt->bind_param('ii', $replacementApplicantId, $replaceId);
