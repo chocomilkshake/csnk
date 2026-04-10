@@ -13,7 +13,6 @@ define('DB_NAME', 'csnk');
 ====================================================== */
 define('APP_NAME', 'CSNK Admin System');
 
-// Auto-detect protocol (http / https)
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
@@ -23,49 +22,44 @@ function detectAdminBasePath(): string
     if ($scriptName !== '') {
         $adminPos = stripos($scriptName, '/admin');
         if ($adminPos !== false) {
-            $base = substr($scriptName, 0, $adminPos + strlen('/admin'));
-            return rtrim($base, '/');
+            return rtrim(substr($scriptName, 0, $adminPos + strlen('/admin')), '/');
         }
     }
-
     return '/admin';
 }
 
-$adminBasePath = detectAdminBasePath();
+define('APP_URL', $scheme . '://' . $host . detectAdminBasePath());
 
-define('APP_URL', $scheme . '://' . $host . $adminBasePath);
 
-// Upload paths
+/* ======================================================
+   UPLOAD PATHS
+====================================================== */
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', APP_URL . '/uploads/');
 
-// Replacement uploads
 define('REPLACEMENTS_UPLOAD_SUBDIR', 'replacements');
 define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENTS_UPLOAD_SUBDIR . '/');
 define('REPLACEMENTS_UPLOAD_URL', UPLOAD_URL . REPLACEMENTS_UPLOAD_SUBDIR . '/');
 
-// Ensure replacements directory exists
 if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
     @mkdir(REPLACEMENTS_UPLOAD_PATH, 0755, true);
 }
 
 
 /* ======================================================
-   SESSION CONFIGURATION (SECURE)
+   SESSION CONFIGURATION
 ====================================================== */
 if (session_status() !== PHP_SESSION_ACTIVE) {
-
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    ini_set('session.cookie_secure', 0); // set to 1 when HTTPS is enabled
+    ini_set('session.cookie_secure', 1);
 
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'domain'   => '',
-        'secure'   => false, // true in production HTTPS
+        'secure'   => true,
         'httponly' => true,
-        'samesite' => 'Lax', // use 'Strict' if possible
+        'samesite' => 'Lax',
     ]);
 
     session_start();
@@ -79,35 +73,44 @@ date_default_timezone_set('Asia/Manila');
 
 
 /* ======================================================
-   ERROR REPORTING (DEV ONLY)
+   ERROR REPORTING (TURN OFF IN PRODUCTION)
 ====================================================== */
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // ❗ set to 0 in production
+ini_set('display_errors', 0);
 
 
 /* ======================================================
-   SMTP / EMAIL CONFIGURATION
+   ✅ SMTP CONFIGURATION — Z.COM (FINAL & CORRECT)
 ====================================================== */
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_PORT', 587);
-define('SMTP_SECURE', 'tls');
-define('SMTP_USER', 'csnkmanila@gmail.com');        // ✅ CHANGE IF NEEDED
-define('SMTP_PASS', 'svmw uiwi vjvt hteu');         // ✅ Gmail App Password
-define('SMTP_FROM_EMAIL', 'csnkmanila@gmail.com');
-define('SMTP_FROM_NAME', 'CSNK Agency');
+
+define('SMTP_HOST', 'mail.crempcophilippines.com');
+define('SMTP_PORT', 465);
+define('SMTP_SECURE', 'ssl');
+
+define('SMTP_USER', 'billing@crempcophilippines.com');
+define('SMTP_PASS', ']I85gcDgU$}DSRsC'); // ✅ cPanel email password
+
+define('SMTP_FROM_EMAIL', 'billing@crempcophilippines.com');
+define('SMTP_FROM_NAME', 'CSNK Agency Billing');
+
 define('SMTP_TIMEOUT', 30);
 define('SMTP_KEEPALIVE', false);
-define('SMTP_AUTO_TLS', true);
-define('SMTP_BCC_SENDER_COPY', false);
+define('SMTP_AUTO_TLS', false);
 
-// === SMC EMAIL SETTINGS ===
-define('SMC_SMTP_HOST', 'smtp.gmail.com');
-define('SMC_SMTP_PORT', 587);
-define('SMC_SMTP_SECURE', 'tls');
-define('SMC_SMTP_USER', 'smcagency.ph@gmail.com');
-define('SMC_SMTP_PASS', 'ahgg slcm tcaq hhqr');
-define('SMC_FROM_EMAIL', 'smcagency.ph@gmail.com');
-define('SMC_FROM_NAME', 'SMC Agency');
+
+/* ======================================================
+   ✅ SMC SMTP (SAME SERVER — SAFE)
+====================================================== */
+define('SMC_SMTP_HOST', 'mail.crempcophilippines.com');
+define('SMC_SMTP_PORT', 465);
+define('SMC_SMTP_SECURE', 'ssl');
+
+define('SMC_SMTP_USER', 'billing@crempcophilippines.com');
+define('SMC_SMTP_PASS', ']I85gcDgU$}DSRsC');
+
+define('SMC_FROM_EMAIL', 'billing@crempcophilippines.com');
+define('SMC_FROM_NAME', 'SMC Agency Billing');
+
 
 
 /* ======================================================
