@@ -1212,6 +1212,21 @@ class Applicant
             $repBuId = isset($rep['business_unit_id']) ? (int) $rep['business_unit_id'] : null;
             if ($originalId <= 0)
                 throw new \RuntimeException('Invalid original applicant link.');
+
+            $origAgency = $this->getAgencyCodeByApplicantId($originalId);
+            $st->execute();
+            if (in_array($candStatus, ['pending', 'approved'], true)) {
+                $stmt = $this->db->prepare("UPDATE applicants SET status = 'on_process', updated_at = NOW() WHERE id = ? AND deleted_at IS NULL LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param('i', $replacementApplicantId);
+                    $stmt->execute();
+                    $stmt->close();
+                    $reportText = "Replacement assignment — moved from {$candStatus} to on_process.";
+                    $stmt2 = $this->db->prepare("
+                        INSERT INTO applicant_status_reports (applicant_id, business_unit_id, from_status, to_status, report_text, admin_id)
+                        VALUES (?, ?, ?, 'on_process', ?, ?)
+                    ");
+                    if ($stmt2) {
                         $stmt2->bind_param('iissi', $replacementApplicantId, $candBuId, $candStatus, $reportText, $adminId);
                         $stmt2->execute();
                         $stmt2->close();
