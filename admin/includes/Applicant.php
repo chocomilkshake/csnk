@@ -948,7 +948,7 @@ class Applicant
           `original_applicant_id` INT(10) UNSIGNED NOT NULL,
           `replacement_applicant_id` INT(10) UNSIGNED DEFAULT NULL,
           `client_booking_id` INT(10) UNSIGNED DEFAULT NULL,
-          `reason` ENUM('AWOL','Client Left','Not Finished Contract','Performance Issue','Other') NOT NULL,
+          `reason` VARCHAR(100) NOT NULL,
           `report_text` TEXT NOT NULL,
           `attachments_json` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`attachments_json`)),
           `status` ENUM('selection','assigned','cancelled') NOT NULL DEFAULT 'selection',
@@ -1242,11 +1242,6 @@ class Applicant
         } catch (\Throwable $e) {
         }
 
-        $allowedReasons = ['AWOL', 'Client Left', 'Not Finished Contract', 'Performance Issue', 'Other'];
-        if (!in_array($reason, $allowedReasons, true)) {
-            $reason = 'Other';
-        }
-
         $orig = $this->getById($originalApplicantId);
         if (!$orig) {
             error_log('createReplacementInit: original not found');
@@ -1256,6 +1251,25 @@ class Applicant
             error_log('createReplacementInit: original not approved');
             return null;
         }
+
+        // ✅ Prevent duplicate active replacements
+        $check = $this->db->prepare("
+            SELECT id
+            FROM applicant_replacements
+            WHERE original_applicant_id = ?
+            AND status = 'selection'
+            LIMIT 1
+        ");
+        $check->bind_param("i", $originalApplicantId);
+        $check->execute();
+        $res = $check->get_result();
+
+        if ($res && $res->num_rows > 0) {
+            $check->close();
+            // Already has an active replacement
+            return null;
+        }
+        $check->close();
 
         $businessUnitId = isset($orig['business_unit_id']) ? (int) $orig['business_unit_id'] : null;
         if ($businessUnitId === null || $businessUnitId <= 0) {
