@@ -1214,6 +1214,19 @@ class Applicant
                 throw new \RuntimeException('Invalid original applicant link.');
 
             $origAgency = $this->getAgencyCodeByApplicantId($originalId);
+            if (strtolower((string) $origAgency) !== self::CSNK_AGENCY_CODE)
+                throw new \RuntimeException('Operation blocked: original applicant is not CSNK.');
+            $candAgency = $this->getAgencyCodeByApplicantId($replacementApplicantId);
+            if (strtolower((string) $candAgency) !== self::CSNK_AGENCY_CODE)
+                throw new \RuntimeException('Candidate is not from CSNK.');
+            if ($replacementApplicantId === $originalId)
+                throw new \RuntimeException('Cannot assign the same person as their own replacement.');
+
+            // Load statuses + BU
+            $st = $this->db->prepare("SELECT status, business_unit_id FROM applicants WHERE id = ? LIMIT 1");
+            if (!$st)
+                throw new \RuntimeException('Failed to prepare original status check.');
+            $st->bind_param('i', $originalId);
             $st->execute();
             $ro = $st->get_result();
             $origRow = $ro ? $ro->fetch_assoc() : null;
