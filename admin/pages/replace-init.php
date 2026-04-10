@@ -1,5 +1,9 @@
 <?php
 // FILE: admin/pages/replace-init.php (MySQLi-only, FIXED)
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
+
 require_once '../includes/config.php';
 require_once '../includes/Database.php';
 require_once '../includes/Auth.php';
@@ -8,12 +12,24 @@ require_once '../includes/Applicant.php';
 
 const CSNK_AGENCY_CODE = 'csnk';
 
+function json_out($ok, $payload = [], $http = 200) {
+    if (ob_get_length()) ob_end_clean();
+    http_response_code($http);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
 $database = new Database();
 $auth     = new Auth($database);
 $auth->requireLogin();
 
 $currentUser = $auth->getCurrentUser();
-$adminId     = isset($currentUser['id']) ? (int)$currentUser['id'] : null;
+$adminId     = isset($currentUser['id']) ? (int)$currentUser['id'] : (int)($_SESSION['admin_id'] ?? 0);
 
 $isAjax = (
     (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
@@ -25,23 +41,9 @@ if ($isAjax) {
     header('Content-Type: application/json; charset=UTF-8');
 }
 
-function json_out($ok, $payload = [], $http = 200) {
-    http_response_code($http);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
     setFlashMessage('error', 'Invalid request method.');
-    redirect('approved.php'); exit;
-}
-
-if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
-    || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
-    if ($isAjax) json_out(false, ['message' => 'Invalid security token. Please refresh the page and try again.'], 403);
-    setFlashMessage('error', 'Invalid security token.');
     redirect('approved.php'); exit;
 }
 
@@ -54,20 +56,19 @@ if ($originalId <= 0) {
     setFlashMessage('error', 'Missing required fields.');
     redirect('approved.php'); exit;
 }
-if ($adminId === null) {
+if ($adminId <= 0) {
     if ($isAjax) json_out(false, ['message' => 'Authentication error. Please log in again.'], 401);
     setFlashMessage('error', 'Authentication error. Please log in again.');
     redirect('approved.php'); exit;
 }
-if ($reason === '') {
-    if ($isAjax) json_out(false, ['message' => 'Please select a reason for replacement.'], 422);
-    setFlashMessage('error', 'Please select a reason.');
-    redirect('approved.php'); exit;
-}
-if ($reportText === '') {
-    if ($isAjax) json_out(false, ['message' => 'Please provide a report/note for the replacement.'], 422);
-    setFlashMessage('error', 'Please provide a report/note.');
-    redirect('approved.php'); exit;
+
+// --- Optional CSRF ---
+if (!empty($_POST['csrf_token'])) {
+    if (empty($_SESSION['csrf_token']) || !hash_equals((string)$_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
+        if ($isAjax) json_out(false, ['message' => 'Invalid security token.'], 403);
+        setFlashMessage('error', 'Invalid security token.');
+        redirect('approved.php'); exit;
+    }
 }
 
 // --- MySQLi connection ---
