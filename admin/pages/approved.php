@@ -576,39 +576,71 @@ $exportUrl = buildUrl('../includes/excel_approved.php', []);
                         <div class="col-12 col-md-5">
                             <label class="form-label fw-semibold" for="rep-reason">Reason <span
                                     class="text-danger">*</span></label>
-                            <select name="reason" id="rep-reason" class="form-select form-select-lg rep-input" required
-                                aria-describedby="rep-reason-help">
+                                <select name="reason"
+                                    id="rep-reason"
+                                    class="form-select form-select-lg rep-input"
+                                    required
+                                    aria-describedby="rep-reason-help">
+
                                 <option value="" selected disabled>Select a reason</option>
 
-                                <!-- Attendance / Conduct -->
-                                <option value="AWOL">AWOL</option>
-                                <option value="Habitual Absences">Habitual Absences</option>
-                                <option value="Violation of Company Policies">Violation of Company Policies</option>
+                                <!-- Attendance & Availability -->
+                                <option value="Did not show up for work">Did not show up for work (AWOL)</option>
+                                <option value="Frequent absences">Frequent absences</option>
+                                <option value="Often late">Often late</option>
+                                <option value="Not available as agreed">Not available as agreed</option>
+                                <option value="Missed scheduled work">Missed scheduled work</option>
+
+                                <!-- Behavior & Rules -->
+                                <option value="Did not follow company rules">Did not follow company rules</option>
+                                <option value="Did not follow client rules">Did not follow client rules</option>
+                                <option value="Unprofessional behavior">Unprofessional behavior</option>
+                                <option value="Behavior or conduct issue">Behavior or conduct issue</option>
+                                <option value="Data or privacy concern">Data or privacy concern</option>
+
+                                <!-- Work Performance -->
+                                <option value="Work performance issue">Work performance issue</option>
+                                <option value="Did not meet job expectations">Did not meet job expectations</option>
+                                <option value="Lack of required skills">Lack of required skills</option>
+                                <option value="Did not pass training or assessment">Did not pass training or assessment</option>
+                                <option value="Poor quality of work">Poor quality of work</option>
 
                                 <!-- Client-Related -->
-                                <option value="Client Left">Client Left</option>
-                                <option value="Client Requested Replacement">Client Requested Replacement</option>
-                                <option value="Client Feedback (Negative)">Client Feedback (Negative)</option>
+                                <option value="Client requested a replacement">Client requested a replacement</option>
+                                <option value="Negative feedback from client">Negative feedback from client</option>
+                                <option value="Issue with client assignment">Issue with client assignment</option>
+                                <option value="Client cancelled the role">Client cancelled the role</option>
+                                <option value="Position no longer needed">Position no longer needed</option>
 
                                 <!-- Assignment / Contract -->
-                                <option value="Not Finished Contract">Not Finished Contract</option>
-                                <option value="Did Not Report to Client">Did Not Report to Client</option>
-                                <option value="Mismatch to Client Requirements">Mismatch to Client Requirements</option>
+                                <option value="Did not start the assignment">Did not start the assignment</option>
+                                <option value="Did not complete the contract">Did not complete the contract</option>
+                                <option value="Declined the assigned role">Declined the assigned role</option>
+                                <option value="Role not a good fit">Role not a good fit</option>
+                                <option value="Schedule conflict">Schedule conflict</option>
 
-                                <!-- Performance -->
-                                <option value="Performance Issue">Performance Issue</option>
-                                <option value="Failed to Meet Job Expectations">Failed to Meet Job Expectations</option>
+                                <!-- Requirements / Documents -->
+                                <option value="Incomplete requirements">Incomplete requirements</option>
+                                <option value="Documents could not be verified">Documents could not be verified</option>
+                                <option value="Medical or background concern">Medical or background concern</option>
 
-                                <!-- Personal -->
-                                <option value="Personal Concern / Personal Reason">Personal Concern / Personal Reason
-                                </option>
+                                <!-- Personal Reasons -->
+                                <option value="Personal reason">Personal reason</option>
+                                <option value="Health-related reason">Health-related reason</option>
+                                <option value="Family or emergency reason">Family or emergency reason</option>
+                                <option value="Applicant chose not to continue">Applicant chose not to continue</option>
 
-                                <!-- Fallback -->
-                                <option value="Other">Other</option>
+                                <!-- Administrative -->
+                                <option value="Internal or processing error">Internal or processing error</option>
+                                <option value="Incorrect or duplicate approval">Incorrect or duplicate approval</option>
+
+                                <!-- Other -->
+                                <option value="Other">Other (please explain in notes)</option>
+
                             </select>
                             <div id="rep-reason-help" class="form-text" style="font-size:.95rem;">Choose the most
                                 appropriate reason.</div>
-                        </div>
+                            </div>
 
                         <!-- Report / Note -->
                         <div class="col-12 col-md-7">
