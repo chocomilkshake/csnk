@@ -40,13 +40,6 @@ $isAjax = (
     (isset($_POST['ajax']) && (string)$_POST['ajax'] === '1')
 );
 
-function json_out($ok, $payload = [], $http = 200) {
-    http_response_code($http);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['ok' => (bool)$ok] + $payload, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if ($isAjax) json_out(false, ['message' => 'Invalid request method. Expected POST.'], 405);
     setFlashMessage('error', 'Invalid request method.');
