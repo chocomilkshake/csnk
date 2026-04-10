@@ -1222,7 +1222,7 @@ class Applicant
             if (!$stmt)
                 throw new \RuntimeException('Failed to prepare assignment update.');
             $stmt->bind_param('ii', $replacementApplicantId, $replaceId);
-            $stmt->execute(
+            $stmt->execute();
             $affectedAssign = $stmt->affected_rows;
             $stmt->close();
             if ($affectedAssign !== 1)
