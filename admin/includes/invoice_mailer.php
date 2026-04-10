@@ -191,6 +191,24 @@ function sendInvoiceEmail(
     ?string $paymentLink = null
 ): bool {
 
+    $smtp = getSmtpConfig($companyType);
+    $mail = new PHPMailer(true);
+    setLastInvoiceMailerError('');
+    $companyCode = strtoupper($companyType);
+    $smtpBody = '';
+    $smtpAltBody = '';
+
+
+        if (is_readable($pdfPath)) {
+            $mail->addAttachment($pdfPath, "Invoice-{$invoiceNumber}.pdf");
+        }
+
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        $mail->Subject = "Invoice {$invoiceNumber} | {$companyType} Manpower Agency";
+
+        /* ================= BRANDING ================= */
+        $year = date('Y');
         $siteBaseUrl = preg_replace('#/admin/?$#', '', APP_URL);
 
         if ($companyCode === 'SMC') {
