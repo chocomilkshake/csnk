@@ -699,7 +699,9 @@ if ($canViewReports && $conn instanceof mysqli) {
     function resetIdleTimer() {
         clearTimeout(idleTimer);
         idleTimer = setTimeout(() => {
-            alert("Your se
+            alert("Your session expired due to inactivity.");
+            window.location.href = "logout.php";
+        }, IDLE_LIMIT);
     }
 
     // Detect all activity typesoll', 'touchstart']
