@@ -706,7 +706,9 @@ if ($canViewReports && $conn instanceof mysqli) {
 
     // Detect all activity types
     ['mousemove', 'mousedown', 'click', 'keydown', 'scroll', 'touchstart']
-        .forEach(evt => document.addEvent
+        .forEach(evt => document.addEventListener(evt, resetIdleTimer, true));
+
+    window.addEventListener('load', resetIdleTimer);
 })();
 </script>
 
