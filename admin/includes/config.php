@@ -144,7 +144,6 @@ define('SMC_FROM_EMAIL', 'billing@crempcophilippines.com');
 define('SMC_FROM_NAME', 'SMC Agency Billing');
 
 
-
 /* ======================================================
    XENDIT PAYMENT GATEWAY CONFIGURATION
 ====================================================== */
