@@ -69,6 +69,23 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 
 /* ======================================================
+   ✅ SESSION IDLE TIMEOUT (AUTO LOGOUT AFTER 5 MINUTES)
+====================================================== */
+
+// 5 minutes = 300 seconds
+define('SESSION_IDLE_TIMEOUT', 300);
+
+// Skip timeout check on login & logout pages
+$currentScript = basename($_SERVER['PHP_SELF'] ?? '');
+
+if (!in_array($currentSc
+
+    }
+
+}
+
+
+/* ======================================================
    TIMEZONE
 ====================================================== */
 date_default_timezone_set('Asia/Manila');
