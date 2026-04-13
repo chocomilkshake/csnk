@@ -691,6 +691,21 @@ if ($canViewReports && $conn instanceof mysqli) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
+<script>
+(() => {
+    const IDLE_LIMIT = 300000; // 5 minutes
+    let idleTimer;
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = se
+    }
+
+    // Detect all activity typesoll', 'touchstart']
+        .forEach(evt => document.addEvent
+})();
+</script>
+
 <body>
     <!-- Sidebar -->
     <aside class="sidebar" id="csnkSidebar">
