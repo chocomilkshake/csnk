@@ -695,21 +695,28 @@ if ($canViewReports && $conn instanceof mysqli) {
 <script>
 (() => {
     const IDLE_LIMIT = 300000; // 5 minutes
+    const LOGOUT_URL = '<?php echo h(APP_URL); ?>/pages/logout.php';
     let idleTimer;
 
     function resetIdleTimer() {
         clearTimeout(idleTimer);
         idleTimer = setTimeout(() => {
             alert("Your session expired due to inactivity.");
-            window.location.href = "logout.php";
+            window.location.href = LOGOUT_URL;
         }, IDLE_LIMIT);
     }
 
-    // Detect all activity types
-    ['mousemove', 'mousedown', 'click', 'keydown', 'scroll', 'touchstart']
+    // Detect activity events
+    ['mousemove', 'mousedown', 'click', 'keydown', 'scroll', 'touchstart', 'touchmove']
         .forEach(evt => document.addEventListener(evt, resetIdleTimer, true));
 
     window.addEventListener('load', resetIdleTimer);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            resetIdleTimer();
+        }
+    });
+    window.addEventListener('focus', resetIdleTimer);
 })();
 </script>
 
