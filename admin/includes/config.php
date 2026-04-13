@@ -54,12 +54,16 @@ if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
 if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    ini_set('session.cookie_secure', 1);
+
+    $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+    ini_set('session.cookie_secure', $secureCookie ? 1 : 0);
 
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'secure'   => true,
+        'secure'   => $secureCookie,
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -88,7 +92,7 @@ if (!in_array($currentScript, ['login.php', 'logout.php'], true)) {
             session_unset();
             session_destroy();
 
-            header('Location: /csnk/admin/pages/login.php?reason=timeout');
+            header('Location: ' . APP_URL . '/pages/login.php?reason=timeout');
             exit;
         }
     }
