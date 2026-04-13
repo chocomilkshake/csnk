@@ -93,6 +93,8 @@ if (!in_array($currentScript, ['login.php', 'logout.php'], true)) {
         }
     }
 
+    // Update last activity timestamp
+    $_SESSION['last_activity'] = time();
 }
 
 
