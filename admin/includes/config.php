@@ -78,7 +78,12 @@ define('SESSION_IDLE_TIMEOUT', 300);
 // Skip timeout check on login & logout pages
 $currentScript = basename($_SERVER['PHP_SELF'] ?? '');
 
-if (!in_array($currentSc
+if (!in_array($currentScript, ['login.php', 'logout.php'], true)) {
+
+    // Check last activity
+    if (isset($_SESSION['last_activity'])) {
+        if ((time() - $_SESSION['last_activity']) >= SESSION_IDLE_TIMEOUT) {
+
 
     }
 
