@@ -88,6 +88,9 @@ if (!in_array($currentScript, ['login.php', 'logout.php'], true)) {
             session_unset();
             session_destroy();
 
+            header('Location: /csnk/admin/pages/login.php?reason=timeout');
+            exit;
+        }
     }
 
 }
