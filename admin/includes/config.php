@@ -84,6 +84,9 @@ if (!in_array($currentScript, ['login.php', 'logout.php'], true)) {
     if (isset($_SESSION['last_activity'])) {
         if ((time() - $_SESSION['last_activity']) >= SESSION_IDLE_TIMEOUT) {
 
+            // Destroy session securely
+            session_unset();
+            session_destroy();
 
     }
 
