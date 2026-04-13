@@ -22,6 +22,24 @@ function detectAdminBasePath(): string
     if ($scriptName !== '') {
         $adminPos = stripos($scriptName, '/admin');
         if ($adminPos !== false) {
+            return rtrim(substr($scriptName, 0, $adminPos + strlen('/admin')), '/');
+        }
+    }
+    return '/admin';
+}
+
+
+define('APP_URL', $scheme . '://' . $host . detectAdminBasePath());
+
+
+/* ======================================================
+   UPLOAD PATHS
+====================================================== */
+define('UPLOAD_PATH', __DIR__ . '/../uploads/');
+define('UPLOAD_URL', APP_URL . '/uploads/');
+
+
+define('REPLACEMENTS_UPLOAD_SUBDIR', 'replacements');
 define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENTS_UPLOAD_SUBDIR . '/');
 define('REPLACEMENTS_UPLOAD_URL', UPLOAD_URL . REPLACEMENTS_UPLOAD_SUBDIR . '/');
 
