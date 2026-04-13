@@ -18,7 +18,27 @@ $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
 function detectAdminBasePath(): string
 {
-    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME
+    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($scriptName !== '') {
+        $adminPos = stripos($scriptName, '/admin');
+        if ($adminPos !== false) {
+define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENTS_UPLOAD_SUBDIR . '/');
+define('REPLACEMENTS_UPLOAD_URL', UPLOAD_URL . REPLACEMENTS_UPLOAD_SUBDIR . '/');
+
+if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
+    @mkdir(REPLACEMENTS_UPLOAD_PATH, 0755, true);
+}
+
+
+/* ======================================================
+   SESSION CONFIGURATION
+====================================================== */
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_only_cookies', 1);
+
+    $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 
     ini_set('session.cookie_secure', $secureCookie ? 1 : 0);
 
