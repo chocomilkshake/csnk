@@ -1,12 +1,8 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/Database.php';
-require_once '../includes/Auth.php';
-
-$database = new Database();
-$auth = new Auth($database);
-
-$auth->logout();
-
+/**
+ * CSNK Admin System
+ * Secure Logout Handler
+ * - Works for manual logout
+ * - Used by auto-logout (idle timeout)
 header('Location: login.php');
-exit();
+exit;
