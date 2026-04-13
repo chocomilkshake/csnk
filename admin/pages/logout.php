@@ -26,5 +26,5 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 }
 
 // Redirect to login page
-header('Location: login.php');
+header('Location: ' . APP_URL . '/pages/login.php');
 exit;
