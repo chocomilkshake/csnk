@@ -16,59 +16,6 @@ define('APP_NAME', 'CSNK Admin System');
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-function detectAdminBasePath(): string
-{
-    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
-    if ($scriptName !== '') {
-        $adminPos = stripos($scriptName, '/admin');
-        if ($adminPos !== false) {
-            return rtrim(substr($scriptName, 0, $adminPos + strlen('/admin')), '/');
-        }
-    }
-    return '/admin';
-}
-
-
-define('APP_URL', $scheme . '://' . $host . detectAdminBasePath());
-
-
-/* ======================================================
-   UPLOAD PATHS
-====================================================== */
-define('UPLOAD_PATH', __DIR__ . '/../uploads/');
-define('UPLOAD_URL', APP_URL . '/uploads/');
-
-
-define('REPLACEMENTS_UPLOAD_SUBDIR', 'replacements');
-define('REPLACEMENTS_UPLOAD_PATH', UPLOAD_PATH . REPLACEMENTS_UPLOAD_SUBDIR . '/');
-define('REPLACEMENTS_UPLOAD_URL', UPLOAD_URL . REPLACEMENTS_UPLOAD_SUBDIR . '/');
-
-if (!is_dir(REPLACEMENTS_UPLOAD_PATH)) {
-    @mkdir(REPLACEMENTS_UPLOAD_PATH, 0755, true);
-}
-
-
-/* ======================================================
-   SESSION CONFIGURATION
-====================================================== */
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    ini_set('session.cookie_httponly', 1);
-    ini_set('session.use_only_cookies', 1);
-
-    $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
-
-    ini_set('session.cookie_secure', $secureCookie ? 1 : 0);
-
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path'     => '/',
-        'secure'   => $secureCookie,
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-
-    session_start();
 }
 
 
