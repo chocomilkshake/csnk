@@ -67,6 +67,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+
 /* ======================================================
    ✅ SESSION IDLE TIMEOUT (AUTO LOGOUT AFTER 5 MINUTES)
 ====================================================== */
