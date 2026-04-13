@@ -698,7 +698,8 @@ if ($canViewReports && $conn instanceof mysqli) {
 
     function resetIdleTimer() {
         clearTimeout(idleTimer);
-        idleTimer = se
+        idleTimer = setTimeout(() => {
+            alert("Your se
     }
 
     // Detect all activity typesoll', 'touchstart']
